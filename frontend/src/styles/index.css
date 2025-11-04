@@ -1,0 +1,9 @@
+/* 中文注释：全局样式入口，集成 Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 中文注释：基础布局与滚动优化 */
+html, body, #app {
+  height: 100%;
+}
