@@ -12,6 +12,18 @@
       </div>
     </el-card>
 
+    <!-- 中文注释：账号管理区域，提供退出登录按钮 -->
+    <el-card shadow="never">
+      <template #header>
+        <span>账号管理</span>
+      </template>
+      <el-form label-width="160px">
+        <el-form-item label="退出登录">
+          <el-button type="danger" @click="onLogout">退出登录</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
     <el-card shadow="never">
       <template #header>
         <span>系统设置</span>
@@ -19,10 +31,6 @@
       <el-form label-width="160px">
         <el-form-item label="固定番茄钟页面">
           <el-switch v-model="fixed" @change="onFixedChange" />
-        </el-form-item>
-        <el-form-item label="退出登录">
-          <!-- 中文注释：退出登录当前为清空本地缓存并重置全局状态，因尚未接入后端认证 -->
-          <el-button type="danger" @click="logout">退出登录（清空本地缓存）</el-button>
         </el-form-item>
         <el-form-item label="快速入口">
           <!-- 中文注释：快速进入登录与注册占位页，便于体验流程 -->
@@ -39,6 +47,7 @@ import { useAppState } from '@/stores/appState'
 import { computed } from 'vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import router from '@/router'
+import { useAuth } from '@/stores/auth'
 
 // 中文注释：固定番茄设置持久化到 appState（后续联动后端 UserSettings）
 const store = useAppState()
@@ -51,16 +60,14 @@ function onFixedChange() {
   // 中文注释：此处可调用后端保存设置
 }
 
-// 中文注释：退出登录逻辑：清空本地缓存中的登录标记与 appState，重置 store，并返回登录页
-function logout() {
+// 中文注释：退出登录，清除认证信息并跳转到登录页
+const auth = useAuth()
+function onLogout() {
   try {
-    localStorage.removeItem('appState')
+    auth.logout()
     store.reset()
-    // 中文注释：恢复无登录页版本：退出后保留在当前页面或返回任务页
-    // 如需返回任务页，请取消下一行注释
-    // router.push('/tasks')
+    router.replace('/login')
   } catch (_) {
-    // 兜底刷新页面
     location.reload()
   }
 }

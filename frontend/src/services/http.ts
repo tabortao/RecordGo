@@ -9,6 +9,11 @@ const instance = axios.create({
 // 请求拦截器：可附加 JWT 等
 instance.interceptors.request.use((config) => {
   // 中文注释：此处可注入鉴权头，如从 localStorage 读取 token
+  const token = localStorage.getItem('auth_token')
+  if (token) {
+    config.headers = config.headers || {}
+    ;(config.headers as any).Authorization = `Bearer ${token}`
+  }
   return config
 })
 
@@ -33,6 +38,18 @@ instance.interceptors.response.use(
       await new Promise((r) => setTimeout(r, delay))
       return instance(config)
     }
+    // 中文注释：如果后端返回未登录（如 401 或业务码），可跳转登录
+    try {
+      const status = error?.response?.status
+      const payload = error?.response?.data
+      const code = typeof payload?.code === 'number' ? payload.code : -1
+      if (status === 401 || code == 40100) {
+        // 清理本地 token 并跳转登录
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('auth_user')
+        // 为避免循环依赖，这里不直接导入路由；页面调用处可根据返回错误重定向
+      }
+    } catch (_) {}
     return Promise.reject(error)
   }
 )

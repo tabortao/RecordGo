@@ -24,6 +24,10 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 
     api := r.Group("/api")
     {
+        // 中文注释：认证路由（登录/注册）
+        api.POST("/auth/register", handlers.Register)
+        api.POST("/auth/login", handlers.Login)
+
         api.GET("/health", handlers.Health)
         // 中文注释：默认心愿占位接口，可用于前端初始化
         api.GET("/wishes/default", handlers.DefaultWishes)

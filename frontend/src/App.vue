@@ -3,7 +3,8 @@
   <div class="min-h-screen flex flex-col bg-gray-50">
     <!-- 中文注释：为页面内容增加底部留白，避免被固定底部导航遮挡 -->
     <router-view class="flex-1 pb-16" />
-    <BottomNav />
+    <!-- 中文注释：登录/注册页面隐藏底部导航 -->
+    <BottomNav v-if="!noNav" />
   </div>
   
   <!-- 中文注释：全局加载中占位（可根据需要改造） -->
@@ -11,8 +12,13 @@
 </template>
 
 <script setup lang="ts">
-// 中文注释：注册底部导航组件
+// 中文注释：注册底部导航组件与根据路由控制显示
 import BottomNav from '@/components/BottomNav.vue'
+import { useRoute } from 'vue-router'
+import { computed } from 'vue'
+
+const route = useRoute()
+const noNav = computed(() => route.meta?.noNav === true)
 </script>
 
 <style scoped>
