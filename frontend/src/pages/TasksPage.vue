@@ -61,13 +61,21 @@
     <el-card shadow="never">
       <template #header>
         <div class="flex items-center justify-between">
-          <span>今日任务</span>
+          <span class="font-semibold">今日任务</span>
           <div class="space-x-2 flex items-center">
-            <el-radio-group v-model="filter">
-              <el-radio-button label="全部" />
-              <el-radio-button label="已完成" />
-              <el-radio-button label="待完成" />
-            </el-radio-group>
+            <!-- 中文注释：筛选图标下拉菜单，点击选择“全部/已完成/待完成” -->
+            <el-dropdown trigger="click" @command="onFilterCommand">
+              <span class="el-dropdown-link">
+                <el-icon class="cursor-pointer" :size="18" title="筛选"><Filter /></el-icon>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="全部">全部</el-dropdown-item>
+                  <el-dropdown-item command="已完成">已完成</el-dropdown-item>
+                  <el-dropdown-item command="待完成">待完成</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
             <el-button type="primary" @click="openCreate">添加任务</el-button>
           </div>
         </div>
@@ -87,17 +95,17 @@
       <div v-else class="space-y-4">
         <!-- 按分类分组显示 -->
         <div v-for="group in groupedTasks" :key="group.category" class="space-y-3">
-          <div class="text-base font-semibold text-red-500">{{ group.category }}</div>
+          <div class="text-base font-semibold text-green-700">{{ group.category }}</div>
           <el-card v-for="t in group.items" :key="t.id" shadow="hover" class="relative">
             <!-- 中文注释：自定义圆形复选框，居中于第一行与第二行之间，略大，点击切换完成状态 -->
             <div class="absolute left-2 top-1/2 -translate-y-1/2">
               <div
-                class="w-7 h-7 rounded-full border-2 flex items-center justify-center cursor-pointer"
+                class="w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer"
                 :class="t.status===2 ? 'bg-green-500 border-green-500 text-white' : 'border-gray-400 text-gray-400'"
                 @click="() => onCheckComplete(t, t.status !== 2)"
                 title="点击切换完成状态"
               >
-                <el-icon :size="18">
+                <el-icon :size="12">
                   <CircleCheck />
                 </el-icon>
               </div>
@@ -144,16 +152,16 @@
                 <template v-if="t.status===2">
                   <div class="flex items-center gap-1 text-blue-600 text-xs" title="实际完成时间">
                     <el-icon :size="14"><Clock /></el-icon>
-                    <span>{{ formatHMS(actualSecondsLocal[t.id] ?? ((t.actual_minutes||0)*60)) }}</span>
+                    <span class="font-semibold">{{ formatHMS(actualSecondsLocal[t.id] ?? ((t.actual_minutes||0)*60)) }}</span>
                   </div>
                 </template>
                 <div class="flex items-center gap-1 text-green-600 text-xs" title="计划用时">
                   <el-icon :size="14"><List /></el-icon>
-                  <span>{{ t.plan_minutes || 0 }} 分</span>
+                  <span class="font-semibold">{{ t.plan_minutes || 0 }} 分</span>
                 </div>
                 <div class="flex items-center gap-1 text-amber-600 text-xs" title="金币">
                   <el-icon :size="14"><Coin /></el-icon>
-                  <span>{{ t.score || 0 }}</span>
+                  <span class="font-semibold">{{ t.score || 0 }}</span>
                 </div>
               </div>
             </div>
@@ -260,13 +268,15 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete } from '@element-plus/icons-vue'
+import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import { useAppState } from '@/stores/appState'
 import TomatoTimer from '@/components/TomatoTimer.vue'
 import WeekCalendar from '@/components/WeekCalendar.vue'
 import dayjs from 'dayjs'
-import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, type TaskItem } from '@/services/tasks'
+import utc from 'dayjs/plugin/utc'
+dayjs.extend(utc)
+import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, type TaskItem } from '@/services/tasks'
 
 // 顶部统计占位（后续与后端联动）
 const store = useAppState()
@@ -284,7 +294,7 @@ const selectedDate = ref<string>(dayjs().format('YYYY-MM-DD'))
 const taskCountMap = computed<Record<string, number>>(() => {
   const map: Record<string, number> = {}
   for (const t of tasks.value) {
-    const d = (t.start_date || '').slice(0, 10)
+    const d = t.start_date ? dayjs.utc(t.start_date).local().format('YYYY-MM-DD') : ''
     if (!d) continue
     map[d] = (map[d] || 0) + 1
   }
@@ -445,7 +455,6 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
   }
 }
 // 取消切换状态功能：保留空函数避免引用错误（模板已移除）
-function toggleStatus(_t: TaskItem) {}
 
 function confirmDelete(t: TaskItem) {
   ElMessageBox.confirm(`确认删除任务「${t.name}」？删除后可在回收站恢复。`, '提示', { type: 'warning' })
@@ -461,16 +470,7 @@ function confirmDelete(t: TaskItem) {
     .catch(() => {})
 }
 
-// 批量删除入口移除，移动端简化操作
 
-async function openRecycle() {
-  recycleVisible.value = true
-  try {
-    recycleList.value = await listRecycleBin()
-  } catch (e: any) {
-    ElMessage.error(`回收站加载失败：${e.message || e}`)
-  }
-}
 
 const recycleList = ref<TaskItem[]>([])
 async function restore(ids: number[]) {
@@ -524,6 +524,11 @@ function onMenu(cmd: string, t: TaskItem) {
   if (cmd === 'delete') return confirmDelete(t)
 }
 
+// 中文注释：筛选图标下拉菜单命令处理，更新状态筛选条件
+function onFilterCommand(cmd: '全部' | '已完成' | '待完成') {
+  filter.value = cmd
+}
+
 // 中文注释：悬浮球填充百分比（正计时用已用时 / 目标时长，倒计时用剩余时间）
 const fillPercent = computed(() => {
   const dur = store.tomato.durationMinutes * 60
@@ -546,4 +551,6 @@ const floatingTime = computed(() => {
 
 <style scoped>
 /* 中文注释：基本页面样式，响应式栅格布局已通过 Tailwind 实现 */
+/* 中文注释：分类筛选按钮的文字加粗，增强可读性 */
+.el-radio-button__inner { font-weight: 600; }
 </style>

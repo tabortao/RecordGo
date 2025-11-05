@@ -1,9 +1,14 @@
 # 任务与积分小程序项目规则（RecordGo）
 
-版本：0.1.0  
+版本：0.1.1  
 更新日期：2025-11-04  
 适用平台：Windows 10/11  
 技术栈：前端 Vue 3 + Vite + Element Plus + Pinia；后端 Gin（Go 1.24.1）+ GORM；数据库 SQLite（纯 Go 驱动）；支持 Docker 部署
+
+## 最新规则，必须遵守
+
+- 前端具有热加载，修改无需刷新即可生效，无需再次启动前端，前端使用`pnpm dev` ，默认前端已经启动在 `http://localhost:5173`
+- 请记住 不要pnpm build，项目已经启动了 pnpm dev，不需要再次启动前端了，具有热加载。
 
 ---
 

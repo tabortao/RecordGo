@@ -13,18 +13,20 @@
       <div
         v-for="d in days"
         :key="d.format('YYYY-MM-DD')"
-        class="p-2 rounded-lg text-center cursor-pointer border"
+        class="p-2 rounded-lg text-center cursor-pointer border transition-colors"
         :class="{
-          'bg-green-50 border-green-300': d.isSame(selected, 'date'),
+          'text-white shadow-sm': d.isSame(selected, 'date'),
           'hover:bg-gray-50': !d.isSame(selected, 'date')
         }"
+        :style="d.isSame(selected, 'date') ? { backgroundColor: 'rgb(149, 212, 117)', borderColor: 'rgb(34, 197, 94)' } : {}"
         @click="onPick(d)"
       >
-        <div class="text-xs text-gray-500">{{ weekdayLabel(d) }}</div>
-        <div class="text-lg font-semibold">{{ d.date() }}</div>
+        <div class="text-xs" :class="d.isSame(selected, 'date') ? 'text-white/80' : 'text-gray-500'">{{ weekdayLabel(d) }}</div>
+        <div class="text-lg font-semibold" :class="d.isSame(selected, 'date') ? 'text-white' : 'text-gray-900'">{{ d.date() }}</div>
         <div class="h-5 flex items-center justify-center">
-          <span v-if="countMap[d.format('YYYY-MM-DD')]" class="inline-flex items-center gap-1 text-xs text-purple-600">
-            <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+          <!-- 中文注释：当日有任务时显示绿色小圆点与数字；无任务则不显示 -->
+          <span v-if="countMap[d.format('YYYY-MM-DD')]" class="inline-flex items-center gap-1 text-xs" :class="d.isSame(selected, 'date') ? 'text-white' : 'text-purple-600'">
+            <span class="w-2 h-2 rounded-full" :class="d.isSame(selected, 'date') ? 'bg-white/90' : 'bg-purple-600'"></span>
             {{ countMap[d.format('YYYY-MM-DD')] }}
           </span>
         </div>
@@ -35,6 +37,7 @@
 
 <script setup lang="ts">
 // 中文注释：使用 dayjs 计算当前周的起止，周一为一周开始；对外发出日期与周切换事件
+import { ref, computed } from 'vue'
 import dayjs, { Dayjs } from 'dayjs'
 import isoWeek from 'dayjs/plugin/isoWeek'
 import weekOfYear from 'dayjs/plugin/weekOfYear'
