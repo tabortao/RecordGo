@@ -28,6 +28,7 @@ declare module 'vue' {
     ElInput: typeof import('element-plus/es')['ElInput']
     ElInputNumber: typeof import('element-plus/es')['ElInputNumber']
     ElOption: typeof import('element-plus/es')['ElOption']
+    ElProgress: typeof import('element-plus/es')['ElProgress']
     ElRadioButton: typeof import('element-plus/es')['ElRadioButton']
     ElRadioGroup: typeof import('element-plus/es')['ElRadioGroup']
     ElRow: typeof import('element-plus/es')['ElRow']
@@ -40,6 +41,7 @@ declare module 'vue' {
     ElUpload: typeof import('element-plus/es')['ElUpload']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    TaskImageUploader: typeof import('./components/TaskImageUploader.vue')['default']
     TomatoTimer: typeof import('./components/TomatoTimer.vue')['default']
     WeekCalendar: typeof import('./components/WeekCalendar.vue')['default']
   }

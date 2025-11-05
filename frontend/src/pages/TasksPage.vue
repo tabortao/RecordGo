@@ -203,7 +203,7 @@
           <el-input v-model="form.description" type="textarea" style="width: 100%" />
         </el-form-item>
 
-        <!-- 任务图片上传（移动到描述之后，每行一个字段） -->
+        <!-- 任务图片上传（组件实现：多选、缩略图预览与进度） -->
         <el-form-item class="image-upload">
           <template #label>
             <div class="flex items-center gap-1">
@@ -211,22 +211,15 @@
               <span>任务图片</span>
             </div>
           </template>
-          <el-upload
-            list-type="picture-card"
-            :auto-upload="false"
-            v-model:file-list="uploadList"
-            :on-change="onTaskImageChange"
-            :on-remove="onTaskImageRemove"
-            :on-preview="onTaskImagePreview"
-            accept="image/*"
-            :limit="6"
-          >
-            <el-icon><Plus /></el-icon>
-          </el-upload>
-          <el-dialog v-model="previewVisible" width="600px">
-            <img :src="previewUrl" class="w-full" />
-          </el-dialog>
-          <div class="text-xs text-gray-500 mt-1">前端将自动压缩并转换为 WebP；创建模式下图片会暂存在本地，刷新后自动恢复。</div>
+          <TaskImageUploader
+            :editing="editing"
+            :user-id="userId"
+            :task-id="currentTask?.id"
+            v-model:serverPaths="form.images"
+            v-model:localFiles="form.local_images"
+            @added="() => ElMessage.success('图片已添加')"
+          />
+          <div class="text-xs text-gray-500 mt-1">前端自动压缩并转换为 WebP；创建模式下图片暂存为草稿，刷新可恢复。</div>
         </el-form-item>
 
         <!-- 分类（每行一个字段） -->
@@ -402,12 +395,14 @@ import defaultAvatar from '@/assets/avatars/default.png'
 import { useAppState } from '@/stores/appState'
 import TomatoTimer from '@/components/TomatoTimer.vue'
 import WeekCalendar from '@/components/WeekCalendar.vue'
+import TaskImageUploader from '@/components/TaskImageUploader.vue'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 dayjs.extend(utc)
 import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, uploadTaskImage, type TaskItem } from '@/services/tasks'
 import { prepareUpload } from '@/utils/image'
 const isMobile = ref(false)
+const userId = 1 // 中文注释：示例用户ID（参考心愿页做法，后续接入登录）
 const dialogWidth = computed(() => (isMobile.value ? '96vw' : '640px'))
 
 // 顶部统计占位（后续与后端联动）
@@ -487,27 +482,7 @@ const editing = ref(false)
 const currentTask = ref<TaskItem | null>(null)
 const formRef = ref<FormInstance>()
 const form = reactive<any>({ name: '', description: '', category: '语文', score: 1, plan_minutes: 20, start_date: new Date(), end_date: undefined, images: [], local_images: [] })
-const uploadList = ref<any[]>([])
-const DRAFT_KEY = 'task_draft_images'
-
-// 中文注释：File 转 dataURL（用于草稿持久化，刷新恢复）
-async function fileToDataURL(file: File): Promise<string> {
-  return await new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result))
-    reader.onerror = (e) => reject(e)
-    reader.readAsDataURL(file)
-  })
-}
-function dataURLToFile(dataURL: string, name = 'image.webp', type = 'image/webp'): File {
-  const arr = dataURL.split(',')
-  const mime = arr[0].match(/:(.*?);/)?.[1] || type
-  const bstr = atob(arr[1])
-  let n = bstr.length
-  const u8arr = new Uint8Array(n)
-  while (n--) { u8arr[n] = bstr.charCodeAt(n) }
-  return new File([u8arr], name, { type: mime })
-}
+// 中文注释：上传列表与草稿逻辑已迁移到组件中处理
 const rules: FormRules = {
   name: [{ required: true, message: '请输入任务标题', trigger: 'blur' }],
   category: [{ required: true, message: '请选择分类', trigger: 'change' }],
@@ -536,16 +511,6 @@ async function fetchTasks() {
 function openCreate() {
   editing.value = false
   Object.assign(form, { name: '', description: '', category: '语文', score: 1, plan_minutes: 20, start_date: new Date(), end_date: undefined, images: [], local_images: [], repeat_type: 'none', weekly_days: [] })
-  // 中文注释：恢复草稿图片，避免刷新后丢失
-  try {
-    const raw = localStorage.getItem(DRAFT_KEY)
-    uploadList.value = []
-    if (raw) {
-      const arr: { name: string; type: string; dataURL: string }[] = JSON.parse(raw)
-      form.local_images = arr.map((x) => dataURLToFile(x.dataURL, x.name, x.type))
-      uploadList.value = arr.map((x) => ({ name: x.name, url: x.dataURL }))
-    }
-  } catch { uploadList.value = [] }
   formVisible.value = true
 }
 
@@ -555,7 +520,6 @@ function openEdit(t: TaskItem) {
   Object.assign(form, { name: t.name, description: t.description, category: t.category, score: t.score, plan_minutes: t.plan_minutes, start_date: new Date(t.start_date), end_date: t.end_date ? new Date(t.end_date) : undefined, images: imgs, local_images: [], repeat_type: 'none', weekly_days: [] })
   currentTask.value = t
   // 中文注释：编辑模式下展示服务端已上传图片的缩略图
-  uploadList.value = (imgs || []).map((p) => ({ name: p.split('/').pop(), url: resolveUploadUrl(p) }))
   formVisible.value = true
 }
 
@@ -591,7 +555,7 @@ async function submitForm() {
       const createdTasks: TaskItem[] = []
       for (const d of dates) {
         const t = await createTask({
-          user_id: 1, // 中文注释：演示用，后续接入登录用户 ID
+          user_id: userId,
           name: form.name,
           description: form.description,
           category: form.category,
@@ -609,30 +573,46 @@ async function submitForm() {
           for (const f of form.local_images) {
             try {
               const webp = await prepareUpload(f as File)
-              const { path } = await uploadTaskImage(1, webp, t.id)
+              // 中文注释：前端调试日志，确认文件对象与元信息
+              console.debug('准备上传任务图片', {
+                task_id: t.id,
+                filename: (webp as File)?.name,
+                size: (webp as File)?.size,
+                type: (webp as File)?.type,
+                isFile: webp instanceof File,
+              })
+              const { path } = await uploadTaskImage(userId, webp, t.id)
               paths.push(path)
-            } catch (_) {}
+            } catch (err: any) {
+              // 中文注释：详细前端错误日志，包含任务ID、文件名与后端返回信息
+              console.error('上传任务图片失败', {
+                task_id: t.id,
+                filename: (f as File)?.name,
+                message: err?.message || err,
+                response: err?.response?.data
+              })
+              ElMessage.error(`图片上传失败：${(f as File)?.name || ''} → ${err?.response?.data?.message || err?.message || '未知错误'}`)
+            }
           }
           if (paths.length > 0) {
             await updateTask(t.id, { image_json: JSON.stringify(paths) })
+            console.info('任务图片已更新到 image_json', { task_id: t.id, count: paths.length })
           }
         }
       }
       ElMessage.success(`任务已创建${dates.length>1?`（${dates.length}条）`:''}`)
     }
-    // 中文注释：清理草稿持久化并同步缩略图列表
-    try {
-      localStorage.removeItem(DRAFT_KEY)
-    } catch {}
-    if ((form.images || []).length) {
-      uploadList.value = (form.images || []).map((p: string) => ({ name: p.split('/').pop(), url: resolveUploadUrl(p) }))
-    } else {
-      uploadList.value = []
-    }
+    // 中文注释：创建成功后清理草稿（组件已管理缩略图）
+    try { localStorage.removeItem('task_draft_images') } catch {}
     formVisible.value = false
     await fetchTasks()
   } catch (e: any) {
-    ElMessage.error(`提交失败：${e.message || e}`)
+    // 中文注释：提交失败时输出更详细的诊断信息
+    console.error('提交任务失败', {
+      message: e?.message || e,
+      response: e?.response?.data,
+    })
+    ElMessage.error(`提交失败：${e?.response?.data?.message || e?.message || e}`)
   }
 }
 
@@ -742,61 +722,7 @@ function onFilterCommand(cmd: '全部' | '已完成' | '待完成') {
   filter.value = cmd
 }
 
-// ===== 任务图片上传逻辑 =====
-const previewVisible = ref(false)
-const previewUrl = ref('')
-async function onTaskImageChange(file: any) {
-  try {
-    const webp = await prepareUpload(file.raw as File)
-    // 中文注释：编辑模式下立即上传到该任务ID；创建模式下暂存，提交创建后按任务ID上传
-    if (editing.value && currentTask.value) {
-      const resp = await uploadTaskImage(1, webp, currentTask.value.id) // 中文注释：演示用户 ID=1
-      form.images = form.images || []
-      form.images.push(resp.path)
-      uploadList.value.push({ name: (file.name || 'image.webp'), url: resolveUploadUrl(resp.path) })
-      ElMessage.success('图片上传成功')
-    } else {
-      form.local_images = form.local_images || []
-      form.local_images.push(webp)
-      // 中文注释：将 webp 持久化为草稿，刷新后恢复
-      try {
-        const durl = await fileToDataURL(webp)
-        const raw = localStorage.getItem(DRAFT_KEY)
-        const arr: any[] = raw ? JSON.parse(raw) : []
-        arr.push({ name: file.name || 'image.webp', type: webp.type || 'image/webp', dataURL: durl })
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(arr))
-        uploadList.value.push({ name: file.name || 'image.webp', url: durl })
-      } catch {}
-      ElMessage.success('图片已添加，将在创建后上传')
-    }
-  } catch (e: any) {
-    ElMessage.error(e?.message || '图片上传失败')
-  }
-}
-function onTaskImageRemove(file: any) {
-  if (editing.value) {
-    const url = file.url || file.response?.path
-    if (!url) return
-    form.images = (form.images || []).filter((x: string) => x !== url)
-  } else {
-    const name = file?.name
-    form.local_images = (form.local_images || []).filter((x: File) => (x as any).name !== name)
-    // 中文注释：同时更新草稿与缩略图列表
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY)
-      if (raw) {
-        const arr: { name: string; type: string; dataURL: string }[] = JSON.parse(raw)
-        const next = arr.filter((x) => x.name !== name)
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(next))
-      }
-      uploadList.value = uploadList.value.filter((x) => x.name !== name)
-    } catch {}
-  }
-}
-function onTaskImagePreview(file: any) {
-  previewUrl.value = file.url || file.response?.path || ''
-  previewVisible.value = !!previewUrl.value
-}
+// 中文注释：任务图片上传逻辑已迁移到组件中
 
 // ===== 重复日期生成逻辑 =====
 function generateRepeatDates(start: Date, end: Date | undefined, type: 'none' | 'daily' | 'weekdays' | 'weekly' | 'monthly', weeklyDays: number[]) {

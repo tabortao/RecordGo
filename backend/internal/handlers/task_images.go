@@ -3,48 +3,157 @@ package handlers
 import (
     "fmt"
     "io"
+    "net/http"
     "mime/multipart"
     "os"
     "path/filepath"
+    "strconv"
     "strings"
     "time"
 
     "github.com/gin-gonic/gin"
+    "go.uber.org/zap"
     "recordgo/internal/common"
 )
 
 // UploadTaskImage 上传任务图片（前端需先压缩并转换为 webp）
 // 中文注释：接收表单字段 user_id 与文件 file，保存到 storage/uploads/images/task_images/{用户id}
 func UploadTaskImage(c *gin.Context) {
-    // 中文注释：按需求必须提供用户ID与任务ID，图片已在前端转换为 webp
-    userID := c.PostForm("user_id")
-    taskID := c.PostForm("task_id")
-    if strings.TrimSpace(userID) == "" {
+    // 中文注释：按需求必须提供用户ID与任务ID，图片已在前端转换为 webp（失败回退原图）
+    userIDStr := strings.TrimSpace(c.PostForm("user_id"))
+    taskIDStr := strings.TrimSpace(c.PostForm("task_id"))
+    // 中文注释：记录请求基础信息，便于排查
+    zap.L().Info("UploadTaskImage: received form",
+        zap.String("path", c.FullPath()),
+        zap.String("method", c.Request.Method),
+        zap.String("user_id", userIDStr),
+        zap.String("task_id", taskIDStr),
+    )
+    // 中文注释：记录请求头的 Content-Type 与内容长度，辅助定位 multipart 解析问题
+    zap.L().Info("UploadTaskImage: request meta",
+        zap.String("content_type", c.Request.Header.Get("Content-Type")),
+        zap.Int64("content_length", c.Request.ContentLength),
+    )
+    if userIDStr == "" {
+        zap.L().Warn("UploadTaskImage: missing user_id")
         common.Error(c, 40001, "缺少 user_id")
         return
     }
-    if strings.TrimSpace(taskID) == "" {
+    if taskIDStr == "" {
+        zap.L().Warn("UploadTaskImage: missing task_id")
         common.Error(c, 40003, "缺少 task_id")
         return
     }
-    file, err := c.FormFile("file")
-    if err != nil {
+    // 中文注释：将 user_id 与 task_id 转为数字，防止目录遍历与非法字符
+    uid, err := strconv.Atoi(userIDStr)
+    if err != nil || uid <= 0 {
+        zap.L().Warn("UploadTaskImage: invalid user_id", zap.String("user_id", userIDStr), zap.Error(err))
+        common.Error(c, 40001, "非法 user_id")
+        return
+    }
+    tid, err := strconv.Atoi(taskIDStr)
+    if err != nil || tid <= 0 {
+        zap.L().Warn("UploadTaskImage: invalid task_id", zap.String("task_id", taskIDStr), zap.Error(err))
+        common.Error(c, 40003, "非法 task_id")
+        return
+    }
+
+    // 中文注释：显式解析 multipart 表单，避免默认行为在部分代理/环境下解析失败
+    if ct := c.Request.Header.Get("Content-Type"); !strings.HasPrefix(strings.ToLower(ct), "multipart/form-data") {
+        zap.L().Warn("UploadTaskImage: invalid content-type", zap.String("content_type", ct))
+    }
+    if perr := c.Request.ParseMultipartForm(10 << 20); perr != nil {
+        zap.L().Warn("UploadTaskImage: ParseMultipartForm error", zap.Error(perr))
+    }
+
+    // 中文注释：优先兼容字段名 image 与 file（前端统一使用 image）；同时兼容常见数组键 image[]
+    file, err := c.FormFile("image")
+    if err != nil || file == nil {
+        file, err = c.FormFile("file")
+    }
+    if (err != nil || file == nil) && c.Request.MultipartForm != nil {
+        if v := c.Request.MultipartForm.File["image[]"]; len(v) > 0 {
+            file = v[0]
+            err = nil
+            zap.L().Info("UploadTaskImage: fallback via image[]", zap.String("filename", file.Filename))
+        }
+    }
+    // 中文注释：尝试解析 multipart，记录可用的文件键与数量，必要时进行回退选取
+    var parsedKeys []string
+    if mf, perr := c.MultipartForm(); perr == nil && mf != nil {
+        for k, v := range mf.File {
+            parsedKeys = append(parsedKeys, fmt.Sprintf("%s(%d)", k, len(v)))
+        }
+        zap.L().Info("UploadTaskImage: multipart parsed", zap.Strings("file_keys", parsedKeys))
+        // 中文注释：如果常规获取失败但表单中存在文件，回退使用第一个可用文件
+        if (err != nil || file == nil) && len(mf.File) > 0 {
+            for k, v := range mf.File {
+                if len(v) > 0 {
+                    file = v[0]
+                    err = nil
+                    zap.L().Info("UploadTaskImage: fallback file via multipart", zap.String("key", k), zap.String("filename", file.Filename))
+                    break
+                }
+            }
+        }
+    } else {
+        if perr != nil {
+            zap.L().Warn("UploadTaskImage: parse multipart failed", zap.Error(perr))
+        }
+    }
+    if err != nil || file == nil {
+        zap.L().Warn("UploadTaskImage: missing file", zap.Error(err), zap.Strings("available_keys", parsedKeys))
         common.Error(c, 40002, "缺少文件")
         return
     }
-    // 保存到约定目录：storage/uploads/images/task_images/{用户id}/{taskid}
-    path, err := saveTaskImage(file, userID, taskID)
+    zap.L().Info("UploadTaskImage: file meta",
+        zap.String("filename", file.Filename),
+        zap.Int64("size", file.Size),
+    )
+
+    // 中文注释：安全校验——限制文件大小 < 5MB，校验 MIME 类型为图片
+    const maxSize = int64(5 * 1024 * 1024)
+    if file.Size > maxSize {
+        zap.L().Warn("UploadTaskImage: file too large", zap.Int64("size", file.Size))
+        common.Error(c, 40005, "文件过大，需小于5MB")
+        return
+    }
+    contentType, ext, err := sniffImageContentType(file)
     if err != nil {
+        zap.L().Warn("UploadTaskImage: sniff type failed", zap.Error(err))
+        common.Error(c, 40004, "无法识别文件类型")
+        return
+    }
+    if !strings.HasPrefix(contentType, "image/") {
+        zap.L().Warn("UploadTaskImage: unsupported type", zap.String("content_type", contentType))
+        common.Error(c, 40004, "不支持的文件类型")
+        return
+    }
+    zap.L().Info("UploadTaskImage: type detected", zap.String("content_type", contentType), zap.String("ext", ext))
+
+    // 保存到约定目录：storage/uploads/images/task_images/{用户id}/{taskid}
+    path, err := saveTaskImage(file, fmt.Sprintf("%d", uid), fmt.Sprintf("%d", tid), ext)
+    if err != nil {
+        zap.L().Error("UploadTaskImage: save failed",
+            zap.Error(err),
+            zap.Int("user_id", uid),
+            zap.Int("task_id", tid),
+        )
         common.Error(c, 50018, "保存任务图片失败")
         return
     }
     // 返回相对路径，前端记录到 image_json（JSON 数组）
+    zap.L().Info("UploadTaskImage: saved",
+        zap.Int("user_id", uid),
+        zap.Int("task_id", tid),
+        zap.String("path", path),
+    )
     common.Ok(c, gin.H{"path": path})
 }
 
 // saveTaskImage 将上传文件保存到 storage/uploads/images/task_images/{用户id}/{taskid}
 // 中文注释：文件命名为 task_任务ID_时间戳_uuid.webp（uuid 用纳秒替代）
-func saveTaskImage(file *multipart.FileHeader, userID string, taskID string) (string, error) {
+func saveTaskImage(file *multipart.FileHeader, userID string, taskID string, ext string) (string, error) {
     root := os.Getenv("STORAGE_ROOT")
     if strings.TrimSpace(root) == "" {
         root = "storage"
@@ -53,11 +162,18 @@ func saveTaskImage(file *multipart.FileHeader, userID string, taskID string) (st
     if err := os.MkdirAll(dir, 0o755); err != nil {
         return "", fmt.Errorf("创建目录失败: %w", err)
     }
-    filename := fmt.Sprintf("task_%s_%d_%d.webp", taskID, time.Now().Unix(), time.Now().UnixNano())
+    // 中文注释：文件命名为 task_任务ID_时间戳_uuid.后缀（uuid 用纳秒替代）；后缀来源于 MIME 检测
+    filename := fmt.Sprintf("task_%s_%d_%d.%s", taskID, time.Now().Unix(), time.Now().UnixNano(), ext)
     full := filepath.Join(dir, filename)
     if err := saveUploadedFileGeneric(file, full); err != nil {
         return "", err
     }
+    // 中文注释：记录保存路径信息
+    zap.L().Debug("saveTaskImage: file saved",
+        zap.String("dir", dir),
+        zap.String("filename", filename),
+        zap.String("full", full),
+    )
     rel := filepath.ToSlash(filepath.Join("uploads", "images", "task_images", userID, taskID, filename))
     return rel, nil
 }
@@ -78,4 +194,40 @@ func saveUploadedFileGeneric(file *multipart.FileHeader, dst string) error {
         return err
     }
     return nil
+}
+
+// sniffImageContentType 读取少量内容检测 MIME，并返回建议扩展名（webp/jpg/png/gif）
+// 中文注释：防止用户伪造扩展名，后端以内容为准；失败时返回错误
+func sniffImageContentType(file *multipart.FileHeader) (string, string, error) {
+    f, err := file.Open()
+    if err != nil {
+        return "", "", err
+    }
+    defer f.Close()
+    buf := make([]byte, 1024)
+    n, _ := f.Read(buf)
+    if n == 0 {
+        return "", "", fmt.Errorf("空文件")
+    }
+    ct := http.DetectContentType(buf[:n])
+    // 映射扩展名
+    var ext string
+    switch ct {
+    case "image/webp":
+        ext = "webp"
+    case "image/jpeg":
+        ext = "jpg"
+    case "image/png":
+        ext = "png"
+    case "image/gif":
+        ext = "gif"
+    default:
+        if strings.HasPrefix(ct, "image/") {
+            // 兜底：未知图片类型统一使用原后缀或 webp
+            ext = "webp"
+        } else {
+            return "", "", fmt.Errorf("不支持的类型: %s", ct)
+        }
+    }
+    return ct, ext, nil
 }

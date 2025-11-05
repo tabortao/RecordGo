@@ -6,6 +6,7 @@ import (
     "time"
 
     "github.com/gin-gonic/gin"
+    "go.uber.org/zap"
     "gorm.io/gorm"
     "recordgo/internal/common"
     "recordgo/internal/db"
@@ -54,13 +55,23 @@ type TomatoCompleteReq struct {
 func CreateTask(c *gin.Context) {
     var req CreateTaskReq
     if err := c.ShouldBindJSON(&req); err != nil {
+        zap.L().Warn("CreateTask: bind failed", zap.Error(err))
         common.Error(c, 40001, "参数错误")
         return
     }
     if req.Name == "" || req.PlanMinutes <= 0 {
+        zap.L().Warn("CreateTask: invalid fields", zap.String("name", req.Name), zap.Int("plan_minutes", req.PlanMinutes))
         common.Error(c, 40002, "任务名称与计划时长必填且合法")
         return
     }
+    zap.L().Info("CreateTask: creating",
+        zap.Uint("user_id", req.UserID),
+        zap.String("name", req.Name),
+        zap.Int("score", req.Score),
+        zap.Int("plan_minutes", req.PlanMinutes),
+        zap.String("category", req.Category),
+        zap.Time("start_date", req.StartDate),
+    )
     t := models.Task{
         UserID: req.UserID,
         Name: req.Name,
@@ -74,9 +85,11 @@ func CreateTask(c *gin.Context) {
         Status: 0,
     }
     if err := db.DB().Create(&t).Error; err != nil {
+        zap.L().Error("CreateTask: db create failed", zap.Error(err))
         common.Error(c, 50001, "创建任务失败")
         return
     }
+    zap.L().Info("CreateTask: created", zap.Uint("task_id", t.ID))
     // 历史记录：create
     snapshot, _ := json.Marshal(t)
     _ = db.DB().Create(&models.TaskHistory{TaskID: t.ID, ChangeType: "create", SnapshotJSON: string(snapshot)}).Error
@@ -129,11 +142,13 @@ func UpdateTask(c *gin.Context) {
     id := c.Param("id")
     var req UpdateTaskReq
     if err := c.ShouldBindJSON(&req); err != nil {
+        zap.L().Warn("UpdateTask: bind failed", zap.Error(err), zap.String("id", id))
         common.Error(c, 40001, "参数错误")
         return
     }
     var t models.Task
     if err := db.DB().First(&t, id).Error; err != nil {
+        zap.L().Warn("UpdateTask: not found", zap.Error(err), zap.String("id", id))
         common.Error(c, 40401, "任务不存在")
         return
     }
@@ -153,9 +168,11 @@ func UpdateTask(c *gin.Context) {
     if req.ImageJSON != nil { t.ImageJSON = *req.ImageJSON }
 
     if err := db.DB().Save(&t).Error; err != nil {
+        zap.L().Error("UpdateTask: db save failed", zap.Error(err), zap.String("id", id))
         common.Error(c, 50004, "更新任务失败")
         return
     }
+    zap.L().Info("UpdateTask: updated", zap.Uint("task_id", t.ID))
     // 历史记录：update，保存修改前快照
     _ = db.DB().Create(&models.TaskHistory{TaskID: t.ID, ChangeType: "update", SnapshotJSON: string(before)}).Error
     common.Ok(c, t)
