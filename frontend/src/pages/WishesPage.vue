@@ -59,7 +59,7 @@
               <el-button type="primary" size="small">选择图片</el-button>
             </el-upload>
           </div>
-          <div class="text-xs text-gray-500 mt-1">前端会压缩并转换为 webp，失败将回退原图。</div>
+          <!-- <div class="text-xs text-gray-500 mt-1">前端会压缩并转换为 webp，失败将回退原图。</div> -->
         </el-form-item>
         <el-form-item label="心愿名称"><el-input v-model="form.name" /></el-form-item>
         <el-form-item label="心愿描述"><el-input type="textarea" v-model="form.content" /></el-form-item>

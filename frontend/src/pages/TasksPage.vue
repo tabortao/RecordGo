@@ -32,7 +32,7 @@
         <div class="flex flex-col items-center">
           <el-icon style="color:#3b82f6"><List /></el-icon>
           <div class="text-xs text-gray-500">任务数</div>
-          <div class="font-semibold">{{ tasks.length }}</div>
+          <div class="font-semibold">{{ completedTasksCount }}/{{ tasks.length }}</div>
         </div>
       </el-card>
       <el-card shadow="never" class="stat-card">
@@ -114,7 +114,7 @@
             <div class="flex items-center justify-between pl-10">
               <div class="flex items-center gap-3">
                 <!-- 中文注释：番茄钟图标仅在未完成时显示，位于右侧“待完成”标签左侧，此处移除 -->
-                <div class="font-semibold text-left">{{ t.name }}</div>
+                <div class="font-semibold text-left" :class="{'text-gray-500': t.status === 2}">{{ t.name }}</div>
               </div>
               <div class="flex items-center gap-2">
                 <template v-if="t.status !== 2">
@@ -282,6 +282,9 @@ import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, comple
 const store = useAppState()
 // 中文注释：总金币改为直接读取全局 store.coins（由后端任务完成/取消与心愿兑换实时更新），与心愿页保持一致
 const totalCoins = computed(() => store.coins)
+const completedTasksCount = computed(() => {
+  return tasks.value.filter(t => t.status === 2).length
+})
 const dayCoins = ref(0)
 const dayMinutes = ref(0)
 const completeRate = ref(0)
