@@ -117,9 +117,9 @@
                 <div class="font-semibold text-left" :class="{'text-gray-500': t.status === 2}">{{ t.name }}</div>
               </div>
               <div class="flex items-center gap-2">
+                <!-- 中文注释：列表图片查看入口始终可见（有图时显示蓝色图标），支持全屏覆盖与手势缩放 -->
+                <el-icon v-if="hasImages(t)" class="cursor-pointer text-blue-600 mr-1" :size="16" title="查看图片" @click="openTaskImages(t)"><Picture /></el-icon>
                 <template v-if="t.status !== 2">
-                  <!-- 中文注释：有图片则显示蓝色图片图标，点击查看并可左右翻看 -->
-                  <el-icon v-if="hasImages(t)" class="cursor-pointer text-blue-600 mr-1" :size="16" title="查看图片" @click="openTaskImages(t)"><Picture /></el-icon>
                   <img src="@/assets/tomato.png" alt="番茄钟" class="w-4 h-4 cursor-pointer" @click="openTomato(t)" />
                   <el-tag type="danger" size="small">待完成</el-tag>
                 </template>
@@ -359,17 +359,8 @@
       <TomatoTimer :work-minutes="currentTask?.plan_minutes || 20" :break-minutes="5" :task-name="currentTask?.name" :task-remark="currentTask?.remark || currentTask?.description" @complete="onTomatoComplete" />
     </el-dialog>
 
-    <!-- 中文注释：任务图片查看对话框（支持多张左右翻看、放大展示） -->
-    <el-dialog v-model="imagesViewerVisible" title="任务图片" :width="isMobile ? '92vw' : '720px'">
-      <el-carousel v-if="imageViewerList.length" indicator-position="outside" height="400px">
-        <el-carousel-item v-for="(src, idx) in imageViewerList" :key="idx">
-          <img :src="src" alt="task image" class="w-full h-full object-contain" />
-        </el-carousel-item>
-      </el-carousel>
-      <template #footer>
-        <el-button @click="imagesViewerVisible=false">关闭</el-button>
-      </template>
-    </el-dialog>
+    <!-- 中文注释：任务图片全屏查看（覆盖式），支持缩放与左右翻看 -->
+    <el-image-viewer v-if="imagesViewerVisible" :url-list="imageViewerList" :initial-index="imageViewerIndex" @close="imagesViewerVisible=false" />
 
     <!-- 右下角绿色加号浮动按钮：创建任务 -->
   <el-button
@@ -554,11 +545,13 @@ function hasImages(t: TaskItem) {
 // 中文注释：任务图片查看对话框状态与打开方法
 const imagesViewerVisible = ref(false)
 const imageViewerList = ref<string[]>([])
+const imageViewerIndex = ref(0)
 function openTaskImages(t: TaskItem) {
   try {
     const rels = t.image_json ? JSON.parse(t.image_json) as string[] : []
     imageViewerList.value = rels.map(resolveUploadUrl)
     if (imageViewerList.value.length > 0) {
+      imageViewerIndex.value = 0
       imagesViewerVisible.value = true
     } else {
       ElMessage.info('该任务暂无图片')

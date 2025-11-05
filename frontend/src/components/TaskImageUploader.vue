@@ -9,14 +9,11 @@
     <!-- 缩略图预览与进度条（下方显示） -->
     <div class="grid grid-cols-3 gap-3">
       <div v-for="(item, idx) in items" :key="item.key" class="border rounded p-2 relative">
-        <!-- 中文注释：点击缩略图可放大预览，支持左右翻看 -->
+        <!-- 中文注释：点击缩略图可放大预览，支持左右翻看；右上角提供删除图标 -->
         <el-image :src="item.url" :preview-src-list="previewUrls" fit="cover" class="w-full h-24 rounded" />
+        <el-icon class="absolute top-1 right-1 cursor-pointer text-white bg-black/50 rounded-full p-0.5" :size="16" title="删除" @click="removeAt(idx)"><Close /></el-icon>
         <div v-if="item.uploading" class="absolute left-2 right-2 bottom-2">
           <el-progress :percentage="item.progress" :stroke-width="8" />
-        </div>
-        <div class="flex items-center justify-between mt-2 text-xs">
-          <span class="truncate" :title="item.name">{{ item.name }}</span>
-          <el-button link type="danger" @click="removeAt(idx)">移除</el-button>
         </div>
       </div>
     </div>
@@ -26,6 +23,7 @@
 <script setup lang="ts">
 // 中文注释：属性定义——编辑模式下立即上传到后端；创建模式下仅本地暂存
 import { ref, reactive, watch, onMounted, computed } from 'vue'
+import { Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { prepareUpload } from '@/utils/image'
 import { uploadTaskImage } from '@/services/tasks'
