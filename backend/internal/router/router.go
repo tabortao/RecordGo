@@ -40,6 +40,8 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         api.POST("/wishes/:id/exchange", handlers.ExchangeWish)
         api.GET("/wishes/records", handlers.ListWishRecords)
         api.POST("/upload/wish-icon", handlers.UploadWishIcon)
+        // 中文注释：任务图片上传接口
+        api.POST("/upload/task-image", handlers.UploadTaskImage)
 
         // 中文注释：任务管理 RESTful 路由
         api.POST("/tasks", handlers.CreateTask)

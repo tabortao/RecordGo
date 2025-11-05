@@ -23,6 +23,7 @@ type CreateTaskReq struct {
     PlanMinutes  int       `json:"plan_minutes"`
     StartDate    time.Time `json:"start_date"`
     EndDate      *time.Time `json:"end_date"`
+    ImageJSON    string    `json:"image_json"` // 中文注释：任务图片 JSON 数组字符串
 }
 
 // 中文注释：编辑请求结构体（允许全部可变更字段）
@@ -69,6 +70,7 @@ func CreateTask(c *gin.Context) {
         PlanMinutes: req.PlanMinutes,
         StartDate: req.StartDate,
         EndDate: req.EndDate,
+        ImageJSON: req.ImageJSON,
         Status: 0,
     }
     if err := db.DB().Create(&t).Error; err != nil {

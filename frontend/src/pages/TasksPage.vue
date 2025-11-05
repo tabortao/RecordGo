@@ -170,36 +170,165 @@
       </div>
     </el-card>
 
-    <!-- 创建/编辑对话框 -->
-    <el-dialog v-model="formVisible" :title="editing ? '编辑任务' : '创建任务'" width="520px">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="88px">
-        <el-form-item label="任务标题" prop="name">
-          <el-input v-model="form.name" maxlength="128" show-word-limit />
+    <!-- 创建/编辑对话框：自定义头部图标与标题 -->
+    <el-dialog v-model="formVisible" :width="dialogWidth">
+      <template #header>
+        <div class="flex items-center gap-2">
+          <el-icon class="text-green-600"><Plus /></el-icon>
+          <span class="font-semibold">{{ editing ? '编辑任务' : '创建任务' }}</span>
+        </div>
+      </template>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+        <!-- 基础信息分区 -->
+        <el-card shadow="never" class="section-card mb-3">
+        <!-- 任务标题 -->
+        <el-form-item prop="name" required>
+          <template #label>
+            <div class="flex items-center gap-1">
+              <el-icon><Edit /></el-icon>
+              <span>任务标题</span>
+            </div>
+          </template>
+          <el-input v-model="form.name" maxlength="128" show-word-limit style="width: 100%" />
         </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="form.description" type="textarea" />
+
+        <!-- 描述 -->
+        <el-form-item label="任务描述" prop="description">
+          <template #label>
+            <div class="flex items-center gap-1">
+              <el-icon><List /></el-icon>
+              <span>任务描述</span>
+            </div>
+          </template>
+          <el-input v-model="form.description" type="textarea" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="分类" prop="category">
-          <el-select v-model="form.category" placeholder="选择分类">
+
+        <!-- 任务图片上传（移动到描述之后，每行一个字段） -->
+        <el-form-item class="image-upload">
+          <template #label>
+            <div class="flex items-center gap-1">
+              <el-icon><Plus /></el-icon>
+              <span>任务图片</span>
+            </div>
+          </template>
+          <el-upload
+            list-type="picture-card"
+            :auto-upload="false"
+            v-model:file-list="uploadList"
+            :on-change="onTaskImageChange"
+            :on-remove="onTaskImageRemove"
+            :on-preview="onTaskImagePreview"
+            accept="image/*"
+            :limit="6"
+          >
+            <el-icon><Plus /></el-icon>
+          </el-upload>
+          <el-dialog v-model="previewVisible" width="600px">
+            <img :src="previewUrl" class="w-full" />
+          </el-dialog>
+          <div class="text-xs text-gray-500 mt-1">前端将自动压缩并转换为 WebP；创建模式下图片会暂存在本地，刷新后自动恢复。</div>
+        </el-form-item>
+
+        <!-- 分类（每行一个字段） -->
+        <el-form-item prop="category" required>
+          <template #label>
+            <div class="flex items-center gap-1">
+              <el-icon><List /></el-icon>
+              <span>任务分类</span>
+            </div>
+          </template>
+          <el-select v-model="form.category" placeholder="选择分类" style="width: 100%">
             <el-option label="语文" value="语文" />
             <el-option label="数学" value="数学" />
             <el-option label="英语" value="英语" />
           </el-select>
         </el-form-item>
-        <!-- 中文注释：字段文案统一为“金币” -->
-        <el-form-item label="金币" prop="score">
-          <el-input-number v-model="form.score" :min="-10" :max="10" />
+
+        <!-- 计划时长（每行一个字段） -->
+        <el-form-item prop="plan_minutes" required>
+          <template #label>
+            <div class="flex items-center gap-1">
+              <el-icon><Clock /></el-icon>
+              <span>计划时长</span>
+            </div>
+          </template>
+          <el-input-number v-model="form.plan_minutes" :min="1" :max="240" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="计划时长" prop="plan_minutes">
-          <!-- 中文注释：计划时长最小 1 分钟，满足用户需求 -->
-          <el-input-number v-model="form.plan_minutes" :min="1" :max="240" />
+        </el-card>
+
+        <!-- 计划与重复分区 -->
+        <el-card shadow="never" class="section-card mb-3">
+        <!-- 任务金币（每行一个字段） -->
+        <el-form-item prop="score">
+          <template #label>
+            <div class="flex items-center gap-1">
+              <el-icon><Coin /></el-icon>
+              <span>任务金币</span>
+            </div>
+          </template>
+          <el-input-number v-model="form.score" :min="-10" :max="10" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="开始日期" prop="start_date">
-          <el-date-picker v-model="form.start_date" type="date" />
+
+        <!-- 重复类型（每行一个字段） -->
+        <el-form-item prop="repeat_type">
+          <template #label>
+            <div class="flex items-center gap-1">
+              <el-icon><List /></el-icon>
+              <span>重复类型</span>
+            </div>
+          </template>
+          <el-select v-model="form.repeat_type" placeholder="选择重复类型" style="width: 100%">
+            <el-option label="无" value="none" />
+            <el-option label="每天" value="daily" />
+            <el-option label="每个工作日" value="weekdays" />
+            <el-option label="每周" value="weekly" />
+            <el-option label="每月" value="monthly" />
+          </el-select>
         </el-form-item>
-        <el-form-item label="截止日期" prop="end_date">
-          <el-date-picker v-model="form.end_date" type="date" />
+
+        <!-- 每周重复时选择星期（移动到重复类型之后） -->
+        <el-form-item v-if="form.repeat_type==='weekly'" prop="weekly_days">
+          <template #label>
+            <div class="flex items-center gap-1">
+              <el-icon><List /></el-icon>
+              <span>选择星期</span>
+            </div>
+          </template>
+          <el-checkbox-group v-model="form.weekly_days">
+            <el-checkbox :label="1">周一</el-checkbox>
+            <el-checkbox :label="2">周二</el-checkbox>
+            <el-checkbox :label="3">周三</el-checkbox>
+            <el-checkbox :label="4">周四</el-checkbox>
+            <el-checkbox :label="5">周五</el-checkbox>
+            <el-checkbox :label="6">周六</el-checkbox>
+            <el-checkbox :label="7">周日</el-checkbox>
+          </el-checkbox-group>
         </el-form-item>
+
+        <!-- 开始/截止日期（每行一个字段） -->
+        <el-form-item prop="start_date" required>
+          <template #label>
+            <div class="flex items-center gap-1">
+              <el-icon><Clock /></el-icon>
+              <span>开始日期</span>
+            </div>
+          </template>
+          <el-date-picker v-model="form.start_date" type="date" style="width: 100%" />
+        </el-form-item>
+        <el-form-item prop="end_date">
+          <template #label>
+            <div class="flex items-center gap-1">
+              <el-icon><Clock /></el-icon>
+              <span>截止日期</span>
+            </div>
+          </template>
+          <el-date-picker v-model="form.end_date" type="date" style="width: 100%" />
+        </el-form-item>
+
+        
+        </el-card>
+
+        <!-- 任务图片已上移至描述之后，此处删除分区卡片 -->
       </el-form>
       <template #footer>
         <div class="flex justify-end gap-2">
@@ -276,7 +405,10 @@ import WeekCalendar from '@/components/WeekCalendar.vue'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 dayjs.extend(utc)
-import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, type TaskItem } from '@/services/tasks'
+import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, uploadTaskImage, type TaskItem } from '@/services/tasks'
+import { prepareUpload } from '@/utils/image'
+const isMobile = ref(false)
+const dialogWidth = computed(() => (isMobile.value ? '96vw' : '640px'))
 
 // 顶部统计占位（后续与后端联动）
 const store = useAppState()
@@ -354,7 +486,28 @@ const tomatoVisible = ref(false)
 const editing = ref(false)
 const currentTask = ref<TaskItem | null>(null)
 const formRef = ref<FormInstance>()
-const form = reactive<any>({ name: '', description: '', category: '语文', score: 1, plan_minutes: 20, start_date: new Date(), end_date: undefined })
+const form = reactive<any>({ name: '', description: '', category: '语文', score: 1, plan_minutes: 20, start_date: new Date(), end_date: undefined, images: [], local_images: [] })
+const uploadList = ref<any[]>([])
+const DRAFT_KEY = 'task_draft_images'
+
+// 中文注释：File 转 dataURL（用于草稿持久化，刷新恢复）
+async function fileToDataURL(file: File): Promise<string> {
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = (e) => reject(e)
+    reader.readAsDataURL(file)
+  })
+}
+function dataURLToFile(dataURL: string, name = 'image.webp', type = 'image/webp'): File {
+  const arr = dataURL.split(',')
+  const mime = arr[0].match(/:(.*?);/)?.[1] || type
+  const bstr = atob(arr[1])
+  let n = bstr.length
+  const u8arr = new Uint8Array(n)
+  while (n--) { u8arr[n] = bstr.charCodeAt(n) }
+  return new File([u8arr], name, { type: mime })
+}
 const rules: FormRules = {
   name: [{ required: true, message: '请输入任务标题', trigger: 'blur' }],
   category: [{ required: true, message: '请选择分类', trigger: 'change' }],
@@ -382,15 +535,33 @@ async function fetchTasks() {
 
 function openCreate() {
   editing.value = false
-  Object.assign(form, { name: '', description: '', category: '语文', score: 1, plan_minutes: 20, start_date: new Date(), end_date: undefined })
+  Object.assign(form, { name: '', description: '', category: '语文', score: 1, plan_minutes: 20, start_date: new Date(), end_date: undefined, images: [], local_images: [], repeat_type: 'none', weekly_days: [] })
+  // 中文注释：恢复草稿图片，避免刷新后丢失
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY)
+    uploadList.value = []
+    if (raw) {
+      const arr: { name: string; type: string; dataURL: string }[] = JSON.parse(raw)
+      form.local_images = arr.map((x) => dataURLToFile(x.dataURL, x.name, x.type))
+      uploadList.value = arr.map((x) => ({ name: x.name, url: x.dataURL }))
+    }
+  } catch { uploadList.value = [] }
   formVisible.value = true
 }
 
 function openEdit(t: TaskItem) {
   editing.value = true
-  Object.assign(form, { name: t.name, description: t.description, category: t.category, score: t.score, plan_minutes: t.plan_minutes, start_date: new Date(t.start_date), end_date: t.end_date ? new Date(t.end_date) : undefined })
+  const imgs = t.image_json ? (JSON.parse(t.image_json) as string[]) : []
+  Object.assign(form, { name: t.name, description: t.description, category: t.category, score: t.score, plan_minutes: t.plan_minutes, start_date: new Date(t.start_date), end_date: t.end_date ? new Date(t.end_date) : undefined, images: imgs, local_images: [], repeat_type: 'none', weekly_days: [] })
   currentTask.value = t
+  // 中文注释：编辑模式下展示服务端已上传图片的缩略图
+  uploadList.value = (imgs || []).map((p) => ({ name: p.split('/').pop(), url: resolveUploadUrl(p) }))
   formVisible.value = true
+}
+
+function resolveUploadUrl(rel: string) {
+  const base = (import.meta as any).env.VITE_API_BASE || ''
+  return `${base}/api/${rel}`.replace(/\/$/, '')
 }
 
 async function submitForm() {
@@ -406,21 +577,57 @@ async function submitForm() {
         score: form.score,
         plan_minutes: form.plan_minutes,
         start_date: form.start_date,
-        end_date: form.end_date
+        end_date: form.end_date,
+        image_json: JSON.stringify(form.images || [])
       })
       ElMessage.success('任务已更新')
     } else {
-      await createTask({
-        user_id: 1, // 中文注释：演示用，后续接入登录用户 ID
-        name: form.name,
-        description: form.description,
-        category: form.category,
-        score: form.score,
-        plan_minutes: form.plan_minutes,
-        start_date: form.start_date,
-        end_date: form.end_date
-      })
-      ElMessage.success('任务已创建')
+      // 中文注释：根据重复类型批量创建任务实例
+      const dates = generateRepeatDates(form.start_date, form.end_date, form.repeat_type, form.weekly_days)
+      if (dates.length === 0) {
+        // 无重复或未设置截止日期则创建单个
+        dates.push(form.start_date)
+      }
+      const createdTasks: TaskItem[] = []
+      for (const d of dates) {
+        const t = await createTask({
+          user_id: 1, // 中文注释：演示用，后续接入登录用户 ID
+          name: form.name,
+          description: form.description,
+          category: form.category,
+          score: form.score,
+          plan_minutes: form.plan_minutes,
+          start_date: d,
+          end_date: undefined
+        })
+        createdTasks.push(t)
+      }
+      // 中文注释：创建后按任务ID上传本地图片，并写入 image_json
+      if ((form.local_images || []).length > 0) {
+        for (const t of createdTasks) {
+          const paths: string[] = []
+          for (const f of form.local_images) {
+            try {
+              const webp = await prepareUpload(f as File)
+              const { path } = await uploadTaskImage(1, webp, t.id)
+              paths.push(path)
+            } catch (_) {}
+          }
+          if (paths.length > 0) {
+            await updateTask(t.id, { image_json: JSON.stringify(paths) })
+          }
+        }
+      }
+      ElMessage.success(`任务已创建${dates.length>1?`（${dates.length}条）`:''}`)
+    }
+    // 中文注释：清理草稿持久化并同步缩略图列表
+    try {
+      localStorage.removeItem(DRAFT_KEY)
+    } catch {}
+    if ((form.images || []).length) {
+      uploadList.value = (form.images || []).map((p: string) => ({ name: p.split('/').pop(), url: resolveUploadUrl(p) }))
+    } else {
+      uploadList.value = []
     }
     formVisible.value = false
     await fetchTasks()
@@ -460,11 +667,11 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
 // 取消切换状态功能：保留空函数避免引用错误（模板已移除）
 
 function confirmDelete(t: TaskItem) {
-  ElMessageBox.confirm(`确认删除任务「${t.name}」？删除后可在回收站恢复。`, '提示', { type: 'warning' })
+  ElMessageBox.confirm(`确认删除任务「${t.name}」？`, '提示', { type: 'warning' })
     .then(async () => {
       try {
         await deleteTask(t.id)
-        ElMessage.success('已删除，可在回收站恢复')
+        ElMessage.success('已删除')
         await fetchTasks()
       } catch (e: any) {
         ElMessage.error(`删除失败：${e.message || e}`)
@@ -518,6 +725,9 @@ async function onTomatoComplete(seconds?: number) {
 
 onMounted(() => {
   fetchTasks()
+  const updateMobile = () => { isMobile.value = window.innerWidth < 768 }
+  updateMobile()
+  window.addEventListener('resize', updateMobile)
 })
 
 // 菜单命令统一处理
@@ -530,6 +740,100 @@ function onMenu(cmd: string, t: TaskItem) {
 // 中文注释：筛选图标下拉菜单命令处理，更新状态筛选条件
 function onFilterCommand(cmd: '全部' | '已完成' | '待完成') {
   filter.value = cmd
+}
+
+// ===== 任务图片上传逻辑 =====
+const previewVisible = ref(false)
+const previewUrl = ref('')
+async function onTaskImageChange(file: any) {
+  try {
+    const webp = await prepareUpload(file.raw as File)
+    // 中文注释：编辑模式下立即上传到该任务ID；创建模式下暂存，提交创建后按任务ID上传
+    if (editing.value && currentTask.value) {
+      const resp = await uploadTaskImage(1, webp, currentTask.value.id) // 中文注释：演示用户 ID=1
+      form.images = form.images || []
+      form.images.push(resp.path)
+      uploadList.value.push({ name: (file.name || 'image.webp'), url: resolveUploadUrl(resp.path) })
+      ElMessage.success('图片上传成功')
+    } else {
+      form.local_images = form.local_images || []
+      form.local_images.push(webp)
+      // 中文注释：将 webp 持久化为草稿，刷新后恢复
+      try {
+        const durl = await fileToDataURL(webp)
+        const raw = localStorage.getItem(DRAFT_KEY)
+        const arr: any[] = raw ? JSON.parse(raw) : []
+        arr.push({ name: file.name || 'image.webp', type: webp.type || 'image/webp', dataURL: durl })
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(arr))
+        uploadList.value.push({ name: file.name || 'image.webp', url: durl })
+      } catch {}
+      ElMessage.success('图片已添加，将在创建后上传')
+    }
+  } catch (e: any) {
+    ElMessage.error(e?.message || '图片上传失败')
+  }
+}
+function onTaskImageRemove(file: any) {
+  if (editing.value) {
+    const url = file.url || file.response?.path
+    if (!url) return
+    form.images = (form.images || []).filter((x: string) => x !== url)
+  } else {
+    const name = file?.name
+    form.local_images = (form.local_images || []).filter((x: File) => (x as any).name !== name)
+    // 中文注释：同时更新草稿与缩略图列表
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (raw) {
+        const arr: { name: string; type: string; dataURL: string }[] = JSON.parse(raw)
+        const next = arr.filter((x) => x.name !== name)
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(next))
+      }
+      uploadList.value = uploadList.value.filter((x) => x.name !== name)
+    } catch {}
+  }
+}
+function onTaskImagePreview(file: any) {
+  previewUrl.value = file.url || file.response?.path || ''
+  previewVisible.value = !!previewUrl.value
+}
+
+// ===== 重复日期生成逻辑 =====
+function generateRepeatDates(start: Date, end: Date | undefined, type: 'none' | 'daily' | 'weekdays' | 'weekly' | 'monthly', weeklyDays: number[]) {
+  const out: Date[] = []
+  if (!end || type === 'none') return out
+  const s = dayjs(start).startOf('day')
+  const e = dayjs(end).startOf('day')
+  if (e.isBefore(s)) return out
+  if (type === 'daily') {
+    let d = s.clone()
+    while (!d.isAfter(e)) { out.push(d.toDate()); d = d.add(1, 'day') }
+  } else if (type === 'weekdays') {
+    let d = s.clone()
+    while (!d.isAfter(e)) {
+      const w = d.day() // 0-周日 ... 6-周六
+      if (w >= 1 && w <= 5) out.push(d.toDate())
+      d = d.add(1, 'day')
+    }
+  } else if (type === 'weekly') {
+    const set = new Set(weeklyDays || [])
+    let d = s.clone()
+    while (!d.isAfter(e)) {
+      const w = d.day() === 0 ? 7 : d.day()
+      if (set.has(w)) out.push(d.toDate())
+      d = d.add(1, 'day')
+    }
+  } else if (type === 'monthly') {
+    // 中文注释：按每月同一日生成（若当月无该日，例如 31 日，则跳过）
+    let d = s.clone()
+    const dayOfMonth = s.date()
+    while (!d.isAfter(e)) {
+      const candidate = d.date(dayOfMonth)
+      if (candidate.month() === d.month() && !candidate.isAfter(e)) out.push(candidate.toDate())
+      d = d.add(1, 'month')
+    }
+  }
+  return out
 }
 
 // 中文注释：悬浮球填充百分比（正计时用已用时 / 目标时长，倒计时用剩余时间）
@@ -556,4 +860,37 @@ const floatingTime = computed(() => {
 /* 中文注释：基本页面样式，响应式栅格布局已通过 Tailwind 实现 */
 /* 中文注释：分类筛选按钮的文字加粗，增强可读性 */
 .el-radio-button__inner { font-weight: 600; }
+/* 中文注释：缩小图片上传卡片与缩略图尺寸，保证整齐美观 */
+.image-upload :deep(.el-upload--picture-card) {
+  width: 96px;
+  height: 96px;
+}
+.image-upload :deep(.el-upload-list--picture-card .el-upload-list__item) {
+  width: 96px;
+  height: 96px;
+}
+/* 中文注释：表单项间距优化与色彩区分（轻微灰色分隔） */
+:deep(.el-form-item) {
+  margin-bottom: 12px;
+}
+/* 中文注释：统一标签区左对齐，图标与文字同一行对齐显示 */
+:deep(.el-form-item__label) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+/* 中文注释：输入区占满剩余空间，宽度随容器自适应 */
+:deep(.el-form-item__content) {
+  flex: 1;
+  min-width: 0;
+}
+/* 中文注释：分区卡片样式优化，提升视觉层次与对比度 */
+.section-card {
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+}
+.section-card :deep(.el-card__header) {
+  font-weight: 600;
+}
 </style>
