@@ -3,14 +3,14 @@
   <div class="space-y-2">
     <div class="flex items-center gap-2">
       <el-button type="primary" size="small" @click="triggerPick">选择图片</el-button>
-      <span class="text-xs text-gray-500">前端将自动压缩并转换为 WebP</span>
       <input ref="fileInput" type="file" accept="image/*" multiple class="hidden" @change="onPicked" />
     </div>
 
     <!-- 缩略图预览与进度条（下方显示） -->
     <div class="grid grid-cols-3 gap-3">
       <div v-for="(item, idx) in items" :key="item.key" class="border rounded p-2 relative">
-        <img :src="item.url" alt="task image" class="w-full h-24 object-cover rounded" />
+        <!-- 中文注释：点击缩略图可放大预览，支持左右翻看 -->
+        <el-image :src="item.url" :preview-src-list="previewUrls" fit="cover" class="w-full h-24 rounded" />
         <div v-if="item.uploading" class="absolute left-2 right-2 bottom-2">
           <el-progress :percentage="item.progress" :stroke-width="8" />
         </div>
@@ -25,7 +25,7 @@
 
 <script setup lang="ts">
 // 中文注释：属性定义——编辑模式下立即上传到后端；创建模式下仅本地暂存
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { prepareUpload } from '@/utils/image'
 import { uploadTaskImage } from '@/services/tasks'
@@ -50,6 +50,8 @@ const emit = defineEmits<{
 const fileInput = ref<HTMLInputElement | null>(null)
 const items = reactive<Item[]>([])
 const DRAFT_KEY = 'task_draft_images'
+// 中文注释：预览列表（用于点击缩略图打开大图查看与翻看）
+const previewUrls = computed(() => items.map(i => i.url))
 
 function triggerPick() {
   fileInput.value?.click()

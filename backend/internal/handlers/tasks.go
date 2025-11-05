@@ -2,7 +2,10 @@ package handlers
 
 import (
     "encoding/json"
+    "os"
+    "path/filepath"
     "strconv"
+    "strings"
     "time"
 
     "github.com/gin-gonic/gin"
@@ -237,6 +240,23 @@ func DeleteTask(c *gin.Context) {
     // 历史记录：delete
     snapshot, _ := json.Marshal(t)
     _ = db.DB().Create(&models.TaskHistory{TaskID: t.ID, ChangeType: "delete", SnapshotJSON: string(snapshot)}).Error
+    // 中文注释：删除任务时同步删除关联图片文件
+    if strings.TrimSpace(t.ImageJSON) != "" {
+        var paths []string
+        _ = json.Unmarshal([]byte(t.ImageJSON), &paths)
+        if len(paths) > 0 {
+            root := os.Getenv("STORAGE_ROOT")
+            if strings.TrimSpace(root) == "" { root = "storage" }
+            for _, rel := range paths {
+                full := filepath.Join(root, filepath.FromSlash(rel))
+                if err := os.Remove(full); err == nil {
+                    zap.L().Info("DeleteTask: removed image file", zap.String("path", full))
+                } else {
+                    zap.L().Warn("DeleteTask: remove image file failed", zap.String("path", full), zap.Error(err))
+                }
+            }
+        }
+    }
     common.Ok(c, gin.H{"id": t.ID})
 }
 
@@ -257,9 +277,29 @@ func BatchDelete(c *gin.Context) {
         common.Error(c, 40005, "无有效 ID")
         return
     }
+    // 中文注释：删除前查询图片路径并尝试删除文件
+    var tasks []models.Task
+    _ = db.DB().Where("id IN ?", ids).Find(&tasks).Error
     if err := db.DB().Where("id IN ?", ids).Delete(&models.Task{}).Error; err != nil {
         common.Error(c, 50007, "批量删除失败")
         return
+    }
+    if len(tasks) > 0 {
+        root := os.Getenv("STORAGE_ROOT")
+        if strings.TrimSpace(root) == "" { root = "storage" }
+        for _, t := range tasks {
+            if strings.TrimSpace(t.ImageJSON) == "" { continue }
+            var paths []string
+            _ = json.Unmarshal([]byte(t.ImageJSON), &paths)
+            for _, rel := range paths {
+                full := filepath.Join(root, filepath.FromSlash(rel))
+                if err := os.Remove(full); err == nil {
+                    zap.L().Info("BatchDelete: removed image file", zap.Uint("task_id", t.ID), zap.String("path", full))
+                } else {
+                    zap.L().Warn("BatchDelete: remove image file failed", zap.Uint("task_id", t.ID), zap.String("path", full), zap.Error(err))
+                }
+            }
+        }
     }
     common.Ok(c, gin.H{"deleted": len(ids)})
 }

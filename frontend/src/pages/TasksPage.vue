@@ -118,6 +118,8 @@
               </div>
               <div class="flex items-center gap-2">
                 <template v-if="t.status !== 2">
+                  <!-- 中文注释：有图片则显示蓝色图片图标，点击查看并可左右翻看 -->
+                  <el-icon v-if="hasImages(t)" class="cursor-pointer text-blue-600 mr-1" :size="16" title="查看图片" @click="openTaskImages(t)"><Picture /></el-icon>
                   <img src="@/assets/tomato.png" alt="番茄钟" class="w-4 h-4 cursor-pointer" @click="openTomato(t)" />
                   <el-tag type="danger" size="small">待完成</el-tag>
                 </template>
@@ -219,7 +221,7 @@
             v-model:localFiles="form.local_images"
             @added="() => ElMessage.success('图片已添加')"
           />
-          <div class="text-xs text-gray-500 mt-1">前端自动压缩并转换为 WebP；创建模式下图片暂存为草稿，刷新可恢复。</div>
+          <!-- 中文注释：根据需求移除上传说明文案 -->
         </el-form-item>
 
         <!-- 分类（每行一个字段） -->
@@ -357,6 +359,18 @@
       <TomatoTimer :work-minutes="currentTask?.plan_minutes || 20" :break-minutes="5" :task-name="currentTask?.name" :task-remark="currentTask?.remark || currentTask?.description" @complete="onTomatoComplete" />
     </el-dialog>
 
+    <!-- 中文注释：任务图片查看对话框（支持多张左右翻看、放大展示） -->
+    <el-dialog v-model="imagesViewerVisible" title="任务图片" :width="isMobile ? '92vw' : '720px'">
+      <el-carousel v-if="imageViewerList.length" indicator-position="outside" height="400px">
+        <el-carousel-item v-for="(src, idx) in imageViewerList" :key="idx">
+          <img :src="src" alt="task image" class="w-full h-full object-contain" />
+        </el-carousel-item>
+      </el-carousel>
+      <template #footer>
+        <el-button @click="imagesViewerVisible=false">关闭</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 右下角绿色加号浮动按钮：创建任务 -->
   <el-button
       type="success"
@@ -400,6 +414,7 @@ import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 dayjs.extend(utc)
 import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, uploadTaskImage, type TaskItem } from '@/services/tasks'
+import { Picture } from '@element-plus/icons-vue'
 import { prepareUpload } from '@/utils/image'
 const isMobile = ref(false)
 const userId = 1 // 中文注释：示例用户ID（参考心愿页做法，后续接入登录）
@@ -526,6 +541,31 @@ function openEdit(t: TaskItem) {
 function resolveUploadUrl(rel: string) {
   const base = (import.meta as any).env.VITE_API_BASE || ''
   return `${base}/api/${rel}`.replace(/\/$/, '')
+}
+
+// 中文注释：判断任务是否有图片
+function hasImages(t: TaskItem) {
+  try {
+    const arr = t.image_json ? JSON.parse(t.image_json) as string[] : []
+    return Array.isArray(arr) && arr.length > 0
+  } catch { return false }
+}
+
+// 中文注释：任务图片查看对话框状态与打开方法
+const imagesViewerVisible = ref(false)
+const imageViewerList = ref<string[]>([])
+function openTaskImages(t: TaskItem) {
+  try {
+    const rels = t.image_json ? JSON.parse(t.image_json) as string[] : []
+    imageViewerList.value = rels.map(resolveUploadUrl)
+    if (imageViewerList.value.length > 0) {
+      imagesViewerVisible.value = true
+    } else {
+      ElMessage.info('该任务暂无图片')
+    }
+  } catch {
+    ElMessage.error('图片数据解析失败')
+  }
 }
 
 async function submitForm() {
