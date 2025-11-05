@@ -10,7 +10,7 @@
     <div class="grid grid-cols-3 gap-3">
       <div v-for="(item, idx) in items" :key="item.key" class="border rounded p-2 relative">
         <!-- 中文注释：点击缩略图可放大预览，支持左右翻看；右上角提供删除图标 -->
-        <el-image :src="item.url" :preview-src-list="previewUrls" fit="cover" class="w-full h-24 rounded" />
+        <img :src="item.url" alt="task image" class="w-full h-24 object-contain rounded" />
         <el-icon class="absolute top-1 right-1 cursor-pointer text-white bg-black/50 rounded-full p-0.5" :size="16" title="删除" @click="removeAt(idx)"><Close /></el-icon>
         <div v-if="item.uploading" class="absolute left-2 right-2 bottom-2">
           <el-progress :percentage="item.progress" :stroke-width="8" />
@@ -25,8 +25,8 @@
 import { ref, reactive, watch, onMounted, computed } from 'vue'
 import { Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { prepareUpload } from '@/utils/image'
-import { uploadTaskImage } from '@/services/tasks'
+ import { prepareUpload } from '@/utils/image'
+ import { uploadTaskImage, deleteTaskImage } from '@/services/tasks'
 
 type Item = { key: string; name: string; url: string; uploading: boolean; progress: number; serverPath?: string; localFile?: File }
 
@@ -123,13 +123,25 @@ async function onPicked(e: Event) {
   if (!props.editing) emit('added')
 }
 
-function removeAt(idx: number) {
+ function removeAt(idx: number) {
   const item = items[idx]
   if (!item) return
   items.splice(idx, 1)
   if (props.editing) {
-    // 仅前端移除缩略图与记录（无删除接口）
-    if (item.serverPath) {
+    // 编辑模式：调用后端删除接口，物理文件 + 数据库 image_json
+    if (item.serverPath && props.taskId) {
+      deleteTaskImage(props.taskId, item.serverPath)
+        .then((resp) => {
+          emit('update:serverPaths', resp.images || props.serverPaths.filter((x) => x !== item.serverPath))
+          ElMessage.success('已删除服务器图片')
+        })
+        .catch((err: any) => {
+          // 后端删除失败时，至少移除前端列表，避免卡死；并提示错误
+          emit('update:serverPaths', props.serverPaths.filter((x) => x !== item.serverPath))
+          ElMessage.error(err?.message || '删除服务器图片失败')
+        })
+    } else if (item.serverPath) {
+      // 缺少任务ID时的兜底处理：仅移除前端列表
       emit('update:serverPaths', props.serverPaths.filter((x) => x !== item.serverPath))
     }
   } else {

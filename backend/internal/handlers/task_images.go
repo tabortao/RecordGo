@@ -1,6 +1,7 @@
 package handlers
 
 import (
+    "encoding/json"
     "fmt"
     "io"
     "net/http"
@@ -14,6 +15,8 @@ import (
     "github.com/gin-gonic/gin"
     "go.uber.org/zap"
     "recordgo/internal/common"
+    "recordgo/internal/db"
+    "recordgo/internal/models"
 )
 
 // UploadTaskImage 上传任务图片（前端需先压缩并转换为 webp）
@@ -230,4 +233,69 @@ func sniffImageContentType(file *multipart.FileHeader) (string, string, error) {
         }
     }
     return ct, ext, nil
+}
+
+// DeleteTaskImage 删除单个任务图片文件并更新任务的 image_json
+// 中文注释：请求路径包含任务ID（/tasks/:id/image），请求体或查询参数提供相对路径 path
+func DeleteTaskImage(c *gin.Context) {
+    idStr := strings.TrimSpace(c.Param("id"))
+    path := strings.TrimSpace(c.Query("path"))
+    if path == "" {
+        var body struct{ Path string `json:"path"` }
+        if err := c.ShouldBindJSON(&body); err == nil {
+            path = strings.TrimSpace(body.Path)
+        }
+    }
+    if idStr == "" || path == "" {
+        zap.L().Warn("DeleteTaskImage: missing params", zap.String("id", idStr), zap.String("path", path))
+        common.Error(c, 40001, "缺少必要参数")
+        return
+    }
+    // 中文注释：查询任务并解析现有图片列表
+    var t models.Task
+    if err := db.DB().First(&t, idStr).Error; err != nil {
+        zap.L().Warn("DeleteTaskImage: task not found", zap.Error(err), zap.String("id", idStr))
+        common.Error(c, 40401, "任务不存在")
+        return
+    }
+    // 中文注释：标准化路径，确保斜杠一致
+    norm := filepath.ToSlash(path)
+    var list []string
+    if strings.TrimSpace(t.ImageJSON) != "" {
+        _ = json.Unmarshal([]byte(t.ImageJSON), &list)
+    }
+    // 中文注释：过滤掉待删除的路径（严格匹配相对路径）
+    kept := make([]string, 0, len(list))
+    removed := false
+    for _, p := range list {
+        if filepath.ToSlash(p) == norm {
+            removed = true
+            continue
+        }
+        kept = append(kept, p)
+    }
+    if !removed {
+        // 中文注释：若任务中不存在该路径，直接返回当前列表
+        zap.L().Info("DeleteTaskImage: path not in task images", zap.String("path", norm), zap.Uint("task_id", t.ID))
+        common.Ok(c, gin.H{"images": kept})
+        return
+    }
+    // 中文注释：尝试删除物理文件
+    root := os.Getenv("STORAGE_ROOT")
+    if strings.TrimSpace(root) == "" { root = "storage" }
+    full := filepath.Join(root, filepath.FromSlash(norm))
+    if err := os.Remove(full); err != nil {
+        zap.L().Warn("DeleteTaskImage: remove file failed", zap.String("full", full), zap.Error(err))
+    } else {
+        zap.L().Info("DeleteTaskImage: removed file", zap.String("full", full))
+    }
+    // 中文注释：更新任务的 image_json
+    b, _ := json.Marshal(kept)
+    t.ImageJSON = string(b)
+    if err := db.DB().Save(&t).Error; err != nil {
+        zap.L().Error("DeleteTaskImage: db save failed", zap.Error(err), zap.Uint("task_id", t.ID))
+        common.Error(c, 50019, "更新任务图片列表失败")
+        return
+    }
+    common.Ok(c, gin.H{"images": kept})
 }

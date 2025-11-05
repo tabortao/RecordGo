@@ -86,3 +86,10 @@ export async function uploadTaskImage(
   } as any)
   return resp as { path: string }
 }
+
+// 删除单个任务图片（物理文件 + 数据库 image_json 更新）
+// 中文注释：后端期望传递 path 相对路径（uploads/images/task_images/...）
+export async function deleteTaskImage(taskId: number, path: string): Promise<{ images: string[] }> {
+  // Axios 的 delete 支持 data 字段传递 JSON 请求体
+  return (await http.delete(`/tasks/${taskId}/image`, { data: { path } })) as any
+}

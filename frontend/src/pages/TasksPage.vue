@@ -32,7 +32,7 @@
         <div class="flex flex-col items-center">
           <el-icon style="color:#3b82f6"><List /></el-icon>
           <div class="text-xs text-gray-500">任务数</div>
-          <div class="font-semibold">{{ completedTasksCount }}/{{ tasks.length }}</div>
+          <div class="font-semibold">{{ completedTasksCount }}/{{ filteredTasks.length }}</div>
         </div>
       </el-card>
       <el-card shadow="never" class="stat-card">
@@ -96,7 +96,14 @@
         <!-- 按分类分组显示 -->
         <div v-for="group in groupedTasks" :key="group.category" class="space-y-3">
           <div class="text-base font-semibold text-green-700">{{ group.category }}</div>
-          <el-card v-for="t in group.items" :key="t.id" shadow="hover" class="relative">
+          <el-card
+            v-for="t in group.items"
+            :key="t.id"
+            shadow="never"
+            class="relative border border-gray-300 hover:ring-1 hover:ring-blue-300 transition"
+            :class="{ 'ring-2 ring-blue-500': activeTaskId === t.id }"
+            @click="activeTaskId = t.id"
+          >
             <!-- 中文注释：自定义圆形复选框，居中于第一行与第二行之间，略大，点击切换完成状态 -->
             <div class="absolute left-2 top-1/2 -translate-y-1/2">
               <div
@@ -379,12 +386,12 @@
       v-if="store.tomato.running && !store.tomato.fixedTomatoPage"
       class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50"
     >
-      <div class="w-14 h-14 rounded-full shadow-lg cursor-pointer overflow-hidden relative bg-blue-200 bg-opacity-60"
+      <div class="w-14 h-14 rounded-full shadow-lg cursor-pointer overflow-hidden relative bg-blue-100"
            @click="tomatoVisible=true">
-        <div class="absolute bottom-0 left-0 right-0 bg-blue-500 bg-opacity-70 transition-all"
+        <div class="absolute bottom-0 left-0 right-0 bg-blue-500 bg-opacity-40 transition-all"
              :style="{ height: fillPercent + '%' }"></div>
-        <!-- 中文注释：悬浮球中央显示 mm:ss，小号文字 -->
-        <div class="absolute inset-0 flex items-center justify-center text-white font-semibold text-[10px]">{{ floatingTime }}</div>
+        <!-- 中文注释：悬浮球中央显示 mm:ss，小号文字；提高对比度便于看清 -->
+        <div class="absolute inset-0 flex items-center justify-center text-blue-900 font-semibold text-[10px]">{{ floatingTime }}</div>
       </div>
     </div>
   </div>
@@ -416,11 +423,14 @@ const store = useAppState()
 // 中文注释：总金币改为直接读取全局 store.coins（由后端任务完成/取消与心愿兑换实时更新），与心愿页保持一致
 const totalCoins = computed(() => store.coins)
 const completedTasksCount = computed(() => {
-  return tasks.value.filter(t => t.status === 2).length
+  return filteredTasks.value.filter(t => t.status === 2).length
 })
 const dayCoins = ref(0)
 const dayMinutes = ref(0)
-const completeRate = ref(0)
+const completeRate = computed(() => {
+  if (filteredTasks.value.length === 0) return 0
+  return Math.round((completedTasksCount.value / filteredTasks.value.length) * 100)
+})
 
 // 列表与筛选
 const tasks = ref<TaskItem[]>([])
@@ -506,7 +516,8 @@ async function fetchTasks() {
     // 简单统计
     dayMinutes.value = tasks.value.reduce((sum, t) => sum + (t.actual_minutes || 0), 0)
     dayCoins.value = tasks.value.filter((t) => t.status === 2).reduce((sum, t) => sum + (t.score || 0), 0)
-    completeRate.value = tasks.value.length ? Math.round((tasks.value.filter((t) => t.status === 2).length / tasks.value.length) * 100) : 0
+    // 中文注释：completeRate 已改为计算属性，无需手动赋值
+    // completeRate.value = tasks.value.length ? Math.round((tasks.value.filter((t) => t.status === 2).length / tasks.value.length) * 100) : 0
     // 中文注释：同步更新全局 coins（考虑心愿扣减），心愿页面读取该值作为可用金币
     store.setCoins(totalCoins.value)
   } catch (e: any) {
@@ -672,7 +683,8 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
     // 统一刷新统计
     dayMinutes.value = tasks.value.reduce((sum, x) => sum + (x.actual_minutes || 0), 0)
     dayCoins.value = tasks.value.filter((x) => x.status === 2).reduce((sum, x) => sum + (x.score || 0), 0)
-    completeRate.value = tasks.value.length ? Math.round((tasks.value.filter((x) => x.status === 2).length / tasks.value.length) * 100) : 0
+    // 中文注释：completeRate 已改为计算属性，无需手动赋值
+    // completeRate.value = tasks.value.length ? Math.round((tasks.value.filter((x) => x.status === 2).length / tasks.value.length) * 100) : 0
   } catch (e: any) {
     ElMessage.error(`状态变更失败：${e.message || e}`)
   }
@@ -812,6 +824,10 @@ const floatingTime = computed(() => {
   const ss = String(sec % 60).padStart(2, '0')
   return `${mm}:${ss}`
 })
+
+// 中文注释：当前选中的任务卡片ID，用于高亮显示
+const activeTaskId = ref<number | null>(null)
+
 // 中文注释：移除未使用的函数（toggleStatus、openRecycle），消除编译器警告
 </script>
 
