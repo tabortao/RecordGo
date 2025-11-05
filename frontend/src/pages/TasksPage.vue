@@ -425,8 +425,12 @@ const totalCoins = computed(() => store.coins)
 const completedTasksCount = computed(() => {
   return filteredTasks.value.filter(t => t.status === 2).length
 })
-const dayCoins = ref(0)
-const dayMinutes = ref(0)
+const dayCoins = computed(() => {
+  return filteredTasks.value.filter((t) => t.status === 2).reduce((sum, t) => sum + (t.score || 0), 0)
+})
+const dayMinutes = computed(() => {
+  return filteredTasks.value.reduce((sum, t) => sum + (t.actual_minutes || 0), 0)
+})
 const completeRate = computed(() => {
   if (filteredTasks.value.length === 0) return 0
   return Math.round((completedTasksCount.value / filteredTasks.value.length) * 100)
@@ -513,9 +517,9 @@ async function fetchTasks() {
   try {
     const res = await listTasks()
     tasks.value = res.items || []
-    // 简单统计
-    dayMinutes.value = tasks.value.reduce((sum, t) => sum + (t.actual_minutes || 0), 0)
-    dayCoins.value = tasks.value.filter((t) => t.status === 2).reduce((sum, t) => sum + (t.score || 0), 0)
+    // 中文注释：日时长、日金币、完成率均改为统计当日任务
+    // dayMinutes.value = filteredTasks.value.reduce((sum, t) => sum + (t.actual_minutes || 0), 0)
+    // dayCoins.value = filteredTasks.value.filter((t) => t.status === 2).reduce((sum, t) => sum + (t.score || 0), 0)
     // 中文注释：completeRate 已改为计算属性，无需手动赋值
     // completeRate.value = tasks.value.length ? Math.round((tasks.value.filter((t) => t.status === 2).length / tasks.value.length) * 100) : 0
     // 中文注释：同步更新全局 coins（考虑心愿扣减），心愿页面读取该值作为可用金币
@@ -681,8 +685,8 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
       ElMessage.success('已取消完成，金币已扣除')
     }
     // 统一刷新统计
-    dayMinutes.value = tasks.value.reduce((sum, x) => sum + (x.actual_minutes || 0), 0)
-    dayCoins.value = tasks.value.filter((x) => x.status === 2).reduce((sum, x) => sum + (x.score || 0), 0)
+    // dayMinutes.value = filteredTasks.value.reduce((sum, x) => sum + (x.actual_minutes || 0), 0)
+    // dayCoins.value = filteredTasks.value.filter((x) => x.status === 2).reduce((sum, x) => sum + (x.score || 0), 0)
     // 中文注释：completeRate 已改为计算属性，无需手动赋值
     // completeRate.value = tasks.value.length ? Math.round((tasks.value.filter((x) => x.status === 2).length / tasks.value.length) * 100) : 0
   } catch (e: any) {
@@ -740,7 +744,8 @@ async function onTomatoComplete(seconds?: number) {
     // 完成后标记任务为已完成
     await updateTaskStatus(currentTask.value.id, 2)
     if (idx >= 0) tasks.value[idx].status = 2
-    dayMinutes.value = tasks.value.reduce((sum, x) => sum + (x.actual_minutes || 0), 0)
+    // 中文注释：dayMinutes 已改为计算属性，无需手动赋值
+    // dayMinutes.value = tasks.value.reduce((sum, x) => sum + (x.actual_minutes || 0), 0)
     ElMessage.success('番茄钟完成，数据已记录')
     tomatoVisible.value = false
   } catch (e: any) {
