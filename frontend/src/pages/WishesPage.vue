@@ -13,7 +13,8 @@
     <!-- 心愿列表：新用户自动显示 6 个内置心愿图标（参考/复制到 assets/wishs） -->
     <div>
       <div class="font-semibold mb-2">心愿</div>
-  <div class="grid grid-cols-3 gap-3">
+      <!-- 中文注释：改为响应式网格布局，移动端单列，桌面端多列 -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         <el-card v-for="w in wishList" :key="w.id" shadow="hover" class="relative" @click="toggleOps(w.id)">
           <!-- 顶部右侧：先显示所需金币（图标+数量），点击卡片后显示编辑/删除图标 -->
           <div class="absolute top-2 right-2 flex items-center gap-2">
