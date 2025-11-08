@@ -20,7 +20,8 @@
         <el-icon :size="18" style="color:#3b82f6"><User /></el-icon>
         <span class="font-semibold">账号管理</span>
       </div>
-      <div class="px-2 py-2 space-y-1">
+      <!-- 响应式网格：移动端单列，桌面端多列 -->
+      <div class="px-2 py-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
         <!-- 编辑个人信息：改为跳转到独立页面 -->
         <button class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition" @click="router.push('/settings/profile')">
           <el-icon :size="18" style="color:#60a5fa"><Edit /></el-icon>
@@ -49,7 +50,8 @@
         <el-icon :size="18" style="color:#0ea5e9"><Setting /></el-icon>
         <span class="font-semibold">设置</span>
       </div>
-      <div class="px-2 py-2 space-y-1">
+      <!-- 响应式网格：移动端单列，桌面端多列 -->
+      <div class="px-2 py-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
         <button v-for="i in settingItems" :key="i.key" class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition text-left" @click="goSettingsTab(i.key)">
           <el-icon :size="18" :style="{ color: i.fg }"><component :is="i.icon" /></el-icon>
           <span class="text-gray-800">{{ i.label }}</span>
