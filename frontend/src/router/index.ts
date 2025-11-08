@@ -34,6 +34,15 @@ const router = createRouter({
       name: 'Mine',
       component: () => import('@/pages/MinePage.vue')
     }
+    ,
+    // 中文注释：设置页面独立子路由
+    { path: '/settings/profile', name: 'SettingsProfile', component: () => import('@/pages/SettingsProfilePage.vue'), meta: { noNav: true } },
+    { path: '/settings/tomato', name: 'SettingsTomato', component: () => import('@/pages/SettingsTomatoPage.vue'), meta: { noNav: true } },
+    { path: '/settings/tasks', name: 'SettingsTasks', component: () => import('@/pages/SettingsTasksPage.vue'), meta: { noNav: true } },
+    { path: '/settings/reading', name: 'SettingsReading', component: () => import('@/pages/SettingsReadingPage.vue'), meta: { noNav: true } },
+    { path: '/settings/subjects', name: 'SettingsSubjects', component: () => import('@/pages/SettingsSubjectsPage.vue'), meta: { noNav: true } },
+    { path: '/settings/coins', name: 'SettingsCoins', component: () => import('@/pages/SettingsCoinsPage.vue'), meta: { noNav: true } },
+    { path: '/settings/about', name: 'SettingsAbout', component: () => import('@/pages/SettingsAboutPage.vue'), meta: { noNav: true } }
   ]
 })
 

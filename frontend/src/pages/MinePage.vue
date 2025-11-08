@@ -21,8 +21,8 @@
         <span class="font-semibold">账号管理</span>
       </div>
       <div class="px-2 py-2 space-y-1">
-        <!-- 编辑个人信息 -->
-        <button class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition" @click="profileDialogVisible = true">
+        <!-- 编辑个人信息：改为跳转到独立页面 -->
+        <button class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition" @click="router.push('/settings/profile')">
           <el-icon :size="18" style="color:#60a5fa"><Edit /></el-icon>
           <span class="text-gray-800">编辑个人信息</span>
         </button>
@@ -39,82 +39,36 @@
       </div>
     </div>
 
-    <!-- 中文注释：编辑个人信息对话框（包含昵称、头像上传、修改密码），样式采用 tailwind，遵循接口一致性与图片 webp 约束 -->
-    <el-dialog v-model="profileDialogVisible" :width="dialogWidth" :show-close="true" title="编辑个人信息">
-      <div class="space-y-4">
-        <!-- 昵称 -->
-        <div class="space-y-2">
-          <label class="text-sm text-gray-600">昵称</label>
-          <el-input v-model="editNickname" placeholder="请输入昵称" />
-        </div>
-        <!-- 头像上传与预览 -->
-        <div class="space-y-2">
-          <label class="text-sm text-gray-600">头像</label>
-          <div class="flex items-center gap-4">
-            <el-avatar :size="56" :src="avatarPreview || avatarSrc" />
-            <input type="file" accept="image/*" @change="onSelectAvatar" />
-          </div>
-          <div class="text-xs text-gray-500">将自动压缩并转换为 webp，失败则回退原格式</div>
-        </div>
-        <!-- 修改密码 -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div class="space-y-2">
-            <label class="text-sm text-gray-600">当前密码</label>
-            <el-input v-model="oldPassword" type="password" placeholder="请输入当前密码" />
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm text-gray-600">新密码</label>
-            <el-input v-model="newPassword" type="password" placeholder="请输入新密码" />
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm text-gray-600">确认新密码</label>
-            <el-input v-model="confirmPassword" type="password" placeholder="请再次输入新密码" />
-          </div>
-        </div>
-      </div>
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <el-button @click="profileDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="saveProfile">保存</el-button>
-        </div>
-      </template>
-    </el-dialog>
+    <!-- 中文注释：按最新需求，取消账号管理下方的“系统设置”卡片 -->
 
-    <el-card shadow="never">
-      <template #header>
-        <span>系统设置</span>
-      </template>
-      <el-form label-width="160px">
-        <el-form-item label="固定番茄钟页面">
-          <el-switch v-model="fixed" @change="onFixedChange" />
-        </el-form-item>
-        
-      </el-form>
-    </el-card>
+    <!-- 中文注释：编辑个人信息对话框已移除，改为独立页面 /settings/profile -->
+
+    <!-- 中文注释：设置模块（与账号管理同级），展示各设置按钮 -->
+    <div class="rounded-lg border bg-white">
+      <div class="px-4 py-3 flex items-center gap-2">
+        <el-icon :size="18" style="color:#0ea5e9"><Setting /></el-icon>
+        <span class="font-semibold">设置</span>
+      </div>
+      <div class="px-2 py-2 space-y-1">
+        <button v-for="i in settingItems" :key="i.key" class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition text-left" @click="goSettingsTab(i.key)">
+          <el-icon :size="18" :style="{ color: i.fg }"><component :is="i.icon" /></el-icon>
+          <span class="text-gray-800">{{ i.label }}</span>
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useAppState } from '@/stores/appState'
-import { computed, ref, watchEffect } from 'vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import router from '@/router'
 import { useAuth } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
-import { prepareUpload } from '@/utils/image'
-import { updateNickname, changePassword, uploadAvatar } from '@/services/user'
-import { User, Edit, SwitchButton } from '@element-plus/icons-vue'
+import { User, Edit, SwitchButton, Setting, Timer, List, Microphone, Notebook, Coin, InfoFilled } from '@element-plus/icons-vue'
 
-// 中文注释：固定番茄设置持久化到 appState（后续联动后端 UserSettings）
+// 中文注释：应用状态（用于退出登录时重置）
 const store = useAppState()
-const fixed = computed({
-  get: () => store.tomato.fixedTomatoPage,
-  set: (v: boolean) => store.updateTomato({ fixedTomatoPage: v })
-})
-
-function onFixedChange() {
-  // 中文注释：此处可调用后端保存设置
-}
 
 // 中文注释：退出登录，清除认证信息并跳转到登录页
 const auth = useAuth()
@@ -147,73 +101,7 @@ function resolveAvatarUrl(p?: string | null) {
 
 const avatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))
 
-// 中文注释：编辑个人信息弹窗状态与字段
-const profileDialogVisible = ref(false)
-const editNickname = ref('')
-const avatarFile = ref<File | null>(null)
-const avatarPreview = ref<string>('')
-const oldPassword = ref('')
-const newPassword = ref('')
-const confirmPassword = ref('')
-const isMobile = ref(false)
-const dialogWidth = computed(() => (isMobile.value ? '96vw' : '560px'))
-
-// 中文注释：打开编辑弹窗时，初始化字段
-watchEffect(() => {
-  if (profileDialogVisible.value) {
-    editNickname.value = auth.user?.nickname || ''
-    avatarFile.value = null
-    avatarPreview.value = ''
-    oldPassword.value = ''
-    newPassword.value = ''
-    confirmPassword.value = ''
-  }
-})
-
-function onSelectAvatar(e: Event) {
-  const input = e.target as HTMLInputElement
-  const f = input.files && input.files[0]
-  if (!f) return
-  avatarFile.value = f
-  avatarPreview.value = URL.createObjectURL(f)
-}
-
-async function saveProfile() {
-  try {
-    // 1) 更新昵称（非空且有变更时）
-    const nicknameTrim = (editNickname.value || '').trim()
-    if (nicknameTrim && nicknameTrim !== (auth.user?.nickname || '')) {
-      await updateNickname(nicknameTrim)
-      auth.updateUser({ nickname: nicknameTrim })
-    }
-
-    // 2) 上传头像（有选择时），前端先转换为 webp
-    if (avatarFile.value && auth.user) {
-      const webp = await prepareUpload(avatarFile.value)
-      const resp = await uploadAvatar(auth.user.id, webp)
-      const path = resp.path
-      auth.updateUser({ avatar_path: path })
-    }
-
-    // 3) 修改密码（若填写）
-    if (oldPassword.value || newPassword.value || confirmPassword.value) {
-      if (!oldPassword.value || !newPassword.value || !confirmPassword.value) {
-        ElMessage.error('请完整填写修改密码字段')
-        return
-      }
-      if (newPassword.value !== confirmPassword.value) {
-        ElMessage.error('两次输入的新密码不一致')
-        return
-      }
-      await changePassword(oldPassword.value, newPassword.value)
-    }
-
-    ElMessage.success('资料已保存')
-    profileDialogVisible.value = false
-  } catch (e: any) {
-    ElMessage.error(e?.message || '保存失败')
-  }
-}
+// 中文注释：编辑个人信息改为独立页面，移除弹窗相关状态与函数
 
 function onChildManage() {
   ElMessage.info('子账号管理功能将在后续版本提供')
@@ -229,14 +117,35 @@ function onLogout() {
   }
 }
 
-// 中文注释：导航到登录与注册占位页面
-function toLogin() {
-  router.push('/login')
+// （移除未使用的登录/注册跳转函数，清理诊断警告）
+
+// 中文注释：移除系统设置按钮对应的旧跳转函数
+
+// 中文注释：设置模块按钮（图标统一 18，与“编辑个人信息”一致）
+type SettingsKey = 'tomato' | 'tasks' | 'reading' | 'subjects' | 'coins' | 'about'
+const settingItems: Array<{ key: SettingsKey; label: string; icon: any; fg: string }> = [
+  { key: 'tomato', label: '番茄钟设置', icon: Timer, fg: '#ef4444' },
+  { key: 'tasks', label: '任务设置', icon: List, fg: '#10b981' },
+  { key: 'reading', label: '朗读设置', icon: Microphone, fg: '#7c3aed' },
+  { key: 'subjects', label: '学科设置', icon: Notebook, fg: '#2563eb' },
+  { key: 'coins', label: '金币设置', icon: Coin, fg: '#f59e0b' },
+  { key: 'about', label: '关于', icon: InfoFilled, fg: '#0ea5e9' }
+]
+
+function goSettingsTab(k: SettingsKey) {
+  // 中文注释：跳转到独立的设置页面路径，而不是通用 /settings
+  const map: Record<SettingsKey, string> = {
+    tomato: '/settings/tomato',
+    tasks: '/settings/tasks',
+    reading: '/settings/reading',
+    subjects: '/settings/subjects',
+    coins: '/settings/coins',
+    about: '/settings/about'
+  }
+  router.push(map[k])
 }
 
-function toRegister() {
-  router.push('/register')
-}
+// （移除我的页内的设置入口列表，保留“系统设置”按钮跳转到独立页面）
 </script>
 
 <style scoped>
