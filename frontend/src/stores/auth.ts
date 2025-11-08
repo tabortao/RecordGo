@@ -36,6 +36,13 @@ export const useAuth = defineStore('auth', {
       localStorage.removeItem('auth_token')
       localStorage.removeItem('auth_user')
     }
+    ,
+    // 中文注释：更新用户的部分字段（如昵称、头像路径等），并持久化
+    updateUser(partial: Partial<AuthUser>) {
+      if (!this.user) return
+      this.user = { ...this.user, ...partial }
+      localStorage.setItem('auth_user', JSON.stringify(this.user))
+    }
   }
 })
 

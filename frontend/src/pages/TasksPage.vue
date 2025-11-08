@@ -4,8 +4,8 @@
     <!-- 顶部统计栏 -->
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <!-- 中文注释：默认头像改为本地 assets/avatars/default.png，与“我的”页面保持一致 -->
-          <el-avatar :size="36" :src="defaultAvatar" />
+          <!-- 中文注释：头像优先使用用户自定义头像；无则使用默认头像，与“我的”页面保持一致 -->
+          <el-avatar :size="36" :src="tasksAvatarSrc" />
           <div class="font-semibold">今日统计</div>
         </div>
       <!-- 中文注释：右侧取消回收站，改为彩色统计图标与金币显示 -->
@@ -404,6 +404,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/avatars/default.png'
+import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
 import TomatoTimer from '@/components/TomatoTimer.vue'
 import WeekCalendar from '@/components/WeekCalendar.vue'
@@ -420,6 +421,7 @@ const dialogWidth = computed(() => (isMobile.value ? '96vw' : '640px'))
 
 // 顶部统计占位（后续与后端联动）
 const store = useAppState()
+const auth = useAuth()
 // 中文注释：总金币改为直接读取全局 store.coins（由后端任务完成/取消与心愿兑换实时更新），与心愿页保持一致
 const totalCoins = computed(() => store.coins)
 const completedTasksCount = computed(() => {
@@ -468,6 +470,16 @@ const filteredTasks = computed(() => {
 })
 
 // 中文注释：按分类分组，便于移动端展示与筛选
+
+// 中文注释：解析头像地址（与“我的”页一致，仅当包含 uploads/ 或完整 URL 时使用后端路径）
+function resolveAvatarUrl(p?: string | null) {
+  if (!p) return defaultAvatar
+  const s = String(p)
+  if (/^https?:\/\//i.test(s)) return s
+  if (!/uploads\//i.test(s)) return defaultAvatar
+  return `/api/${s}`.replace(/\/+/g, '/').replace(/\/$/, '')
+}
+const tasksAvatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))
 const groupedTasks = computed(() => {
   const map = new Map<string, TaskItem[]>()
   for (const t of filteredTasks.value) {

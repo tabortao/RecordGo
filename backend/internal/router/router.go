@@ -27,6 +27,9 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         // 中文注释：认证路由（登录/注册）
         api.POST("/auth/register", handlers.Register)
         api.POST("/auth/login", handlers.Login)
+        // 中文注释：账号安全与资料
+        api.POST("/auth/change-password", handlers.ChangePassword)
+        api.PUT("/user/profile", handlers.UpdateProfile)
 
         api.GET("/health", handlers.Health)
         // 中文注释：默认心愿占位接口，可用于前端初始化
@@ -42,6 +45,8 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         api.POST("/upload/wish-icon", handlers.UploadWishIcon)
         // 中文注释：任务图片上传与删除接口
         api.POST("/upload/task-image", handlers.UploadTaskImage)
+        // 中文注释：用户头像上传
+        api.POST("/upload/avatar", handlers.UploadAvatar)
         api.DELETE("/tasks/:id/image", handlers.DeleteTaskImage)
 
         // 中文注释：任务管理 RESTful 路由
