@@ -94,13 +94,31 @@
         <div class="text-center text-xs text-gray-500">共 {{ records.total }} 条记录，页码 {{ records.page }}/{{ Math.ceil(records.total / records.page_size) || 1 }}</div>
       </div>
     </el-drawer>
+
+    <!-- 兑换心愿弹窗：支持输入数量与备注 -->
+    <el-dialog v-model="showExchange" :title="exchangeTarget ? `兑换：${exchangeTarget.name}` : '兑换心愿'" width="420px">
+      <el-form label-width="90px">
+        <el-form-item label="兑换数量">
+          <el-input-number v-model="exchangeCount" :min="1" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="exchangeRemark" type="textarea" placeholder="可选，记录具体兑换情况" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <el-button @click="cancelExchange">取消</el-button>
+          <el-button type="primary" @click="confirmExchange">确认兑换</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 // 中文注释：引入必要的 Vue API、全局状态、服务方法与图标组件
 import { computed, onMounted, ref, reactive } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { Edit, Delete, Coin } from '@element-plus/icons-vue'
 import { useAppState } from '@/stores/appState'
 import { listWishes, createWish, updateWish, deleteWish, exchangeWish, listWishRecords, uploadWishIcon, toWebp, type Wish, type WishRecord } from '@/services/wishes'
@@ -120,6 +138,12 @@ type WishForm = Partial<Wish> & { icon_preview?: string }
 const form = reactive<WishForm>({ need_coins: 1, unit: '次', exchange_amount: 1, icon_preview: '' })
 const showRecords = ref(false)
 const records = ref<{ items: WishRecord[]; total: number; page: number; page_size: number }>({ items: [], total: 0, page: 1, page_size: 10 })
+
+// 兑换弹窗状态
+const showExchange = ref(false)
+const exchangeTarget = ref<Wish | null>(null)
+const exchangeCount = ref<number>(1)
+const exchangeRemark = ref<string>('')
 
 // 操作区显示切换：点击卡片右上角才显示编辑/删除
 const opsVisibleId = ref<number | null>(null)
@@ -242,27 +266,36 @@ async function onDelete(w: Wish) {
   }
 }
 
-// 兑换心愿
-async function onExchange(w: Wish) {
+// 兑换心愿：打开弹窗
+function onExchange(w: Wish) {
+  exchangeTarget.value = w
+  exchangeCount.value = 1
+  exchangeRemark.value = ''
+  showExchange.value = true
+}
+
+// 确认兑换：调用服务层并可选传备注
+async function confirmExchange() {
+  const w = exchangeTarget.value
+  if (!w) { showExchange.value = false; return }
+  const count = Math.max(1, Number(exchangeCount.value || 1))
   try {
-    // 中文注释：弹出输入框选择兑换份数（默认为 1），后端将按 count 乘以所需金币扣减
-    const { value } = await ElMessageBox.prompt(
-      `输入兑换份数（每份消耗 ${w.need_coins} 金币，得到 ${w.exchange_amount} ${w.unit}）`,
-      '选择兑换数量', { inputType: 'number', inputValue: '1', confirmButtonText: '确认', cancelButtonText: '取消' }
-    )
-    const count = Math.max(1, Number(value || 1))
-    const resp = await exchangeWish(w.id, userId, count)
-    // 中文注释：同步前端金币，与列表和记录刷新
+    const resp = await exchangeWish(w.id, userId, count, exchangeRemark.value)
     if (resp && typeof resp.user_coins !== 'undefined') {
       store.setCoins(Number(resp.user_coins))
     }
     await loadWishes()
     await loadRecords()
-    ElMessage.success(`兑换成功「${w.name}」x${count}，扣除 ${w.need_coins * count} 金币！`)
+    const remarkText = (exchangeRemark.value || '').trim()
+    ElMessage.success(`兑换成功「${w.name}」x${count}，扣除 ${w.need_coins * count} 金币！${remarkText ? '备注：' + remarkText : ''}`)
+    showExchange.value = false
   } catch (e: any) {
-    if (e && e.message && /取消/.test(e.message)) return
     ElMessage.error(e.message || '兑换失败')
   }
+}
+
+function cancelExchange() {
+  showExchange.value = false
 }
 
 // 加载记录

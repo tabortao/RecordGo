@@ -72,9 +72,11 @@ export async function deleteWish(id: number) {
 }
 
 // 兑换心愿
-export async function exchangeWish(id: number, userId: number, count = 1) {
-  // 中文注释：支持一次兑换多份，后端将按 count 扣减金币与累计次数
-  const resp = await http.post(`/wishes/${id}/exchange`, { user_id: userId, count })
+export async function exchangeWish(id: number, userId: number, count = 1, remark?: string) {
+  // 中文注释：支持一次兑换多份；可选备注字段 remark 便于记录具体兑换情况（后端可忽略该字段）
+  const payload: any = { user_id: userId, count }
+  if (remark && remark.trim()) payload.remark = remark.trim()
+  const resp = await http.post(`/wishes/${id}/exchange`, payload)
   // 中文注释：后端返回 { wish, user_coins, record }，此处明确类型，避免 AxiosResponse 类型干扰
   return resp as { wish: Wish; user_coins: number; record: WishRecord }
 }
