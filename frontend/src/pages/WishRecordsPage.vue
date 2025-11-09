@@ -77,9 +77,19 @@ function resolveIcon(icon?: string) {
   if (/\.(png|jpg|jpeg|webp)$/i.test(icon) && !icon.includes('/')) {
     return new URL(`../assets/wishs/${icon}`, import.meta.url).href
   }
-  const base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
+  let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
+  if (!base) {
+    try {
+      const url = new URL(window.location.href)
+      const host = url.hostname || 'localhost'
+      base = `${url.protocol}//${host}:8080`
+    } catch {
+      base = 'http://localhost:8080'
+    }
+  }
   const path = String(icon).replace(/^\/+/, '')
-  return `${base}/${path}`
+  // 中文注释：后端将 uploads 映射到 /api/uploads，这里需要补上 /api 前缀
+  return `${base}/api/${path}`
 }
 
 function getIconSrc(r: WishRecord) {

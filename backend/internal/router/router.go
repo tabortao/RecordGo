@@ -38,6 +38,7 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         // 中文注释：心愿管理与兑换记录相关接口
         api.GET("/wishes", handlers.ListWishes)
         api.POST("/wishes", handlers.CreateWish)
+        api.GET("/wishes/:id", handlers.GetWish)
         api.PUT("/wishes/:id", handlers.UpdateWish)
         api.DELETE("/wishes/:id", handlers.DeleteWish)
         api.POST("/wishes/:id/exchange", handlers.ExchangeWish)

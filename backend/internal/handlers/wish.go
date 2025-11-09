@@ -121,6 +121,17 @@ func CreateWish(c *gin.Context) {
 	common.Ok(c, w)
 }
 
+// GetWish 查询单个心愿详情
+func GetWish(c *gin.Context) {
+    id := c.Param("id")
+    var w models.Wish
+    if err := db.DB().First(&w, id).Error; err != nil {
+        common.Error(c, 40401, "心愿不存在")
+        return
+    }
+    common.Ok(c, w)
+}
+
 // UpdateWish 编辑心愿
 func UpdateWish(c *gin.Context) {
 	id := c.Param("id")

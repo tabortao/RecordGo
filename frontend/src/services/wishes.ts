@@ -34,6 +34,20 @@ export interface WishRecordsResp {
   page_size: number
 }
 
+// 中文注释：规范化后端返回的上传路径为相对路径（uploads/...），并统一斜杠
+export function normalizeUploadPath(p?: string): string {
+  if (!p) return ''
+  let s = String(p).trim().replace(/\\/g, '/')
+  // 抽取从 uploads 开始的相对路径
+  const idx = s.indexOf('uploads/')
+  if (idx >= 0) s = s.slice(idx)
+  // 去掉 storage/ 前缀
+  s = s.replace(/^storage\//, '')
+  // 清理多余前导斜杠
+  s = s.replace(/^\/+/, '')
+  return s
+}
+
 // 列表心愿
 export async function listWishes(userId: number): Promise<Wish[]> {
   // 中文注释：按用户ID查询心愿列表；后端返回模型字段为大写驼峰（如 NeedCoins），此处统一映射为前端使用的下划线命名，确保页面显示与表单绑定不为空
@@ -45,7 +59,14 @@ export async function listWishes(userId: number): Promise<Wish[]> {
       user_id: Number(x.UserID ?? x.user_id),
       name: x.Name ?? x.name ?? '',
       content: x.Content ?? x.content ?? '',
-      icon: x.Icon ?? x.icon ?? '',
+      icon: (() => {
+        const raw = x.Icon ?? x.icon
+        if (!raw) return ''
+        const str = String(raw)
+        // 内置图标文件名（无斜杠）保留原样；否则规范化为 uploads 相对路径
+        if (!str.includes('/') && !str.includes('\\')) return str
+        return normalizeUploadPath(str)
+      })(),
       need_coins: Number(x.NeedCoins ?? x.need_coins ?? 1),
       exchange_amount: Number(x.ExchangeAmount ?? x.exchange_amount ?? 1),
       unit: x.Unit ?? x.unit ?? '次',
@@ -95,8 +116,17 @@ export async function uploadWishIcon(userId: number, file: File) {
   form.append('image', file, (file as any).name || 'icon.webp')
   form.append('file', file, (file as any).name || 'icon.webp')
   const resp = await http.post('/upload/wish-icon', form, { timeout: 30000 } as any)
-  // 中文注释：后端返回 { path }，为相对路径 uploads/images/wish/{用户id}/xxx.webp
-  return resp as { path: string }
+  // 中文注释：后端返回 { path }，可能包含 storage 或绝对路径，统一规范化为 uploads/... 相对路径
+  const r = resp as { path: string }
+  return { path: normalizeUploadPath(r?.path || '') }
+}
+
+// 中文注释：获取单个心愿详情（编辑页面使用）
+export async function getWish(id: number): Promise<Wish> {
+  const w = await http.get(`/wishes/${id}`)
+  // 规范化返回的 icon 字段
+  const icon = normalizeUploadPath((w as any)?.Icon ?? (w as any)?.icon)
+  return { ...(w as any), icon }
 }
 
 // 工具：将图片转换为 webp（质量 0.8），失败则返回原文件

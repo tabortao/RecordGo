@@ -35,7 +35,7 @@
 
           <!-- 图标与名称 -->
           <div class="flex items-center gap-2">
-            <img :src="resolveIcon(w.icon)" alt="icon" class="w-8 h-8 rounded" />
+            <img :src="resolveIcon(w.icon)" alt="icon" class="w-8 h-8 rounded" @error="onIconError" />
             <span class="font-medium">{{ w.name }}</span>
           </div>
           <div class="text-gray-500 text-sm mt-1">{{ w.content }}</div>
@@ -49,32 +49,7 @@
       </div>
     </div>
 
-    <!-- 创建/编辑心愿弹窗 -->
-    <el-dialog v-model="showForm" :title="formMode === 'create' ? '创建心愿' : '编辑心愿'" width="480px">
-      <el-form :model="form" label-width="90px">
-        <el-form-item label="心愿图标">
-          <div class="flex items-center gap-2">
-            <!-- 中文注释：优先显示本地预览，其次显示已上传路径 -->
-            <img v-if="form.icon_preview || form.icon" :src="form.icon_preview || resolveIcon(form.icon!)" class="w-10 h-10 rounded" />
-            <el-upload :auto-upload="false" :show-file-list="false" accept="image/*" @change="onPickIcon">
-              <el-button type="primary" size="small">选择图片</el-button>
-            </el-upload>
-          </div>
-          <!-- <div class="text-xs text-gray-500 mt-1">前端会压缩并转换为 webp，失败将回退原图。</div> -->
-        </el-form-item>
-        <el-form-item label="心愿名称"><el-input v-model="form.name" /></el-form-item>
-        <el-form-item label="心愿描述"><el-input type="textarea" v-model="form.content" /></el-form-item>
-        <el-form-item label="所需金币"><el-input-number v-model="form.need_coins" :min="1" /></el-form-item>
-        <el-form-item label="单位"><el-select v-model="form.unit"><el-option label="个" value="个" /><el-option label="次" value="次" /><el-option label="分钟" value="分钟" /><el-option label="元" value="元" /></el-select></el-form-item>
-        <el-form-item label="兑换数量"><el-input-number v-model="form.exchange_amount" :min="1" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <el-button @click="showForm = false">取消</el-button>
-          <el-button type="primary" @click="submitForm">确定</el-button>
-        </div>
-      </template>
-    </el-dialog>
+    <!-- 中文注释：已改为独立页面，不再使用内置创建/编辑弹窗 -->
 
     <!-- 兑换记录抽屉 -->
     <el-drawer v-model="showRecords" title="兑换记录" :with-header="true" size="380px">
@@ -130,12 +105,12 @@
 
 <script setup lang="ts">
 // 中文注释：引入必要的 Vue API、全局状态、服务方法与图标组件
-import { computed, onMounted, ref, reactive } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import router from '@/router'
 import { ElMessage } from 'element-plus'
 import { Edit, Delete, Coin } from '@element-plus/icons-vue'
 import { useAppState } from '@/stores/appState'
-import { listWishes, createWish, updateWish, deleteWish, exchangeWish, listWishRecords, uploadWishIcon, toWebp, type Wish, type WishRecord } from '@/services/wishes'
+import { listWishes, deleteWish, exchangeWish, listWishRecords, type Wish, type WishRecord } from '@/services/wishes'
 
 // 中文注释：全局状态与本页状态
 const store = useAppState()
@@ -144,12 +119,6 @@ const userId = 1 // 中文注释：示例用户ID（真实项目中从登录信�
 
 // 心愿列表与表单/记录状态
 const wishList = ref<Wish[]>([])
-const showForm = ref(false)
-const formMode = ref<'create' | 'edit'>('create')
-// 中文注释：使用 reactive 而非 ref，确保 Element Plus 表单的 :model 与 v-model 正常工作
-// 中文注释：表单类型扩展 icon_preview 字段用于本地预览
-type WishForm = Partial<Wish> & { icon_preview?: string }
-const form = reactive<WishForm>({ need_coins: 1, unit: '次', exchange_amount: 1, icon_preview: '' })
 const showRecords = ref(false)
 const records = ref<{ items: WishRecord[]; total: number; page: number; page_size: number }>({ items: [], total: 0, page: 1, page_size: 10 })
 
@@ -173,15 +142,31 @@ function resolveIcon(icon: string | undefined) {
   if (/\.(png|jpg|jpeg|webp)$/i.test(icon) && !icon.includes('/')) {
     return new URL(`../assets/wishs/${icon}`, import.meta.url).href
   }
-  // 中文注释：静态文件走后端基址，无需 /api 前缀；拼接时清理多余斜杠
-  const base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
+  // 中文注释：静态文件走后端基址，无需 /api 前缀；若未设置基址则回退到本机 8080
+  let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
+  if (!base) {
+    try {
+      const url = new URL(window.location.href)
+      const host = url.hostname || 'localhost'
+      base = `${url.protocol}//${host}:8080`
+    } catch {
+      base = 'http://localhost:8080'
+    }
+  }
   const path = String(icon).replace(/^\/+/, '')
-  return `${base}/${path}`
+  // 中文注释：后端静态文件映射为 /api/uploads，需要加上 /api 前缀
+  return `${base}/api/${path}`
 }
 // 记录图标可复用 wish 名称对应文件
 function resolveRecordIcon(name: string) {
   const f = `${name}.png`
   try { return new URL(`../assets/wishs/${f}`, import.meta.url).href } catch { return new URL(`../assets/wishs/领取记录.png`, import.meta.url).href }
+}
+
+// 中文注释：图标加载失败时回退到默认占位图，避免破图影响体验
+function onIconError(e: Event) {
+  const img = e.target as HTMLImageElement
+  try { img.src = new URL(`../assets/wishs/领取记录.png`, import.meta.url).href } catch {}
 }
 
 function formatTime(ts: string) {
@@ -232,44 +217,8 @@ function openCreate() {
   router.push('/wishes/create')
 }
 function openEdit(w: Wish) {
-  formMode.value = 'edit'
-  Object.assign(form, { ...w })
-  showForm.value = true
-}
-
-// 选择图标并转换为 webp 上传到后端
-async function onPickIcon(fileEvent: any) {
-  // 中文注释：兼容 Element Plus Upload 的 onChange(uploadFile) 与原生 input 的 change 事件
-  const raw: File | undefined = fileEvent?.raw || fileEvent?.target?.files?.[0] || fileEvent?.file
-  if (!raw) return
-  // 中文注释：先本地预览，再上传
-  try { form.icon_preview = URL.createObjectURL(raw) } catch {}
-  const webp = await toWebp(raw)
-  try {
-    const { path } = await uploadWishIcon(userId, webp)
-    form.icon = path // 中文注释：保存后端返回的相对路径
-    // 上传成功后清理临时预览
-    try { form.icon_preview && URL.revokeObjectURL(form.icon_preview as any) } catch {}
-    form.icon_preview = ''
-  } catch (e) {
-    // 失败回退：暂用本地文件名（不会持久化到服务器）
-    form.icon = raw.name
-  }
-}
-
-// 提交创建/编辑
-async function submitForm() {
-  try {
-    if (formMode.value === 'create') {
-      await createWish(form as any)
-    } else {
-      await updateWish(Number(form.id), form as any)
-    }
-    showForm.value = false
-    await loadWishes()
-  } catch (e: any) {
-    ElMessage.error(e.message || '操作失败')
-  }
+  // 中文注释：改为进入独立编辑页面
+  router.push(`/wishes/${w.id}/edit`)
 }
 
 // 删除心愿
