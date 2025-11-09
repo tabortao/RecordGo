@@ -91,7 +91,9 @@ export async function listWishRecords(userId: number, page = 1, pageSize = 10) {
 export async function uploadWishIcon(userId: number, file: File) {
   const form = new FormData()
   form.append('user_id', String(userId))
-  form.append('image', file)
+  // 中文注释：显式传递文件名，并额外附带 file 键以增强后端兼容性
+  form.append('image', file, (file as any).name || 'icon.webp')
+  form.append('file', file, (file as any).name || 'icon.webp')
   const resp = await http.post('/upload/wish-icon', form, { timeout: 30000 } as any)
   // 中文注释：后端返回 { path }，为相对路径 uploads/images/wish/{用户id}/xxx.webp
   return resp as { path: string }

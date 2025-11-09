@@ -9,7 +9,7 @@
     </div>
 
     <!-- 响应式网格：移动端单列，桌面端双列/多列 -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 gap-4">
       <el-card shadow="never" class="rounded-lg">
         <el-form :model="form" label-width="90px">
           <el-form-item label="心愿图标">
@@ -31,10 +31,6 @@
           </el-form-item>
           <el-form-item label="兑换数量"><el-input-number v-model="form.exchange_amount" :min="1" /></el-form-item>
         </el-form>
-      </el-card>
-      <el-card shadow="never" class="rounded-lg">
-        <div class="text-gray-600 text-sm">提示：上传图片将前端压缩为 webp，失败会回退原图。</div>
-        <div class="text-gray-600 text-sm mt-1">填写完成后点击右下角“确定”创建心愿。</div>
       </el-card>
     </div>
 

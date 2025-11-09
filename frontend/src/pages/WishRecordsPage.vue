@@ -9,15 +9,21 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       <el-card v-for="item in records" :key="item.id" class="rounded-lg" shadow="hover">
-        <div class="flex justify-between items-start">
-          <div>
-            <div class="font-medium">{{ item.wish_name }}</div>
-            <div class="text-xs text-gray-500 mt-1">{{ item.created_at }}</div>
+        <div class="flex gap-3 items-start">
+          <!-- 中文注释：显示对应心愿的图标（内置/上传均支持） -->
+          <img :src="getIconSrc(item)" class="w-8 h-8 rounded" />
+          <div class="flex-1">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="font-medium">{{ item.wish_name }}</div>
+                <div class="text-xs text-gray-500 mt-1">{{ item.created_at }}</div>
+              </div>
+              <el-tag :type="item.status === 'success' ? 'success' : 'info'">{{ item.status }}</el-tag>
+            </div>
+            <div class="mt-3 text-sm text-gray-700">数量：{{ item.amount }} {{ item.unit }}</div>
+            <div class="mt-1 text-sm text-gray-700">消耗金币：{{ item.coins_used }}</div>
           </div>
-          <el-tag :type="item.status === 'success' ? 'success' : 'info'">{{ item.status }}</el-tag>
         </div>
-        <div class="mt-3 text-sm text-gray-700">数量：{{ item.amount }} {{ item.unit }}</div>
-        <div class="mt-1 text-sm text-gray-700">消耗金币：{{ item.coins_used }}</div>
       </el-card>
     </div>
 
@@ -39,7 +45,7 @@
 import { ref, onMounted } from 'vue'
 import router from '@/router'
 import { ArrowLeft, List } from '@element-plus/icons-vue'
-import { listWishRecords, type WishRecord } from '@/services/wishes'
+import { listWishRecords, listWishes, type WishRecord, type Wish } from '@/services/wishes'
 
 const userId = 1 // 中文注释：示例用户ID
 function goBack() { router.back() }
@@ -48,16 +54,40 @@ const records = ref<WishRecord[]>([])
 const page = ref(1)
 const pageSize = ref(9)
 const total = ref(0)
+const wishMap = ref<Record<number, Wish>>({})
 
 async function load() {
   const resp = await listWishRecords(userId, page.value, pageSize.value)
   records.value = resp.items
   total.value = resp.total
+  // 中文注释：并行加载心愿列表，构建 id -> 心愿 的映射用于取图标
+  const wishes = await listWishes(userId)
+  const map: Record<number, Wish> = {}
+  for (const w of wishes) map[w.id] = w
+  wishMap.value = map
 }
 
 function onPageChange(p: number) { page.value = p; load() }
 
 onMounted(load)
+
+// 中文注释：解析心愿图标路径（兼容内置 assets 与后端 uploads 相对路径）
+function resolveIcon(icon?: string) {
+  if (!icon) return new URL('../assets/wishs/领取记录.png', import.meta.url).href
+  if (/\.(png|jpg|jpeg|webp)$/i.test(icon) && !icon.includes('/')) {
+    return new URL(`../assets/wishs/${icon}`, import.meta.url).href
+  }
+  const base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
+  const path = String(icon).replace(/^\/+/, '')
+  return `${base}/${path}`
+}
+
+function getIconSrc(r: WishRecord) {
+  const w = wishMap.value[r.wish_id]
+  if (w && w.icon) return resolveIcon(w.icon)
+  // 中文注释：找不到映射时，回退到名称同名的内置图标
+  try { return new URL(`../assets/wishs/${r.wish_name}.png`, import.meta.url).href } catch { return new URL(`../assets/wishs/领取记录.png`, import.meta.url).href }
+}
 </script>
 
 <style scoped>

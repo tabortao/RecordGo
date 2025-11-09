@@ -173,7 +173,10 @@ function resolveIcon(icon: string | undefined) {
   if (/\.(png|jpg|jpeg|webp)$/i.test(icon) && !icon.includes('/')) {
     return new URL(`../assets/wishs/${icon}`, import.meta.url).href
   }
-  return `${(import.meta as any).env.VITE_API_BASE || ''}/api/${icon}`.replace(/\/api\/$/, '/')
+  // 中文注释：静态文件走后端基址，无需 /api 前缀；拼接时清理多余斜杠
+  const base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
+  const path = String(icon).replace(/^\/+/, '')
+  return `${base}/${path}`
 }
 // 记录图标可复用 wish 名称对应文件
 function resolveRecordIcon(name: string) {
