@@ -33,6 +33,8 @@
               :editing="false"
               :user-id="userId"
               :task-id="undefined"
+              :restore-draft="false"
+              :use-draft-storage="false"
               v-model:serverPaths="form.images"
               v-model:localFiles="form.local_images"
               @added="() => ElMessage.success('图片已添加')"

@@ -21,8 +21,8 @@
 </template>
 
 <script setup lang="ts">
-// 中文注释：属性定义——编辑模式下立即上传到后端；创建模式下仅本地暂存
-import { ref, reactive, watch, onMounted, computed } from 'vue'
+// 中文注释：属性定义——编辑模式下立即上传到后端；创建模式下仅本地暂存；支持是否使用/恢复草稿的开关
+import { ref, reactive, watch, onMounted, computed, withDefaults } from 'vue'
 import { Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
  import { prepareUpload } from '@/utils/image'
@@ -30,14 +30,19 @@ import { ElMessage } from 'element-plus'
 
 type Item = { key: string; name: string; url: string; uploading: boolean; progress: number; serverPath?: string; localFile?: File }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   editing: boolean
   userId: number
   taskId?: number
+  // 中文注释：最多可选图片数，默认 6 张
   limit?: number
   serverPaths: string[]
   localFiles: File[]
-}>()
+  // 中文注释：是否在创建模式下恢复本地草稿图片（默认关闭，避免新建任务显示上次图片）
+  restoreDraft?: boolean
+  // 中文注释：是否在创建模式下将选择的图片写入本地草稿（默认关闭）
+  useDraftStorage?: boolean
+}>(), { limit: 6, restoreDraft: false, useDraftStorage: false })
 
 const emit = defineEmits<{
   (e: 'update:serverPaths', v: string[]): void
@@ -95,24 +100,27 @@ async function onPicked(e: Event) {
           item.uploading = false
           ElMessage.error(err?.message || '图片上传失败')
         }
-      } else {
-        // 创建模式：仅本地暂存，记录到 v-model 与草稿
-        emit('update:localFiles', [...props.localFiles, webp])
-        pushItemPreview(webp.name, url, false)
-        try {
-          const reader = new FileReader()
-          reader.onload = () => {
-            try {
-              const raw = localStorage.getItem(DRAFT_KEY)
-              const arr: any[] = raw ? JSON.parse(raw) : []
-              arr.push({ name: webp.name, type: webp.type || 'image/webp', dataURL: String(reader.result) })
-              localStorage.setItem(DRAFT_KEY, JSON.stringify(arr))
-            } catch {}
-          }
-          reader.readAsDataURL(webp)
-        } catch {}
-        // 中文注释：创建模式添加完成，由父组件统一提示一次，此处不弹窗
-      }
+  } else {
+    // 创建模式：仅本地暂存，记录到 v-model 与草稿
+    emit('update:localFiles', [...props.localFiles, webp])
+    pushItemPreview(webp.name, url, false)
+    // 中文注释：按需写入草稿（默认关闭，避免下次创建页显示历史图片）
+    if (props.useDraftStorage) {
+      try {
+        const reader = new FileReader()
+        reader.onload = () => {
+          try {
+            const raw = localStorage.getItem(DRAFT_KEY)
+            const arr: any[] = raw ? JSON.parse(raw) : []
+            arr.push({ name: webp.name, type: webp.type || 'image/webp', dataURL: String(reader.result) })
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(arr))
+          } catch {}
+        }
+        reader.readAsDataURL(webp)
+      } catch {}
+    }
+    // 中文注释：创建模式添加完成，由父组件统一提示一次，此处不弹窗
+  }
     } catch (err: any) {
       ElMessage.error(err?.message || '处理图片失败')
     }
@@ -152,14 +160,17 @@ async function onPicked(e: Event) {
       // 通过名称匹配移除
       emit('update:localFiles', props.localFiles.filter((x) => (x as any).name !== item.name))
     }
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY)
-      if (raw) {
-        const arr: { name: string; type: string; dataURL: string }[] = JSON.parse(raw)
-        const next = arr.filter((x) => x.name !== item.name)
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(next))
-      }
-    } catch {}
+    // 中文注释：仅在启用草稿存储时同步清理本地草稿
+    if (props.useDraftStorage) {
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY)
+        if (raw) {
+          const arr: { name: string; type: string; dataURL: string }[] = JSON.parse(raw)
+          const next = arr.filter((x) => x.name !== item.name)
+          localStorage.setItem(DRAFT_KEY, JSON.stringify(next))
+        }
+      } catch {}
+    }
   }
 }
 
@@ -173,8 +184,8 @@ onMounted(() => {
       items.push({ key: `${p}-${Date.now()}`, name: p.split('/').pop() || 'image', url: full, uploading: false, progress: 100, serverPath: p })
     }
   }
-  // 创建模式：恢复草稿缩略图
-  if (!props.editing) {
+  // 创建模式：按需恢复草稿缩略图（默认关闭）
+  if (!props.editing && props.restoreDraft) {
     try {
       const raw = localStorage.getItem(DRAFT_KEY)
       if (raw) {
