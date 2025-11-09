@@ -163,6 +163,7 @@ async function submitForm() {
     // 中文注释：先创建任务，再上传本地图片，并更新 image_json
     const d = new Date(form.start_date)
     const payload = {
+      user_id: userId,
       name: form.name,
       description: form.description,
       category: form.category,

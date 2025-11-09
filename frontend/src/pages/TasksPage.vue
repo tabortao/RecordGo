@@ -157,9 +157,10 @@
             <div class="flex items-center justify-between mt-1 pl-10">
               <div class="text-xs text-gray-500 truncate max-w-[60%] text-left">{{ t.remark || t.description }}</div>
               <div class="flex items-center gap-3 text-xs">
+                <!-- 中文注释：无论是否完成，只要有图片就显示图标；点击打开查看器 -->
+                <el-icon v-if="hasImages(t)" class="cursor-pointer text-blue-600" :size="14" title="查看图片" @click="openTaskImages(t)"><Picture /></el-icon>
+                <!-- 中文注释：仅在已完成时显示“实际完成时间”，位于图片图标与计划用时之间 -->
                 <template v-if="t.status===2">
-                  <!-- 中文注释：当任务有图片时，在实际完成时间左侧显示蓝色图片图标，点击可查看，支持左右翻看 -->
-                  <el-icon v-if="hasImages(t)" class="cursor-pointer text-blue-600" :size="14" title="查看图片" @click="openTaskImages(t)"><Picture /></el-icon>
                   <div class="flex items-center gap-1 text-blue-600 text-xs" title="实际完成时间">
                     <el-icon :size="14"><Clock /></el-icon>
                     <span class="font-semibold">{{ formatHMS(actualSecondsLocal[t.id] ?? ((t.actual_minutes||0)*60)) }}</span>
@@ -559,11 +560,29 @@ function resolveUploadUrl(rel: string) {
 }
 
 // 中文注释：判断任务是否有图片
-function hasImages(t: TaskItem) {
+// 中文注释：解析任务的图片 JSON，兼容字符串二次编码的情况（例如 "[\"a\"]"）
+function parseImageList(json?: string): string[] {
+  if (!json || !json.trim()) return []
   try {
-    const arr = t.image_json ? JSON.parse(t.image_json) as string[] : []
-    return Array.isArray(arr) && arr.length > 0
-  } catch { return false }
+    const first = JSON.parse(json)
+    if (Array.isArray(first)) return first as string[]
+    if (typeof first === 'string') {
+      try {
+        const second = JSON.parse(first)
+        return Array.isArray(second) ? (second as string[]) : []
+      } catch { return [] }
+    }
+    return []
+  } catch {
+    // 中文注释：当后端返回非标准字符串时，兜底为空数组，避免前端报错
+    return []
+  }
+}
+
+// 中文注释：判断任务是否有图片
+function hasImages(t: TaskItem) {
+  const arr = parseImageList(t.image_json)
+  return Array.isArray(arr) && arr.length > 0
 }
 
 // 中文注释：任务图片查看对话框状态与打开方法
@@ -571,17 +590,13 @@ const imagesViewerVisible = ref(false)
 const imageViewerList = ref<string[]>([])
 const imageViewerIndex = ref(0)
 function openTaskImages(t: TaskItem) {
-  try {
-    const rels = t.image_json ? JSON.parse(t.image_json) as string[] : []
-    imageViewerList.value = rels.map(resolveUploadUrl)
-    if (imageViewerList.value.length > 0) {
-      imageViewerIndex.value = 0
-      imagesViewerVisible.value = true
-    } else {
-      ElMessage.info('该任务暂无图片')
-    }
-  } catch {
-    ElMessage.error('图片数据解析失败')
+  const rels = parseImageList(t.image_json)
+  imageViewerList.value = rels.map(resolveUploadUrl)
+  if (imageViewerList.value.length > 0) {
+    imageViewerIndex.value = 0
+    imagesViewerVisible.value = true
+  } else {
+    ElMessage.info('该任务暂无图片')
   }
 }
 
