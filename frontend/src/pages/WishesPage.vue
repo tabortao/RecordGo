@@ -96,7 +96,20 @@
     </el-drawer>
 
     <!-- 兑换心愿弹窗：支持输入数量与备注 -->
-    <el-dialog v-model="showExchange" :title="exchangeTarget ? `兑换：${exchangeTarget.name}` : '兑换心愿'" width="420px">
+    <el-dialog
+      v-model="showExchange"
+      width="420px"
+      class="pretty-exchange-dialog rounded-xl overflow-hidden shadow-xl"
+    >
+      <!-- 自定义标题栏，使用 Tailwind 增加背景与圆角 -->
+      <template #header>
+        <div class="bg-emerald-50 px-4 py-3 border-b border-emerald-100">
+          <div class="flex items-center gap-2">
+            <el-icon class="text-emerald-600"><Coin /></el-icon>
+            <h3 class="text-emerald-800 font-semibold text-sm">{{ exchangeTarget ? `兑换：${exchangeTarget.name}` : '兑换心愿' }}</h3>
+          </div>
+        </div>
+      </template>
       <el-form label-width="90px">
         <el-form-item label="兑换数量">
           <el-input-number v-model="exchangeCount" :min="1" />
@@ -106,7 +119,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <div class="flex justify-end gap-2">
+        <div class="flex justify-end gap-2 bg-gray-50 px-4 py-3">
           <el-button @click="cancelExchange">取消</el-button>
           <el-button type="primary" @click="confirmExchange">确认兑换</el-button>
         </div>
@@ -307,4 +320,8 @@ async function loadRecords(page = 1) {
 </script>
 
 <style scoped>
+/* 中文注释：美化兑换弹窗的主体内边距，限定作用于当前组件 */
+:deep(.pretty-exchange-dialog .el-dialog__body) {
+  padding: 16px;
+}
 </style>

@@ -36,6 +36,11 @@ export async function updateTaskStatus(id: number, status: number): Promise<Task
   return (await http.patch(`/tasks/${id}/status`, { status })) as any
 }
 
+// 中文注释：获取单个任务详情，独立页面加载使用
+export async function getTask(id: number): Promise<TaskItem> {
+  return (await http.get(`/tasks/${id}`)) as any
+}
+
 export async function deleteTask(id: number): Promise<{ id: number }> {
   return (await http.delete(`/tasks/${id}`)) as any
 }

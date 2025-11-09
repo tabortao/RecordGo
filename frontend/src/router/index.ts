@@ -24,6 +24,10 @@ const router = createRouter({
       name: 'Tasks',
       component: () => import('@/pages/TasksPage.vue')
     },
+    // 中文注释：任务独立页面路由（创建、编辑、番茄钟），隐藏底部导航
+    { path: '/tasks/create', name: 'TaskCreate', component: () => import('@/pages/TaskCreatePage.vue'), meta: { noNav: true } },
+    { path: '/tasks/:id/edit', name: 'TaskEdit', component: () => import('@/pages/TaskEditPage.vue'), meta: { noNav: true } },
+    { path: '/tasks/:id/tomato', name: 'TaskTomato', component: () => import('@/pages/TomatoPage.vue'), meta: { noNav: true } },
     {
       path: '/wishes',
       name: 'Wishes',

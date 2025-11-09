@@ -406,6 +406,7 @@ import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, D
 import defaultAvatar from '@/assets/avatars/default.png'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
+import router from '@/router'
 import TomatoTimer from '@/components/TomatoTimer.vue'
 import WeekCalendar from '@/components/WeekCalendar.vue'
 import TaskImageUploader from '@/components/TaskImageUploader.vue'
@@ -542,18 +543,13 @@ async function fetchTasks() {
 }
 
 function openCreate() {
-  editing.value = false
-  Object.assign(form, { name: '', description: '', category: '语文', score: 1, plan_minutes: 20, start_date: new Date(), end_date: undefined, images: [], local_images: [], repeat_type: 'none', weekly_days: [] })
-  formVisible.value = true
+  // 中文注释：跳转到独立创建页面，提升移动端体验与布局灵活性
+  router.push('/tasks/create')
 }
 
 function openEdit(t: TaskItem) {
-  editing.value = true
-  const imgs = t.image_json ? (JSON.parse(t.image_json) as string[]) : []
-  Object.assign(form, { name: t.name, description: t.description, category: t.category, score: t.score, plan_minutes: t.plan_minutes, start_date: new Date(t.start_date), end_date: t.end_date ? new Date(t.end_date) : undefined, images: imgs, local_images: [], repeat_type: 'none', weekly_days: [] })
-  currentTask.value = t
-  // 中文注释：编辑模式下展示服务端已上传图片的缩略图
-  formVisible.value = true
+  // 中文注释：跳转到独立编辑页面，按任务ID加载与保存
+  router.push(`/tasks/${t.id}/edit`)
 }
 
 function resolveUploadUrl(rel: string) {
@@ -736,11 +732,8 @@ async function restore(ids: number[]) {
 }
 
 function openTomato(t: TaskItem) {
-  currentTask.value = t
-  // 中文注释：点击番茄钟按钮默认倒计时模式，时间为任务设定时间
-  const m = t.plan_minutes || 20
-  store.updateTomato({ mode: 'countdown', durationMinutes: m, remainingSeconds: m * 60 })
-  tomatoVisible.value = true
+  // 中文注释：跳转到独立番茄钟页面
+  router.push(`/tasks/${t.id}/tomato`)
 }
 
 async function onTomatoComplete(seconds?: number) {
