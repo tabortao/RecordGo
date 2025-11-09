@@ -5,7 +5,7 @@
     <div class="flex items-center justify-between">
       <el-tag type="success">可用金币：{{ coins }}</el-tag>
       <div class="flex items-center gap-2">
-        <el-button size="small" type="primary" @click="showRecords = true">领取记录</el-button>
+        <el-button size="small" type="primary" @click="openRecords()">领取记录</el-button>
         <el-button size="small" type="success" @click="openCreate()">创建心愿</el-button>
       </div>
     </div>
@@ -131,6 +131,7 @@
 <script setup lang="ts">
 // 中文注释：引入必要的 Vue API、全局状态、服务方法与图标组件
 import { computed, onMounted, ref, reactive } from 'vue'
+import router from '@/router'
 import { ElMessage } from 'element-plus'
 import { Edit, Delete, Coin } from '@element-plus/icons-vue'
 import { useAppState } from '@/stores/appState'
@@ -224,9 +225,8 @@ onMounted(async () => {
 
 // 打开创建/编辑
 function openCreate() {
-  formMode.value = 'create'
-  Object.assign(form, { user_id: userId, name: '', content: '', need_coins: 1, unit: '次', exchange_amount: 1, icon: '' })
-  showForm.value = true
+  // 中文注释：改为进入独立创建页面，提升移动端体验
+  router.push('/wishes/create')
 }
 function openEdit(w: Wish) {
   formMode.value = 'edit'
@@ -316,6 +316,11 @@ async function loadRecords(page = 1) {
   try {
     records.value = await listWishRecords(userId, page, records.value.page_size)
   } catch { records.value = { items: [], total: 0, page: 1, page_size: 10 } }
+}
+
+// 中文注释：独立记录页面入口
+function openRecords() {
+  router.push('/wishes/records')
 }
 </script>
 

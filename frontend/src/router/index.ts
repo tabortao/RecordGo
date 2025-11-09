@@ -33,6 +33,9 @@ const router = createRouter({
       name: 'Wishes',
       component: () => import('@/pages/WishesPage.vue')
     },
+    // 中文注释：心愿独立页面（创建、兑换记录），隐藏底部导航
+    { path: '/wishes/create', name: 'WishCreate', component: () => import('@/pages/WishCreatePage.vue'), meta: { noNav: true } },
+    { path: '/wishes/records', name: 'WishRecords', component: () => import('@/pages/WishRecordsPage.vue'), meta: { noNav: true } },
     {
       path: '/mine',
       name: 'Mine',
