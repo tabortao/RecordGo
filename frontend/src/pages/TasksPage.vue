@@ -76,7 +76,8 @@
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-            <el-button type="primary" @click="openCreate">添加任务</el-button>
+        <!-- 需求：取消按钮显示（保留逻辑，隐藏视图） -->
+        <el-button v-if="false" type="primary" @click="openCreate">添加任务</el-button>
           </div>
         </div>
       </template>
@@ -158,10 +159,10 @@
               <div class="text-xs text-gray-500 truncate max-w-[60%] text-left">{{ t.remark || t.description }}</div>
               <div class="flex items-center gap-3 text-xs">
                 <!-- 中文注释：无论是否完成，只要有图片就显示图标；点击打开查看器 -->
-                <el-icon v-if="hasImages(t)" class="cursor-pointer text-blue-600" :size="14" title="查看图片" @click="openTaskImages(t)"><Picture /></el-icon>
+            <el-icon v-if="hasImages(t)" class="cursor-pointer text-orange-500" :size="14" title="查看图片" @click="openTaskImages(t)"><Picture /></el-icon>
                 <!-- 中文注释：仅在已完成时显示“实际完成时间”，位于图片图标与计划用时之间 -->
                 <template v-if="t.status===2">
-                  <div class="flex items-center gap-1 text-blue-600 text-xs" title="实际完成时间">
+            <div class="flex items-center gap-1 text-blue-600 text-xs" title="实际完成时间">
                     <el-icon :size="14"><Clock /></el-icon>
                     <span class="font-semibold">{{ formatHMS(actualSecondsLocal[t.id] ?? ((t.actual_minutes||0)*60)) }}</span>
                   </div>
