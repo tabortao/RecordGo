@@ -2,6 +2,7 @@ package handlers
 
 import (
     "encoding/json"
+    "fmt"
     "os"
     "path/filepath"
     "strconv"
@@ -205,7 +206,15 @@ func UpdateStatus(c *gin.Context) {
     t.Status = req.Status
     // 同步用户金币
     var u models.User
-    _ = db.DB().First(&u, t.UserID).Error
+    if err := db.DB().First(&u, t.UserID).Error; err != nil {
+        // 中文注释：开发环境兜底——若用户不存在，初始化一个测试用户，避免状态变更报错
+        // 说明：正式环境应通过登录/注册获取用户；此兜底仅为当前前后端联调方便
+        u = models.User{ID: t.UserID, Username: fmt.Sprintf("user%d", t.UserID), Role: "user", Coins: 0, Nickname: "测试用户"}
+        if ierr := db.DB().Create(&u).Error; ierr != nil {
+            common.Error(c, 50005, "初始化用户失败")
+            return
+        }
+    }
     if prev == 2 && req.Status != 2 {
         // 取消完成：扣减对应金币（允许为负数，实际效果为增加金币）
         u.Coins -= int64(t.Score)

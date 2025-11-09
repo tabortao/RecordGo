@@ -169,13 +169,25 @@ async function submitForm() {
       end_date: form.end_date
     }
     const t = await updateTask(taskId, payload)
+    // 中文注释：如有新增本地图片，上传后将返回的相对路径写入 image_json，保证编辑页也能持久化图片列表
     if ((form.local_images || []).length > 0) {
+      const newPaths: string[] = []
       for (const f of form.local_images) {
         try {
           const webp = await prepareUpload(f as File)
-          await uploadTaskImage(userId, webp, t.id)
+          const { path } = await uploadTaskImage(userId, webp, t.id)
+          newPaths.push(path)
         } catch (err: any) {
           console.error('上传任务图片失败', { task_id: t.id, filename: (f as File)?.name, message: err?.message || err })
+        }
+      }
+      // 将新的图片路径合并到当前表单状态，并同步写入后端任务的 image_json 字段
+      if (newPaths.length > 0) {
+        form.images = [...(form.images || []), ...newPaths]
+        try {
+          await updateTask(t.id, { image_json: JSON.stringify(form.images) })
+        } catch (err: any) {
+          console.error('更新任务图片列表失败', { task_id: t.id, message: err?.message || err, response: err?.response?.data })
         }
       }
     }

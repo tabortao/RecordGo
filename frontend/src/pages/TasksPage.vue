@@ -124,8 +124,7 @@
                 <div class="font-semibold text-left" :class="{'text-gray-500': t.status === 2}">{{ t.name }}</div>
               </div>
               <div class="flex items-center gap-2">
-                <!-- 中文注释：列表图片查看入口始终可见（有图时显示蓝色图标），支持全屏覆盖与手势缩放 -->
-                <el-icon v-if="hasImages(t)" class="cursor-pointer text-blue-600 mr-1" :size="16" title="查看图片" @click="openTaskImages(t)"><Picture /></el-icon>
+                <!-- 中文注释：图片查看入口移动到“实际完成时间”左侧，避免顶部拥挤 -->
                 <template v-if="t.status !== 2">
                   <img src="@/assets/tomato.png" alt="番茄钟" class="w-4 h-4 cursor-pointer" @click="openTomato(t)" />
                   <el-tag type="danger" size="small">待完成</el-tag>
@@ -159,6 +158,8 @@
               <div class="text-xs text-gray-500 truncate max-w-[60%] text-left">{{ t.remark || t.description }}</div>
               <div class="flex items-center gap-3 text-xs">
                 <template v-if="t.status===2">
+                  <!-- 中文注释：当任务有图片时，在实际完成时间左侧显示蓝色图片图标，点击可查看，支持左右翻看 -->
+                  <el-icon v-if="hasImages(t)" class="cursor-pointer text-blue-600" :size="14" title="查看图片" @click="openTaskImages(t)"><Picture /></el-icon>
                   <div class="flex items-center gap-1 text-blue-600 text-xs" title="实际完成时间">
                     <el-icon :size="14"><Clock /></el-icon>
                     <span class="font-semibold">{{ formatHMS(actualSecondsLocal[t.id] ?? ((t.actual_minutes||0)*60)) }}</span>

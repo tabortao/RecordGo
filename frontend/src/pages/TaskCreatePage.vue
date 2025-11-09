@@ -123,7 +123,8 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft, Plus, Edit, List, Clock, Coin } from '@element-plus/icons-vue'
 import router from '@/router'
 import TaskImageUploader from '@/components/TaskImageUploader.vue'
-import { createTask, uploadTaskImage } from '@/services/tasks'
+// 中文注释：补充导入 updateTask，用于在图片上传后写入 image_json，避免未定义错误
+import { createTask, uploadTaskImage, updateTask } from '@/services/tasks'
 import { prepareUpload } from '@/utils/image'
 
 const userId = 1 // 中文注释：示例用户ID，后续接入登录信息
@@ -180,7 +181,16 @@ async function submitForm() {
           console.error('上传任务图片失败', { task_id: t.id, filename: (f as File)?.name, message: err?.message || err })
         }
       }
-      // 中文注释：图片路径写入由后端负责，此处仅上传
+      // 中文注释：上传完成后，将图片相对路径写入任务的 image_json（JSON 数组字符串）
+      if (paths.length > 0) {
+        try {
+          await updateTask(t.id, { image_json: JSON.stringify(paths) })
+          // 可选：更新本地表单状态，便于返回后立即显示
+          form.images = paths
+        } catch (err: any) {
+          console.error('更新任务图片列表失败', { task_id: t.id, message: err?.message || err, response: err?.response?.data })
+        }
+      }
     }
     ElMessage.success('创建成功')
     router.back()
