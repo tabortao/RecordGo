@@ -106,7 +106,7 @@
       <div class="my-2">
         <el-radio-group v-model="categoryFilter" size="small">
           <el-radio-button label="全部任务">全部任务</el-radio-button>
-          <el-radio-button v-for="c in categories" :key="c.name" :label="c.name">
+          <el-radio-button v-for="c in categoriesForDay" :key="c.name" :label="c.name">
             <span class="inline-flex items-center gap-1">
               <span class="inline-block w-2 h-2 rounded" :style="{ backgroundColor: c.color }"></span>
               <span>{{ c.name }}</span>
@@ -148,8 +148,6 @@
             <!-- 第一行：左侧任务名，右侧状态与番茄钟入口 + 菜单 -->
             <div class="flex items-center justify-between pl-6">
               <div class="flex items-center gap-2">
-                <!-- 中文注释：在任务项显式显示分类颜色标签，提升辨识度 -->
-                <el-tag v-if="t.category" size="small" :style="{ backgroundColor: categoryColor(t.category), color: '#fff', borderColor: categoryColor(t.category) }">{{ t.category }}</el-tag>
                 <!-- 中文注释：番茄钟图标仅在未完成时显示，位于右侧“待完成”标签左侧，此处移除 -->
                 <div class="font-semibold text-left" :class="{'text-gray-500': t.status === 2}">{{ t.name }}</div>
               </div>
@@ -512,6 +510,52 @@ const dialogWidth = computed(() => (isMobile.value ? '96vw' : '640px'))
 const cats = useTaskCategories()
 const categories = computed(() => cats.list())
 function categoryColor(name: string) { return cats.colorOf(name) }
+// 中文注释：按日期与完成筛选得到当日可见任务（不含分类筛选），用于动态生成分类筛选项
+const dateStatusFilteredTasks = computed(() => {
+  let result = tasks.value
+  if (filter.value === '已完成') result = result.filter((t) => t.status === 2)
+  else if (filter.value === '待完成') result = result.filter((t) => t.status !== 2)
+  const selKey = dayjs(selectedDate.value).format('YYYY-MM-DD')
+  result = result.filter((t) => {
+    const sDate = t.start_date ? dayjs(t.start_date).toDate() : null
+    const eDate = t.end_date ? dayjs(t.end_date).toDate() : undefined
+    if (!sDate) return false
+    const rawRepeat = (t as any).repeat || 'none'
+    const rep = String(rawRepeat).toLowerCase()
+    const type: 'none'|'daily'|'weekdays'|'weekly'|'monthly' =
+      /none|无|^$/i.test(rep) ? 'none' :
+      /daily|每天/i.test(rep) ? 'daily' :
+      /weekdays|工作日/i.test(rep) ? 'weekdays' :
+      /weekly|每周/i.test(rep) ? 'weekly' :
+      /monthly|每月/i.test(rep) ? 'monthly' : 'none'
+    if (type === 'none' || !eDate) {
+      return dayjs(sDate).format('YYYY-MM-DD') === selKey
+    }
+    const dow = dayjs(sDate).day() === 0 ? 7 : dayjs(sDate).day()
+    const weeklyDays: number[] = Array.isArray((t as any).weekly_days) ? ((t as any).weekly_days as number[]) : [dow]
+    const dates = generateRepeatDates(sDate, eDate, type, weeklyDays)
+    const keys = new Set(dates.map((d) => dayjs(d).format('YYYY-MM-DD')))
+    return keys.has(selKey)
+  })
+  return result
+})
+// 中文注释：仅展示当日存在任务的分类；若任务包含“未分类”，也纳入筛选项
+const categoriesForDay = computed(() => {
+  const present = new Set<string>()
+  for (const t of dateStatusFilteredTasks.value) present.add((t.category || '未分类'))
+  const list = cats.list().filter(c => present.has(c.name))
+  // 兼容任务出现未在设置页定义的分类
+  for (const name of Array.from(present)) {
+    if (!list.some(c => c.name === name)) list.push({ name, color: cats.colorOf(name), order: cats.orderOf(name) } as any)
+  }
+  // 按自定义顺序排序
+  return list.sort((a, b) => {
+    const oa = cats.orderOf(a.name)
+    const ob = cats.orderOf(b.name)
+    if (oa !== ob) return oa - ob
+    return a.name.localeCompare(b.name)
+  })
+})
 
 // ===== 下拉刷新逻辑（移动端触摸） =====
 const pulling = ref(false) // 是否正在拉动
