@@ -30,6 +30,9 @@ export interface AppState {
   speech: SpeechSettings
   // 中文注释：任务备注入口开关（默认开启，关闭后任务卡片与菜单不显示备注）
   taskNotesEnabled: boolean
+  // 中文注释：任务自动排序开关（默认开启）。开启后：
+  // 1）分类内已完成任务排在下方；2）全部完成的分类排在未完分类之后。
+  taskAutoSortEnabled: boolean
 }
 
 const DEFAULT_STATE: AppState = {
@@ -51,6 +54,9 @@ const DEFAULT_STATE: AppState = {
   },
   // 中文注释：任务备注入口默认开启
   taskNotesEnabled: true
+  ,
+  // 中文注释：任务自动排序默认开启
+  taskAutoSortEnabled: true
 }
 
 export const useAppState = defineStore('appState', {
@@ -96,6 +102,11 @@ export const useAppState = defineStore('appState', {
     // 中文注释：开启/关闭任务备注入口，并持久化
     setTaskNotesEnabled(enabled: boolean) {
       this.taskNotesEnabled = enabled
+      this.persist()
+    },
+    // 中文注释：开启/关闭任务自动排序，并持久化
+    setTaskAutoSortEnabled(enabled: boolean) {
+      this.taskAutoSortEnabled = enabled
       this.persist()
     },
     reset() {

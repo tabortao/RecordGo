@@ -15,6 +15,16 @@
         <el-switch v-model="taskNotesEnabled" />
       </div>
     </el-card>
+    <!-- 中文注释：任务自动排序开关（默认开启）；开启后分类内已完成排下方，全部完成的分类排到未完分类之后 -->
+    <el-card shadow="never">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="font-medium">任务自动排序</div>
+          <div class="text-xs text-gray-500 mt-1">开启后：分类内已完成任务排在下方；当某分类全部完成时，该分类整体排在未完分类之后</div>
+        </div>
+        <el-switch v-model="taskAutoSortEnabled" />
+      </div>
+    </el-card>
     <el-card shadow="never">
       <div class="text-gray-600">其他配置项待完善：任务默认提醒、重复规则等。</div>
     </el-card>
@@ -34,6 +44,10 @@ const store = useAppState()
 const taskNotesEnabled = computed({
   get: () => store.taskNotesEnabled,
   set: (v: boolean) => store.setTaskNotesEnabled(v)
+})
+const taskAutoSortEnabled = computed({
+  get: () => store.taskAutoSortEnabled,
+  set: (v: boolean) => store.setTaskAutoSortEnabled(v)
 })
 </script>
 

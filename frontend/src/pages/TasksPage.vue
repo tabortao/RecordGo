@@ -696,6 +696,27 @@ const groupedTasks = computed(() => {
     map.get(cat)!.push(t)
   }
   let groups = Array.from(map.entries()).map(([category, items]) => ({ category, items }))
+  // 中文注释：自动排序逻辑（默认排序模式且开启自动排序）：
+  // 1）分类内已完成任务排在下方；
+  // 2）全部完成的分类排在未完成分类之后。
+  if (sortMode.value === '默认排序' && store.taskAutoSortEnabled) {
+    groups = groups.map(g => {
+      const unfinished = g.items.filter(i => i.status !== 2)
+      const finished = g.items.filter(i => i.status === 2)
+      // 分类内：未完在上，已完在下；每段内按开始时间升序
+      const byDate = (a: TaskItem, b: TaskItem) => {
+        const ad = a.start_date ? dayjs(a.start_date).valueOf() : 0
+        const bd = b.start_date ? dayjs(b.start_date).valueOf() : 0
+        if (ad !== bd) return ad - bd
+        return (a.id || 0) - (b.id || 0)
+      }
+      return { category: g.category, items: [...unfinished.sort(byDate), ...finished.sort(byDate)] }
+    })
+    const hasUnfinished = (g: { category: string; items: TaskItem[] }) => g.items.some(i => i.status !== 2)
+    const unfinishedGroups = groups.filter(hasUnfinished)
+    const finishedOnlyGroups = groups.filter(g => !hasUnfinished(g))
+    groups = [...unfinishedGroups, ...finishedOnlyGroups]
+  }
   // 中文注释：当选择“任务分类”排序时，按分类名升序排序分组
   if (sortMode.value === '任务分类') {
     groups = groups.sort((a, b) => a.category.localeCompare(b.category))
