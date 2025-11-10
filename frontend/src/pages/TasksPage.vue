@@ -119,8 +119,8 @@
               </div>
             </div>
             <!-- 第一行：左侧任务名，右侧状态与番茄钟入口 + 菜单 -->
-            <div class="flex items-center justify-between pl-10">
-              <div class="flex items-center gap-3">
+            <div class="flex items-center justify-between pl-8">
+              <div class="flex items-center gap-2">
                 <!-- 中文注释：番茄钟图标仅在未完成时显示，位于右侧“待完成”标签左侧，此处移除 -->
                 <div class="font-semibold text-left" :class="{'text-gray-500': t.status === 2}">{{ t.name }}</div>
               </div>
@@ -159,7 +159,7 @@
             </div>
 
             <!-- 第二行：左侧备注/描述；右侧实际/计划/金币（实际精确到秒） -->
-            <div class="flex items-center justify-between mt-1 pl-10">
+            <div class="flex items-center justify-between mt-1 pl-8">
               <div class="text-xs text-gray-500 truncate max-w-[60%] text-left">{{ t.remark || t.description }}</div>
               <div class="flex items-center gap-3 text-xs">
                 <!-- 中文注释：无论是否完成，只要有图片就显示图标；点击打开查看器（强制橙色避免主题覆盖） -->

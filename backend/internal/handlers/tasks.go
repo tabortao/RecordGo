@@ -258,10 +258,10 @@ func DeleteTask(c *gin.Context) {
             if strings.TrimSpace(root) == "" { root = "storage" }
             for _, rel := range paths {
                 full := filepath.Join(root, filepath.FromSlash(rel))
-                if err := os.Remove(full); err == nil {
+                if rmErr := os.Remove(full); rmErr == nil {
                     zap.L().Info("DeleteTask: removed image file", zap.String("path", full))
                 } else {
-                    zap.L().Warn("DeleteTask: remove image file failed", zap.String("path", full), zap.Error(err))
+                    zap.L().Warn("DeleteTask: remove image file failed", zap.String("path", full), zap.Error(rmErr))
                 }
             }
         }
@@ -272,22 +272,23 @@ func DeleteTask(c *gin.Context) {
         root := os.Getenv("STORAGE_ROOT")
         if strings.TrimSpace(root) == "" { root = "storage" }
         dir := filepath.Join(root, "uploads", "images", "task_images", fmt.Sprintf("%d", t.UserID))
-        if entries, err := os.ReadDir(dir); err == nil {
+        entries, readErr := os.ReadDir(dir)
+        if readErr == nil {
             prefix := fmt.Sprintf("task_%d_", t.ID)
             for _, ent := range entries {
                 if ent.IsDir() { continue }
                 name := ent.Name()
                 if strings.HasPrefix(name, prefix) {
                     full := filepath.Join(dir, name)
-                    if err := os.Remove(full); err == nil {
+                    if rmErr := os.Remove(full); rmErr == nil {
                         zap.L().Info("DeleteTask: removed note image", zap.Uint("task_id", t.ID), zap.String("path", full))
                     } else {
-                        zap.L().Warn("DeleteTask: remove note image failed", zap.Uint("task_id", t.ID), zap.String("path", full), zap.Error(err))
+                        zap.L().Warn("DeleteTask: remove note image failed", zap.Uint("task_id", t.ID), zap.String("path", full), zap.Error(rmErr))
                     }
                 }
             }
         } else {
-            zap.L().Debug("DeleteTask: skip note image cleanup (dir missing)", zap.String("dir", dir), zap.Error(err))
+            zap.L().Debug("DeleteTask: skip note image cleanup (dir missing)", zap.String("dir", dir), zap.Error(readErr))
         }
     }
     common.Ok(c, gin.H{"id": t.ID})
@@ -326,30 +327,31 @@ func BatchDelete(c *gin.Context) {
             _ = json.Unmarshal([]byte(t.ImageJSON), &paths)
             for _, rel := range paths {
                 full := filepath.Join(root, filepath.FromSlash(rel))
-                if err := os.Remove(full); err == nil {
+                if rmErr := os.Remove(full); rmErr == nil {
                     zap.L().Info("BatchDelete: removed image file", zap.Uint("task_id", t.ID), zap.String("path", full))
                 } else {
-                    zap.L().Warn("BatchDelete: remove image file failed", zap.Uint("task_id", t.ID), zap.String("path", full), zap.Error(err))
+                    zap.L().Warn("BatchDelete: remove image file failed", zap.Uint("task_id", t.ID), zap.String("path", full), zap.Error(rmErr))
                 }
             }
             // 中文注释：额外清理“任务批注”上传的图片（不在 image_json 中），按文件名前缀 task_任务ID_*，目录按用户ID
             dir := filepath.Join(root, "uploads", "images", "task_images", fmt.Sprintf("%d", t.UserID))
-            if entries, err := os.ReadDir(dir); err == nil {
+            entries, readErr := os.ReadDir(dir)
+            if readErr == nil {
                 prefix := fmt.Sprintf("task_%d_", t.ID)
                 for _, ent := range entries {
                     if ent.IsDir() { continue }
                     name := ent.Name()
                     if strings.HasPrefix(name, prefix) {
                         full := filepath.Join(dir, name)
-                        if err := os.Remove(full); err == nil {
+                        if rmErr := os.Remove(full); rmErr == nil {
                             zap.L().Info("BatchDelete: removed note image", zap.Uint("task_id", t.ID), zap.String("path", full))
                         } else {
-                            zap.L().Warn("BatchDelete: remove note image failed", zap.Uint("task_id", t.ID), zap.String("path", full), zap.Error(err))
+                            zap.L().Warn("BatchDelete: remove note image failed", zap.Uint("task_id", t.ID), zap.String("path", full), zap.Error(rmErr))
                         }
                     }
                 }
             } else {
-                zap.L().Debug("BatchDelete: skip note image cleanup (dir missing)", zap.Uint("task_id", t.ID), zap.String("dir", dir), zap.Error(err))
+                zap.L().Debug("BatchDelete: skip note image cleanup (dir missing)", zap.Uint("task_id", t.ID), zap.String("dir", dir), zap.Error(readErr))
             }
         }
     }

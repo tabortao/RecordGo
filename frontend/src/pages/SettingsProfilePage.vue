@@ -20,7 +20,7 @@
         <el-avatar :size="56" :src="avatarPreview || avatarSrc" />
         <input type="file" accept="image/*" @change="onSelectAvatar" />
       </div>
-      <div class="text-xs text-gray-500">将自动压缩并转换为 webp，失败则回退原格式</div>
+      <!-- 中文注释：取消 webp 自动压缩与回退提示，按原格式上传 -->
     </div>
 
     <!-- 修改密码 -->
@@ -49,7 +49,6 @@
 
 <script setup lang="ts">
 import { useAuth } from '@/stores/auth'
-import { prepareUpload } from '@/utils/image'
 import { updateNickname, changePassword, uploadAvatar } from '@/services/user'
 import { ElMessage } from 'element-plus'
 import { Edit, ArrowLeft } from '@element-plus/icons-vue'
@@ -100,10 +99,9 @@ async function onSave() {
       auth.updateUser({ nickname: nicknameTrim })
     }
 
-    // 2) 头像上传（有选择时），前端先转换为 webp
+    // 2) 头像上传（有选择时），按原文件格式上传（取消 webp 自动转换）
     if (avatarFile.value && auth.user) {
-      const webp = await prepareUpload(avatarFile.value)
-      const resp = await uploadAvatar(auth.user.id, webp)
+      const resp = await uploadAvatar(auth.user.id, avatarFile.value)
       const path = resp.path
       auth.updateUser({ avatar_path: path })
     }
