@@ -448,7 +448,7 @@
 <script setup lang="ts">
 // 中文注释：任务页面逻辑，统一使用服务层 API，实现表单校验与错误提示
 import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, Notebook } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/avatars/default.png'

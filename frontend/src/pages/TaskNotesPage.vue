@@ -19,7 +19,7 @@
           <div class="mt-2 flex flex-wrap gap-3">
             <!-- 图片附件预览，可点击放大 -->
             <template v-for="(att, idx) in n.attachments" :key="att.name + idx">
-              <el-image v-if="att.type==='image'" :src="resolveUrl(att)" :preview-src-list="imageList(n.attachments)" :initial-index="imageIndex(n.attachments, att)" fit="cover" style="width:96px;height:96px;border-radius:8px" />
+              <el-image v-if="att.type==='image'" :src="resolveUrl(att)" :preview-src-list="imageList(n.attachments)" :initial-index="imageIndex(n.attachments, att)" fit="contain" style="width:96px;height:96px;border-radius:8px" />
               <div v-else class="flex items-center gap-2">
                 <el-icon><Microphone /></el-icon>
                 <audio :src="resolveUrl(att)" controls preload="metadata" />
@@ -56,7 +56,7 @@
         <el-form-item label="预览区" v-if="attachments.length">
           <div class="flex flex-wrap gap-3">
             <div v-for="(att, idx) in attachments" :key="att.name + idx" class="relative">
-              <el-image v-if="att.type==='image'" :src="att.url" :preview-src-list="previewList()" :initial-index="previewIndex(att)" fit="cover" style="width:96px;height:96px;border-radius:8px" />
+              <el-image v-if="att.type==='image'" :src="att.url" :preview-src-list="previewList()" :initial-index="previewIndex(att)" fit="contain" style="width:96px;height:96px;border-radius:8px" />
               <div v-else class="w-[200px]">
                 <audio :src="att.url" controls preload="metadata" class="w-full" />
               </div>
