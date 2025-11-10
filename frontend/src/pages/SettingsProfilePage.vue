@@ -1,7 +1,8 @@
 <template>
   <div class="p-4 space-y-4">
     <div class="flex items-center gap-2">
-      <el-icon :size="18" class="cursor-pointer" style="color:#64748b" @click="goBack"><ArrowLeft /></el-icon>
+      <!-- 中文注释：返回按钮不再自动保存，仅关闭页面 -->
+      <el-icon :size="18" class="cursor-pointer" style="color:#64748b" @click="onCancel"><ArrowLeft /></el-icon>
       <el-icon :size="18" style="color:#60a5fa"><Edit /></el-icon>
       <h2 class="font-semibold">编辑个人信息</h2>
     </div>
@@ -38,7 +39,11 @@
       </div>
     </div>
 
-    <!-- 说明：取消底部保存/取消按钮；点击左上返回图标时自动保存并返回 -->
+    <!-- 底部右侧：取消 / 保存 按钮 -->
+    <div class="flex justify-end mt-6 gap-2">
+      <el-button @click="onCancel">取消</el-button>
+      <el-button type="primary" @click="onSave">保存</el-button>
+    </div>
   </div>
 </template>
 
@@ -80,7 +85,13 @@ function onSelectAvatar(e: Event) {
   avatarPreview.value = URL.createObjectURL(f)
 }
 
-async function goBack() {
+// 中文注释：取消返回（不保存，仅关闭页面）
+function onCancel() {
+  router.back()
+}
+
+// 中文注释：显式保存按钮逻辑，保存成功后关闭页面
+async function onSave() {
   try {
     // 1) 昵称更新（非空且有变更）
     const nicknameTrim = (editNickname.value || '').trim()
