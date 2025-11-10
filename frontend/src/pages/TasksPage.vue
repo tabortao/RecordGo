@@ -30,7 +30,7 @@
         <div class="flex flex-col items-center">
           <el-icon style="color:#22c55e"><Clock /></el-icon>
           <div class="text-xs text-gray-500">日时长</div>
-          <div class="font-semibold">{{ dayMinutes }} 分钟</div>
+          <div class="font-semibold">{{ dayMinutes }}</div>
         </div>
       </el-card>
       <el-card shadow="never" class="stat-card">
@@ -508,7 +508,6 @@ const userId = 1 // 中文注释：示例用户ID（参考心愿页做法，后�
 const dialogWidth = computed(() => (isMobile.value ? '96vw' : '640px'))
 // 中文注释：任务分类 Store，用于动态筛选与分组颜色
 const cats = useTaskCategories()
-const categories = computed(() => cats.list())
 function categoryColor(name: string) { return cats.colorOf(name) }
 // 中文注释：按日期与完成筛选得到当日可见任务（不含分类筛选），用于动态生成分类筛选项
 const dateStatusFilteredTasks = computed(() => {

@@ -124,12 +124,11 @@ function onLogout() {
 // 中文注释：移除系统设置按钮对应的旧跳转函数
 
 // 中文注释：设置模块按钮（图标统一 18，与“编辑个人信息”一致）
-type SettingsKey = 'tomato' | 'tasks' | 'reading' | 'subjects' | 'coins' | 'about'
+type SettingsKey = 'tomato' | 'tasks' | 'reading' | 'coins' | 'about'
 const settingItems: Array<{ key: SettingsKey; label: string; icon: any; fg: string }> = [
   { key: 'tomato', label: '番茄钟设置', icon: Timer, fg: '#ef4444' },
   { key: 'tasks', label: '任务设置', icon: List, fg: '#10b981' },
   { key: 'reading', label: '朗读设置', icon: Microphone, fg: '#7c3aed' },
-  { key: 'subjects', label: '任务分类设置', icon: Notebook, fg: '#2563eb' },
   { key: 'coins', label: '金币设置', icon: Coin, fg: '#f59e0b' },
   { key: 'about', label: '关于', icon: InfoFilled, fg: '#0ea5e9' }
 ]
@@ -140,7 +139,6 @@ function goSettingsTab(k: SettingsKey) {
     tomato: '/settings/tomato',
     tasks: '/settings/tasks',
     reading: '/settings/reading',
-    subjects: '/settings/subjects',
     coins: '/settings/coins',
     about: '/settings/about'
   }
