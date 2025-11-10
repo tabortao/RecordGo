@@ -103,7 +103,7 @@
       </template>
       <!-- 日期选择与周视图已移动到卡片上方 -->
       <!-- 分类筛选：与“任务分类设置”一致的动态列表 -->
-      <div class="my-2">
+      <div class="mt-0 mb-6">
         <el-radio-group v-model="categoryFilter" size="small">
           <el-radio-button label="全部任务">全部任务</el-radio-button>
           <el-radio-button v-for="c in categoriesForDay" :key="c.name" :label="c.name">

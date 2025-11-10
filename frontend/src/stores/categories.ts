@@ -95,7 +95,8 @@ export const useTaskCategories = defineStore('taskCategories', () => {
     categories.value = categories.value
       .sort((a, b) => a.order - b.order)
       .map((c, i) => ({ ...c, order: i + 1 }))
-    void persistToServer()
+    // 中文注释：优先调用后端的“仅更新顺序”接口，失败则回退为整体持久化
+    void persistOrder(name, o)
     return true
   }
 
@@ -127,6 +128,15 @@ export const useTaskCategories = defineStore('taskCategories', () => {
       return true
     } catch {
       return false
+    }
+  }
+  // 中文注释：仅更新某个分类的顺序；后端若未提供该接口，将自动回退到整体更新
+  async function persistOrder(name: string, order: number): Promise<boolean> {
+    try {
+      await http.patch('/task-categories/order', { name, order })
+      return true
+    } catch {
+      return await persistToServer()
     }
   }
 

@@ -67,7 +67,7 @@ import defaultAvatar from '@/assets/avatars/default.png'
 import router from '@/router'
 import { useAuth } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
-import { User, Edit, SwitchButton, Setting, Timer, List, Microphone, Notebook, Coin, InfoFilled } from '@element-plus/icons-vue'
+import { User, Edit, SwitchButton, Setting, Timer, List, Microphone, Coin, InfoFilled } from '@element-plus/icons-vue'
 
 // 中文注释：应用状态（用于退出登录时重置）
 const store = useAppState()
