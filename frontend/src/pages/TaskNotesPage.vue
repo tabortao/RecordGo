@@ -15,7 +15,11 @@
       <div class="font-semibold mb-2">历史备注</div>
       <div class="space-y-3">
         <div v-for="n in existingNotes" :key="n.id" class="border rounded p-2">
-          <div class="text-sm whitespace-pre-wrap">{{ n.text }}</div>
+          <!-- 中文注释：右上角显示小喇叭图标，点击朗读备注内容；朗读关闭时隐藏 -->
+          <div class="flex items-start justify-between">
+            <div class="text-sm whitespace-pre-wrap">{{ n.text }}</div>
+            <span v-if="appState.speech.enabled" class="cursor-pointer select-none" title="朗读备注" style="font-size:16px; line-height:16px" @click="speakNote(n.text)">📢</span>
+          </div>
           <div class="mt-2 flex flex-wrap gap-3">
             <!-- 图片附件预览，可点击放大 -->
             <template v-for="(att, idx) in n.attachments" :key="att.name + idx">
@@ -82,6 +86,8 @@ import { useAuth } from '@/stores/auth'
 import { uploadTaskImage, uploadTaskAudio } from '@/services/tasks'
 import { toWebp } from '@/utils/image'
 import { ArrowLeft, Microphone } from '@element-plus/icons-vue'
+import { speak } from '@/utils/speech'
+import { useAppState } from '@/stores/appState'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
@@ -90,6 +96,7 @@ const rawId = route.params.id
 const taskId = Number(Array.isArray(rawId) ? rawId[0] : rawId)
 const auth = useAuth()
 const store = useNotesStore()
+const appState = useAppState()
 
 const noteText = ref('')
 type TmpAttachment = { type: 'image' | 'audio'; name: string; url: string; file?: File; serverPath?: string }
@@ -296,6 +303,19 @@ async function saveNote() {
 function removeNote(noteId: number) {
   store.remove(taskId, noteId)
   ElMessage.success('备注已删除')
+}
+
+// 中文注释：朗读备注内容，遵循全局朗读设置（语音/语速/音调）
+function speakNote(text: string) {
+  try {
+    if (!appState.speech.enabled) return
+    const s = (text || '').trim()
+    if (!s) return
+    const ok = speak(s, { voiceURI: appState.speech.voiceURI || undefined, rate: appState.speech.rate, pitch: appState.speech.pitch })
+    if (!ok) ElMessage.warning('当前浏览器不支持朗读或语音不可用')
+  } catch {
+    // 忽略错误，避免影响页面交互
+  }
 }
 </script>
 

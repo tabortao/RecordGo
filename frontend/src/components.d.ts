@@ -47,6 +47,7 @@ declare module 'vue' {
     ElUpload: typeof import('element-plus/es')['ElUpload']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SpeakerIcon: typeof import('./components/SpeakerIcon.vue')['default']
     TaskImageUploader: typeof import('./components/TaskImageUploader.vue')['default']
     TomatoTimer: typeof import('./components/TomatoTimer.vue')['default']
     WeekCalendar: typeof import('./components/WeekCalendar.vue')['default']

@@ -1,6 +1,11 @@
 <template>
-  <!-- 中文注释：任务页面，包含统计、列表、创建/编辑、批量删除、番茄钟功能 -->
-  <div class="p-4 space-y-4">
+  <!-- 中文注释：任务页面，包含统计、列表、创建/编辑、批量删除、番茄钟功能；支持下拉刷新 -->
+  <div class="pull-refresh-wrapper" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd">
+    <!-- 下拉刷新指示器（固定在顶部），拉动或刷新时淡入显示） -->
+    <div class="fixed top-0 left-0 right-0 flex justify-center pointer-events-none" :style="{ opacity: (pullY>10||refreshing)?1:0 }">
+      <div class="mt-2 text-xs text-gray-500 bg-white/80 rounded px-2 py-1 shadow">{{ refreshing ? '正在刷新...' : '下拉刷新' }}</div>
+    </div>
+    <div class="p-4 space-y-4" :style="{ transform: pullY ? ('translateY(' + pullY + 'px)') : 'none', transition: pulling ? 'none' : 'transform 0.2s ease' }">
     <!-- 顶部统计栏 -->
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -126,13 +131,18 @@
               </div>
               <div class="flex items-center gap-1">
                 <!-- 中文注释：图片查看入口移动到“实际完成时间”左侧，避免顶部拥挤 -->
-                <template v-if="t.status !== 2">
-                  <img src="@/assets/tomato.png" alt="番茄钟" class="w-4 h-4 cursor-pointer" @click="openTomato(t)" />
-                  <el-tag type="danger" size="small">待完成</el-tag>
-                </template>
-                <template v-else>
-                  <el-tag type="success" size="small">已完成</el-tag>
-                </template>
+                <!-- 中文注释：右侧状态与操作区：备注图标 + 小喇叭 + 番茄钟/状态标签 -->
+                <div class="flex items-center gap-1">
+                  <!-- 备注图标：点击进入备注页，作用与菜单中的“备注”一致 -->
+                  <el-icon :size="16" class="cursor-pointer" title="备注" style="color:#f97316" @click="router.push(`/tasks/${t.id}/notes`)"><ChatDotRound /></el-icon>
+                  <!-- 小喇叭：朗读任务（关闭朗读时隐藏），替换为📢表情 -->
+                  <span v-if="store.speech.enabled" class="cursor-pointer select-none" title="朗读任务" style="font-size:16px; line-height:16px" @click="speakTask(t)">📢</span>
+                  <!-- 番茄钟图标仅未完成时显示 -->
+                  <img v-if="t.status !== 2" src="@/assets/tomato.png" alt="番茄钟" class="w-4 h-4 cursor-pointer" @click="openTomato(t)" />
+                  <!-- 状态标签 -->
+                  <el-tag v-if="t.status !== 2" type="danger" size="small">待完成</el-tag>
+                  <el-tag v-else type="success" size="small">已完成</el-tag>
+                </div>
                 <el-dropdown trigger="click" @command="(cmd)=>onMenu(cmd, t)">
                   <span class="el-dropdown-link">
                     <el-icon class="cursor-pointer"><MoreFilled /></el-icon>
@@ -146,8 +156,8 @@
                         <el-icon class="mr-1"><Edit /></el-icon>编辑
                       </el-dropdown-item>
                       <!-- 新增：备注入口 -->
-                      <el-dropdown-item command="notes">
-                        <el-icon class="mr-1"><Notebook /></el-icon>备注
+              <el-dropdown-item command="notes">
+              <el-icon class="mr-1" style="color:#f97316"><ChatDotRound /></el-icon>备注
                       </el-dropdown-item>
                       <el-dropdown-item command="delete" style="color:#f56c6c">
                         <el-icon class="mr-1"><Delete /></el-icon>删除
@@ -417,6 +427,9 @@
     <!-- 中文注释：任务图片全屏查看（覆盖式），支持缩放与左右翻看 -->
     <el-image-viewer v-if="imagesViewerVisible" :url-list="imageViewerList" :initial-index="imageViewerIndex" @close="imagesViewerVisible=false" />
 
+    <!-- 中文注释：结束内部内容容器（p-4 space-y-4），避免顶层 wrapper 未闭合） -->
+    </div>
+
     <!-- 右下角绿色加号浮动按钮：创建任务 -->
   <el-button
       type="success"
@@ -450,7 +463,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, Notebook } from '@element-plus/icons-vue'
+import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
@@ -464,9 +477,53 @@ dayjs.extend(utc)
 import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, uploadTaskImage, batchDelete, type TaskItem } from '@/services/tasks'
 import { Picture } from '@element-plus/icons-vue'
 import { prepareUpload } from '@/utils/image'
+import { speak } from '@/utils/speech'
 const isMobile = ref(false)
 const userId = 1 // 中文注释：示例用户ID（参考心愿页做法，后续接入登录）
 const dialogWidth = computed(() => (isMobile.value ? '96vw' : '640px'))
+
+// ===== 下拉刷新逻辑（移动端触摸） =====
+const pulling = ref(false) // 是否正在拉动
+const pullY = ref(0) // 下拉位移
+const startY = ref(0)
+const refreshing = ref(false)
+const pullThreshold = 150
+
+function onTouchStart(e: TouchEvent) {
+  // 仅在页面滚动到顶部时允许下拉刷新
+  if (window.scrollY > 0) return
+  const t = e.touches[0]
+  startY.value = t.clientY
+  pullY.value = 0
+  pulling.value = true
+}
+
+function onTouchMove(e: TouchEvent) {
+  if (!pulling.value) return
+  const t = e.touches[0]
+  const dy = t.clientY - startY.value
+  if (dy > 0) {
+    // 防止浏览器默认下拉回弹影响
+    e.preventDefault()
+    pullY.value = Math.min(dy, 120)
+  } else {
+    pullY.value = 0
+  }
+}
+
+async function onTouchEnd() {
+  if (!pulling.value) return
+  pulling.value = false
+  if (pullY.value >= pullThreshold) {
+    try {
+      refreshing.value = true
+      await fetchTasks()
+    } finally {
+      refreshing.value = false
+    }
+  }
+  pullY.value = 0
+}
 
 // 顶部统计占位（后续与后端联动）
 const store = useAppState()
@@ -479,6 +536,24 @@ const completedTasksCount = computed(() => {
 const dayCoins = computed(() => {
   return filteredTasks.value.filter((t) => t.status === 2).reduce((sum, t) => sum + (t.score || 0), 0)
 })
+
+// 中文注释：朗读任务内容（格式："{任务分类}，{任务标题}，备注：{任务描述}"）
+function speakTask(t: TaskItem) {
+  try {
+    if (!store.speech.enabled) {
+      ElMessage.info('朗读已关闭，可在“我的 → 朗读设置”开启')
+      return
+    }
+    const category = (t.category || '').trim()
+    const title = (t.name || '').trim()
+    const remark = (t.remark || t.description || '').trim()
+    const text = `${category ? category + '，' : ''}${title}${remark ? '，备注：' + remark : ''}`
+    const ok = speak(text, { voiceURI: store.speech.voiceURI || undefined, rate: store.speech.rate, pitch: store.speech.pitch })
+    if (!ok) ElMessage.warning('当前浏览器不支持朗读或语音不可用')
+  } catch {
+    ElMessage.error('朗读失败，请稍后重试')
+  }
+}
 const dayMinutes = computed(() => {
   return filteredTasks.value.reduce((sum, t) => sum + (t.actual_minutes || 0), 0)
 })
