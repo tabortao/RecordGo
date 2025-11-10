@@ -147,7 +147,9 @@
             </div>
             <!-- 第一行：左侧任务名，右侧状态与番茄钟入口 + 菜单 -->
             <div class="flex items-center justify-between pl-6">
-              <div class="flex items-center gap-1">
+              <div class="flex items-center gap-2">
+                <!-- 中文注释：在任务项显式显示分类颜色标签，提升辨识度 -->
+                <el-tag v-if="t.category" size="small" :style="{ backgroundColor: categoryColor(t.category), color: '#fff', borderColor: categoryColor(t.category) }">{{ t.category }}</el-tag>
                 <!-- 中文注释：番茄钟图标仅在未完成时显示，位于右侧“待完成”标签左侧，此处移除 -->
                 <div class="font-semibold text-left" :class="{'text-gray-500': t.status === 2}">{{ t.name }}</div>
               </div>
@@ -732,7 +734,13 @@ const groupedTasks = computed(() => {
   }
   // 中文注释：当选择“任务分类”排序时，按分类名升序排序分组
   if (sortMode.value === '任务分类') {
-    groups = groups.sort((a, b) => a.category.localeCompare(b.category))
+    const ord = (name: string) => cats.orderOf(name)
+    groups = groups.sort((a, b) => {
+      const oa = ord(a.category)
+      const ob = ord(b.category)
+      if (oa !== ob) return oa - ob
+      return a.category.localeCompare(b.category)
+    })
   }
   return groups
 })

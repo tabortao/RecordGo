@@ -41,6 +41,8 @@
 <script setup lang="ts">
 // 中文注释：任务分类设置页面，联动 Pinia Store，实现增删改与颜色选择，并本地持久化
 import { Notebook, ArrowLeft, Plus, Edit, Delete } from '@element-plus/icons-vue'
+// 中文注释：显式引入 Color Picker 样式，避免在部分环境下样式资源加载中断
+import 'element-plus/es/components/color-picker/style/css'
 import router from '@/router'
 import { computed, reactive, ref, watchEffect } from 'vue'
 import { useTaskCategories } from '@/stores/categories'
