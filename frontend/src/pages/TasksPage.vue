@@ -102,13 +102,16 @@
         </div>
       </template>
       <!-- 日期选择与周视图已移动到卡片上方 -->
-      <!-- 分类筛选：全部学科/语文/数学/英语 -->
+      <!-- 分类筛选：与“任务分类设置”一致的动态列表 -->
       <div class="my-2">
         <el-radio-group v-model="categoryFilter" size="small">
-          <el-radio-button label="全部任务" />
-          <el-radio-button label="语文" />
-          <el-radio-button label="数学" />
-          <el-radio-button label="英语" />
+          <el-radio-button label="全部任务">全部任务</el-radio-button>
+          <el-radio-button v-for="c in categories" :key="c.name" :label="c.name">
+            <span class="inline-flex items-center gap-1">
+              <span class="inline-block w-2 h-2 rounded" :style="{ backgroundColor: c.color }"></span>
+              <span>{{ c.name }}</span>
+            </span>
+          </el-radio-button>
         </el-radio-group>
       </div>
 
@@ -116,7 +119,11 @@
       <div v-else class="space-y-4">
         <!-- 按分类分组显示 -->
         <div v-for="group in groupedTasks" :key="group.category" class="space-y-3">
-          <div class="text-base font-semibold text-green-700">{{ group.category }}</div>
+          <!-- 中文注释：分组标题左侧展示分类颜色，颜色与设置保持一致 -->
+          <div class="text-base font-semibold flex items-center gap-2">
+            <span class="inline-block w-2 h-2 rounded" :style="{ backgroundColor: categoryColor(group.category) }"></span>
+            <span>{{ group.category }}</span>
+          </div>
           <el-card
             v-for="t in group.items"
             :key="t.id"
@@ -495,9 +502,14 @@ import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, comple
 import { Picture } from '@element-plus/icons-vue'
 import { prepareUpload } from '@/utils/image'
 import { speak } from '@/utils/speech'
+import { useTaskCategories } from '@/stores/categories'
 const isMobile = ref(false)
 const userId = 1 // 中文注释：示例用户ID（参考心愿页做法，后续接入登录）
 const dialogWidth = computed(() => (isMobile.value ? '96vw' : '640px'))
+// 中文注释：任务分类 Store，用于动态筛选与分组颜色
+const cats = useTaskCategories()
+const categories = computed(() => cats.list())
+function categoryColor(name: string) { return cats.colorOf(name) }
 
 // ===== 下拉刷新逻辑（移动端触摸） =====
 const pulling = ref(false) // 是否正在拉动
@@ -582,7 +594,8 @@ const completeRate = computed(() => {
 // 列表与筛选
 const tasks = ref<TaskItem[]>([])
 const filter = ref<'全部' | '已完成' | '待完成'>('全部')
-const categoryFilter = ref<'全部任务' | '语文' | '数学' | '英语'>('全部任务')
+// 中文注释：分类筛选使用字符串，完全由“任务分类设置”提供
+const categoryFilter = ref<string>('全部任务')
 const selectedDate = ref<string>(dayjs().format('YYYY-MM-DD'))
 const taskCountMap = computed<Record<string, number>>(() => {
   const map: Record<string, number> = {}

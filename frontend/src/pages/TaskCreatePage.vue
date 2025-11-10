@@ -45,9 +45,10 @@
               <div class="flex items-center gap-1"><el-icon><List /></el-icon><span>任务分类</span></div>
             </template>
             <el-select v-model="form.category" placeholder="选择分类" style="width: 100%">
-              <el-option label="语文" value="语文" />
-              <el-option label="数学" value="数学" />
-              <el-option label="英语" value="英语" />
+              <el-option v-for="c in categories" :key="c.name" :label="c.name" :value="c.name">
+                <span class="inline-block w-2 h-2 rounded mr-2" :style="{ backgroundColor: c.color }"></span>
+                <span>{{ c.name }}</span>
+              </el-option>
             </el-select>
           </el-form-item>
           <el-form-item prop="plan_minutes" required>
@@ -122,6 +123,12 @@
 // 中文注释：创建任务页面逻辑，与列表页表单一致但独立路由展示
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
+import { computed } from 'vue'
+import { useTaskCategories } from '@/stores/categories'
+
+// 中文注释：联动任务分类设置，创建页下拉选项与颜色一致
+const cats = useTaskCategories()
+const categories = computed(() => cats.list())
 import { ArrowLeft, Plus, Edit, List, Clock, Coin } from '@element-plus/icons-vue'
 import router from '@/router'
 import TaskImageUploader from '@/components/TaskImageUploader.vue'

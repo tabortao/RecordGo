@@ -129,7 +129,7 @@ const settingItems: Array<{ key: SettingsKey; label: string; icon: any; fg: stri
   { key: 'tomato', label: '番茄钟设置', icon: Timer, fg: '#ef4444' },
   { key: 'tasks', label: '任务设置', icon: List, fg: '#10b981' },
   { key: 'reading', label: '朗读设置', icon: Microphone, fg: '#7c3aed' },
-  { key: 'subjects', label: '学科设置', icon: Notebook, fg: '#2563eb' },
+  { key: 'subjects', label: '任务分类设置', icon: Notebook, fg: '#2563eb' },
   { key: 'coins', label: '金币设置', icon: Coin, fg: '#f59e0b' },
   { key: 'about', label: '关于', icon: InfoFilled, fg: '#0ea5e9' }
 ]

@@ -35,9 +35,10 @@
           <el-form-item prop="category" required>
             <template #label><div class="flex items-center gap-1"><el-icon><List /></el-icon><span>任务分类</span></div></template>
             <el-select v-model="form.category" placeholder="选择分类" style="width: 100%">
-              <el-option label="语文" value="语文" />
-              <el-option label="数学" value="数学" />
-              <el-option label="英语" value="英语" />
+              <el-option v-for="c in categories" :key="c.name" :label="c.name" :value="c.name">
+                <span class="inline-block w-2 h-2 rounded mr-2" :style="{ backgroundColor: c.color }"></span>
+                <span>{{ c.name }}</span>
+              </el-option>
             </el-select>
           </el-form-item>
           <el-form-item prop="plan_minutes" required>
@@ -106,12 +107,18 @@ import TaskImageUploader from '@/components/TaskImageUploader.vue'
 import { getTask, updateTask, uploadTaskImage } from '@/services/tasks'
 import { useRoute } from 'vue-router'
 import { prepareUpload } from '@/utils/image'
+import { computed } from 'vue'
+import { useTaskCategories } from '@/stores/categories'
 
 const route = useRoute()
 const taskId = Number(route.params.id)
 const userId = 1 // 中文注释：示例用户ID
 const taskLoaded = ref(false)
 function goBack() { router.back() }
+
+// 中文注释：联动任务分类设置，编辑页下拉选项与颜色一致
+const cats = useTaskCategories()
+const categories = computed(() => cats.list())
 
 type FormModel = {
   name: string
