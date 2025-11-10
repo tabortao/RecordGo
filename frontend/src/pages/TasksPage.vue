@@ -347,6 +347,23 @@
       </template>
     </el-dialog>
 
+    <!-- 删除任务对话框（非重复任务：仅取消/确定） -->
+    <el-dialog v-model="simpleDeleteDialogVisible" :width="isMobile ? '92vw' : '400px'">
+      <template #header>
+        <div class="flex items-center gap-2">
+          <el-icon class="text-red-500"><Delete /></el-icon>
+          <span class="font-semibold">删除任务</span>
+        </div>
+      </template>
+      <div class="text-gray-700">确认删除任务「{{ deleteTarget?.name }}」？</div>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <el-button @click="simpleDeleteDialogVisible=false">取消</el-button>
+          <el-button type="danger" @click="doDeleteSimple">确定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!-- 删除任务对话框（重复系列三种范围选择） -->
     <el-dialog v-model="deleteDialogVisible" :width="isMobile ? '92vw' : '480px'">
       <template #header>
@@ -793,6 +810,8 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
 const deleteDialogVisible = ref(false)
 const deleteScope = ref<'current'|'future'|'all'>('current')
 const deleteTarget = ref<TaskItem | null>(null)
+// 中文注释：非重复任务删除确认对话框（仅取消/确定）
+const simpleDeleteDialogVisible = ref(false)
 
 function isRepeatedTask(t: TaskItem): boolean {
   const rep = String((t as any).repeat || '').trim()
@@ -809,22 +828,8 @@ function confirmDelete(t: TaskItem) {
     deleteDialogVisible.value = true
     return
   }
-  ElMessageBox.confirm(`确认删除任务「${t.name}」？`, '删除任务', {
-    type: 'warning',
-    icon: Delete,
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-  })
-    .then(async () => {
-      try {
-        await deleteTask(t.id)
-        ElMessage.success('已删除')
-        await fetchTasks()
-      } catch (e: any) {
-        ElMessage.error(`删除失败：${e.message || e}`)
-      }
-    })
-    .catch(() => {})
+  deleteTarget.value = t
+  simpleDeleteDialogVisible.value = true
 }
 
 async function doDeleteCurrent(t: TaskItem) {
@@ -832,6 +837,18 @@ async function doDeleteCurrent(t: TaskItem) {
     await deleteTask(t.id)
     ElMessage.success('已删除当前日程')
     deleteDialogVisible.value = false
+    await fetchTasks()
+  } catch (e: any) {
+    ElMessage.error(`删除失败：${e.message || e}`)
+  }
+}
+
+async function doDeleteSimple() {
+  if (!deleteTarget.value) return
+  try {
+    await deleteTask(deleteTarget.value.id)
+    ElMessage.success('已删除')
+    simpleDeleteDialogVisible.value = false
     await fetchTasks()
   } catch (e: any) {
     ElMessage.error(`删除失败：${e.message || e}`)
