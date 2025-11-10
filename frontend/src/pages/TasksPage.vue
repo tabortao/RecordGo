@@ -134,7 +134,8 @@
                 <!-- 中文注释：右侧状态与操作区：备注图标 + 小喇叭 + 番茄钟/状态标签 -->
                 <div class="flex items-center gap-1">
                   <!-- 备注图标：点击进入备注页，作用与菜单中的“备注”一致 -->
-                  <el-icon :size="16" class="cursor-pointer" title="备注" style="color:#f97316" @click="router.push(`/tasks/${t.id}/notes`)"><ChatDotRound /></el-icon>
+              <!-- 中文注释：备注入口图标（受开关控制）；关闭后不显示 -->
+              <el-icon v-if="store.taskNotesEnabled" :size="16" class="cursor-pointer" title="备注" style="color:#f97316" @click="router.push(`/tasks/${t.id}/notes`)"><ChatDotRound /></el-icon>
                   <!-- 小喇叭：朗读任务（关闭朗读时隐藏），替换为📢表情 -->
                   <span v-if="store.speech.enabled" class="cursor-pointer select-none" title="朗读任务" style="font-size:16px; line-height:16px" @click="speakTask(t)">📢</span>
                   <!-- 番茄钟图标仅未完成时显示 -->
@@ -156,7 +157,8 @@
                         <el-icon class="mr-1"><Edit /></el-icon>编辑
                       </el-dropdown-item>
                       <!-- 新增：备注入口 -->
-              <el-dropdown-item command="notes">
+            <!-- 中文注释：备注菜单项（受开关控制）；关闭后不显示 -->
+            <el-dropdown-item v-if="store.taskNotesEnabled" command="notes">
               <el-icon class="mr-1" style="color:#f97316"><ChatDotRound /></el-icon>备注
                       </el-dropdown-item>
                       <el-dropdown-item command="delete" style="color:#f56c6c">

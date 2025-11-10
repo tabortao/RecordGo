@@ -28,6 +28,8 @@ export interface AppState {
   permissions: Permissions
   tomato: TomatoState
   speech: SpeechSettings
+  // 中文注释：任务备注入口开关（默认开启，关闭后任务卡片与菜单不显示备注）
+  taskNotesEnabled: boolean
 }
 
 const DEFAULT_STATE: AppState = {
@@ -46,7 +48,9 @@ const DEFAULT_STATE: AppState = {
     voiceURI: null,
     rate: 1,
     pitch: 1
-  }
+  },
+  // 中文注释：任务备注入口默认开启
+  taskNotesEnabled: true
 }
 
 export const useAppState = defineStore('appState', {
@@ -87,6 +91,11 @@ export const useAppState = defineStore('appState', {
     // 中文注释：更新朗读设置（语音、语速、音调、开关），并持久化
     updateSpeech(partial: Partial<SpeechSettings>) {
       this.speech = { ...this.speech, ...partial }
+      this.persist()
+    },
+    // 中文注释：开启/关闭任务备注入口，并持久化
+    setTaskNotesEnabled(enabled: boolean) {
+      this.taskNotesEnabled = enabled
       this.persist()
     },
     reset() {
