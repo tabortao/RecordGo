@@ -203,8 +203,9 @@ func DeleteWish(c *gin.Context) {
 
 // 中文注释：心愿兑换请求结构体
 type ExchangeReq struct {
-	UserID uint `json:"user_id"`
-	Count  int  `json:"count"` // 中文注释：一次兑换的份数，默认 1
+    UserID uint `json:"user_id"`
+    Count  int  `json:"count"` // 中文注释：一次兑换的份数，默认 1
+    Remark string `json:"remark"` // 中文注释：可选备注，记录兑换心愿时的说明
 }
 
 // ExchangeWish 兑换心愿：扣减金币、累计心愿兑换次数、写入兑换记录
@@ -256,6 +257,7 @@ func ExchangeWish(c *gin.Context) {
 		Amount:    w.ExchangeAmount * req.Count,
 		Unit:      w.Unit,
 		Status:    "成功",
+		Remark:    strings.TrimSpace(req.Remark),
 		CreatedAt: time.Now(),
 	}
 	if err := db.DB().Create(&rec).Error; err != nil {

@@ -23,6 +23,8 @@ export interface WishRecord {
   amount: number
   unit: string
   status: string
+  // 中文注释：兑换备注（可选），由后端在兑换时保存
+  remark?: string
   created_at: string
 }
 
@@ -105,7 +107,21 @@ export async function exchangeWish(id: number, userId: number, count = 1, remark
 // 兑换记录
 export async function listWishRecords(userId: number, page = 1, pageSize = 10) {
   const resp = await http.get('/wishes/records', { params: { user_id: userId, page, page_size: pageSize } } as any)
-  return resp as WishRecordsResp
+  // 中文注释：兼容后端可能返回的大小写字段，统一映射为前端使用的下划线命名
+  const raw = resp as any
+  const items = Array.isArray(raw.items) ? raw.items.map((x: any) => ({
+    id: Number(x.id ?? x.ID),
+    user_id: Number(x.user_id ?? x.UserID),
+    wish_id: Number(x.wish_id ?? x.WishID),
+    wish_name: String(x.wish_name ?? x.WishName ?? ''),
+    coins_used: Number(x.coins_used ?? x.CoinsUsed ?? 0),
+    amount: Number(x.amount ?? x.Amount ?? 0),
+    unit: String(x.unit ?? x.Unit ?? ''),
+    status: String(x.status ?? x.Status ?? ''),
+    remark: String(x.remark ?? x.Remark ?? ''),
+    created_at: String(x.created_at ?? x.CreatedAt ?? '')
+  })) : []
+  return { items, total: Number(raw.total ?? 0), page: Number(raw.page ?? page), page_size: Number(raw.page_size ?? pageSize) } as WishRecordsResp
 }
 
 // 上传心愿图标（前端先转换为 webp）

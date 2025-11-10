@@ -12,6 +12,7 @@ type WishRecord struct {
     Amount     int       `json:"amount"`      // 中文注释：一次兑换对应的数量（如：10）
     Unit       string    `gorm:"size:16" json:"unit"` // 中文注释：单位（个/次/分钟等）
     Status     string    `gorm:"size:16" json:"status"` // 中文注释：状态（成功/失败），前端展示用
+    Remark     string    `gorm:"size:256" json:"remark"` // 中文注释：兑换时填写的备注信息，便于记录具体情况
     CreatedAt  time.Time `json:"created_at"`
 }
 

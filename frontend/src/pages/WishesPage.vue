@@ -63,6 +63,8 @@
                 <div class="text-green-600">{{ r.status }}</div>
               </div>
               <div class="text-gray-500 text-xs">使用{{ r.coins_used }}金币 · {{ formatTime(r.created_at) }}</div>
+              <!-- 中文注释：显示兑换备注（若有填写） -->
+              <div class="text-gray-500 text-xs mt-1" v-if="r.remark && r.remark.trim()">备注：{{ r.remark }}</div>
             </div>
           </div>
         </el-card>

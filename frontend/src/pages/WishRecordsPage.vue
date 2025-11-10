@@ -22,6 +22,8 @@
             </div>
             <div class="mt-3 text-sm text-gray-700">数量：{{ item.amount }} {{ item.unit }}</div>
             <div class="mt-1 text-sm text-gray-700">消耗金币：{{ item.coins_used }}</div>
+            <!-- 中文注释：展示兑换备注（若填写） -->
+            <div class="mt-1 text-xs text-gray-500" v-if="item.remark && item.remark.trim()">备注：{{ item.remark }}</div>
           </div>
         </div>
       </el-card>
