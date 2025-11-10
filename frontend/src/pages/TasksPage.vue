@@ -809,7 +809,12 @@ function confirmDelete(t: TaskItem) {
     deleteDialogVisible.value = true
     return
   }
-  ElMessageBox.confirm(`确认删除任务「${t.name}」？`, '提示', { type: 'warning' })
+  ElMessageBox.confirm(`确认删除任务「${t.name}」？`, '删除任务', {
+    type: 'warning',
+    icon: Delete,
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+  })
     .then(async () => {
       try {
         await deleteTask(t.id)
