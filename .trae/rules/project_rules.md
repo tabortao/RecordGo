@@ -88,13 +88,16 @@ go mod tidy
 $env:SECRET_KEY = "replace-with-your-secret"   # JWT 加密密钥
 $env:DB_PATH = "storage/database/recordgo.db"  # 数据库文件路径
 $env:STORAGE_ROOT = "storage"                  # 存储根目录
-$env:PORT = "8080"                             # 服务端口
+$env:PORT = "8082"                             # 服务端口
 $env:GIN_MODE = "release"                      # 或 "debug"
 
 # 运行数据库迁移（如项目包含迁移命令）
 # go run ./cmd/migrate
 
 # 启动服务（示例）
+
+cd g:\Code\RecordGo\backend ; $env:SECRET_KEY = 'dev-secret'; $env:DB_PATH = 'storage/database/recordgo.db'; $env:STORAGE_ROOT = 'storage'; $env:PORT = '8082'; $env:GIN_MODE = 'debug'; go run ./cmd/server
+
 go run ./cmd/server
 
 # 或构建可执行文件后运行

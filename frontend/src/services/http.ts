@@ -1,8 +1,10 @@
 import axios, { AxiosRequestConfig } from 'axios'
 
 // 中文注释：Axios 实例，统一处理 RESTful 响应结构 {code,message,data}，并实现指数退避重试
+// 开发环境优先使用 Vite 代理（baseURL='/api'，避免浏览器 CORS）；生产或独立部署使用 VITE_API_BASE
+const base = (import.meta as any).env?.DEV ? '/api' : ((import.meta as any).env?.VITE_API_BASE || '/api')
 const instance = axios.create({
-  baseURL: '/api',
+  baseURL: base,
   timeout: 10000
 })
 

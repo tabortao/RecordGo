@@ -98,3 +98,31 @@ export async function deleteTaskImage(taskId: number, path: string): Promise<{ i
   // Axios 的 delete 支持 data 字段传递 JSON 请求体
   return (await http.delete(`/tasks/${taskId}/image`, { data: { path } })) as any
 }
+
+// 上传任务音频（wav/mp3），保存到与图片相同的目录
+// 中文注释：后端返回 { path }，相对路径 uploads/images/task_images/{用户id}/{任务id}/xxx.wav
+export async function uploadTaskAudio(
+  userId: number,
+  file: File,
+  taskId: number,
+  onProgress?: (percentage: number) => void
+): Promise<{ path: string }> {
+  const form = new FormData()
+  form.append('user_id', String(userId))
+  form.append('task_id', String(taskId))
+  // 中文注释：优先使用 audio 字段，兼容 file 字段
+  form.append('audio', file, (file as any).name || 'audio.wav')
+  form.append('file', file, (file as any).name || 'audio.wav')
+  const resp = await http.post('/upload/task-audio', form, {
+    timeout: 30000,
+    onUploadProgress: (e: any) => {
+      try {
+        const total = e?.total || 0
+        const loaded = e?.loaded || 0
+        const p = total > 0 ? Math.round((loaded * 100) / total) : 0
+        onProgress && onProgress(p)
+      } catch {}
+    }
+  } as any)
+  return resp as { path: string }
+}

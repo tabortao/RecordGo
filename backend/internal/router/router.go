@@ -44,8 +44,9 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         api.POST("/wishes/:id/exchange", handlers.ExchangeWish)
         api.GET("/wishes/records", handlers.ListWishRecords)
         api.POST("/upload/wish-icon", handlers.UploadWishIcon)
-        // 中文注释：任务图片上传与删除接口
+        // 中文注释：任务图片与音频上传接口
         api.POST("/upload/task-image", handlers.UploadTaskImage)
+        api.POST("/upload/task-audio", handlers.UploadTaskAudio)
         // 中文注释：用户头像上传
         api.POST("/upload/avatar", handlers.UploadAvatar)
         api.DELETE("/tasks/:id/image", handlers.DeleteTaskImage)

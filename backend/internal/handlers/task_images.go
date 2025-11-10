@@ -134,7 +134,8 @@ func UploadTaskImage(c *gin.Context) {
     }
     zap.L().Info("UploadTaskImage: type detected", zap.String("content_type", contentType), zap.String("ext", ext))
 
-    // 保存到约定目录：storage/uploads/images/task_images/{用户id}/{taskid}
+    // 保存到约定目录：storage/uploads/images/task_images/{用户id}
+    // 中文注释：根据最新规范，图片按用户维度进行归档，不再按任务ID分目录；任务ID保留在文件名中。
     path, err := saveTaskImage(file, fmt.Sprintf("%d", uid), fmt.Sprintf("%d", tid), ext)
     if err != nil {
         zap.L().Error("UploadTaskImage: save failed",
@@ -154,14 +155,15 @@ func UploadTaskImage(c *gin.Context) {
     common.Ok(c, gin.H{"path": path})
 }
 
-// saveTaskImage 将上传文件保存到 storage/uploads/images/task_images/{用户id}/{taskid}
-// 中文注释：文件命名为 task_任务ID_时间戳_uuid.webp（uuid 用纳秒替代）
+// saveTaskImage 将上传文件保存到 storage/uploads/images/task_images/{用户id}
+// 中文注释：文件命名为 task_任务ID_时间戳_uuid.webp（uuid 用纳秒替代），目录不再包含任务ID。
 func saveTaskImage(file *multipart.FileHeader, userID string, taskID string, ext string) (string, error) {
     root := os.Getenv("STORAGE_ROOT")
     if strings.TrimSpace(root) == "" {
         root = "storage"
     }
-    dir := filepath.Join(root, "uploads", "images", "task_images", userID, taskID)
+    // 中文注释：按最新规范仅按用户ID分目录
+    dir := filepath.Join(root, "uploads", "images", "task_images", userID)
     if err := os.MkdirAll(dir, 0o755); err != nil {
         return "", fmt.Errorf("创建目录失败: %w", err)
     }
@@ -177,7 +179,8 @@ func saveTaskImage(file *multipart.FileHeader, userID string, taskID string, ext
         zap.String("filename", filename),
         zap.String("full", full),
     )
-    rel := filepath.ToSlash(filepath.Join("uploads", "images", "task_images", userID, taskID, filename))
+    // 中文注释：返回相对路径 uploads/images/task_images/{用户id}/{文件名}
+    rel := filepath.ToSlash(filepath.Join("uploads", "images", "task_images", userID, filename))
     return rel, nil
 }
 

@@ -145,6 +145,10 @@
                       <el-dropdown-item command="edit">
                         <el-icon class="mr-1"><Edit /></el-icon>编辑
                       </el-dropdown-item>
+                      <!-- 新增：备注入口 -->
+                      <el-dropdown-item command="notes">
+                        <el-icon class="mr-1"><Notebook /></el-icon>备注
+                      </el-dropdown-item>
                       <el-dropdown-item command="delete" style="color:#f56c6c">
                         <el-icon class="mr-1"><Delete /></el-icon>删除
                       </el-dropdown-item>
@@ -158,8 +162,8 @@
             <div class="flex items-center justify-between mt-1 pl-10">
               <div class="text-xs text-gray-500 truncate max-w-[60%] text-left">{{ t.remark || t.description }}</div>
               <div class="flex items-center gap-3 text-xs">
-                <!-- 中文注释：无论是否完成，只要有图片就显示图标；点击打开查看器 -->
-            <el-icon v-if="hasImages(t)" class="cursor-pointer text-orange-500" :size="14" title="查看图片" @click="openTaskImages(t)"><Picture /></el-icon>
+                <!-- 中文注释：无论是否完成，只要有图片就显示图标；点击打开查看器（强制橙色避免主题覆盖） -->
+            <el-icon v-if="hasImages(t)" class="cursor-pointer" :size="14" title="查看图片" style="color:#F97316 !important" @click="openTaskImages(t)"><Picture /></el-icon>
                 <!-- 中文注释：仅在已完成时显示“实际完成时间”，位于图片图标与计划用时之间 -->
                 <template v-if="t.status===2">
             <div class="flex items-center gap-1 text-blue-600 text-xs" title="实际完成时间">
@@ -405,7 +409,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter } from '@element-plus/icons-vue'
+import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, Notebook } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
@@ -541,7 +545,14 @@ async function fetchTasks() {
     // 中文注释：同步更新全局 coins（考虑心愿扣减），心愿页面读取该值作为可用金币
     store.setCoins(totalCoins.value)
   } catch (e: any) {
-    ElMessage.error(`任务列表加载失败：${e.message || e}`)
+    // 中文注释：增强错误提示，优先展示后端返回的业务错误信息
+    const msg = e?.response?.data?.message || e?.message || e
+    console.error('任务列表加载失败诊断', {
+      message: e?.message,
+      status: e?.response?.status,
+      payload: e?.response?.data,
+    })
+    ElMessage.error(`任务列表加载失败：${msg}`)
   }
 }
 
@@ -786,6 +797,7 @@ onMounted(() => {
 function onMenu(cmd: string, t: TaskItem) {
   if (cmd === 'tomato') return openTomato(t)
   if (cmd === 'edit') return openEdit(t)
+  if (cmd === 'notes') return router.push(`/tasks/${t.id}/notes`)
   if (cmd === 'delete') return confirmDelete(t)
 }
 

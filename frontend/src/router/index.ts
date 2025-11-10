@@ -28,6 +28,9 @@ const router = createRouter({
     { path: '/tasks/create', name: 'TaskCreate', component: () => import('@/pages/TaskCreatePage.vue'), meta: { noNav: true } },
     { path: '/tasks/:id/edit', name: 'TaskEdit', component: () => import('@/pages/TaskEditPage.vue'), meta: { noNav: true } },
     { path: '/tasks/:id/tomato', name: 'TaskTomato', component: () => import('@/pages/TomatoPage.vue'), meta: { noNav: true } },
+    // 中文注释：任务备注独立页面，支持多条备注与附件（图片/音频），隐藏底部导航
+    // 中文注释：为规避别名解析的偶发诊断错误，这里改用相对路径导入
+    { path: '/tasks/:id/notes', name: 'TaskNotes', component: () => import('../pages/TaskNotesPage.vue'), meta: { noNav: true } },
     {
       path: '/wishes',
       name: 'Wishes',
