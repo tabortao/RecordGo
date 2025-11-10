@@ -81,6 +81,21 @@
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
+            <!-- 中文注释：排序图标下拉菜单，点击选择排序方式（默认/时间顺序/任务分类/完成优先/添加时间） -->
+            <el-dropdown trigger="click" @command="onSortCommand">
+              <span class="el-dropdown-link">
+                <el-icon class="cursor-pointer" :size="18" title="排序"><Sort /></el-icon>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="默认排序">默认排序</el-dropdown-item>
+                  <el-dropdown-item command="时间顺序">时间顺序</el-dropdown-item>
+                  <el-dropdown-item command="任务分类">任务分类</el-dropdown-item>
+                  <el-dropdown-item command="完成优先">完成优先</el-dropdown-item>
+                  <el-dropdown-item command="添加时间">添加时间</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
         <!-- 需求：取消按钮显示（保留逻辑，隐藏视图） -->
         <el-button v-if="false" type="primary" @click="openCreate">添加任务</el-button>
           </div>
@@ -465,7 +480,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound } from '@element-plus/icons-vue'
+import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound, Sort } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
@@ -628,6 +643,39 @@ const filteredTasks = computed(() => {
   })
   return result
 })
+// 中文注释：排序模式（默认/时间顺序/任务分类/完成优先/添加时间）
+type SortMode = '默认排序' | '时间顺序' | '任务分类' | '完成优先' | '添加时间'
+const sortMode = ref<SortMode>('默认排序')
+
+// 中文注释：根据排序模式对任务排序；在分组前执行，保证分组顺序也受影响
+const sortedTasks = computed(() => {
+  const arr = [...filteredTasks.value]
+  const byDateAsc = (a: TaskItem, b: TaskItem) => {
+    const ad = a.start_date ? dayjs(a.start_date).valueOf() : 0
+    const bd = b.start_date ? dayjs(b.start_date).valueOf() : 0
+    if (ad !== bd) return ad - bd
+    return (a.id || 0) - (b.id || 0)
+  }
+  const byCategory = (a: TaskItem, b: TaskItem) => {
+    const ac = (a.category || '未分类')
+    const bc = (b.category || '未分类')
+    if (ac !== bc) return ac.localeCompare(bc)
+    return byDateAsc(a, b)
+  }
+  const byCompletedFirst = (a: TaskItem, b: TaskItem) => {
+    if ((a.status === 2) !== (b.status === 2)) return a.status === 2 ? -1 : 1
+    return byDateAsc(a, b)
+  }
+  const byAddedTime = (a: TaskItem, b: TaskItem) => {
+    // 中文注释：后端暂未提供 created_at，使用 id 作为添加时间近似（id 越大越新）
+    return (b.id || 0) - (a.id || 0)
+  }
+  if (sortMode.value === '时间顺序') return arr.sort(byDateAsc)
+  if (sortMode.value === '任务分类') return arr.sort(byCategory)
+  if (sortMode.value === '完成优先') return arr.sort(byCompletedFirst)
+  if (sortMode.value === '添加时间') return arr.sort(byAddedTime)
+  return arr
+})
 
 // 中文注释：按分类分组，便于移动端展示与筛选
 
@@ -642,12 +690,17 @@ function resolveAvatarUrl(p?: string | null) {
 const tasksAvatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))
 const groupedTasks = computed(() => {
   const map = new Map<string, TaskItem[]>()
-  for (const t of filteredTasks.value) {
+  for (const t of sortedTasks.value) {
     const cat = t.category || '未分类'
     if (!map.has(cat)) map.set(cat, [])
     map.get(cat)!.push(t)
   }
-  return Array.from(map.entries()).map(([category, items]) => ({ category, items }))
+  let groups = Array.from(map.entries()).map(([category, items]) => ({ category, items }))
+  // 中文注释：当选择“任务分类”排序时，按分类名升序排序分组
+  if (sortMode.value === '任务分类') {
+    groups = groups.sort((a, b) => a.category.localeCompare(b.category))
+  }
+  return groups
 })
 
 // 中文注释：本地保存每个任务的实际秒数，便于前端精确展示（后端以分钟存储）
@@ -1017,6 +1070,11 @@ function onMenu(cmd: string, t: TaskItem) {
 // 中文注释：筛选图标下拉菜单命令处理，更新状态筛选条件
 function onFilterCommand(cmd: '全部' | '已完成' | '待完成') {
   filter.value = cmd
+}
+
+// 中文注释：排序图标下拉菜单命令处理，更新排序模式
+function onSortCommand(cmd: SortMode) {
+  sortMode.value = cmd
 }
 
 // 中文注释：任务图片上传逻辑已迁移到组件中
