@@ -50,7 +50,7 @@
               <el-icon class="mr-1"><Microphone /></el-icon>{{ recording ? '停止录音' : '开始录音' }}
             </el-button>
           </div>
-          <div class="text-xs text-gray-500 mt-1">图片自动压缩并转为 webp；音频录音保存为 wav 格式</div>
+          <!-- <div class="text-xs text-gray-500 mt-1">图片自动压缩并转为 webp；音频录音保存为 wav 格式</div> -->
         </el-form-item>
 
         <el-form-item label="预览区" v-if="attachments.length">

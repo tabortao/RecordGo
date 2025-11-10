@@ -4,6 +4,8 @@ import http from './http'
 export interface TaskItem {
   id: number
   user_id: number
+  // 中文注释：重复任务系列 ID（同一系列的实例共享该 ID）；一次性任务为空
+  series_id?: number
   name: string
   description: string
   category: string

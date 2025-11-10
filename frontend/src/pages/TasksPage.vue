@@ -119,12 +119,12 @@
               </div>
             </div>
             <!-- 第一行：左侧任务名，右侧状态与番茄钟入口 + 菜单 -->
-            <div class="flex items-center justify-between pl-8">
-              <div class="flex items-center gap-2">
+            <div class="flex items-center justify-between pl-6">
+              <div class="flex items-center gap-1">
                 <!-- 中文注释：番茄钟图标仅在未完成时显示，位于右侧“待完成”标签左侧，此处移除 -->
                 <div class="font-semibold text-left" :class="{'text-gray-500': t.status === 2}">{{ t.name }}</div>
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1">
                 <!-- 中文注释：图片查看入口移动到“实际完成时间”左侧，避免顶部拥挤 -->
                 <template v-if="t.status !== 2">
                   <img src="@/assets/tomato.png" alt="番茄钟" class="w-4 h-4 cursor-pointer" @click="openTomato(t)" />
@@ -159,7 +159,7 @@
             </div>
 
             <!-- 第二行：左侧备注/描述；右侧实际/计划/金币（实际精确到秒） -->
-            <div class="flex items-center justify-between mt-1 pl-8">
+            <div class="flex items-center justify-between mt-1 pl-6">
               <div class="text-xs text-gray-500 truncate max-w-[60%] text-left">{{ t.remark || t.description }}</div>
               <div class="flex items-center gap-3 text-xs">
                 <!-- 中文注释：无论是否完成，只要有图片就显示图标；点击打开查看器（强制橙色避免主题覆盖） -->
@@ -347,6 +347,30 @@
       </template>
     </el-dialog>
 
+    <!-- 删除任务对话框（重复系列三种范围选择） -->
+    <el-dialog v-model="deleteDialogVisible" :width="isMobile ? '92vw' : '480px'">
+      <template #header>
+        <div class="flex items-center gap-2">
+          <el-icon class="text-red-500"><Delete /></el-icon>
+          <span class="font-semibold">删除任务</span>
+        </div>
+      </template>
+      <div class="space-y-3">
+        <div class="text-gray-700">请选择删除范围：</div>
+        <el-radio-group v-model="deleteScope">
+          <el-radio label="current">仅删除当前日程</el-radio>
+          <el-radio label="future">删除当前及未来全部日程</el-radio>
+          <el-radio label="all">删除所有日程</el-radio>
+        </el-radio-group>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <el-button @click="deleteDialogVisible=false">取消</el-button>
+          <el-button type="danger" @click="deleteScope==='current' ? doDeleteCurrent(deleteTarget!) : doDeleteSeries(deleteScope as 'future'|'all')">确定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!-- 回收站对话框 -->
     <el-dialog v-model="recycleVisible" title="回收站" width="600px">
       <el-table :data="recycleList" style="width: 100%">
@@ -420,7 +444,7 @@ import TaskImageUploader from '@/components/TaskImageUploader.vue'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 dayjs.extend(utc)
-import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, uploadTaskImage, type TaskItem } from '@/services/tasks'
+import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, uploadTaskImage, batchDelete, type TaskItem } from '@/services/tasks'
 import { Picture } from '@element-plus/icons-vue'
 import { prepareUpload } from '@/utils/image'
 const isMobile = ref(false)
@@ -454,9 +478,29 @@ const selectedDate = ref<string>(dayjs().format('YYYY-MM-DD'))
 const taskCountMap = computed<Record<string, number>>(() => {
   const map: Record<string, number> = {}
   for (const t of tasks.value) {
-    const d = t.start_date ? dayjs.utc(t.start_date).local().format('YYYY-MM-DD') : ''
-    if (!d) continue
-    map[d] = (map[d] || 0) + 1
+    const sDate = t.start_date ? dayjs(t.start_date).toDate() : null
+    const eDate = t.end_date ? dayjs(t.end_date).toDate() : undefined
+    if (!sDate) continue
+    const rawRepeat = (t as any).repeat || 'none'
+    const rep = String(rawRepeat).toLowerCase()
+    const type: 'none'|'daily'|'weekdays'|'weekly'|'monthly' =
+      /none|无|^$/i.test(rep) ? 'none' :
+      /daily|每天/i.test(rep) ? 'daily' :
+      /weekdays|工作日/i.test(rep) ? 'weekdays' :
+      /weekly|每周/i.test(rep) ? 'weekly' :
+      /monthly|每月/i.test(rep) ? 'monthly' : 'none'
+    if (type === 'none' || !eDate) {
+      const key = dayjs(sDate).format('YYYY-MM-DD')
+      map[key] = (map[key] || 0) + 1
+      continue
+    }
+    const dow = dayjs(sDate).day() === 0 ? 7 : dayjs(sDate).day()
+    const weeklyDays: number[] = Array.isArray((t as any).weekly_days) ? ((t as any).weekly_days as number[]) : [dow]
+    const dates = generateRepeatDates(sDate, eDate, type, weeklyDays)
+    for (const d of dates) {
+      const key = dayjs(d).format('YYYY-MM-DD')
+      map[key] = (map[key] || 0) + 1
+    }
   }
   return map
 })
@@ -465,14 +509,28 @@ const filteredTasks = computed(() => {
   if (filter.value === '已完成') result = result.filter((t) => t.status === 2)
   else if (filter.value === '待完成') result = result.filter((t) => t.status !== 2)
   if (categoryFilter.value !== '全部任务') result = result.filter((t) => (t.category || '') === categoryFilter.value)
-  // 中文注释：日期过滤，选中日期在任务的开始/截止范围内（无截止则按开始日期）
+  // 中文注释：日期过滤，使用重复规则生成发生日期，匹配选中日期
+  const selKey = dayjs(selectedDate.value).format('YYYY-MM-DD')
   result = result.filter((t) => {
-    const sd = t.start_date ? dayjs(t.start_date) : null
-    const ed = t.end_date ? dayjs(t.end_date) : null
-    const sel = dayjs(selectedDate.value)
-    if (!sd) return false
-    if (ed) return sel.isSame(sd, 'day') || (sel.isAfter(sd, 'day') && sel.isBefore(ed, 'day')) || sel.isSame(ed, 'day')
-    return sel.isSame(sd, 'day')
+    const sDate = t.start_date ? dayjs(t.start_date).toDate() : null
+    const eDate = t.end_date ? dayjs(t.end_date).toDate() : undefined
+    if (!sDate) return false
+    const rawRepeat = (t as any).repeat || 'none'
+    const rep = String(rawRepeat).toLowerCase()
+    const type: 'none'|'daily'|'weekdays'|'weekly'|'monthly' =
+      /none|无|^$/i.test(rep) ? 'none' :
+      /daily|每天/i.test(rep) ? 'daily' :
+      /weekdays|工作日/i.test(rep) ? 'weekdays' :
+      /weekly|每周/i.test(rep) ? 'weekly' :
+      /monthly|每月/i.test(rep) ? 'monthly' : 'none'
+    if (type === 'none' || !eDate) {
+      return dayjs(sDate).format('YYYY-MM-DD') === selKey
+    }
+    const dow = dayjs(sDate).day() === 0 ? 7 : dayjs(sDate).day()
+    const weeklyDays: number[] = Array.isArray((t as any).weekly_days) ? ((t as any).weekly_days as number[]) : [dow]
+    const dates = generateRepeatDates(sDate, eDate, type, weeklyDays)
+    const keys = new Set(dates.map((d) => dayjs(d).format('YYYY-MM-DD')))
+    return keys.has(selKey)
   })
   return result
 })
@@ -731,7 +789,26 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
 }
 // 取消切换状态功能：保留空函数避免引用错误（模板已移除）
 
+// 删除对话框状态（重复任务支持范围选择）
+const deleteDialogVisible = ref(false)
+const deleteScope = ref<'current'|'future'|'all'>('current')
+const deleteTarget = ref<TaskItem | null>(null)
+
+function isRepeatedTask(t: TaskItem): boolean {
+  const rep = String((t as any).repeat || '').trim()
+  if (!!t.series_id || !!t.end_date || rep !== '') return true
+  // 中文注释：后端暂未持久化 repeat/series_id 时，按“名称+分类”在列表中出现多次来判断为重复系列
+  const sameGroup = tasks.value.filter((x) => x.name === t.name && (x.category || '') === (t.category || ''))
+  return sameGroup.length >= 2
+}
+
 function confirmDelete(t: TaskItem) {
+  if (isRepeatedTask(t)) {
+    deleteTarget.value = t
+    deleteScope.value = 'current'
+    deleteDialogVisible.value = true
+    return
+  }
   ElMessageBox.confirm(`确认删除任务「${t.name}」？`, '提示', { type: 'warning' })
     .then(async () => {
       try {
@@ -743,6 +820,43 @@ function confirmDelete(t: TaskItem) {
       }
     })
     .catch(() => {})
+}
+
+async function doDeleteCurrent(t: TaskItem) {
+  try {
+    await deleteTask(t.id)
+    ElMessage.success('已删除当前日程')
+    deleteDialogVisible.value = false
+    await fetchTasks()
+  } catch (e: any) {
+    ElMessage.error(`删除失败：${e.message || e}`)
+  }
+}
+
+async function doDeleteSeries(scope: 'future'|'all') {
+  if (!deleteTarget.value) return
+  const target = deleteTarget.value
+  try {
+    // 中文注释：按 series_id 分组，若无则用“名称 + 分类”兜底
+    const group = tasks.value.filter((x) => {
+      if (target.series_id) return x.series_id === target.series_id
+      return x.name === target.name && (x.category || '') === (target.category || '')
+    })
+    // 仅当前及未来：筛选 start_date >= 选中日期；全部：整组
+    let candidates = group
+    if (scope === 'future') {
+      const th = dayjs(selectedDate.value).startOf('day')
+      candidates = group.filter((x) => dayjs(x.start_date).startOf('day').isSame(th) || dayjs(x.start_date).startOf('day').isAfter(th))
+    }
+    const ids = candidates.map((x) => x.id)
+    if (ids.length === 0) { ElMessage.info('未找到可删除的系列任务'); return }
+    await batchDelete(ids)
+    ElMessage.success(`已删除${scope==='all'?'整个系列':'当前及未来'}共 ${ids.length} 条`)
+    deleteDialogVisible.value = false
+    await fetchTasks()
+  } catch (e: any) {
+    ElMessage.error(`批量删除失败：${e.message || e}`)
+  }
 }
 
 

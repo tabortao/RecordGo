@@ -128,6 +128,7 @@ import TaskImageUploader from '@/components/TaskImageUploader.vue'
 // 中文注释：补充导入 updateTask，用于在图片上传后写入 image_json，避免未定义错误
 import { createTask, uploadTaskImage, updateTask } from '@/services/tasks'
 import { prepareUpload } from '@/utils/image'
+import dayjs from 'dayjs'
 
 const userId = 1 // 中文注释：示例用户ID，后续接入登录信息
 function goBack() { router.back() }
@@ -161,41 +162,61 @@ const rules = {
 async function submitForm() {
   try {
     // 中文注释：先创建任务，再上传本地图片，并更新 image_json
-    const d = new Date(form.start_date)
-    const payload = {
-      user_id: userId,
-      name: form.name,
-      description: form.description,
-      category: form.category,
-      score: form.score,
-      plan_minutes: form.plan_minutes,
-      start_date: d,
-      end_date: form.end_date
-    }
-    const t = await createTask(payload)
-    if ((form.local_images || []).length > 0) {
-      const paths: string[] = []
-      for (const f of form.local_images) {
-        try {
-          const webp = await prepareUpload(f as File)
-          const { path } = await uploadTaskImage(userId, webp, t.id)
-          paths.push(path)
-        } catch (err: any) {
-          console.error('上传任务图片失败', { task_id: t.id, filename: (f as File)?.name, message: err?.message || err })
+    const start = new Date(form.start_date)
+    const end = form.end_date ? new Date(form.end_date) : undefined
+    // 中文注释：生成重复发生日期；若未设置重复或没有截止日期，则只创建一个实例
+    const dates = (() => {
+      const out: Date[] = []
+      if (!end || form.repeat_type === 'none') return [start]
+      const s = dayjs(start).startOf('day')
+      const e = dayjs(end).startOf('day')
+      if (e.isBefore(s)) return [start]
+      if (form.repeat_type === 'daily') {
+        let d = s.clone(); while (!d.isAfter(e)) { out.push(d.toDate()); d = d.add(1, 'day') }
+      } else if (form.repeat_type === 'weekdays') {
+        let d = s.clone(); while (!d.isAfter(e)) { const w = d.day(); if (w>=1 && w<=5) out.push(d.toDate()); d = d.add(1,'day') }
+      } else if (form.repeat_type === 'weekly') {
+        // 中文注释：若未选择星期，默认使用开始日期对应的星期
+        const dow = s.day()===0?7:s.day()
+        const set = new Set((form.weekly_days && form.weekly_days.length>0) ? form.weekly_days : [dow])
+        let d = s.clone(); while (!d.isAfter(e)) { const w = d.day()===0?7:d.day(); if (set.has(w)) out.push(d.toDate()); d = d.add(1,'day') }
+      } else if (form.repeat_type === 'monthly') {
+        let d = s.clone(); const dom = s.date(); while (!d.isAfter(e)) { const c = d.date(dom); if (c.month()===d.month() && !c.isAfter(e)) out.push(c.toDate()); d = d.add(1,'month') }
+      }
+      return out.length>0 ? out : [start]
+    })()
+
+    const created: number[] = []
+    for (const d of dates) {
+      const t = await createTask({
+        user_id: userId,
+        name: form.name,
+        description: form.description,
+        category: form.category,
+        score: form.score,
+        plan_minutes: form.plan_minutes,
+        start_date: d,
+        end_date: undefined
+      })
+      // 中文注释：为每个实例上传图片，并更新 image_json
+      if ((form.local_images || []).length > 0) {
+        const paths: string[] = []
+        for (const f of form.local_images) {
+          try {
+            const webp = await prepareUpload(f as File)
+            const { path } = await uploadTaskImage(userId, webp, t.id)
+            paths.push(path)
+          } catch (err: any) {
+            console.error('上传任务图片失败', { task_id: t.id, filename: (f as File)?.name, message: err?.message || err })
+          }
+        }
+        if (paths.length > 0) {
+          try { await updateTask(t.id, { image_json: JSON.stringify(paths) }) } catch {}
         }
       }
-      // 中文注释：上传完成后，将图片相对路径写入任务的 image_json（JSON 数组字符串）
-      if (paths.length > 0) {
-        try {
-          await updateTask(t.id, { image_json: JSON.stringify(paths) })
-          // 可选：更新本地表单状态，便于返回后立即显示
-          form.images = paths
-        } catch (err: any) {
-          console.error('更新任务图片列表失败', { task_id: t.id, message: err?.message || err, response: err?.response?.data })
-        }
-      }
+      created.push(t.id)
     }
-    ElMessage.success('创建成功')
+    ElMessage.success(`创建成功${created.length>1?`（${created.length}条）`:''}`)
     router.back()
   } catch (e: any) {
     ElMessage.error(e.message || '创建失败')
