@@ -16,6 +16,19 @@
         <svg width="256" height="256" viewBox="0 0 256 256">
           <!-- 背景轨道 -->
           <circle cx="128" cy="128" r="100" stroke="#4a4a48" stroke-width="12" fill="none" />
+          <!-- 钟表刻度：60 个刻度，5 的倍数加粗加长 -->
+          <g stroke="#B8CEE8" opacity="0.7">
+            <template v-for="i in 60" :key="i">
+              <line
+                x1="128"
+                y1="28"
+                x2="128"
+                :y2="((i-1) % 5 === 0) ? 44 : 36"
+                :stroke-width="((i-1) % 5 === 0) ? 2.5 : 1.5"
+                :transform="'rotate(' + ((i-1) * 6) + ' 128 128)'"
+              />
+            </template>
+          </g>
           <!-- 进度弧线：倒计时剩余比例，起点在上方（-90°旋转） -->
           <circle
             cx="128" cy="128" r="100"
@@ -99,14 +112,16 @@ let timer: any = null
 // 中文注释：移除未使用的文本计算，避免无用警告
 const mm = computed(() => String(Math.floor(remaining.value / 60)).padStart(2, '0'))
 const ss = computed(() => String(remaining.value % 60).padStart(2, '0'))
-// 中文注释：表盘进度计算（倒计时浅橙色区域逐渐减少）
-const totalSeconds = computed(() => Math.max(1, workM.value * 60))
-const progressRatio = computed(() => {
-  const used = mode.value === 'countdown' ? remaining.value : Math.min(totalSeconds.value, remaining.value)
-  return Math.min(1, Math.max(0, used / totalSeconds.value))
+// 中文注释：表盘进度按 60 分钟满圈映射。倒计时显示剩余与 60 的比例，正计时显示剩余（计划-已用）与 60 的比例。
+const dialRatio = computed(() => {
+  if (mode.value === 'countdown') {
+    return Math.min(1, Math.max(0, remaining.value / 3600))
+  }
+  const left = Math.max(0, workM.value * 60 - remaining.value)
+  return Math.min(1, left / 3600)
 })
 const circumference = 2 * Math.PI * 100
-const dashOffset = computed(() => circumference * (1 - progressRatio.value))
+const dashOffset = computed(() => circumference * (1 - dialRatio.value))
 
 function toggleMode() {
   // 中文注释：切换模式，正计时从 00:00 开始，倒计时从计划时长开始

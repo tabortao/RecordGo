@@ -5,6 +5,8 @@
       <el-icon :size="18" class="cursor-pointer" :style="{ color: '#B8CEE8' }" @click="goBack"><ArrowLeft /></el-icon>
       <el-icon :size="18" :style="{ color: '#B8CEE8' }"><Clock /></el-icon>
       <h2 class="font-semibold" :style="{ color: '#B8CEE8' }">番茄钟</h2>
+      <!-- 右上角系统时间显示 -->
+      <div class="ml-auto font-mono text-sm" :style="{ color: '#B8CEE8' }">{{ systemTime }}</div>
     </div>
     <!-- 中文注释：将任务标题、备注、预计时长融入到上方定时器组件，取消下方信息卡片；居中显示 -->
     <div class="max-w-3xl mx-auto">
@@ -15,13 +17,14 @@
 
 <script setup lang="ts">
 // 中文注释：番茄钟独立页面，从路由参数中读取任务ID并加载任务信息
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { ArrowLeft, Clock } from '@element-plus/icons-vue'
 import router from '@/router'
 import TomatoTimer from '@/components/TomatoTimer.vue'
 import { useRoute } from 'vue-router'
 import { getTask, completeTomato, updateTaskStatus } from '@/services/tasks'
 import { ElMessage } from 'element-plus'
+import dayjs from 'dayjs'
 
 const route = useRoute()
 const taskId = Number(route.params.id)
@@ -30,8 +33,15 @@ function goBack() { router.back() }
 const workMinutes = ref<number>(20)
 const taskName = ref<string>('')
 const taskRemark = ref<string>('')
+const systemTime = ref<string>('')
+let clockTimer: any = null
 
 onMounted(async () => {
+  // 初始化系统时间显示并每秒更新
+  systemTime.value = dayjs().format('HH:mm:ss')
+  clockTimer = setInterval(() => {
+    systemTime.value = dayjs().format('HH:mm:ss')
+  }, 1000)
   if (!isNaN(taskId)) {
     try {
       const t = await getTask(taskId)
@@ -42,6 +52,10 @@ onMounted(async () => {
       ElMessage.error(e.message || '加载任务失败')
     }
   }
+})
+
+onUnmounted(() => {
+  if (clockTimer) clearInterval(clockTimer)
 })
 
 async function onTomatoComplete(seconds?: number) {
