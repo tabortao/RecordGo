@@ -8,14 +8,12 @@
     <!-- 中文注释：时间居中，右侧提供模式切换图标；备注在时间下方显示为灰色小字 -->
     <!-- 中文注释：夜间主题 - 时间与图标颜色调整为浅色（#B8CEE8），使对比清晰 -->
     <!-- 中文注释：中部区域使用 flex-1 居中，让时间显示位于顶部与底部之间的正中 -->
-    <div class="flex-1 flex flex-col items-center justify-center gap-3">
-      <!-- 上方集成任务标题，响应式居中显示（可选） -->
-      <div class="text-sm" v-if="props.taskName" :style="{ color: '#B8CEE8' }">任务：{{ props.taskName }}</div>
+    <div class="flex-1 flex flex-col items-center justify-center gap-3 pb-28">
       <!-- 中文注释：表盘样式 + 数字时间：浅橙色进度圈在倒计时模式下逐渐减少 -->
       <div class="relative w-64 h-64">
         <svg width="256" height="256" viewBox="0 0 256 256">
           <!-- 背景轨道 -->
-          <circle cx="128" cy="128" r="100" stroke="#4a4a48" stroke-width="12" fill="none" />
+          <circle cx="128" cy="128" r="100" stroke="#4a4a48" stroke-width="16" fill="none" />
           <!-- 钟表刻度：60 个刻度，5 的倍数加粗加长 -->
           <g stroke="#B8CEE8" opacity="0.7">
             <template v-for="i in 60" :key="i">
@@ -32,7 +30,7 @@
           <!-- 进度弧线：倒计时剩余比例，起点在上方（-90°旋转） -->
           <circle
             cx="128" cy="128" r="100"
-            stroke="#F4A261" stroke-width="12" fill="none" stroke-linecap="round"
+            stroke="#F4A261" stroke-width="16" fill="none" stroke-linecap="round"
             :style="{ transition: 'stroke-dashoffset .3s linear' }"
             :stroke-dasharray="circumference"
             :stroke-dashoffset="dashOffset"
@@ -43,9 +41,9 @@
             <template v-for="i in 60" :key="'sep-'+i">
               <line
                 x1="128"
-                y1="22"
+                y1="20"
                 x2="128"
-                y2="34"
+                y2="36"
                 stroke-width="3"
                 :transform="'rotate(' + ((i-1) * 6) + ' 128 128)'"
               />
@@ -79,7 +77,7 @@
     </div>
 
     <!-- 中文注释：底部区域 - 包含时间预设/自定义与控制按钮，更贴近页面底部 -->
-    <div class="mt-auto pt-4 pb-2 space-y-3">
+    <div class="absolute bottom-4 left-0 right-0 space-y-3">
       <!-- 中文注释：倒计时模式下显示预设与自定义；正计时不显示这些 -->
       <div class="flex items-center justify-center gap-3" v-if="mode==='countdown'">
       <div class="flex items-center gap-2">
@@ -134,10 +132,11 @@ const ss = computed(() => String(remaining.value % 60).padStart(2, '0'))
 // 中文注释：表盘进度按 60 分钟满圈映射。倒计时显示剩余与 60 的比例，正计时显示剩余（计划-已用）与 60 的比例。
 const dialRatio = computed(() => {
   if (mode.value === 'countdown') {
+    // 倒计时：显示剩余相对 60 分钟的比例（逐步减少）
     return Math.min(1, Math.max(0, remaining.value / 3600))
   }
-  const left = Math.max(0, workM.value * 60 - remaining.value)
-  return Math.min(1, left / 3600)
+  // 正计时：显示已用时间相对 60 分钟的比例（从 0 逐步增加）
+  return Math.min(1, Math.max(0, remaining.value / 3600))
 })
 const circumference = 2 * Math.PI * 100
 const dashOffset = computed(() => circumference * (1 - dialRatio.value))
