@@ -96,13 +96,15 @@ onMounted(async () => {
       // 中文注释：若当前存在同一任务正在计时，则不重置剩余时间（保持连续性）；
       // 仅在未运行或切换到不同任务时，重置为预计时间。
       const expectedSec = (workMinutes.value || 20) * 60
+      const isCountup = store.tomato.mode === 'countup'
       const sameRunning = store.tomato.running && store.tomato.currentTaskId === taskId
       if (store.tomato.fixedTomatoPage) {
-        // 中文注释：固定页面模式下，每次进入都重置为预计时长，且保持未运行（需要用户点击“开始”）
-        store.updateTomato({ remainingSeconds: expectedSec, durationMinutes: workMinutes.value, currentTaskId: taskId, running: false })
+        // 中文注释：固定页面模式下，每次进入根据设置模式重置：正计时为 0，倒计时为预计时长；保持未运行（需用户点击“开始”）
+        store.updateTomato({ remainingSeconds: isCountup ? 0 : expectedSec, durationMinutes: workMinutes.value, currentTaskId: taskId, running: false })
       } else {
         if (!sameRunning) {
-          store.updateTomato({ remainingSeconds: expectedSec, durationMinutes: workMinutes.value, currentTaskId: taskId })
+          // 中文注释：非固定模式且未连续计时：进入页面时根据设置模式重置剩余/已用秒数
+          store.updateTomato({ remainingSeconds: isCountup ? 0 : expectedSec, durationMinutes: workMinutes.value, currentTaskId: taskId })
         } else {
           // 保持当前剩余时间，仅同步任务ID与时长
           store.updateTomato({ durationMinutes: workMinutes.value, currentTaskId: taskId })

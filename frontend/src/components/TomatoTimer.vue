@@ -94,11 +94,14 @@
       <el-button size="small" @click="applyCustom" :style="nightBtnStyle">应用</el-button>
     </div>
 
-    <!-- 控制按钮 -->
+    <!-- 控制按钮（精简）：移除“重置”，合并“开始/继续”为一个主按钮；运行时显示“暂停” -->
     <div class="flex justify-center gap-2 mt-2">
-      <el-button @click="start" :disabled="running" :style="nightBtnStyle">开始</el-button>
-      <el-button @click="togglePauseResume" :disabled="!started" :style="nightBtnStyle">{{ running ? '暂停' : '继续' }}</el-button>
-      <el-button @click="reset" :style="nightBtnStyle">重置</el-button>
+      <template v-if="running">
+        <el-button @click="pause" :style="nightBtnStyle">暂停</el-button>
+      </template>
+      <template v-else>
+        <el-button @click="onMainAction" :style="nightBtnStyle">{{ started ? '继续' : '开始' }}</el-button>
+      </template>
       <el-button @click="complete" :style="nightBtnStyle">完成</el-button>
     </div>
 
@@ -281,6 +284,11 @@ function togglePauseResume() {
     store.updateTomato({ running: true, startAtMs: startAtMs.value, endAtMs: endAtMs.value })
     if (!timer) timer = setInterval(tick, 1000)
   }
+}
+// 中文注释：主按钮动作（开始/继续）：未开始执行 start，已开始但暂停执行恢复
+function onMainAction() {
+  if (!started.value) start()
+  else togglePauseResume()
 }
 function reset() {
   pause()
