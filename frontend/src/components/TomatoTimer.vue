@@ -113,7 +113,8 @@ import { computed, onUnmounted, ref, watch } from 'vue'
 import { useAppState } from '@/stores/appState'
 import { RefreshRight } from '@element-plus/icons-vue'
 
-const props = defineProps<{ workMinutes?: number; breakMinutes?: number; taskName?: string; taskRemark?: string }>()
+// 中文注释：新增 taskId，便于悬浮球返回到独立番茄钟页面
+const props = defineProps<{ workMinutes?: number; breakMinutes?: number; taskName?: string; taskRemark?: string; taskId?: number }>()
 const emit = defineEmits<{ (e: 'complete', seconds: number): void }>()
 const store = useAppState()
 
@@ -205,7 +206,8 @@ function start() {
   started.value = true
   // 正计时从 00:00 开始
   if (mode.value === 'countup') remaining.value = 0
-  store.updateTomato({ running: true, mode: mode.value, durationMinutes: workM.value, remainingSeconds: remaining.value })
+  // 中文注释：开始时仅更新运行状态与当前任务ID；是否显示悬浮球由页面返回决定
+  store.updateTomato({ running: true, mode: mode.value, durationMinutes: workM.value, remainingSeconds: remaining.value, currentTaskId: props.taskId ?? null })
   if (!timer) timer = setInterval(tick, 1000)
 }
 function pause() {
@@ -269,6 +271,8 @@ watch(phase, () => {
 onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
+// 中文注释：向父组件暴露停止/开始/暂停方法，便于页面“返回”时控制行为
+defineExpose({ stop: stopInternal, start, pause })
 </script>
 
 <style scoped>

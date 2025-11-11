@@ -7,6 +7,8 @@ export interface TomatoState {
   durationMinutes: number
   remainingSeconds: number
   fixedTomatoPage: boolean
+  showFloating: boolean
+  currentTaskId: number | null
 }
 
 export interface Permissions {
@@ -44,7 +46,9 @@ const DEFAULT_STATE: AppState = {
     mode: 'countdown',
     durationMinutes: 20,
     remainingSeconds: 20 * 60,
-    fixedTomatoPage: false
+    fixedTomatoPage: true,
+    showFloating: false,
+    currentTaskId: null
   },
   speech: {
     enabled: true,

@@ -14,7 +14,7 @@
     </div>
     <!-- 中文注释：中部容器高度按 calc(100vh - 顶部高度 - 底部高度) 计算，确保垂直居中且无滚动 -->
     <div class="flex items-center justify-center" :style="{ height: midHeight }">
-      <TomatoTimer :work-minutes="workMinutes" :break-minutes="5" :task-name="taskName" :task-remark="taskRemark" @complete="onTomatoComplete" />
+      <TomatoTimer ref="timerRef" :work-minutes="workMinutes" :break-minutes="5" :task-name="taskName" :task-remark="taskRemark" :task-id="taskId" @complete="onTomatoComplete" />
     </div>
   </div>
 </template>
@@ -26,13 +26,26 @@ import { ArrowLeft, Clock } from '@element-plus/icons-vue'
 import router from '@/router'
 import TomatoTimer from '@/components/TomatoTimer.vue'
 import { useRoute } from 'vue-router'
+import { useAppState } from '@/stores/appState'
 import { getTask, completeTomato, updateTaskStatus } from '@/services/tasks'
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
 
 const route = useRoute()
+const store = useAppState()
+const timerRef = ref<InstanceType<typeof TomatoTimer> | null>(null)
 const taskId = Number(route.params.id)
-function goBack() { router.back() }
+function goBack() {
+  if (store.tomato.running) {
+    if (store.tomato.fixedTomatoPage) {
+      timerRef.value?.stop?.()
+      store.updateTomato({ showFloating: false })
+    } else {
+      store.updateTomato({ showFloating: true })
+    }
+  }
+  router.back()
+}
 
 const workMinutes = ref<number>(20)
 const taskName = ref<string>('')

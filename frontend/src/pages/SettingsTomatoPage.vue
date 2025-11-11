@@ -3,12 +3,12 @@
     <div class="flex items-center gap-2">
       <el-icon :size="18" class="cursor-pointer" style="color:#64748b" @click="goBack"><ArrowLeft /></el-icon>
       <el-icon :size="18" style="color:#ef4444"><Timer /></el-icon>
-      <h2 class="font-semibold">番茄钟设置</h2>
+      <h2 class="font-semibold text-base">番茄钟设置</h2>
     </div>
 
     <!-- 模式设置（倒计时/正计时） -->
     <div class="space-y-2">
-      <label class="text-sm text-gray-600">计时模式</label>
+      <label class="text-base text-gray-700">计时模式</label>
       <el-radio-group v-model="mode">
         <el-radio label="countdown">倒计时</el-radio>
         <el-radio label="countup">正计时</el-radio>
@@ -17,14 +17,14 @@
 
     <!-- 预设时长（分钟） -->
     <div class="space-y-2">
-      <label class="text-sm text-gray-600">预设时长（分钟）</label>
+      <label class="text-base text-gray-700">预设时长（分钟）</label>
       <el-input-number v-model="duration" :min="1" :max="180" />
     </div>
 
     <!-- 固定全屏番茄钟页面 -->
     <div class="space-y-2">
       <el-switch v-model="fixed" active-text="固定番茄钟页面" inactive-text="不固定" />
-      <div class="text-xs text-gray-500">开启后，进入番茄钟为固定全屏，适合专注模式。</div>
+      <div class="text-base text-gray-600">开启后，进入番茄钟为固定全屏，适合专注模式。</div>
     </div>
 
     <!-- 取消底部保存/取消按钮；用户点击左侧返回图标时自动保存并返回 -->

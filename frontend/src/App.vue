@@ -6,6 +6,8 @@
     <!-- 中文注释：登录/注册页面隐藏底部导航 -->
     <BottomNav v-if="!noNav" />
   </div>
+  <!-- 中文注释：非固定模式下，返回后显示悬浮番茄钟继续计时 -->
+  <FloatingTomato v-if="shouldShowFloating" />
   
   <!-- 中文注释：全局加载中占位（可根据需要改造） -->
   <el-backtop />
@@ -14,11 +16,15 @@
 <script setup lang="ts">
 // 中文注释：注册底部导航组件与根据路由控制显示
 import BottomNav from '@/components/BottomNav.vue'
+import FloatingTomato from '@/components/FloatingTomato.vue'
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
+import { useAppState } from '@/stores/appState'
 
 const route = useRoute()
 const noNav = computed(() => route.meta?.noNav === true)
+const store = useAppState()
+const shouldShowFloating = computed(() => store.tomato.showFloating && store.tomato.running)
 </script>
 
 <style scoped>
