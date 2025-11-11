@@ -1,42 +1,72 @@
 <template>
   <!-- 中文注释：番茄钟组件（增强版），支持倒计时/正计时、预设与自定义、开始/暂停/继续/完成 -->
-  <div class="p-4 space-y-4 relative">
+  <!-- 中文注释：容器改为充满视口高度，底部区域更贴近页面底部 -->
+  <div class="relative p-4 flex flex-col min-h-screen justify-between">
 
     <!-- 中文注释：移除组件内部标题，避免与弹窗标题重复显示 -->
 
     <!-- 中文注释：时间居中，右侧提供模式切换图标；备注在时间下方显示为灰色小字 -->
-    <div class="flex items-center justify-center gap-3">
-      <div class="text-6xl font-mono">{{ mm }}:{{ ss }}</div>
-      <el-icon
-        class="cursor-pointer"
-        :title="mode==='countdown' ? '切换为正计时' : '切换为倒计时'"
-        :style="{ color: mode==='countdown' ? '#ef4444' : '#10b981' }"
-        @click="toggleMode"
-      >
-        <RefreshRight />
-      </el-icon>
+    <!-- 中文注释：夜间主题 - 时间与图标颜色调整为浅色（#B8CEE8），使对比清晰 -->
+    <!-- 中文注释：中部区域使用 flex-1 居中，让时间显示位于顶部与底部之间的正中 -->
+    <div class="flex-1 flex flex-col items-center justify-center gap-3">
+      <!-- 上方集成任务标题，响应式居中显示（可选） -->
+      <div class="text-sm" v-if="props.taskName" :style="{ color: '#B8CEE8' }">任务：{{ props.taskName }}</div>
+      <!-- 中文注释：表盘样式 + 数字时间：浅橙色进度圈在倒计时模式下逐渐减少 -->
+      <div class="relative w-64 h-64">
+        <svg width="256" height="256" viewBox="0 0 256 256">
+          <!-- 背景轨道 -->
+          <circle cx="128" cy="128" r="100" stroke="#4a4a48" stroke-width="12" fill="none" />
+          <!-- 进度弧线：倒计时剩余比例，起点在上方（-90°旋转） -->
+          <circle
+            cx="128" cy="128" r="100"
+            stroke="#F4A261" stroke-width="12" fill="none" stroke-linecap="round"
+            :style="{ transition: 'stroke-dashoffset .3s linear' }"
+            :stroke-dasharray="circumference"
+            :stroke-dashoffset="dashOffset"
+            transform="rotate(-90 128 128)"
+          />
+        </svg>
+        <!-- 数字时间置于表盘中心 -->
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="text-7xl font-mono" :style="{ color: '#B8CEE8' }">{{ mm }}:{{ ss }}</div>
+        </div>
+      </div>
+      <!-- 模式切换图标置于时间下方，避免与中心重叠 -->
+      <div>
+        <el-icon
+          class="cursor-pointer"
+          :title="mode==='countdown' ? '切换为正计时' : '切换为倒计时'"
+          :style="{ color: '#B8CEE8' }"
+          @click="toggleMode"
+        >
+          <RefreshRight />
+        </el-icon>
+      </div>
+      <div class="text-center text-xs" :style="{ color: '#9aa8b8' }" v-if="props.taskRemark">备注：{{ props.taskRemark }}</div>
+      <!-- 中文注释：移除预计时长的小字提示，界面更简洁 -->
     </div>
-    <div class="text-center text-xs text-gray-500" v-if="props.taskRemark">{{ props.taskRemark }}</div>
 
-    <!-- 中文注释：倒计时模式下显示预设与自定义；正计时不显示这些 -->
-    <div class="flex items-center justify-center gap-3" v-if="mode==='countdown'">
+    <!-- 中文注释：底部区域 - 包含时间预设/自定义与控制按钮，更贴近页面底部 -->
+    <div class="mt-auto pt-4 pb-2 space-y-3">
+      <!-- 中文注释：倒计时模式下显示预设与自定义；正计时不显示这些 -->
+      <div class="flex items-center justify-center gap-3" v-if="mode==='countdown'">
       <div class="flex items-center gap-2">
-        <el-tag class="cursor-pointer" @click="setDuration(10)">10分钟</el-tag>
-        <el-tag class="cursor-pointer" @click="setDuration(20)">20分钟</el-tag>
+        <el-tag class="cursor-pointer" @click="setDuration(10)" :style="nightTagStyle">10分钟</el-tag>
+        <el-tag class="cursor-pointer" @click="setDuration(20)" :style="nightTagStyle">20分钟</el-tag>
       </div>
       <el-input-number v-model="customMinutes" :min="1" :max="240" />
-      <el-button size="small" @click="applyCustom">应用</el-button>
+      <el-button size="small" @click="applyCustom" :style="nightBtnStyle">应用</el-button>
     </div>
 
     <!-- 控制按钮 -->
     <div class="flex justify-center gap-2 mt-2">
-      <el-button type="primary" @click="start" :disabled="running">开始</el-button>
-      <el-button :type="running ? 'warning' : 'success'" @click="togglePauseResume" :disabled="!started">{{ running ? '暂停' : '继续' }}</el-button>
-      <el-button type="warning" @click="reset">重置</el-button>
-      <el-button type="danger" @click="complete">完成</el-button>
+      <el-button @click="start" :disabled="running" :style="nightBtnStyle">开始</el-button>
+      <el-button @click="togglePauseResume" :disabled="!started" :style="nightBtnStyle">{{ running ? '暂停' : '继续' }}</el-button>
+      <el-button @click="reset" :style="nightBtnStyle">重置</el-button>
+      <el-button @click="complete" :style="nightBtnStyle">完成</el-button>
     </div>
 
-    <div class="text-center text-gray-500 text-xs">完成后将上报实际耗时并自动标记任务完成</div>
+    </div>
   </div>
 </template>
 
@@ -57,16 +87,26 @@ const breakM = computed(() => props.breakMinutes ?? 5)
 type Phase = 'work' | 'break'
 const phase = ref<Phase>('work')
 const mode = ref<'countdown' | 'countup'>(store.tomato.mode)
+// 中文注释：夜间主题按钮与 Tag 样式（与深色背景协调）
+const nightBtnStyle = { backgroundColor: '#3a3a38', color: '#B8CEE8', borderColor: '#4a4a48' }
+const nightTagStyle = { backgroundColor: '#3a3a38', color: '#B8CEE8', borderColor: '#4a4a48' }
 const running = ref(store.tomato.running)
 const remaining = ref(store.tomato.remainingSeconds || (mode.value === 'countdown' ? workM.value * 60 : 0))
 const started = ref(false)
 const customMinutes = ref(workM.value)
 let timer: any = null
 
-const phaseText = computed(() => (phase.value === 'work' ? '工作中' : '休息中'))
-const headerText = computed(() => (mode.value === 'countdown' ? '倒计时' : '正计时'))
+// 中文注释：移除未使用的文本计算，避免无用警告
 const mm = computed(() => String(Math.floor(remaining.value / 60)).padStart(2, '0'))
 const ss = computed(() => String(remaining.value % 60).padStart(2, '0'))
+// 中文注释：表盘进度计算（倒计时浅橙色区域逐渐减少）
+const totalSeconds = computed(() => Math.max(1, workM.value * 60))
+const progressRatio = computed(() => {
+  const used = mode.value === 'countdown' ? remaining.value : Math.min(totalSeconds.value, remaining.value)
+  return Math.min(1, Math.max(0, used / totalSeconds.value))
+})
+const circumference = 2 * Math.PI * 100
+const dashOffset = computed(() => circumference * (1 - progressRatio.value))
 
 function toggleMode() {
   // 中文注释：切换模式，正计时从 00:00 开始，倒计时从计划时长开始
@@ -87,7 +127,8 @@ function tick() {
     }
     stopInternal()
     if (phase.value === 'work') {
-      emit('complete')
+      // 中文注释：工作阶段倒计时结束，按计划时长（秒）上报
+      emit('complete', workM.value * 60)
       phase.value = 'break'
       remaining.value = breakM.value * 60
     } else {
@@ -100,7 +141,8 @@ function tick() {
     store.updateTomato({ remainingSeconds: remaining.value })
     if (remaining.value >= workM.value * 60) {
       stopInternal()
-      emit('complete')
+      // 中文注释：正计时完成时按累计秒数上报
+      emit('complete', remaining.value)
     }
   }
 }

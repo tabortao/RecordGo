@@ -1,23 +1,14 @@
 <template>
-  <!-- 中文注释：独立的番茄钟页面，顶部返回图标；页面居中展示定时器，响应式布局 -->
-  <div class="p-4 space-y-4">
+  <!-- 中文注释：独立的番茄钟页面（夜间主题），顶部返回图标；深色背景响应式居中展示定时器 -->
+  <div class="min-h-screen p-4 space-y-4" :style="{ backgroundColor: '#30302E' }">
     <div class="flex items-center gap-2">
-      <el-icon :size="18" class="cursor-pointer text-gray-600" @click="goBack"><ArrowLeft /></el-icon>
-      <el-icon :size="18" class="text-red-500"><Clock /></el-icon>
-      <h2 class="font-semibold">番茄钟</h2>
+      <el-icon :size="18" class="cursor-pointer" :style="{ color: '#B8CEE8' }" @click="goBack"><ArrowLeft /></el-icon>
+      <el-icon :size="18" :style="{ color: '#B8CEE8' }"><Clock /></el-icon>
+      <h2 class="font-semibold" :style="{ color: '#B8CEE8' }">番茄钟</h2>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      <el-card class="rounded-lg md:col-span-2 xl:col-span-2 flex items-center justify-center">
-        <!-- 中文注释：定时器组件居中，传入任务信息与默认时间 -->
-        <TomatoTimer :work-minutes="workMinutes" :break-minutes="5" :task-name="taskName" :task-remark="taskRemark" @complete="onTomatoComplete" />
-      </el-card>
-      <el-card class="rounded-lg">
-        <div class="text-sm text-gray-600">
-          任务：{{ taskName || '未指定' }}
-        </div>
-        <div class="text-sm text-gray-600 mt-1">备注：{{ taskRemark || '无' }}</div>
-        <div class="text-sm text-gray-600 mt-1">预设工作时长：{{ workMinutes }} 分钟</div>
-      </el-card>
+    <!-- 中文注释：将任务标题、备注、预计时长融入到上方定时器组件，取消下方信息卡片；居中显示 -->
+    <div class="max-w-3xl mx-auto">
+      <TomatoTimer :work-minutes="workMinutes" :break-minutes="5" :task-name="taskName" :task-remark="taskRemark" @complete="onTomatoComplete" />
     </div>
   </div>
 </template>
