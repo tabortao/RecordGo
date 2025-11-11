@@ -8,7 +8,7 @@
     <!-- 中文注释：时间居中，右侧提供模式切换图标；备注在时间下方显示为灰色小字 -->
     <!-- 中文注释：夜间主题 - 时间与图标颜色调整为浅色（#B8CEE8），使对比清晰 -->
     <!-- 中文注释：中部区域使用 flex-1 居中，让时间显示位于顶部与底部之间的正中 -->
-    <div class="flex-1 flex flex-col items-center justify-center gap-3 pb-32">
+    <div class="flex-1 flex flex-col items-center justify-center gap-3 pt-16 pb-32">
       <!-- 中文注释：表盘样式 + 数字时间：浅橙色进度圈在倒计时模式下逐渐减少 -->
       <div class="relative w-64 h-64">
         <svg width="256" height="256" viewBox="0 0 256 256">
@@ -57,8 +57,13 @@
           </g>
         </svg>
         <!-- 数字时间置于表盘中心 -->
+        <!-- 中文注释：中心时间区域改为上下结构；上方笑脸、下方红色番茄图标 -->
         <div class="absolute inset-0 flex items-center justify-center">
-          <div class="text-6xl font-mono" :style="{ color: '#B8CEE8' }">{{ mm }}:{{ ss }}</div>
+          <div class="flex flex-col items-center justify-center">
+            <div class="text-xl select-none" :style="{ color: '#B8CEE8' }">😊</div>
+            <div class="text-6xl font-mono" :style="{ color: '#B8CEE8' }">{{ mm }}:{{ ss }}</div>
+            <img src="@/assets/tomato.png" alt="番茄" class="w-6 h-6 mt-2 select-none" />
+          </div>
         </div>
       </div>
       <!-- 模式切换图标置于时间下方，避免与中心重叠 -->
@@ -84,7 +89,8 @@
         <el-tag class="cursor-pointer" @click="setDuration(10)" :style="nightTagStyle">10分钟</el-tag>
         <el-tag class="cursor-pointer" @click="setDuration(20)" :style="nightTagStyle">20分钟</el-tag>
       </div>
-      <el-input-number v-model="customMinutes" :min="1" :max="240" />
+      <!-- 中文注释：步进改为5分钟，点击 + / - 按5分钟增减 -->
+      <el-input-number v-model="customMinutes" :min="1" :max="240" :step="5" />
       <el-button size="small" @click="applyCustom" :style="nightBtnStyle">应用</el-button>
     </div>
 
