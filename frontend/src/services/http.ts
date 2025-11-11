@@ -21,10 +21,37 @@ instance.interceptors.request.use((config) => {
 
 // 响应拦截器：统一业务错误处理
 instance.interceptors.response.use(
-  (resp) => {
+  async (resp) => {
     const payload = resp.data
     if (payload && typeof payload.code !== 'undefined') {
-      if (payload.code === 0) return payload.data
+      if (payload.code === 0) {
+        // 中文注释：统一在成功响应中同步最新金币，避免页面各处手动维护导致不一致
+        try {
+          const data = payload.data
+          let latestCoins: any = undefined
+          if (data && typeof data === 'object') {
+            if (Object.prototype.hasOwnProperty.call(data, 'user_coins')) {
+              latestCoins = (data as any).user_coins
+            } else if (Object.prototype.hasOwnProperty.call(data, 'coins')) {
+              latestCoins = (data as any).coins
+            } else if ((data as any).user && typeof (data as any).user === 'object') {
+              const u = (data as any).user
+              if (Object.prototype.hasOwnProperty.call(u, 'coins')) latestCoins = (u as any).coins
+            }
+          }
+          const n = Number(latestCoins)
+          if (Number.isFinite(n)) {
+            // 中文注释：为避免循环依赖，采用按需动态导入 Store 并在此处写入
+            const { useAppState } = await import('@/stores/appState')
+            const { useAuth } = await import('@/stores/auth')
+            const appState = useAppState()
+            const auth = useAuth()
+            appState.setCoins(n)
+            auth.updateUser({ coins: n })
+          }
+        } catch (_) {}
+        return payload.data
+      }
       // 中文注释：业务错误统一抛出，交由上层捕获
       return Promise.reject(new Error(payload.message || '业务错误'))
     }
