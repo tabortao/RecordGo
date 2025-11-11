@@ -109,7 +109,7 @@
 <script setup lang="ts">
 // 中文注释：接收任务名与备注 + 工作/休息分钟数（合并定义）
 // 中文注释：番茄钟逻辑，工作与休息两个阶段，倒计时结束后切换阶段并在工作结束时触发 complete 事件
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useAppState } from '@/stores/appState'
 import { RefreshRight } from '@element-plus/icons-vue'
 
@@ -270,6 +270,14 @@ watch(phase, () => {
 
 onUnmounted(() => {
   if (timer) clearInterval(timer)
+})
+// 中文注释：如果进入页面时番茄钟仍在运行（来自悬浮球），自动继续计时
+onMounted(() => {
+  if (store.tomato.running) {
+    running.value = true
+    started.value = true
+    if (!timer) timer = setInterval(tick, 1000)
+  }
 })
 // 中文注释：向父组件暴露停止/开始/暂停方法，便于页面“返回”时控制行为
 defineExpose({ stop: stopInternal, start, pause })

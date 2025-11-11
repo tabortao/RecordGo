@@ -91,10 +91,16 @@ onMounted(async () => {
       taskName.value = t.name
       taskRemark.value = t.remark || t.description
       workMinutes.value = t.plan_minutes || 20
-      // 中文注释：进入页面时重置倒计时为任务预计时间，避免沿用上次未完成的剩余时间
-      // 同时更新全局番茄钟工作时长，确保悬浮球等处一致
+      // 中文注释：若当前存在同一任务正在计时，则不重置剩余时间（保持连续性）；
+      // 仅在未运行或切换到不同任务时，重置为预计时间。
       const expectedSec = (workMinutes.value || 20) * 60
-      store.updateTomato({ remainingSeconds: expectedSec, durationMinutes: workMinutes.value, currentTaskId: taskId })
+      const sameRunning = store.tomato.running && store.tomato.currentTaskId === taskId
+      if (!sameRunning) {
+        store.updateTomato({ remainingSeconds: expectedSec, durationMinutes: workMinutes.value, currentTaskId: taskId })
+      } else {
+        // 保持当前剩余时间，仅同步任务ID与时长
+        store.updateTomato({ durationMinutes: workMinutes.value, currentTaskId: taskId })
+      }
     } catch (e: any) {
       ElMessage.error(e.message || '加载任务失败')
     }
