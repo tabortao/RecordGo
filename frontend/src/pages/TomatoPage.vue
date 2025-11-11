@@ -38,8 +38,10 @@ const taskId = Number(route.params.id)
 function goBack() {
   if (store.tomato.running) {
     if (store.tomato.fixedTomatoPage) {
+      // 中文注释：固定番茄钟页面下，返回视为未完成，立即停止并重置到预计时长；不显示悬浮球
       timerRef.value?.stop?.()
-      store.updateTomato({ showFloating: false })
+      const resetSec = (store.tomato.durationMinutes || 20) * 60
+      store.updateTomato({ running: false, remainingSeconds: resetSec, currentTaskId: null, showFloating: false })
     } else {
       store.updateTomato({ showFloating: true })
     }
@@ -95,11 +97,16 @@ onMounted(async () => {
       // 仅在未运行或切换到不同任务时，重置为预计时间。
       const expectedSec = (workMinutes.value || 20) * 60
       const sameRunning = store.tomato.running && store.tomato.currentTaskId === taskId
-      if (!sameRunning) {
-        store.updateTomato({ remainingSeconds: expectedSec, durationMinutes: workMinutes.value, currentTaskId: taskId })
+      if (store.tomato.fixedTomatoPage) {
+        // 中文注释：固定页面模式下，每次进入都重置为预计时长，且保持未运行（需要用户点击“开始”）
+        store.updateTomato({ remainingSeconds: expectedSec, durationMinutes: workMinutes.value, currentTaskId: taskId, running: false })
       } else {
-        // 保持当前剩余时间，仅同步任务ID与时长
-        store.updateTomato({ durationMinutes: workMinutes.value, currentTaskId: taskId })
+        if (!sameRunning) {
+          store.updateTomato({ remainingSeconds: expectedSec, durationMinutes: workMinutes.value, currentTaskId: taskId })
+        } else {
+          // 保持当前剩余时间，仅同步任务ID与时长
+          store.updateTomato({ durationMinutes: workMinutes.value, currentTaskId: taskId })
+        }
       }
     } catch (e: any) {
       ElMessage.error(e.message || '加载任务失败')
