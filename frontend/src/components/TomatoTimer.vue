@@ -110,6 +110,7 @@
 // 中文注释：接收任务名与备注 + 工作/休息分钟数（合并定义）
 // 中文注释：番茄钟逻辑，工作与休息两个阶段，倒计时结束后切换阶段并在工作结束时触发 complete 事件
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useAppState } from '@/stores/appState'
 import { RefreshRight } from '@element-plus/icons-vue'
 
@@ -135,6 +136,28 @@ let timer: any = null
 // 中文注释：墙钟时间戳，支持锁屏/后台后继续准确计时
 const startAtMs = ref<number | null>(store.tomato.startAtMs ?? null)
 const endAtMs = ref<number | null>(store.tomato.endAtMs ?? null)
+// 中文注释：Wake Lock API 哨兵，用于保持设备常亮（移动端）
+let wakeLock: any = null
+async function requestWakeLock() {
+  try {
+    const nav: any = navigator as any
+    if (nav.wakeLock && typeof nav.wakeLock.request === 'function') {
+      wakeLock = await nav.wakeLock.request('screen')
+      // 中文注释：若被系统释放，则在可见且仍在计时时尝试重新申请
+      wakeLock.addEventListener?.('release', () => {
+        wakeLock = null
+        if (document.visibilityState === 'visible' && running.value) {
+          requestWakeLock().catch(() => {})
+        }
+      })
+    }
+  } catch (e: any) {
+    ElMessage.warning('保持常亮失败，请手动关闭自动息屏')
+  }
+}
+async function releaseWakeLock() {
+  try { if (wakeLock) { await wakeLock.release(); wakeLock = null } } catch {}
+}
 
 // 中文注释：移除未使用的文本计算，避免无用警告
 const mm = computed(() => String(Math.floor(remaining.value / 60)).padStart(2, '0'))
@@ -222,6 +245,8 @@ function start() {
   }
   store.updateTomato({ running: true, mode: mode.value, durationMinutes: workM.value, remainingSeconds: remaining.value, currentTaskId: props.taskId ?? null, startAtMs: startAtMs.value, endAtMs: endAtMs.value })
   if (!timer) timer = setInterval(tick, 1000)
+  // 中文注释：开始后尝试申请常亮（移动端）
+  requestWakeLock().catch(() => {})
 }
 function pause() {
   running.value = false
@@ -233,6 +258,8 @@ function pause() {
   startAtMs.value = null
   endAtMs.value = null
   store.updateTomato({ running: false, startAtMs: null, endAtMs: null })
+  // 中文注释：暂停时释放常亮
+  releaseWakeLock().catch(() => {})
 }
 function togglePauseResume() {
   if (!started.value) return
@@ -276,6 +303,8 @@ function stopInternal() {
   startAtMs.value = null
   endAtMs.value = null
   store.updateTomato({ running: false, startAtMs: null, endAtMs: null })
+  // 中文注释：停止时释放常亮
+  releaseWakeLock().catch(() => {})
 }
 function setDuration(min: number) {
   customMinutes.value = min
@@ -311,6 +340,10 @@ onMounted(() => {
   }
   const onVis = () => {
     if (document.visibilityState === 'visible' && running.value) tick()
+    // 中文注释：页面重新可见且在计时，则尝试重新申请常亮
+    if (document.visibilityState === 'visible' && running.value) {
+      requestWakeLock().catch(() => {})
+    }
   }
   document.addEventListener('visibilitychange', onVis)
   ;(window as any).__tomato_vis__ = onVis
@@ -318,6 +351,8 @@ onMounted(() => {
 onUnmounted(() => {
   const onVis = (window as any).__tomato_vis__
   if (onVis) document.removeEventListener('visibilitychange', onVis)
+  // 中文注释：组件卸载时释放常亮
+  releaseWakeLock().catch(() => {})
 })
 // 中文注释：向父组件暴露停止/开始/暂停方法，便于页面“返回”时控制行为
 defineExpose({ stop: stopInternal, start, pause })

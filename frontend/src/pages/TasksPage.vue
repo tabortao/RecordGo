@@ -1190,23 +1190,7 @@ function generateRepeatDates(start: Date, end: Date | undefined, type: 'none' | 
   return out
 }
 
-// 中文注释：悬浮球填充百分比（正计时用已用时 / 目标时长，倒计时用剩余时间）
-const fillPercent = computed(() => {
-  const dur = store.tomato.durationMinutes * 60
-  const sec = store.tomato.remainingSeconds
-  if (store.tomato.mode === 'countup') {
-    return Math.min(100, Math.round((sec / dur) * 100))
-  }
-  return Math.min(100, Math.round(((dur - sec) / dur) * 100))
-})
-
-// 中文注释：悬浮球显示的时间文本（mm:ss），倒计时显示剩余，正计时显示累计
-const floatingTime = computed(() => {
-  const sec = Math.max(0, store.tomato.remainingSeconds || 0)
-  const mm = String(Math.floor(sec / 60)).padStart(2, '0')
-  const ss = String(sec % 60).padStart(2, '0')
-  return `${mm}:${ss}`
-})
+// 中文注释：移除未使用的 fillPercent 与 floatingTime，避免编译器警告
 
 // 中文注释：当前选中的任务卡片ID，用于高亮显示
 const activeTaskId = ref<number | null>(null)
