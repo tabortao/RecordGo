@@ -40,6 +40,17 @@
       </div>
     </el-card>
 
+    <!-- 保持常亮（Wake Lock）卡片 -->
+    <el-card shadow="never">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="font-medium">保持常亮</div>
+          <div class="text-xs text-gray-500 mt-1">移动端开始计时后保持屏幕常亮，默认开启</div>
+        </div>
+        <el-switch v-model="keepAwake" />
+      </div>
+    </el-card>
+
     <!-- 底部操作按钮：取消与确定（与任务设置保持一致的页内按钮风格） -->
     <el-card shadow="never">
       <div class="flex justify-end gap-2">
@@ -60,6 +71,7 @@ const store = useAppState()
 const mode = ref(store.tomato.mode)
 const duration = ref(store.tomato.durationMinutes)
 const fixed = ref(store.tomato.fixedTomatoPage)
+const keepAwake = ref(store.tomato.keepAwakeEnabled)
 
 function goBack() {
   // 中文注释：返回不再自动保存，直接关闭页面
@@ -76,7 +88,8 @@ function confirm() {
   store.updateTomato({
     mode: mode.value as 'countdown' | 'countup',
     durationMinutes: duration.value,
-    fixedTomatoPage: fixed.value
+    fixedTomatoPage: fixed.value,
+    keepAwakeEnabled: keepAwake.value
   })
   router.back()
 }

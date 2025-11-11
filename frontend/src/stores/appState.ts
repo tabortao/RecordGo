@@ -12,6 +12,8 @@ export interface TomatoState {
   // 中文注释：为支持锁屏/标签页不可见时继续计时，记录开始与结束的时间戳（毫秒）
   startAtMs?: number | null
   endAtMs?: number | null
+  // 中文注释：是否启用保持常亮（Wake Lock），移动端默认开启
+  keepAwakeEnabled: boolean
 }
 
 export interface Permissions {
@@ -53,7 +55,8 @@ const DEFAULT_STATE: AppState = {
     showFloating: false,
     currentTaskId: null,
     startAtMs: null,
-    endAtMs: null
+    endAtMs: null,
+    keepAwakeEnabled: true
   },
   speech: {
     enabled: true,

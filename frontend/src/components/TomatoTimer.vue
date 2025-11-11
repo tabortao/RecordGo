@@ -246,7 +246,9 @@ function start() {
   store.updateTomato({ running: true, mode: mode.value, durationMinutes: workM.value, remainingSeconds: remaining.value, currentTaskId: props.taskId ?? null, startAtMs: startAtMs.value, endAtMs: endAtMs.value })
   if (!timer) timer = setInterval(tick, 1000)
   // 中文注释：开始后尝试申请常亮（移动端）
-  requestWakeLock().catch(() => {})
+  if (store.tomato.keepAwakeEnabled) {
+    requestWakeLock().catch(() => {})
+  }
 }
 function pause() {
   running.value = false
@@ -341,7 +343,7 @@ onMounted(() => {
   const onVis = () => {
     if (document.visibilityState === 'visible' && running.value) tick()
     // 中文注释：页面重新可见且在计时，则尝试重新申请常亮
-    if (document.visibilityState === 'visible' && running.value) {
+    if (document.visibilityState === 'visible' && running.value && store.tomato.keepAwakeEnabled) {
       requestWakeLock().catch(() => {})
     }
   }
@@ -353,6 +355,12 @@ onUnmounted(() => {
   if (onVis) document.removeEventListener('visibilitychange', onVis)
   // 中文注释：组件卸载时释放常亮
   releaseWakeLock().catch(() => {})
+})
+// 中文注释：监听“保持常亮”开关变化；运行中开启则申请，关闭则释放
+watch(() => store.tomato.keepAwakeEnabled, (enabled) => {
+  if (!running.value) return
+  if (enabled) requestWakeLock().catch(() => {})
+  else releaseWakeLock().catch(() => {})
 })
 // 中文注释：向父组件暴露停止/开始/暂停方法，便于页面“返回”时控制行为
 defineExpose({ stop: stopInternal, start, pause })
