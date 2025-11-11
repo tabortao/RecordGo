@@ -5,8 +5,8 @@
       <el-icon :size="18" class="cursor-pointer" :style="{ color: '#B8CEE8' }" @click="goBack"><ArrowLeft /></el-icon>
       <el-icon :size="18" :style="{ color: '#B8CEE8' }"><Clock /></el-icon>
       <h2 class="font-semibold" :style="{ color: '#B8CEE8' }">番茄钟</h2>
-      <!-- 右上角系统时间显示 -->
-      <div class="ml-auto font-mono text-sm" :style="{ color: '#B8CEE8' }">{{ systemTime }}</div>
+      <!-- 右上角系统时间显示（字号与标题一致） -->
+      <h2 class="ml-auto font-mono font-semibold" :style="{ color: '#B8CEE8' }">{{ systemTime }}</h2>
     </div>
     <!-- 中文注释：将任务标题、备注、预计时长融入到上方定时器组件，取消下方信息卡片；居中显示 -->
     <div class="max-w-3xl mx-auto">

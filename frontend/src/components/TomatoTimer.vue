@@ -29,6 +29,19 @@
               />
             </template>
           </g>
+          <!-- 进度环分钟分割线（白色）：每 1 分钟一条，覆盖在进度环之上 -->
+          <g stroke="#FFFFFF" opacity="0.7">
+            <template v-for="i in 60" :key="'sep-'+i">
+              <line
+                x1="128"
+                y1="22"
+                x2="128"
+                y2="34"
+                stroke-width="2"
+                :transform="'rotate(' + ((i-1) * 6) + ' 128 128)'"
+              />
+            </template>
+          </g>
           <!-- 进度弧线：倒计时剩余比例，起点在上方（-90°旋转） -->
           <circle
             cx="128" cy="128" r="100"
@@ -38,6 +51,12 @@
             :stroke-dashoffset="dashOffset"
             transform="rotate(-90 128 128)"
           />
+          <!-- 数字刻度（0、5、10...55） -->
+          <g fill="#B8CEE8" font-size="12" opacity="0.85" font-family="monospace">
+            <template v-for="lbl in dialLabels" :key="lbl.m">
+              <text :x="lbl.x" :y="lbl.y" text-anchor="middle" dominant-baseline="middle">{{ lbl.m }}</text>
+            </template>
+          </g>
         </svg>
         <!-- 数字时间置于表盘中心 -->
         <div class="absolute inset-0 flex items-center justify-center">
@@ -122,6 +141,19 @@ const dialRatio = computed(() => {
 })
 const circumference = 2 * Math.PI * 100
 const dashOffset = computed(() => circumference * (1 - dialRatio.value))
+// 中文注释：数字刻度位置（0、5、10...55），使用三角函数定位到圆周内侧
+const dialLabels = computed(() => {
+  const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+  const r = 78 // 刻度数字到圆心的半径，略小于进度环半径
+  return minutes.map((m) => {
+    const rad = (m * 6 - 90) * Math.PI / 180
+    return {
+      m,
+      x: 128 + r * Math.cos(rad),
+      y: 128 + r * Math.sin(rad),
+    }
+  })
+})
 
 function toggleMode() {
   // 中文注释：切换模式，正计时从 00:00 开始，倒计时从计划时长开始
