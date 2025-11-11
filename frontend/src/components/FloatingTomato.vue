@@ -15,13 +15,16 @@
 </template>
 
 <script setup lang="ts">
-// 中文注释：悬浮球组件在页面间继续计时（非固定模式），并在倒计时结束时自动停止与隐藏
+// 中文注释：悬浮球组件在页面间继续计时（非固定模式），并在倒计时结束时写入完成记录、自动停止与隐藏
 import { computed, onMounted, onUnmounted } from 'vue'
 import router from '@/router'
 import { useAppState } from '@/stores/appState'
+import { completeTomato, updateTaskStatus } from '@/services/tasks'
+import { ElMessage } from 'element-plus'
 
 const store = useAppState()
 let t: any = null
+let finishedOnce = false
 
 const mm = computed(() => {
   const sec = store.tomato.remainingSeconds || 0
@@ -30,16 +33,33 @@ const mm = computed(() => {
 })
 const ss = computed(() => String((store.tomato.remainingSeconds || 0) % 60).padStart(2, '0'))
 
+async function finalizeCountdown() {
+  const id = store.tomato.currentTaskId
+  const minutes = store.tomato.durationMinutes || 20
+  try {
+    if (id && !isNaN(id)) {
+      await completeTomato(id, minutes)
+      await updateTaskStatus(id, 2)
+      ElMessage.success('番茄钟完成，数据已记录')
+    }
+  } catch (e: any) {
+    ElMessage.error(`番茄上报失败：${e?.message || e}`)
+  }
+}
+
 function tick() {
   const mode = store.tomato.mode
   const cur = store.tomato.remainingSeconds || 0
   if (mode === 'countdown') {
     const next = Math.max(0, cur - 1)
     store.updateTomato({ remainingSeconds: next })
-    if (next === 0) {
-      store.updateTomato({ running: false, showFloating: false })
-      clearInterval(t)
-      t = null
+    if (next === 0 && !finishedOnce) {
+      finishedOnce = true
+      // 写入完成记录并关闭悬浮球
+      finalizeCountdown().finally(() => {
+        store.updateTomato({ running: false, showFloating: false })
+        if (t) { clearInterval(t); t = null }
+      })
     }
   } else {
     store.updateTomato({ remainingSeconds: cur + 1 })

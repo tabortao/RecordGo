@@ -89,6 +89,10 @@ onMounted(async () => {
       taskName.value = t.name
       taskRemark.value = t.remark || t.description
       workMinutes.value = t.plan_minutes || 20
+      // 中文注释：进入页面时重置倒计时为任务预计时间，避免沿用上次未完成的剩余时间
+      // 同时更新全局番茄钟工作时长，确保悬浮球等处一致
+      const expectedSec = (workMinutes.value || 20) * 60
+      store.updateTomato({ remainingSeconds: expectedSec, durationMinutes: workMinutes.value, currentTaskId: taskId })
     } catch (e: any) {
       ElMessage.error(e.message || '加载任务失败')
     }

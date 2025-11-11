@@ -27,13 +27,16 @@
       <div class="text-base text-gray-600">开启后，进入番茄钟为固定全屏，适合专注模式。</div>
     </div>
 
-    <!-- 取消底部保存/取消按钮；用户点击左侧返回图标时自动保存并返回 -->
+    <!-- 底部操作按钮：取消与确定 -->
+    <div class="flex justify-end gap-2 pt-4">
+      <el-button @click="cancel">取消</el-button>
+      <el-button type="primary" @click="confirm">确定</el-button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useAppState } from '@/stores/appState'
-import { ElMessage } from 'element-plus'
 import { Timer, ArrowLeft } from '@element-plus/icons-vue'
 import router from '@/router'
 
@@ -44,13 +47,22 @@ const duration = ref(store.tomato.durationMinutes)
 const fixed = ref(store.tomato.fixedTomatoPage)
 
 function goBack() {
-  // 中文注释：返回时自动保存最新设置
+  // 中文注释：返回不再自动保存，直接关闭页面
+  router.back()
+}
+
+function cancel() {
+  // 中文注释：取消不保存设置，关闭页面
+  router.back()
+}
+
+function confirm() {
+  // 中文注释：确定按钮保存设置并关闭页面
   store.updateTomato({
     mode: mode.value as 'countdown' | 'countup',
     durationMinutes: duration.value,
     fixedTomatoPage: fixed.value
   })
-  ElMessage.success('番茄钟设置已保存')
   router.back()
 }
 </script>
