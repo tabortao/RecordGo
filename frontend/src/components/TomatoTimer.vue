@@ -82,7 +82,7 @@
     </div>
 
     <!-- 中文注释：底部区域 - 包含时间预设/自定义与控制按钮，更贴近页面底部 -->
-    <div class="fixed bottom-4 left-0 right-0 space-y-3" data-bottom="tomato-controls">
+    <div class="fixed bottom-12 left-0 right-0 space-y-3" data-bottom="tomato-controls">
       <!-- 中文注释：倒计时模式下显示预设与自定义；正计时不显示这些 -->
       <div class="flex items-center justify-center gap-3" v-if="mode==='countdown'">
       <div class="flex items-center gap-2">
