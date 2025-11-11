@@ -4,13 +4,23 @@
       <!-- 中文注释：返回按钮不再自动保存，仅关闭页面 -->
       <el-icon :size="18" class="cursor-pointer" style="color:#64748b" @click="onCancel"><ArrowLeft /></el-icon>
       <el-icon :size="18" style="color:#60a5fa"><Edit /></el-icon>
-      <h2 class="font-semibold">编辑个人信息</h2>
-    </div>
+  <h2 class="font-semibold">编辑个人信息</h2>
+  </div>
 
-    <!-- 昵称 -->
-    <div class="space-y-2">
-      <label class="text-sm text-gray-600">昵称</label>
-      <el-input v-model="editNickname" placeholder="请输入昵称" />
+    <!-- 基本信息：昵称 / 电话 / 邮箱 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="space-y-2">
+        <label class="text-sm text-gray-600">昵称</label>
+        <el-input v-model="editNickname" placeholder="请输入昵称" />
+      </div>
+      <div class="space-y-2">
+        <label class="text-sm text-gray-600">电话</label>
+        <el-input v-model="editPhone" placeholder="请输入电话" />
+      </div>
+      <div class="space-y-2">
+        <label class="text-sm text-gray-600">邮箱</label>
+        <el-input v-model="editEmail" placeholder="请输入邮箱" />
+      </div>
     </div>
 
     <!-- 头像上传与预览 -->
@@ -49,7 +59,7 @@
 
 <script setup lang="ts">
 import { useAuth } from '@/stores/auth'
-import { updateNickname, changePassword, uploadAvatar } from '@/services/user'
+import { updateProfile, changePassword, uploadAvatar } from '@/services/user'
 import { ElMessage } from 'element-plus'
 import { Edit, ArrowLeft } from '@element-plus/icons-vue'
 import router from '@/router'
@@ -70,6 +80,8 @@ const avatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))
 
 // 字段状态
 const editNickname = ref(auth.user?.nickname || '')
+const editPhone = ref(auth.user?.phone || '')
+const editEmail = ref(auth.user?.email || '')
 const avatarFile = ref<File | null>(null)
 const avatarPreview = ref<string>('')
 const oldPassword = ref('')
@@ -92,11 +104,17 @@ function onCancel() {
 // 中文注释：显式保存按钮逻辑，保存成功后关闭页面
 async function onSave() {
   try {
-    // 1) 昵称更新（非空且有变更）
+    // 1) 资料更新：昵称/电话/邮箱（有变更时一起提交）
     const nicknameTrim = (editNickname.value || '').trim()
-    if (nicknameTrim && nicknameTrim !== (auth.user?.nickname || '')) {
-      await updateNickname(nicknameTrim)
-      auth.updateUser({ nickname: nicknameTrim })
+    const phoneTrim = (editPhone.value || '').trim()
+    const emailTrim = (editEmail.value || '').trim()
+    const payload: { nickname?: string; phone?: string; email?: string } = {}
+    if (nicknameTrim && nicknameTrim !== (auth.user?.nickname || '')) payload.nickname = nicknameTrim
+    if (phoneTrim !== (auth.user?.phone || '')) payload.phone = phoneTrim
+    if (emailTrim !== (auth.user?.email || '')) payload.email = emailTrim
+    if (Object.keys(payload).length > 0) {
+      await updateProfile(payload)
+      auth.updateUser(payload)
     }
 
     // 2) 头像上传（有选择时），按原文件格式上传（取消 webp 自动转换）

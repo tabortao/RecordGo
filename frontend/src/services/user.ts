@@ -3,7 +3,13 @@ import http from './http'
 
 // 中文注释：更新昵称（与后端字段保持一致）
 export async function updateNickname(nickname: string) {
-  return await http.put('/user/profile', { nickname }) as any
+  // 中文注释：保留旧函数，实际委托到 updateProfile
+  return await updateProfile({ nickname })
+}
+
+// 中文注释：更新用户资料（昵称/电话/邮箱），字段可选
+export async function updateProfile(payload: { nickname?: string, phone?: string, email?: string }) {
+  return await http.put('/user/profile', payload) as any
 }
 
 // 中文注释：修改密码

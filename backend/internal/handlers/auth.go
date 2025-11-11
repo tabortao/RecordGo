@@ -134,6 +134,8 @@ func Login(c *gin.Context) {
             "coins": u.Coins,
             "tomatoes": u.Tomatoes,
             "avatar_path": u.AvatarPath,
+            "phone": u.Phone,
+            "email": u.Email,
         },
     })
 }

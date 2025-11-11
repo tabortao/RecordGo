@@ -10,8 +10,8 @@ const instance = axios.create({
 
 // 请求拦截器：可附加 JWT 等
 instance.interceptors.request.use((config) => {
-  // 中文注释：此处可注入鉴权头，如从 localStorage 读取 token
-  const token = localStorage.getItem('auth_token')
+  // 中文注释：为兼容“未勾选记住我”的会话，优先读取 sessionStorage，其次读取 localStorage
+  const token = (sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token'))
   if (token) {
     config.headers = config.headers || {}
     ;(config.headers as any).Authorization = `Bearer ${token}`

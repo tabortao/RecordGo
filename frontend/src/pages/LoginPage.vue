@@ -1,20 +1,26 @@
 <template>
-  <div class="min-h-screen bg-white flex items-center justify-center">
-    <!-- 中文注释：简洁美观的登录卡片，匹配后端数据库字段 -->
-    <el-card class="w-[360px] shadow">
+  <!-- 中文注释：现代化登录页面，Tailwind 渐变背景 + 居中卡片 -->
+  <div class="min-h-screen bg-gradient-to-br from-sky-50 to-indigo-100 flex items-center justify-center p-4">
+    <el-card class="w-full max-w-[400px] rounded-xl shadow-lg border" body-class="p-5">
       <template #header>
-        <div class="font-semibold text-center">任务积分助手 · 登录</div>
+        <div class="text-center">
+          <div class="text-xl font-semibold">任务积分助手 · 登录</div>
+        </div>
       </template>
       <el-form label-position="top" @submit.prevent>
         <el-form-item label="用户名">
           <el-input v-model="username" placeholder="请输入用户名" />
         </el-form-item>
         <el-form-item label="密码">
-          <el-input v-model="password" type="password" placeholder="请输入密码" />
+          <!-- 中文注释：启用 Element Plus 内置的小眼睛图标进行显示/隐藏切换 -->
+          <el-input v-model="password" type="password" show-password placeholder="请输入密码" />
         </el-form-item>
+        <div class="flex items-center justify-between mb-3">
+          <el-checkbox v-model="rememberMe">记住我</el-checkbox>
+          <button class="text-sm text-gray-500 hover:text-indigo-600" type="button" @click="toRegister">去注册</button>
+        </div>
         <el-button type="primary" class="w-full" @click="doLogin">登录</el-button>
-        <div class="flex justify-between mt-3 text-sm text-gray-500">
-          <button class="hover:text-green-600" type="button" @click="toRegister">去注册</button>
+        <div class="flex justify-center mt-3 text-xs text-gray-500">
           <button class="hover:text-gray-600" type="button" @click="clearCache">清空缓存</button>
         </div>
       </el-form>
@@ -29,10 +35,12 @@ import router from '@/router'
 import { apiLogin } from '@/services/auth'
 import { useAuth } from '@/stores/auth'
 
-// 中文注释：登录表单字段（与后端一致）
+// 中文注释：登录表单字段：用户名 + 密码
 const username = ref('')
 const password = ref('')
 const auth = useAuth()
+// 中文注释：记住我（默认未勾选），勾选则写入 localStorage；未勾选仅本次会话
+const rememberMe = ref(false)
 
 onMounted(() => {
   // 中文注释：若从注册页带回用户名，自动回填
@@ -48,7 +56,7 @@ async function doLogin() {
   }
   try {
     const resp = await apiLogin(username.value, password.value)
-    auth.setLogin(resp.token, resp.user)
+    auth.setLogin(resp.token, resp.user, rememberMe.value)
     ElMessage.success('登录成功')
     const redirect = (router.currentRoute.value.query.redirect as string) || '/tasks'
     router.replace(redirect)
@@ -68,5 +76,5 @@ function toRegister() {
 </script>
 
 <style scoped>
-/* 中文注释：基础内边距与宽度样式 */
+/* 中文注释：页面样式由 Tailwind 类控制，这里无需额外样式 */
 </style>

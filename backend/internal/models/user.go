@@ -14,6 +14,7 @@ type User struct {
     Nickname    string    `gorm:"size:64"`
     AvatarPath  string    `gorm:"size:256"`
     Phone       string    `gorm:"size:32"`
+    Email       string    `gorm:"size:128"`
     ParentID    *uint
     CreatedAt   time.Time
     UpdatedAt   time.Time

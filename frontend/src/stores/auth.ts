@@ -11,37 +11,70 @@ export interface AuthUser {
   coins: number
   tomatoes: number
   avatar_path: string
+  phone?: string
+  email?: string
 }
 
 export const useAuth = defineStore('auth', {
   state: () => ({
-    token: localStorage.getItem('auth_token') || '',
+    // 中文注释：初始化时优先读取会话（不记住我），否则读取本地（记住我）
+    token: ((): string => {
+      const st = sessionStorage.getItem('auth_token')
+      if (st) return st
+      return localStorage.getItem('auth_token') || ''
+    })(),
     user: ((): AuthUser | null => {
-      const s = localStorage.getItem('auth_user')
+      // 中文注释：与 token 同步读取来源，避免来源不一致
+      const su = sessionStorage.getItem('auth_user')
+      const lu = localStorage.getItem('auth_user')
+      const s = su || lu || ''
       try { return s ? JSON.parse(s) as AuthUser : null } catch { return null }
     })()
   }),
   actions: {
-    // 中文注释：登录后设置 token 与用户信息，并持久化
-    setLogin(token: string, user: AuthUser) {
+    // 中文注释：登录后设置 token 与用户信息；remember=true 写入 localStorage，false 写入 sessionStorage
+    setLogin(token: string, user: AuthUser, remember: boolean = true) {
       this.token = token
       this.user = user
-      localStorage.setItem('auth_token', token)
-      localStorage.setItem('auth_user', JSON.stringify(user))
+      try {
+        if (remember) {
+          // 中文注释：记住我 → 本地持久化
+          localStorage.setItem('auth_token', token)
+          localStorage.setItem('auth_user', JSON.stringify(user))
+          // 中文注释：清理会话存储，避免来源冲突
+          sessionStorage.removeItem('auth_token')
+          sessionStorage.removeItem('auth_user')
+        } else {
+          // 中文注释：不记住我 → 仅本次会话
+          sessionStorage.setItem('auth_token', token)
+          sessionStorage.setItem('auth_user', JSON.stringify(user))
+          // 中文注释：清理本地存储，确保退出或刷新后需重新登录
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('auth_user')
+        }
+      } catch {}
     },
     // 中文注释：退出登录，清除持久化并重置状态
     logout() {
       this.token = ''
       this.user = null
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('auth_user')
+      try {
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('auth_user')
+        sessionStorage.removeItem('auth_token')
+        sessionStorage.removeItem('auth_user')
+      } catch {}
     }
     ,
     // 中文注释：更新用户的部分字段（如昵称、头像路径等），并持久化
     updateUser(partial: Partial<AuthUser>) {
       if (!this.user) return
       this.user = { ...this.user, ...partial }
-      localStorage.setItem('auth_user', JSON.stringify(this.user))
+      try {
+        // 中文注释：根据当前来源同步更新，两侧都写入以提升兼容性
+        localStorage.setItem('auth_user', JSON.stringify(this.user))
+        sessionStorage.setItem('auth_user', JSON.stringify(this.user))
+      } catch {}
     }
   }
 })

@@ -62,9 +62,15 @@ const router = createRouter({
 router.beforeEach((to) => {
   const auth = useAuth()
   const isPublic = to.meta?.public === true
+  // 中文注释：已登录访问登录/注册页面时自动跳转任务页
+  if (auth.token && (to.path === '/login' || to.path === '/register')) {
+    return { path: '/tasks' }
+  }
+  // 中文注释：未登录访问私有页面时跳转至登录，并记录重定向
   if (!isPublic && !auth.token) {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
+  return true
 })
 
 export default router

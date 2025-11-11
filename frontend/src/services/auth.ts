@@ -13,6 +13,8 @@ export interface LoginResp {
     coins: number
     tomatoes: number
     avatar_path: string
+    phone?: string
+    email?: string
   }
 }
 

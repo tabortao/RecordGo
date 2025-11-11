@@ -40,15 +40,17 @@ func extractUserIDFromToken(c *gin.Context) uint {
     return 0
 }
 
-// UpdateProfile 更新用户昵称
+// UpdateProfile 更新用户资料（昵称/电话/邮箱），字段可选
 type UpdateProfileReq struct {
-    Nickname string `json:"nickname"`
+    Nickname *string `json:"nickname"`
+    Phone    *string `json:"phone"`
+    Email    *string `json:"email"`
 }
 
 func UpdateProfile(c *gin.Context) {
     var req UpdateProfileReq
-    if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.Nickname) == "" {
-        common.Error(c, 40001, "参数错误：缺少昵称")
+    if err := c.ShouldBindJSON(&req); err != nil {
+        common.Error(c, 40001, "参数错误")
         return
     }
     uid := extractUserIDFromToken(c)
@@ -61,12 +63,28 @@ func UpdateProfile(c *gin.Context) {
         common.Error(c, 40401, "用户不存在")
         return
     }
-    u.Nickname = strings.TrimSpace(req.Nickname)
+    if req.Nickname != nil {
+        u.Nickname = strings.TrimSpace(*req.Nickname)
+    }
+    if req.Phone != nil {
+        u.Phone = strings.TrimSpace(*req.Phone)
+    }
+    if req.Email != nil {
+        e := strings.TrimSpace(*req.Email)
+        // 中文注释：基础邮箱格式校验（后端兜底），允许为空
+        if e != "" {
+            if !strings.Contains(e, "@") || !strings.Contains(e, ".") {
+                common.Error(c, 40002, "邮箱格式不正确")
+                return
+            }
+        }
+        u.Email = e
+    }
     if err := db.DB().Save(&u).Error; err != nil {
         common.Error(c, 50010, "更新昵称失败")
         return
     }
-    common.Ok(c, gin.H{"nickname": u.Nickname})
+    common.Ok(c, gin.H{"nickname": u.Nickname, "phone": u.Phone, "email": u.Email})
 }
 
 // ChangePassword 修改密码
