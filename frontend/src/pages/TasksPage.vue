@@ -466,19 +466,7 @@
       <el-icon :size="24"><Plus /></el-icon>
     </el-button>
 
-    <!-- 悬浮番茄钟：位于底部导航上方居中，水位填充动画展示进度 -->
-    <div
-      v-if="store.tomato.running && !store.tomato.fixedTomatoPage"
-      class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50"
-    >
-      <div class="w-14 h-14 rounded-full shadow-lg cursor-pointer overflow-hidden relative bg-blue-100"
-           @click="tomatoVisible=true">
-        <div class="absolute bottom-0 left-0 right-0 bg-blue-500 bg-opacity-40 transition-all"
-             :style="{ height: fillPercent + '%' }"></div>
-        <!-- 中文注释：悬浮球中央显示 mm:ss，小号文字；提高对比度便于看清 -->
-        <div class="absolute inset-0 flex items-center justify-center text-blue-900 font-semibold text-[10px]">{{ floatingTime }}</div>
-      </div>
-    </div>
+    <!-- 中文注释：移除旧版任务页悬浮番茄钟，改用新的全局悬浮球（右下角橙色），避免重复显示 -->
   </div>
  </template>
 

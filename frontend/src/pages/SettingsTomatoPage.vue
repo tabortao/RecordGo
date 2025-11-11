@@ -3,35 +3,50 @@
     <div class="flex items-center gap-2">
       <el-icon :size="18" class="cursor-pointer" style="color:#64748b" @click="goBack"><ArrowLeft /></el-icon>
       <el-icon :size="18" style="color:#ef4444"><Timer /></el-icon>
-      <h2 class="font-semibold text-base">番茄钟设置</h2>
+      <h2 class="font-semibold">番茄钟设置</h2>
     </div>
 
-    <!-- 模式设置（倒计时/正计时） -->
-    <div class="space-y-2">
-      <label class="text-base text-gray-700">计时模式</label>
-      <el-radio-group v-model="mode">
-        <el-radio label="countdown">倒计时</el-radio>
-        <el-radio label="countup">正计时</el-radio>
-      </el-radio-group>
-    </div>
+    <!-- 计时模式卡片 -->
+    <el-card shadow="never">
+      <div class="font-medium">计时模式</div>
+      <div class="text-xs text-gray-500 mt-1">选择倒计时或正计时显示方式</div>
+      <div class="mt-3">
+        <el-radio-group v-model="mode">
+          <el-radio label="countdown">倒计时</el-radio>
+          <el-radio label="countup">正计时</el-radio>
+        </el-radio-group>
+      </div>
+    </el-card>
 
-    <!-- 预设时长（分钟） -->
-    <div class="space-y-2">
-      <label class="text-base text-gray-700">预设时长（分钟）</label>
-      <el-input-number v-model="duration" :min="1" :max="180" />
-    </div>
+    <!-- 预设时长卡片 -->
+    <el-card shadow="never">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="font-medium">预设时长（分钟）</div>
+          <div class="text-xs text-gray-500 mt-1">进入番茄钟页面时默认使用的计划时长</div>
+        </div>
+        <el-input-number v-model="duration" :min="1" :max="180" />
+      </div>
+    </el-card>
 
-    <!-- 固定全屏番茄钟页面 -->
-    <div class="space-y-2">
-      <el-switch v-model="fixed" active-text="固定番茄钟页面" inactive-text="不固定" />
-      <div class="text-base text-gray-600">开启后，进入番茄钟为固定全屏，适合专注模式。</div>
-    </div>
+    <!-- 固定全屏卡片 -->
+    <el-card shadow="never">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="font-medium">固定番茄钟页面</div>
+          <div class="text-xs text-gray-500 mt-1">开启后：进入番茄钟为固定全屏，适合专注模式</div>
+        </div>
+        <el-switch v-model="fixed" />
+      </div>
+    </el-card>
 
-    <!-- 底部操作按钮：取消与确定 -->
-    <div class="flex justify-end gap-2 pt-4">
-      <el-button @click="cancel">取消</el-button>
-      <el-button type="primary" @click="confirm">确定</el-button>
-    </div>
+    <!-- 底部操作按钮：取消与确定（与任务设置保持一致的页内按钮风格） -->
+    <el-card shadow="never">
+      <div class="flex justify-end gap-2">
+        <el-button @click="cancel">取消</el-button>
+        <el-button type="primary" @click="confirm">确定</el-button>
+      </div>
+    </el-card>
   </div>
 </template>
 
