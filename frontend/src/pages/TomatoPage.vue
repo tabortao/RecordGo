@@ -1,7 +1,7 @@
 <template>
   <!-- 中文注释：独立的番茄钟页面（夜间主题），顶部返回图标；深色背景响应式居中展示定时器 -->
-  <div class="h-screen p-4 space-y-4 overflow-hidden flex flex-col" :style="{ backgroundColor: '#30302E' }">
-    <div ref="topRef">
+  <div ref="rootRef" class="h-screen p-4 overflow-hidden flex flex-col" :style="{ backgroundColor: '#30302E' }">
+    <div ref="topRef" class="pb-3">
     <div class="flex items-center gap-2">
       <el-icon :size="18" class="cursor-pointer" :style="{ color: '#B8CEE8' }" @click="goBack"><ArrowLeft /></el-icon>
       <el-icon :size="18" :style="{ color: '#B8CEE8' }"><Clock /></el-icon>
@@ -10,7 +10,7 @@
       <h2 class="ml-auto font-mono font-semibold" :style="{ color: '#B8CEE8', fontSize: '1.3em' }">{{ systemTime }}</h2>
     </div>
     <!-- 任务标题：靠近页面标题，避免紧邻下方为时钟 -->
-    <div class="mt-1 mb-3 text-center font-bold" :style="{ color: '#B8CEE8', fontSize: '1.2em' }" v-if="taskName">任务：{{ taskName }}</div>
+    <div class="mt-1 text-center font-bold" :style="{ color: '#B8CEE8', fontSize: '1.2em' }" v-if="taskName">任务：{{ taskName }}</div>
     </div>
     <!-- 中文注释：中部容器高度按 calc(100vh - 顶部高度 - 底部高度) 计算，确保垂直居中且无滚动 -->
     <div class="flex items-center justify-center" :style="{ height: midHeight }">
@@ -40,14 +40,22 @@ const taskRemark = ref<string>('')
 const systemTime = ref<string>('')
 let clockTimer: any = null
 // 顶部与底部高度测量，用于计算中部容器高度
+const rootRef = ref<HTMLElement | null>(null)
 const topRef = ref<HTMLElement | null>(null)
 const topH = ref(0)
 const bottomH = ref(0)
-const midHeight = computed(() => `calc(100vh - ${topH.value}px - ${bottomH.value}px)`)
+const padTop = ref(0)
+const padBottom = ref(0)
+const midHeight = computed(() => `calc(100vh - ${topH.value}px - ${bottomH.value}px - ${padTop.value}px - ${padBottom.value}px)`)
 function measureHeights() {
   topH.value = topRef.value?.offsetHeight || 0
   const bottomEl = document.querySelector('[data-bottom="tomato-controls"]') as HTMLElement | null
   bottomH.value = bottomEl?.offsetHeight || 120
+  if (rootRef.value) {
+    const cs = getComputedStyle(rootRef.value)
+    padTop.value = parseFloat(cs.paddingTop || '0') || 0
+    padBottom.value = parseFloat(cs.paddingBottom || '0') || 0
+  }
 }
 
 onMounted(async () => {
@@ -59,6 +67,9 @@ onMounted(async () => {
   // 计算顶部与底部固定区高度
   measureHeights()
   window.addEventListener('resize', measureHeights)
+  // 全局禁用滚动条，确保页面无滚动
+  document.documentElement.style.overflowY = 'hidden'
+  document.body.style.overflowY = 'hidden'
   if (!isNaN(taskId)) {
     try {
       const t = await getTask(taskId)
@@ -75,6 +86,9 @@ onUnmounted(() => {
   if (clockTimer) clearInterval(clockTimer)
   // 移除监听
   window.removeEventListener('resize', measureHeights)
+  // 恢复页面滚动
+  document.documentElement.style.overflowY = ''
+  document.body.style.overflowY = ''
 })
 
 async function onTomatoComplete(seconds?: number) {
