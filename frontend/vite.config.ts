@@ -24,6 +24,8 @@ export default defineConfig(({ mode }) => {
         dts: 'src/components.d.ts'
       })
     ],
+    // 中文注释：将 favicon 静态资源目录作为公共目录，便于通过根路径引用图标与 manifest
+    publicDir: 'src/assets/favicon',
     server: {
       port: 5173,
       proxy: {
