@@ -32,6 +32,8 @@ export interface AppState {
   coins: number
   // 中文注释：心愿兑换扣除的金币累计，用于总金币计算（主/子账号共享金币池）
   wishDeductedCoins: number
+  // 中文注释：最近金币变动历史（最多保留20条），记录每次变更的增量与时间
+  coinsHistory: { delta: number; newTotal: number; at: string }[]
   permissions: Permissions
   tomato: TomatoState
   speech: SpeechSettings
@@ -45,6 +47,7 @@ export interface AppState {
 const DEFAULT_STATE: AppState = {
   coins: 0,
   wishDeductedCoins: 0,
+  coinsHistory: [],
   permissions: { view_only: false },
   tomato: {
     running: false,
@@ -90,7 +93,17 @@ export const useAppState = defineStore('appState', {
   },
   actions: {
     setCoins(v: number) {
-      this.coins = v
+      // 中文注释：记录金币变动历史（增量=新值-旧值），时间为 ISO 字符串
+      const prev = Number(this.coins || 0)
+      const next = Number(v || 0)
+      this.coins = next
+      const delta = next - prev
+      try {
+        const record = { delta, newTotal: next, at: new Date().toISOString() }
+        const arr = Array.isArray(this.coinsHistory) ? [...this.coinsHistory] : []
+        arr.unshift(record)
+        this.coinsHistory = arr.slice(0, 20)
+      } catch { this.coinsHistory = [] }
       this.persist()
     },
     setWishDeducted(v: number) {

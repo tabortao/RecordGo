@@ -820,8 +820,7 @@ async function fetchTasks() {
     // dayCoins.value = filteredTasks.value.filter((t) => t.status === 2).reduce((sum, t) => sum + (t.score || 0), 0)
     // 中文注释：completeRate 已改为计算属性，无需手动赋值
     // completeRate.value = tasks.value.length ? Math.round((tasks.value.filter((t) => t.status === 2).length / tasks.value.length) * 100) : 0
-    // 中文注释：同步更新全局 coins（考虑心愿扣减），心愿页面读取该值作为可用金币
-    store.setCoins(totalCoins.value)
+    // 中文注释：移除本地计算后的金币覆盖，统一由拦截器在后端返回时同步，避免状态不一致
   } catch (e: any) {
     // 中文注释：增强错误提示，优先展示后端返回的业务错误信息
     const msg = e?.response?.data?.message || e?.message || e
@@ -985,17 +984,15 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
       // 中文注释：勾选为完成：按计划时长计入实际，并标记为已完成
       const planM = t.plan_minutes || 20
       await updateTask(t.id, { actual_minutes: planM })
-      const resp: any = await updateTaskStatus(t.id, 2)
+      await updateTaskStatus(t.id, 2)
       t.status = 2
       t.actual_minutes = (t.actual_minutes || 0) + planM
       actualSecondsLocal[t.id] = planM * 60
-      if (resp && typeof resp.user_coins !== 'undefined') store.setCoins(Number(resp.user_coins))
       ElMessage.success('已标记为完成（按计划时长计）')
     } else {
       // 中文注释：取消完成：标记为未完成，并从日金币与总金币中扣除该任务金币
-      const resp: any = await updateTaskStatus(t.id, 0)
+      await updateTaskStatus(t.id, 0)
       t.status = 0
-      if (resp && typeof resp.user_coins !== 'undefined') store.setCoins(Number(resp.user_coins))
       ElMessage.success('已取消完成，金币已扣除')
     }
     // 统一刷新统计

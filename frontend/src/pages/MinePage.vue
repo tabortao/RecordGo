@@ -58,6 +58,8 @@
         </button>
       </div>
     </div>
+
+    <!-- 中文注释：按需求取消“最近金币变动”卡片展示 -->
   </div>
 </template>
 
@@ -146,6 +148,8 @@ function goSettingsTab(k: SettingsKey) {
 }
 
 // （移除我的页内的设置入口列表，保留“系统设置”按钮跳转到独立页面）
+
+// 中文注释：按需求取消“最近金币变动”卡片相关逻辑
 </script>
 
 <style scoped>

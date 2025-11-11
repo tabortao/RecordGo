@@ -250,10 +250,8 @@ async function confirmExchange() {
   if (!w) { showExchange.value = false; return }
   const count = Math.max(1, Number(exchangeCount.value || 1))
   try {
-    const resp = await exchangeWish(w.id, userId.value, count, exchangeRemark.value)
-    if (resp && typeof resp.user_coins !== 'undefined') {
-      store.setCoins(Number(resp.user_coins))
-    }
+    await exchangeWish(w.id, userId.value, count, exchangeRemark.value)
+    // 中文注释：移除局部金币更新，统一交由响应拦截器处理最新金币同步
     await loadWishes()
     await loadRecords()
     const remarkText = (exchangeRemark.value || '').trim()
