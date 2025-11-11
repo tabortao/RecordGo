@@ -83,6 +83,8 @@ onMounted(async () => {
   // 全局禁用滚动条，确保页面无滚动
   document.documentElement.style.overflowY = 'hidden'
   document.body.style.overflowY = 'hidden'
+  // 中文注释：进入番茄钟页面时隐藏悬浮球，避免同时显示
+  store.updateTomato({ showFloating: false })
   if (!isNaN(taskId)) {
     try {
       const t = await getTask(taskId)
