@@ -1,7 +1,7 @@
 <template>
   <!-- 中文注释：番茄钟组件（增强版），支持倒计时/正计时、预设与自定义、开始/暂停/继续/完成 -->
   <!-- 中文注释：容器改为充满视口高度，底部区域更贴近页面底部 -->
-  <div class="relative p-4 flex flex-col min-h-screen justify-between">
+  <div class="relative p-4 flex flex-col h-screen justify-between">
 
     <!-- 中文注释：移除组件内部标题，避免与弹窗标题重复显示 -->
 
@@ -29,19 +29,6 @@
               />
             </template>
           </g>
-          <!-- 进度环分钟分割线（白色）：每 1 分钟一条，覆盖在进度环之上 -->
-          <g stroke="#FFFFFF" opacity="0.7">
-            <template v-for="i in 60" :key="'sep-'+i">
-              <line
-                x1="128"
-                y1="22"
-                x2="128"
-                y2="34"
-                stroke-width="2"
-                :transform="'rotate(' + ((i-1) * 6) + ' 128 128)'"
-              />
-            </template>
-          </g>
           <!-- 进度弧线：倒计时剩余比例，起点在上方（-90°旋转） -->
           <circle
             cx="128" cy="128" r="100"
@@ -51,8 +38,21 @@
             :stroke-dashoffset="dashOffset"
             transform="rotate(-90 128 128)"
           />
+          <!-- 进度环分钟分割线（白色）：每 1 分钟一条，覆盖在进度环之上，使橙色环呈间断 -->
+          <g stroke="#FFFFFF" opacity="0.85">
+            <template v-for="i in 60" :key="'sep-'+i">
+              <line
+                x1="128"
+                y1="22"
+                x2="128"
+                y2="34"
+                stroke-width="3"
+                :transform="'rotate(' + ((i-1) * 6) + ' 128 128)'"
+              />
+            </template>
+          </g>
           <!-- 数字刻度（0、5、10...55） -->
-          <g fill="#B8CEE8" font-size="12" opacity="0.85" font-family="monospace">
+          <g fill="#B8CEE8" font-size="12" opacity="0.95" font-family="monospace" font-weight="700">
             <template v-for="lbl in dialLabels" :key="lbl.m">
               <text :x="lbl.x" :y="lbl.y" text-anchor="middle" dominant-baseline="middle">{{ lbl.m }}</text>
             </template>
@@ -60,7 +60,7 @@
         </svg>
         <!-- 数字时间置于表盘中心 -->
         <div class="absolute inset-0 flex items-center justify-center">
-          <div class="text-7xl font-mono" :style="{ color: '#B8CEE8' }">{{ mm }}:{{ ss }}</div>
+          <div class="text-6xl font-mono" :style="{ color: '#B8CEE8' }">{{ mm }}:{{ ss }}</div>
         </div>
       </div>
       <!-- 模式切换图标置于时间下方，避免与中心重叠 -->
@@ -141,10 +141,10 @@ const dialRatio = computed(() => {
 })
 const circumference = 2 * Math.PI * 100
 const dashOffset = computed(() => circumference * (1 - dialRatio.value))
-// 中文注释：数字刻度位置（0、5、10...55），使用三角函数定位到圆周内侧
+// 中文注释：数字刻度位置（0、5、10...55），放到表盘外侧并加粗显示
 const dialLabels = computed(() => {
   const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
-  const r = 78 // 刻度数字到圆心的半径，略小于进度环半径
+  const r = 120 // 外侧半径：略大于进度环外缘（100 + 6 + margin）
   return minutes.map((m) => {
     const rad = (m * 6 - 90) * Math.PI / 180
     return {

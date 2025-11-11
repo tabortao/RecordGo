@@ -1,6 +1,6 @@
 <template>
   <!-- 中文注释：独立的番茄钟页面（夜间主题），顶部返回图标；深色背景响应式居中展示定时器 -->
-  <div class="min-h-screen p-4 space-y-4" :style="{ backgroundColor: '#30302E' }">
+  <div class="h-screen p-4 space-y-4" :style="{ backgroundColor: '#30302E' }">
     <div class="flex items-center gap-2">
       <el-icon :size="18" class="cursor-pointer" :style="{ color: '#B8CEE8' }" @click="goBack"><ArrowLeft /></el-icon>
       <el-icon :size="18" :style="{ color: '#B8CEE8' }"><Clock /></el-icon>
