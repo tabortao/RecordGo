@@ -1,15 +1,15 @@
 <template>
   <!-- 中文注释：独立的番茄钟页面（夜间主题），顶部返回图标；深色背景响应式居中展示定时器 -->
-  <div class="h-screen p-4 space-y-4" :style="{ backgroundColor: '#30302E' }">
+  <div class="h-screen p-4 space-y-4 overflow-hidden" :style="{ backgroundColor: '#30302E' }">
     <div class="flex items-center gap-2">
       <el-icon :size="18" class="cursor-pointer" :style="{ color: '#B8CEE8' }" @click="goBack"><ArrowLeft /></el-icon>
       <el-icon :size="18" :style="{ color: '#B8CEE8' }"><Clock /></el-icon>
       <h2 class="font-semibold" :style="{ color: '#B8CEE8' }">番茄钟</h2>
       <!-- 右上角系统时间显示（字号与标题一致） -->
-      <h2 class="ml-auto font-mono font-semibold" :style="{ color: '#B8CEE8', fontSize: '2em' }">{{ systemTime }}</h2>
+      <h2 class="ml-auto font-mono font-semibold" :style="{ color: '#B8CEE8', fontSize: '1.3em' }">{{ systemTime }}</h2>
     </div>
     <!-- 任务标题：靠近页面标题，避免紧邻下方为时钟 -->
-    <div class="text-sm mt-1 mb-3 text-center" :style="{ color: '#B8CEE8' }" v-if="taskName">任务：{{ taskName }}</div>
+    <div class="mt-1 mb-3 text-center font-bold" :style="{ color: '#B8CEE8', fontSize: '1.2em' }" v-if="taskName">任务：{{ taskName }}</div>
     <!-- 中文注释：将任务标题、备注、预计时长融入到上方定时器组件，取消下方信息卡片；居中显示 -->
     <div class="max-w-3xl mx-auto">
       <TomatoTimer :work-minutes="workMinutes" :break-minutes="5" :task-name="taskName" :task-remark="taskRemark" @complete="onTomatoComplete" />

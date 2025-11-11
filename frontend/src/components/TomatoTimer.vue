@@ -1,7 +1,7 @@
 <template>
   <!-- 中文注释：番茄钟组件（增强版），支持倒计时/正计时、预设与自定义、开始/暂停/继续/完成 -->
   <!-- 中文注释：容器改为充满视口高度，底部区域更贴近页面底部 -->
-  <div class="relative p-4 flex flex-col h-screen justify-between">
+  <div class="relative p-4 flex flex-col justify-between">
 
     <!-- 中文注释：移除组件内部标题，避免与弹窗标题重复显示 -->
 
@@ -267,5 +267,18 @@ onUnmounted(() => {
 
 <style scoped>
 /* 中文注释：使用基础文本样式与按钮布局，视觉轻量 */
+/* 中文注释：夜间主题 - 统一数字输入控件的底纹与文字颜色，与按钮风格一致 */
+:deep(.el-input__wrapper) {
+  background-color: #3a3a38; /* rgb(58, 58, 56) */
+  color: #B8CEE8;
+  border-color: #4a4a48;
+}
+:deep(.el-input__inner) {
+  color: #B8CEE8;
+}
+:deep(.el-input-number__decrease),
+:deep(.el-input-number__increase) {
+  color: #B8CEE8;
+}
 </style>
 
