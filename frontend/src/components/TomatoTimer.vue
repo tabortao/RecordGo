@@ -269,16 +269,22 @@ onUnmounted(() => {
 /* 中文注释：使用基础文本样式与按钮布局，视觉轻量 */
 /* 中文注释：夜间主题 - 统一数字输入控件的底纹与文字颜色，与按钮风格一致 */
 :deep(.el-input__wrapper) {
-  background-color: #3a3a38; /* rgb(58, 58, 56) */
-  color: #B8CEE8;
-  border-color: #4a4a48;
+  background-color: #3a3a38 !important; /* rgb(58, 58, 56) */
+  color: #B8CEE8 !important;
+  box-shadow: 0 0 0 1px #4a4a48 inset !important; /* Element Plus 使用 box-shadow 模拟边框 */
 }
 :deep(.el-input__inner) {
-  color: #B8CEE8;
+  color: #B8CEE8 !important;
 }
 :deep(.el-input-number__decrease),
 :deep(.el-input-number__increase) {
-  color: #B8CEE8;
+  color: #B8CEE8 !important;
+  background-color: #3a3a38 !important;
+  border-color: #4a4a48 !important;
+}
+:deep(.el-input-number__decrease:hover),
+:deep(.el-input-number__increase:hover) {
+  background-color: #3a3a38 !important;
 }
 </style>
 
