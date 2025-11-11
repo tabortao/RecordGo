@@ -9,6 +9,9 @@ export interface TomatoState {
   fixedTomatoPage: boolean
   showFloating: boolean
   currentTaskId: number | null
+  // 中文注释：为支持锁屏/标签页不可见时继续计时，记录开始与结束的时间戳（毫秒）
+  startAtMs?: number | null
+  endAtMs?: number | null
 }
 
 export interface Permissions {
@@ -48,7 +51,9 @@ const DEFAULT_STATE: AppState = {
     remainingSeconds: 20 * 60,
     fixedTomatoPage: true,
     showFloating: false,
-    currentTaskId: null
+    currentTaskId: null,
+    startAtMs: null,
+    endAtMs: null
   },
   speech: {
     enabled: true,

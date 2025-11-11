@@ -61,21 +61,26 @@ async function finalizeCountdown() {
 }
 
 function tick() {
+  // 中文注释：基于墙钟时间戳计算，避免锁屏/后台导致中断
+  const now = Date.now()
   const mode = store.tomato.mode
-  const cur = store.tomato.remainingSeconds || 0
   if (mode === 'countdown') {
-    const next = Math.max(0, cur - 1)
+    const endAt = store.tomato.endAtMs ?? null
+    if (endAt == null) return
+    const next = Math.max(0, Math.round((endAt - now) / 1000))
     store.updateTomato({ remainingSeconds: next })
-    if (next === 0 && !finishedOnce) {
+    if (next <= 0 && !finishedOnce) {
       finishedOnce = true
-      // 写入完成记录并关闭悬浮球
       finalizeCountdown().finally(() => {
-        store.updateTomato({ running: false, showFloating: false })
+        store.updateTomato({ running: false, showFloating: false, startAtMs: null, endAtMs: null })
         if (t) { clearInterval(t); t = null }
       })
     }
   } else {
-    store.updateTomato({ remainingSeconds: cur + 1 })
+    const startAt = store.tomato.startAtMs ?? null
+    if (startAt == null) return
+    const next = Math.max(0, Math.round((now - startAt) / 1000))
+    store.updateTomato({ remainingSeconds: next })
   }
 }
 
@@ -92,6 +97,9 @@ function openTomatoPage() {
 
 onMounted(() => {
   if (!t) t = setInterval(tick, 1000)
+  const onVis = () => { if (document.visibilityState === 'visible' && store.tomato.running) tick() }
+  document.addEventListener('visibilitychange', onVis)
+  ;(window as any).__floating_vis__ = onVis
   // 初始位置：底部居中
   const w = window.innerWidth
   const h = window.innerHeight
@@ -110,7 +118,11 @@ onMounted(() => {
     posTop.value = h - BALL_SIZE - 64 // 约等于 bottom-16
   }
 })
-onUnmounted(() => { if (t) { clearInterval(t); t = null } })
+onUnmounted(() => {
+  if (t) { clearInterval(t); t = null }
+  const onVis = (window as any).__floating_vis__
+  if (onVis) document.removeEventListener('visibilitychange', onVis)
+})
 
 function onPointerDown(e: PointerEvent) {
   dragging = true

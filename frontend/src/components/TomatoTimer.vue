@@ -132,6 +132,9 @@ const remaining = ref(store.tomato.remainingSeconds || (mode.value === 'countdow
 const started = ref(false)
 const customMinutes = ref(workM.value)
 let timer: any = null
+// 中文注释：墙钟时间戳，支持锁屏/后台后继续准确计时
+const startAtMs = ref<number | null>(store.tomato.startAtMs ?? null)
+const endAtMs = ref<number | null>(store.tomato.endAtMs ?? null)
 
 // 中文注释：移除未使用的文本计算，避免无用警告
 const mm = computed(() => String(Math.floor(remaining.value / 60)).padStart(2, '0'))
@@ -172,29 +175,31 @@ function toggleMode() {
 }
 
 function tick() {
+  const now = Date.now()
   if (mode.value === 'countdown') {
-    if (remaining.value > 0) {
-      remaining.value -= 1
-      store.updateTomato({ remainingSeconds: remaining.value })
-      return
-    }
-    stopInternal()
-    if (phase.value === 'work') {
-      // 中文注释：工作阶段倒计时结束，按计划时长（秒）上报
-      emit('complete', workM.value * 60)
-      phase.value = 'break'
-      remaining.value = breakM.value * 60
-    } else {
-      phase.value = 'work'
-      remaining.value = workM.value * 60
+    // 基于 endAtMs 计算剩余，避免页面不可见时中断
+    const target = endAtMs.value ?? (startAtMs.value ? startAtMs.value + workM.value * 60 * 1000 : null)
+    if (target == null) return
+    remaining.value = Math.max(0, Math.round((target - now) / 1000))
+    store.updateTomato({ remainingSeconds: remaining.value })
+    if (remaining.value <= 0) {
+      stopInternal()
+      if (phase.value === 'work') {
+        emit('complete', workM.value * 60)
+        phase.value = 'break'
+        remaining.value = breakM.value * 60
+      } else {
+        phase.value = 'work'
+        remaining.value = workM.value * 60
+      }
     }
   } else {
-    // 正计时：向上累计，到达目标分钟触发完成
-    remaining.value += 1
+    // 正计时：基于 startAtMs 计算累计秒数
+    if (!startAtMs.value) return
+    remaining.value = Math.max(0, Math.round((now - startAtMs.value) / 1000))
     store.updateTomato({ remainingSeconds: remaining.value })
     if (remaining.value >= workM.value * 60) {
       stopInternal()
-      // 中文注释：正计时完成时按累计秒数上报
       emit('complete', remaining.value)
     }
   }
@@ -206,8 +211,16 @@ function start() {
   started.value = true
   // 正计时从 00:00 开始
   if (mode.value === 'countup') remaining.value = 0
-  // 中文注释：开始时仅更新运行状态与当前任务ID；是否显示悬浮球由页面返回决定
-  store.updateTomato({ running: true, mode: mode.value, durationMinutes: workM.value, remainingSeconds: remaining.value, currentTaskId: props.taskId ?? null })
+  // 中文注释：记录墙钟时间戳，确保锁屏后继续计时
+  const now = Date.now()
+  if (mode.value === 'countdown') {
+    startAtMs.value = now
+    endAtMs.value = now + remaining.value * 1000
+  } else {
+    startAtMs.value = now
+    endAtMs.value = null
+  }
+  store.updateTomato({ running: true, mode: mode.value, durationMinutes: workM.value, remainingSeconds: remaining.value, currentTaskId: props.taskId ?? null, startAtMs: startAtMs.value, endAtMs: endAtMs.value })
   if (!timer) timer = setInterval(tick, 1000)
 }
 function pause() {
@@ -216,7 +229,10 @@ function pause() {
     clearInterval(timer)
     timer = null
   }
-  store.updateTomato({ running: false })
+  // 中文注释：暂停时保留当前 remainingSeconds，并清空时间戳
+  startAtMs.value = null
+  endAtMs.value = null
+  store.updateTomato({ running: false, startAtMs: null, endAtMs: null })
 }
 function togglePauseResume() {
   if (!started.value) return
@@ -224,15 +240,26 @@ function togglePauseResume() {
     pause()
   } else {
     running.value = true
+    const now = Date.now()
+    if (mode.value === 'countdown') {
+      endAtMs.value = now + remaining.value * 1000
+      startAtMs.value = now
+    } else {
+      // 正计时恢复：保持已用秒数的连续性
+      startAtMs.value = now - remaining.value * 1000
+      endAtMs.value = null
+    }
+    store.updateTomato({ running: true, startAtMs: startAtMs.value, endAtMs: endAtMs.value })
     if (!timer) timer = setInterval(tick, 1000)
-    store.updateTomato({ running: true })
   }
 }
 function reset() {
   pause()
   phase.value = 'work'
   remaining.value = workM.value * 60
-  store.updateTomato({ remainingSeconds: remaining.value })
+  startAtMs.value = null
+  endAtMs.value = null
+  store.updateTomato({ remainingSeconds: remaining.value, startAtMs: null, endAtMs: null })
 }
 function complete() {
   // 中文注释：手动完成，触发上报（正计时秒数 / 倒计时换算秒数）
@@ -246,7 +273,9 @@ function stopInternal() {
     clearInterval(timer)
     timer = null
   }
-  store.updateTomato({ running: false })
+  startAtMs.value = null
+  endAtMs.value = null
+  store.updateTomato({ running: false, startAtMs: null, endAtMs: null })
 }
 function setDuration(min: number) {
   customMinutes.value = min
@@ -271,13 +300,24 @@ watch(phase, () => {
 onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
-// 中文注释：如果进入页面时番茄钟仍在运行（来自悬浮球），自动继续计时
+// 中文注释：如果进入页面时番茄钟仍在运行（来自悬浮球），自动继续计时；同时监听可见性变化以刷新一次
 onMounted(() => {
   if (store.tomato.running) {
     running.value = true
     started.value = true
+    startAtMs.value = store.tomato.startAtMs ?? startAtMs.value
+    endAtMs.value = store.tomato.endAtMs ?? endAtMs.value
     if (!timer) timer = setInterval(tick, 1000)
   }
+  const onVis = () => {
+    if (document.visibilityState === 'visible' && running.value) tick()
+  }
+  document.addEventListener('visibilitychange', onVis)
+  ;(window as any).__tomato_vis__ = onVis
+})
+onUnmounted(() => {
+  const onVis = (window as any).__tomato_vis__
+  if (onVis) document.removeEventListener('visibilitychange', onVis)
 })
 // 中文注释：向父组件暴露停止/开始/暂停方法，便于页面“返回”时控制行为
 defineExpose({ stop: stopInternal, start, pause })
