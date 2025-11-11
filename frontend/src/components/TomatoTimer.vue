@@ -8,7 +8,7 @@
     <!-- 中文注释：时间居中，右侧提供模式切换图标；备注在时间下方显示为灰色小字 -->
     <!-- 中文注释：夜间主题 - 时间与图标颜色调整为浅色（#B8CEE8），使对比清晰 -->
     <!-- 中文注释：中部区域使用 flex-1 居中，让时间显示位于顶部与底部之间的正中 -->
-    <div class="flex-1 flex flex-col items-center justify-center gap-3 pb-28">
+    <div class="flex-1 flex flex-col items-center justify-center gap-3 pb-32">
       <!-- 中文注释：表盘样式 + 数字时间：浅橙色进度圈在倒计时模式下逐渐减少 -->
       <div class="relative w-64 h-64">
         <svg width="256" height="256" viewBox="0 0 256 256">
@@ -30,7 +30,7 @@
           <!-- 进度弧线：倒计时剩余比例，起点在上方（-90°旋转） -->
           <circle
             cx="128" cy="128" r="100"
-            stroke="#F4A261" stroke-width="16" fill="none" stroke-linecap="round"
+            stroke="#F4A261" stroke-width="16" fill="none" stroke-linecap="butt"
             :style="{ transition: 'stroke-dashoffset .3s linear' }"
             :stroke-dasharray="circumference"
             :stroke-dashoffset="dashOffset"
@@ -77,7 +77,7 @@
     </div>
 
     <!-- 中文注释：底部区域 - 包含时间预设/自定义与控制按钮，更贴近页面底部 -->
-    <div class="absolute bottom-4 left-0 right-0 space-y-3">
+    <div class="fixed bottom-4 left-0 right-0 space-y-3">
       <!-- 中文注释：倒计时模式下显示预设与自定义；正计时不显示这些 -->
       <div class="flex items-center justify-center gap-3" v-if="mode==='countdown'">
       <div class="flex items-center gap-2">

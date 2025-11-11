@@ -6,10 +6,10 @@
       <el-icon :size="18" :style="{ color: '#B8CEE8' }"><Clock /></el-icon>
       <h2 class="font-semibold" :style="{ color: '#B8CEE8' }">番茄钟</h2>
       <!-- 右上角系统时间显示（字号与标题一致） -->
-      <h2 class="ml-auto font-mono font-semibold" :style="{ color: '#B8CEE8' }">{{ systemTime }}</h2>
+      <h2 class="ml-auto font-mono font-semibold" :style="{ color: '#B8CEE8', fontSize: '2em' }">{{ systemTime }}</h2>
     </div>
     <!-- 任务标题：靠近页面标题，避免紧邻下方为时钟 -->
-    <div class="text-sm mt-1 mb-3" :style="{ color: '#B8CEE8' }" v-if="taskName">任务：{{ taskName }}</div>
+    <div class="text-sm mt-1 mb-3 text-center" :style="{ color: '#B8CEE8' }" v-if="taskName">任务：{{ taskName }}</div>
     <!-- 中文注释：将任务标题、备注、预计时长融入到上方定时器组件，取消下方信息卡片；居中显示 -->
     <div class="max-w-3xl mx-auto">
       <TomatoTimer :work-minutes="workMinutes" :break-minutes="5" :task-name="taskName" :task-remark="taskRemark" @complete="onTomatoComplete" />
