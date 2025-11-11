@@ -112,12 +112,15 @@ import router from '@/router'
 import { ElMessage } from 'element-plus'
 import { Edit, Delete, Coin } from '@element-plus/icons-vue'
 import { useAppState } from '@/stores/appState'
+import { useAuth } from '@/stores/auth'
 import { listWishes, deleteWish, exchangeWish, listWishRecords, type Wish, type WishRecord } from '@/services/wishes'
 
 // 中文注释：全局状态与本页状态
 const store = useAppState()
 const coins = computed(() => store.coins)
-const userId = 1 // 中文注释：示例用户ID（真实项目中从登录信息获取）
+// 中文注释：从认证状态读取当前登录用户ID；未登录时回退为 0（将触发默认心愿回退逻辑）
+const auth = useAuth()
+const userId = computed(() => auth.user?.id ?? 0)
 
 // 心愿列表与表单/记录状态
 const wishList = ref<Wish[]>([])
@@ -180,7 +183,7 @@ function formatTime(ts: string) {
 // 加载心愿列表（新用户自动生成内置心愿）
 async function loadWishes() {
   try {
-    wishList.value = await listWishes(userId)
+    wishList.value = await listWishes(userId.value)
   } catch (e) {
     // 兜底：调用默认心愿接口（增加 JSON 安全解析，避免空响应导致异常）
     let d: any = { data: [] }
@@ -194,7 +197,7 @@ async function loadWishes() {
     wishList.value = (d.data || []).map((x: any, i: number) => ({
       // 中文注释：内置图标强制与 assets/wishs 文件名一致：<心愿名称>.png
       id: i + 1,
-      user_id: userId,
+      user_id: userId.value,
       name: x.name,
       content: x.content || `默认内置心愿：${x.name}`,
       icon: `${x.name}.png`,
@@ -247,7 +250,7 @@ async function confirmExchange() {
   if (!w) { showExchange.value = false; return }
   const count = Math.max(1, Number(exchangeCount.value || 1))
   try {
-    const resp = await exchangeWish(w.id, userId, count, exchangeRemark.value)
+    const resp = await exchangeWish(w.id, userId.value, count, exchangeRemark.value)
     if (resp && typeof resp.user_coins !== 'undefined') {
       store.setCoins(Number(resp.user_coins))
     }
@@ -268,7 +271,7 @@ function cancelExchange() {
 // 加载记录
 async function loadRecords(page = 1) {
   try {
-    records.value = await listWishRecords(userId, page, records.value.page_size)
+    records.value = await listWishRecords(userId.value, page, records.value.page_size)
   } catch { records.value = { items: [], total: 0, page: 1, page_size: 10 } }
 }
 

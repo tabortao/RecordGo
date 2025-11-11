@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '@/stores/auth'
+import { useAppState } from '@/stores/appState'
 
 // 中文注释：简单的三页面路由结构，默认进入任务页；恢复无登录守卫的版本
 const router = createRouter({
@@ -61,7 +62,18 @@ const router = createRouter({
 // 中文注释：全局前置守卫——未登录禁止进入业务页面
 router.beforeEach((to) => {
   const auth = useAuth()
+  const store = useAppState()
   const isPublic = to.meta?.public === true
+  // 中文注释：登录后首次进入业务页面时，确保全局金币从用户信息恢复
+  try {
+    const userCoins = Number((auth.user as any)?.coins ?? NaN)
+    if (!isNaN(userCoins)) {
+      // 仅当值不一致时才更新，避免不必要的持久化
+      if (Number(store.coins) !== userCoins) {
+        store.setCoins(userCoins)
+      }
+    }
+  } catch {}
   // 中文注释：已登录访问登录/注册页面时自动跳转任务页
   if (auth.token && (to.path === '/login' || to.path === '/register')) {
     return { path: '/tasks' }
