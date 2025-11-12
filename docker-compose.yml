@@ -1,0 +1,17 @@
+services:
+  recordgo-server:
+    image: tabortoa/taskgo:latest
+    container_name: recordgo-server
+    restart: unless-stopped
+    ports:
+      - "38048:8080"
+    environment:
+      SECRET_KEY: "replace-with-your-secret"
+      DB_PATH: "/app/storage/database/recordgo.db"
+      STORAGE_ROOT: "/app/storage"
+      PORT: "8080"
+      GIN_MODE: "release"
+      PARENT_COINS_SYNC: "true"
+      ALLOW_ORIGINS: "https://recordgo.netlify.com"
+    volumes:
+      - ./storage:/app/storage

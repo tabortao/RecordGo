@@ -19,6 +19,34 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
     r := gin.New()
     r.Use(gin.Recovery())
 
+    r.Use(func(c *gin.Context) {
+        origin := c.Request.Header.Get("Origin")
+        allow := ""
+        for _, o := range cfg.AllowedOrigins {
+            if o == "*" {
+                allow = "*"
+                break
+            }
+            if origin == o {
+                allow = origin
+                break
+            }
+        }
+        if allow == "" && len(cfg.AllowedOrigins) == 1 && cfg.AllowedOrigins[0] == "*" {
+            allow = "*"
+        }
+        if allow != "" {
+            c.Writer.Header().Set("Access-Control-Allow-Origin", allow)
+        }
+        c.Writer.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
+        c.Writer.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+        if c.Request.Method == "OPTIONS" {
+            c.AbortWithStatus(204)
+            return
+        }
+        c.Next()
+    })
+
     // 中文注释：静态文件服务（上传图片），映射到 /api/uploads
     r.Static("/api/uploads", filepath.Join(cfg.StorageRoot, "uploads"))
 
