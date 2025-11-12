@@ -1,19 +1,17 @@
 FROM golang:1.24-alpine AS build
-WORKDIR /src
-COPY backend/go.mod backend/go.sum ./backend/
-WORKDIR /src/backend
+WORKDIR /app
+COPY backend/go.mod backend/go.sum ./
 RUN go mod download
-WORKDIR /src
-COPY backend ./backend
+COPY backend ./
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    go build -ldflags="-s -w" -o server ./backend/cmd/server
+    go build -ldflags="-s -w" -o server ./cmd/server
 
 FROM alpine:latest
 WORKDIR /app
 RUN apk add --no-cache tzdata
 ENV TZ="UTC"
-COPY --from=build /src/server /app/
+COPY --from=build /app/server /app/
 EXPOSE 8080
 RUN mkdir -p /app/storage
 VOLUME /app/storage
