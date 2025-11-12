@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"recordgo/internal/common"
+	"recordgo/internal/config"
 	"recordgo/internal/db"
 	"recordgo/internal/models"
 
@@ -244,30 +245,38 @@ func ExchangeWish(c *gin.Context) {
 		common.Error(c, 40401, "心愿不存在")
 		return
 	}
-	var u models.User
-	if err := db.DB().First(&u, req.UserID).Error; err != nil {
+    var u models.User
+    if err := db.DB().First(&u, req.UserID).Error; err != nil {
 		// 中文注释：开发环境兜底——如果用户不存在，自动创建一个测试用户并给予初始金币
 		// 说明：正式环境应通过登录/注册获得用户，这里仅为便于联调前端心愿功能
 		u = models.User{ID: req.UserID, Username: fmt.Sprintf("user%d", req.UserID), Role: "user", Coins: 100, Nickname: "测试用户"}
 		_ = db.DB().Create(&u).Error
 	}
-	// 中文注释：按数量计算总金币需求
-	totalCost := int64(w.NeedCoins * req.Count)
-	if u.Coins < totalCost {
-		common.Error(c, 40006, "金币不足")
-		return
-	}
-	// 扣减金币与心愿计数
-	u.Coins -= totalCost
-	w.Exchanged += req.Count
-	if err := db.DB().Save(&u).Error; err != nil {
-		common.Error(c, 50014, "扣减金币失败")
-		return
-	}
-	if err := db.DB().Save(&w).Error; err != nil {
-		common.Error(c, 50015, "更新心愿失败")
-		return
-	}
+    // 中文注释：确定金币实际归属用户（父或本人）
+    target := u
+    if cfg2, _ := config.Load(); cfg2 != nil && cfg2.ParentCoinsSync && u.ParentID != nil {
+        var parent models.User
+        if err := db.DB().First(&parent, *u.ParentID).Error; err == nil {
+            target = parent
+        }
+    }
+    // 中文注释：按数量计算总金币需求，并校验余额
+    totalCost := int64(w.NeedCoins * req.Count)
+    if target.Coins < totalCost {
+        common.Error(c, 40006, "金币不足")
+        return
+    }
+    // 扣减金币与心愿计数
+    target.Coins -= totalCost
+    w.Exchanged += req.Count
+    if err := db.DB().Save(&target).Error; err != nil {
+        common.Error(c, 50014, "扣减金币失败")
+        return
+    }
+    if err := db.DB().Save(&w).Error; err != nil {
+        common.Error(c, 50015, "更新心愿失败")
+        return
+    }
 	// 写入兑换记录
 	rec := models.WishRecord{
 		UserID:    req.UserID,
@@ -284,7 +293,8 @@ func ExchangeWish(c *gin.Context) {
 		common.Error(c, 50016, "写入兑换记录失败")
 		return
 	}
-	common.Ok(c, gin.H{"wish": w, "user_coins": u.Coins, "record": rec})
+    // 中文注释：返回 user_coins 为金币实际归属用户（父或本人）的最新值，便于前端统一展示
+    common.Ok(c, gin.H{"wish": w, "user_coins": target.Coins, "record": rec})
 }
 
 // ListWishRecords 分页查询兑换记录（支持 user_id 过滤）

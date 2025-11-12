@@ -121,6 +121,15 @@ func Login(c *gin.Context) {
         common.Error(c, 50003, "签发令牌失败")
         return
     }
+    // 中文注释：计算返回的金币值——若启用了父子金币同步且为子账号，则使用父账号金币
+    coinsToReturn := u.Coins
+    cfg2, _ := config.Load()
+    if cfg2 != nil && cfg2.ParentCoinsSync && u.ParentID != nil {
+        var parent models.User
+        if err := db.DB().First(&parent, *u.ParentID).Error; err == nil {
+            coinsToReturn = parent.Coins
+        }
+    }
     // 返回与前端一致的用户字段
     common.Ok(c, gin.H{
         "token": signed,
@@ -131,7 +140,7 @@ func Login(c *gin.Context) {
             "role": u.Role,
             "permissions": u.Permissions,
             "parent_id": u.ParentID,
-            "coins": u.Coins,
+            "coins": coinsToReturn,
             "tomatoes": u.Tomatoes,
             "avatar_path": u.AvatarPath,
             "phone": u.Phone,

@@ -148,6 +148,44 @@ func DeleteSubAccount(c *gin.Context) {
     common.Ok(c, gin.H{"id": child.ID})
 }
 
+// RebindChildReq 重新绑定子账号到新的父账号（仅父账号/管理员）
+type RebindChildReq struct {
+    ParentID uint `json:"parent_id"`
+}
+
+// RebindSubAccount 将现有子账号绑定到指定父账号（修复历史数据）
+func RebindSubAccount(c *gin.Context) {
+    // 中文注释：仅父账号或具备 manage_children 权限的账号可操作
+    if !hasPermission(c, "account", "manage_children") {
+        deny(c, "无权限重新绑定子账号")
+        return
+    }
+    id := strings.TrimSpace(c.Param("id"))
+    var child models.User
+    if err := db.DB().First(&child, id).Error; err != nil {
+        common.Error(c, 40404, "子账号不存在")
+        return
+    }
+    var req RebindChildReq
+    if err := c.ShouldBindJSON(&req); err != nil || req.ParentID == 0 {
+        common.Error(c, 40001, "参数错误：缺少有效 parent_id")
+        return
+    }
+    // 校验目标父账号存在
+    var parent models.User
+    if err := db.DB().First(&parent, req.ParentID).Error; err != nil {
+        common.Error(c, 40401, "父账号不存在")
+        return
+    }
+    // 执行绑定
+    child.ParentID = &req.ParentID
+    if err := db.DB().Save(&child).Error; err != nil {
+        common.Error(c, 50058, "保存绑定关系失败")
+        return
+    }
+    common.Ok(c, toChildResp(&child))
+}
+
 // GenerateChildToken 生成或刷新子账号登录令牌
 func GenerateChildToken(c *gin.Context) {
     if !hasPermission(c, "account", "manage_children") {

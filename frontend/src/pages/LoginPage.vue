@@ -55,6 +55,7 @@ import { ElMessage } from 'element-plus'
 import router from '@/router'
 import { apiLogin, apiTokenLogin } from '@/services/auth'
 import { useAuth } from '@/stores/auth'
+import { useAppState } from '@/stores/appState'
 
 // 中文注释：登录模式与表单字段：账号密码 或 子账号令牌
 const mode = ref<'account'|'token'>('account')
@@ -62,6 +63,7 @@ const username = ref('')
 const password = ref('')
 const token = ref('')
 const auth = useAuth()
+const appState = useAppState()
 // 中文注释：记住我（默认未勾选），勾选则写入 localStorage；未勾选仅本次会话
 const rememberMe = ref(false)
 
@@ -80,6 +82,8 @@ async function doLogin() {
   try {
     const resp = await apiLogin(username.value, password.value)
     auth.setLogin(resp.token, resp.user, rememberMe.value)
+    // 中文注释：登录后立即同步全局金币，避免进入页面前显示为 0 的闪烁或不一致
+    try { appState.setCoins(Number(resp.user?.coins ?? 0)) } catch {}
     ElMessage.success('登录成功')
     const redirect = (router.currentRoute.value.query.redirect as string) || '/tasks'
     router.replace(redirect)
@@ -93,6 +97,8 @@ async function doTokenLogin() {
   try {
     const resp = await apiTokenLogin(token.value)
     auth.setLogin(resp.token, resp.user, rememberMe.value)
+    // 中文注释：令牌登录同样同步全局金币
+    try { appState.setCoins(Number(resp.user?.coins ?? 0)) } catch {}
     ElMessage.success('登录成功')
     const redirect = (router.currentRoute.value.query.redirect as string) || '/tasks'
     router.replace(redirect)

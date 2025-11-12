@@ -13,6 +13,7 @@ import (
     "go.uber.org/zap"
     "gorm.io/gorm"
     "recordgo/internal/common"
+    "recordgo/internal/config"
     "recordgo/internal/db"
     "recordgo/internal/models"
 )
@@ -219,25 +220,32 @@ func UpdateStatus(c *gin.Context) {
     // 中文注释：当任务状态从“已完成”变更为其他状态时，扣减用户金币；当从非已完成变更为“已完成”时，增加用户金币
     prev := t.Status
     t.Status = req.Status
-    // 同步用户金币
-    var u models.User
-    if err := db.DB().First(&u, t.UserID).Error; err != nil {
-        // 中文注释：开发环境兜底——若用户不存在，初始化一个测试用户，避免状态变更报错
-        // 说明：正式环境应通过登录/注册获取用户；此兜底仅为当前前后端联调方便
-        u = models.User{ID: t.UserID, Username: fmt.Sprintf("user%d", t.UserID), Role: "user", Coins: 0, Nickname: "测试用户"}
-        if ierr := db.DB().Create(&u).Error; ierr != nil {
+    // 同步用户金币：若启用父子金币同步，则将金币更新与返回值指向父账号
+    var owner models.User
+    if err := db.DB().First(&owner, t.UserID).Error; err != nil {
+        // 中文注释：开发环境兜底——若任务所属用户不存在，初始化一个测试用户，避免报错
+        owner = models.User{ID: t.UserID, Username: fmt.Sprintf("user%d", t.UserID), Role: "user", Coins: 0, Nickname: "测试用户"}
+        if ierr := db.DB().Create(&owner).Error; ierr != nil {
             common.Error(c, 50005, "初始化用户失败")
             return
         }
     }
+    // 选择金币实际归属用户
+    target := owner
+    if cfg2, _ := config.Load(); cfg2 != nil && cfg2.ParentCoinsSync && owner.ParentID != nil {
+        var parent models.User
+        if err := db.DB().First(&parent, *owner.ParentID).Error; err == nil {
+            target = parent
+        }
+    }
     if prev == 2 && req.Status != 2 {
         // 取消完成：扣减对应金币（允许为负数，实际效果为增加金币）
-        u.Coins -= int64(t.Score)
+        target.Coins -= int64(t.Score)
     } else if prev != 2 && req.Status == 2 {
         // 标记完成：增加对应金币
-        u.Coins += int64(t.Score)
+        target.Coins += int64(t.Score)
     }
-    if err := db.DB().Save(&u).Error; err != nil {
+    if err := db.DB().Save(&target).Error; err != nil {
         common.Error(c, 50005, "更新用户金币失败")
         return
     }
@@ -246,7 +254,8 @@ func UpdateStatus(c *gin.Context) {
         return
     }
     _ = db.DB().Create(&models.TaskHistory{TaskID: t.ID, ChangeType: "status", SnapshotJSON: string(before)}).Error
-    common.Ok(c, gin.H{"task": t, "user_coins": u.Coins})
+    // 中文注释：返回 user_coins 为金币实际归属用户（父或本人）的最新值，便于前端统一展示
+    common.Ok(c, gin.H{"task": t, "user_coins": target.Coins})
 }
 
 // DeleteTask 软删除（进入回收站）

@@ -71,6 +71,11 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         api.PUT("/subaccounts/:id", handlers.UpdateSubAccount)
         api.DELETE("/subaccounts/:id", handlers.DeleteSubAccount)
         api.POST("/subaccounts/:id/token", handlers.GenerateChildToken)
+        // 中文注释：修复历史子账号未绑定父账号的情况（仅父账号/管理员）
+        api.POST("/subaccounts/:id/rebind", handlers.RebindSubAccount)
+
+        // 中文注释：金币查询（返回当前登录用户的有效金币，父子同步时返回父账号金币）
+        api.GET("/coins", handlers.GetCoins)
     }
 
     return r

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
+import http from '@/services/http'
 
 // 中文注释：简单的三页面路由结构，默认进入任务页；恢复无登录守卫的版本
 const router = createRouter({
@@ -62,7 +63,7 @@ const router = createRouter({
 })
 
 // 中文注释：全局前置守卫——未登录禁止进入业务页面
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuth()
   const store = useAppState()
   const isPublic = to.meta?.public === true
@@ -74,6 +75,16 @@ router.beforeEach((to) => {
       if (Number(store.coins) !== userCoins) {
         store.setCoins(userCoins)
       }
+    }
+  } catch {}
+  // 中文注释：若为子账号，且启用父子金币同步（由后端控制），在进入业务页时主动请求一次 /api/coins
+  try {
+    const isChild = !!(auth.user && (auth.user as any).parent_id)
+    const alreadyChecked = sessionStorage.getItem('coins_sync_checked') === '1'
+    // 触发条件：子账号且未触发过同步检查；或当前显示为 0，防止首次显示为 0 的情况
+    if (isChild && (!alreadyChecked || Number(store.coins) === 0)) {
+      await http.get('/coins')
+      sessionStorage.setItem('coins_sync_checked', '1')
     }
   } catch {}
   // 中文注释：已登录访问登录/注册页面时自动跳转任务页
