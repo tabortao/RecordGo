@@ -80,11 +80,9 @@ router.beforeEach(async (to) => {
   // 中文注释：若为子账号，且启用父子金币同步（由后端控制），在进入业务页时主动请求一次 /api/coins
   try {
     const isChild = !!(auth.user && (auth.user as any).parent_id)
-    const alreadyChecked = sessionStorage.getItem('coins_sync_checked') === '1'
-    // 触发条件：子账号且未触发过同步检查；或当前显示为 0，防止首次显示为 0 的情况
-    if (isChild && (!alreadyChecked || Number(store.coins) === 0)) {
+    // 中文注释：取消“一次性检查”与 0 值条件，改为每次进入业务页都拉取最新金币，确保父子同步即时生效
+    if (isChild && !isPublic) {
       await http.get('/coins')
-      sessionStorage.setItem('coins_sync_checked', '1')
     }
   } catch {}
   // 中文注释：已登录访问登录/注册页面时自动跳转任务页

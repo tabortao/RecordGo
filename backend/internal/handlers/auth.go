@@ -4,6 +4,7 @@ import (
     "crypto/sha256"
     "encoding/hex"
     "time"
+    "strings"
     
     "github.com/gin-gonic/gin"
     jwt "github.com/golang-jwt/jwt/v5"
@@ -33,6 +34,8 @@ type Claims struct {
     Role       string `json:"role"`
     Permissions string `json:"permissions"`
     ParentID   *uint  `json:"parent_id"`
+    // 中文注释：子账号登录令牌（用于令牌刷新后使旧 JWT 失效）；父账号或普通登录可为空
+    LoginToken string `json:"login_token"`
     jwt.RegisteredClaims
 }
 
@@ -104,12 +107,17 @@ func Login(c *gin.Context) {
 
     // 生成 JWT
     cfg, _ := config.Load()
+    // 中文注释：若为子账号，将当前 LoginToken 注入 JWT 用于后续校验；父账号为空字符串
+    lt := ""
+    if u.ParentID != nil { lt = strings.TrimSpace(u.LoginToken) }
     claims := Claims{
         UserID:     u.ID,
         Username:   u.Username,
         Role:       u.Role,
         Permissions: ifEmpty(u.Permissions, `{"view_only": false}`),
         ParentID:   u.ParentID,
+        // 中文注释：若为子账号，附带当前登录令牌；用于服务端校验令牌是否已刷新
+        LoginToken: lt,
         RegisteredClaims: jwt.RegisteredClaims{
             ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
             IssuedAt:  jwt.NewNumericDate(time.Now()),

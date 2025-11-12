@@ -49,6 +49,8 @@ type UpdateTaskReq struct {
 // 中文注释：状态变更请求结构体
 type UpdateStatusReq struct {
     Status int `json:"status"` // 0待完成 1进行中 2已完成
+    // 中文注释：番茄钟完成放行标记（仅用于在 view_only 下允许标记为“已完成”）
+    AllowByTomato bool `json:"allow_by_tomato"`
 }
 
 // 中文注释：番茄钟完成上报请求结构体
@@ -196,15 +198,17 @@ func UpdateTask(c *gin.Context) {
 // UpdateStatus 状态变更（记录历史）
 func UpdateStatus(c *gin.Context) {
     id := c.Param("id")
-    // 中文注释：子账号权限校验——需要具备 tasks.status 权限；家长默认放行
-    if !hasPermission(c, "tasks", "status") {
-        deny(c, "无权限更改任务状态")
-        return
-    }
     var req UpdateStatusReq
     if err := c.ShouldBindJSON(&req); err != nil {
         common.Error(c, 40001, "参数错误")
         return
+    }
+    // 中文注释：在 view_only 下，若为番茄钟完成且目标状态为“已完成”，允许放行；否则执行常规权限校验
+    if !hasPermission(c, "tasks", "status") {
+        if !(req.AllowByTomato && req.Status == 2) {
+            deny(c, "无权限更改任务状态")
+            return
+        }
     }
     if req.Status < 0 || req.Status > 2 {
         common.Error(c, 40003, "非法状态")

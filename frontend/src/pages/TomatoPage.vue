@@ -131,7 +131,8 @@ async function onTomatoComplete(seconds?: number) {
     const usedSec = Math.max(1, seconds || workMinutes.value * 60)
     const reportMinutes = Math.max(1, Math.round(usedSec / 60))
     await completeTomato(taskId, reportMinutes)
-    await updateTaskStatus(taskId, 2)
+    // 中文注释：番茄钟完成允许在只读权限下标记“已完成”，后端识别 allow_by_tomato 放行
+    await updateTaskStatus(taskId, 2, { allowByTomato: true })
     ElMessage.success('番茄钟完成，数据已记录')
     router.back()
   } catch (e: any) {

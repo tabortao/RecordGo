@@ -2,6 +2,7 @@ package handlers
 
 import (
     "strings"
+    "time"
 
     "github.com/gin-gonic/gin"
     jwt "github.com/golang-jwt/jwt/v5"
@@ -43,6 +44,11 @@ func TokenLogin(c *gin.Context) {
         Role:       u.Role,
         Permissions: u.Permissions,
         ParentID:   u.ParentID,
+        LoginToken: strings.TrimSpace(u.LoginToken),
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+            IssuedAt:  jwt.NewNumericDate(time.Now()),
+        },
     }
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
     tokenStr, err := token.SignedString([]byte(cfg.SecretKey))

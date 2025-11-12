@@ -52,7 +52,8 @@ async function finalizeCountdown() {
   try {
     if (id && !isNaN(id)) {
       await completeTomato(id, minutes)
-      await updateTaskStatus(id, 2)
+      // 中文注释：悬浮球计时完成也视为番茄完成，允许只读权限下标记“已完成”
+      await updateTaskStatus(id, 2, { allowByTomato: true })
       ElMessage.success('番茄钟完成，数据已记录')
     }
   } catch (e: any) {

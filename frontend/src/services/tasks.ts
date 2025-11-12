@@ -34,8 +34,10 @@ export async function updateTask(id: number, payload: any): Promise<TaskItem> {
   return (await http.put(`/tasks/${id}`, payload)) as any
 }
 
-export async function updateTaskStatus(id: number, status: number): Promise<TaskItem> {
-  return (await http.patch(`/tasks/${id}/status`, { status })) as any
+export async function updateTaskStatus(id: number, status: number, opts?: { allowByTomato?: boolean }): Promise<TaskItem> {
+  const body: any = { status }
+  if (opts?.allowByTomato) body.allow_by_tomato = true
+  return (await http.patch(`/tasks/${id}/status`, body)) as any
 }
 
 // 中文注释：获取单个任务详情，独立页面加载使用

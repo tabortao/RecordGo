@@ -8,6 +8,8 @@ import (
     jwt "github.com/golang-jwt/jwt/v5"
     "recordgo/internal/common"
     "recordgo/internal/config"
+    "recordgo/internal/db"
+    "recordgo/internal/models"
 )
 
 // 中文注释：从 Authorization 中解析 JWT Claims；失败返回 nil
@@ -24,6 +26,16 @@ func extractClaims(c *gin.Context) *Claims {
             return []byte(cfg.SecretKey), nil
         })
         if err == nil && t.Valid {
+            // 中文注释：子账号令牌刷新校验——若 JWT 中含有登录令牌字段，则需与数据库中当前 LoginToken 一致；不一致则判定令牌失效
+            if claims.ParentID != nil && strings.TrimSpace(claims.LoginToken) != "" {
+                var u models.User
+                if dberr := db.DB().First(&u, claims.UserID).Error; dberr != nil {
+                    return nil
+                }
+                if strings.TrimSpace(u.LoginToken) != strings.TrimSpace(claims.LoginToken) {
+                    return nil
+                }
+            }
             return claims
         }
     }
