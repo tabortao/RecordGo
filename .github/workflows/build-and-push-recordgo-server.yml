@@ -6,6 +6,12 @@ on:
       - "release/**"
     tags:
       - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: '发布版本标签 (例如: v1.0.0)'
+        required: true
+        type: string
 
 env:
   DOCKER_PLATFORMS: |
