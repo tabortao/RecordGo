@@ -456,6 +456,7 @@
 
     <!-- 右下角绿色加号浮动按钮：创建任务 -->
   <el-button
+      v-if="isParent || canTaskCreate"
       type="success"
       circle
       class="fixed bottom-20 right-6 shadow-lg"
@@ -479,6 +480,7 @@ import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, D
 import defaultAvatar from '@/assets/avatars/default.png'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
+import { usePermissions } from '@/composables/permissions'
 import router from '@/router'
 import TomatoTimer from '@/components/TomatoTimer.vue'
 import WeekCalendar from '@/components/WeekCalendar.vue'
@@ -492,7 +494,11 @@ import { prepareUpload } from '@/utils/image'
 import { speak } from '@/utils/speech'
 import { useTaskCategories } from '@/stores/categories'
 const isMobile = ref(false)
-const userId = 1 // 中文注释：示例用户ID（参考心愿页做法，后续接入登录）
+// 中文注释：接入认证状态获取真实用户ID（未登录回退为 0）
+const auth = useAuth()
+const userId = computed(() => auth.user?.id ?? 0)
+// 中文注释：解析权限，父账号默认放行；子账号按动作校验
+const { isParent, viewOnly, canTaskCreate, canTaskEdit, canTaskDelete, canTaskStatus } = usePermissions()
 const dialogWidth = computed(() => (isMobile.value ? '96vw' : '640px'))
 // 中文注释：任务分类 Store，用于动态筛选与分组颜色
 const cats = useTaskCategories()
@@ -589,7 +595,6 @@ async function onTouchEnd() {
 
 // 顶部统计占位（后续与后端联动）
 const store = useAppState()
-const auth = useAuth()
 // 中文注释：总金币改为直接读取全局 store.coins（由后端任务完成/取消与心愿兑换实时更新），与心愿页保持一致
 const totalCoins = computed(() => store.coins)
 const completedTasksCount = computed(() => {
@@ -834,11 +839,21 @@ async function fetchTasks() {
 }
 
 function openCreate() {
+  // 中文注释：权限校验：父账号允许；子账号需具备 tasks.create 权限
+  if (!isParent.value && !canTaskCreate.value) {
+    ElMessage.warning('当前权限不允许创建任务')
+    return
+  }
   // 中文注释：跳转到独立创建页面，提升移动端体验与布局灵活性
   router.push('/tasks/create')
 }
 
 function openEdit(t: TaskItem) {
+  // 中文注释：权限校验：父账号允许；子账号需具备 tasks.edit 权限
+  if (!isParent.value && !canTaskEdit.value) {
+    ElMessage.warning('当前权限不允许编辑任务')
+    return
+  }
   // 中文注释：跳转到独立编辑页面，按任务ID加载与保存
   router.push(`/tasks/${t.id}/edit`)
 }
@@ -895,6 +910,8 @@ async function submitForm() {
   } catch { return }
   try {
     if (editing.value && currentTask.value) {
+      // 中文注释：编辑权限校验
+      if (!isParent.value && !canTaskEdit.value) { ElMessage.warning('当前权限不允许编辑任务'); return }
       await updateTask(currentTask.value.id, {
         name: form.name,
         description: form.description,
@@ -907,6 +924,8 @@ async function submitForm() {
       })
       ElMessage.success('任务已更新')
     } else {
+      // 中文注释：创建权限校验
+      if (!isParent.value && !canTaskCreate.value) { ElMessage.warning('当前权限不允许创建任务'); return }
       // 中文注释：根据重复类型批量创建任务实例
       const dates = generateRepeatDates(form.start_date, form.end_date, form.repeat_type, form.weekly_days)
       if (dates.length === 0) {
@@ -942,7 +961,7 @@ async function submitForm() {
                 type: (webp as File)?.type,
                 isFile: webp instanceof File,
               })
-              const { path } = await uploadTaskImage(userId, webp, t.id)
+              const { path } = await uploadTaskImage(userId.value, webp, t.id)
               paths.push(path)
             } catch (err: any) {
               // 中文注释：详细前端错误日志，包含任务ID、文件名与后端返回信息
@@ -979,6 +998,11 @@ async function submitForm() {
 
 // 勾选即完成：只允许从未完成 -> 已完成，不提供取消
 async function onCheckComplete(t: TaskItem, checked: boolean) {
+  // 中文注释：状态变更权限校验
+  if (!isParent.value && !canTaskStatus.value) {
+    ElMessage.warning('当前权限不允许更改任务状态')
+    return
+  }
   try {
     if (checked) {
       // 中文注释：勾选为完成：按计划时长计入实际，并标记为已完成
@@ -1022,6 +1046,11 @@ function isRepeatedTask(t: TaskItem): boolean {
 }
 
 function confirmDelete(t: TaskItem) {
+  // 中文注释：删除权限校验
+  if (!isParent.value && !canTaskDelete.value) {
+    ElMessage.warning('当前权限不允许删除任务')
+    return
+  }
   if (isRepeatedTask(t)) {
     deleteTarget.value = t
     deleteScope.value = 'current'

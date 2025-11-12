@@ -28,3 +28,8 @@ export async function apiRegister(username: string, password: string, nickname?:
   return await http.post('/auth/register', { username, password, nickname })
 }
 
+// 中文注释：子账号令牌登录（免密码，仅限子账号使用）
+export async function apiTokenLogin(token: string) {
+  return await http.post<LoginResp>('/auth/token-login', { token })
+}
+

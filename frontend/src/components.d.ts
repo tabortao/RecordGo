@@ -54,4 +54,7 @@ declare module 'vue' {
     TomatoTimer: typeof import('./components/TomatoTimer.vue')['default']
     WeekCalendar: typeof import('./components/WeekCalendar.vue')['default']
   }
+  export interface ComponentCustomProperties {
+    vLoading: typeof import('element-plus/es')['ElLoadingDirective']
+  }
 }

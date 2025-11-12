@@ -9,6 +9,8 @@ type User struct {
     PasswordSha string    `gorm:"size:128"`
     Role        string    `gorm:"size:16"` // admin/user
     Permissions string    `gorm:"type:text"` // JSON
+    // 中文注释：子账号登录令牌（随机生成，用于免密码登录子账号）
+    LoginToken  string    `gorm:"size:128;index"`
     Coins       int64
     Tomatoes    int64
     Nickname    string    `gorm:"size:64"`

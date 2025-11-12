@@ -2,13 +2,13 @@
   <!-- 中文注释：心愿页面，展示内置/自定义心愿卡片，支持编辑/删除/兑换与记录查看 -->
   <div class="p-4 space-y-4">
     <!-- 顶部：金币与操作按钮 -->
-    <div class="flex items-center justify-between">
-      <el-tag type="success">可用金币：{{ coins }}</el-tag>
-      <div class="flex items-center gap-2">
-        <el-button size="small" type="primary" @click="openRecords()">领取记录</el-button>
-        <el-button size="small" type="success" @click="openCreate()">创建心愿</el-button>
-      </div>
+  <div class="flex items-center justify-between">
+    <el-tag type="success">可用金币：{{ coins }}</el-tag>
+    <div class="flex items-center gap-2">
+      <el-button size="small" type="primary" @click="openRecords()">领取记录</el-button>
+      <el-button v-if="isParent || canWishCreate" size="small" type="success" @click="openCreate()">创建心愿</el-button>
     </div>
+  </div>
 
     <!-- 心愿列表：新用户自动显示 6 个内置心愿图标（参考/复制到 assets/wishs） -->
     <div>
@@ -25,10 +25,10 @@
             </div>
             <div v-if="opsVisibleId === w.id" class="flex items-center gap-2">
               <el-tooltip content="编辑">
-                <el-button circle size="small" @click.stop="openEdit(w)"><el-icon><Edit /></el-icon></el-button>
+                <el-button v-if="isParent || canWishEdit" circle size="small" @click.stop="openEdit(w)"><el-icon><Edit /></el-icon></el-button>
               </el-tooltip>
               <el-tooltip content="删除">
-                <el-button circle size="small" type="danger" @click.stop="onDelete(w)"><el-icon><Delete /></el-icon></el-button>
+                <el-button v-if="isParent || canWishDelete" circle size="small" type="danger" @click.stop="onDelete(w)"><el-icon><Delete /></el-icon></el-button>
               </el-tooltip>
             </div>
           </div>
@@ -43,7 +43,7 @@
           <!-- 底部：左兑换次数，右兑换按钮 -->
           <div class="mt-2 flex items-center justify-between">
             <div class="text-xs text-gray-600">已兑换：{{ w.exchanged }} 次</div>
-            <el-button type="warning" size="small" @click.stop="onExchange(w)">兑换</el-button>
+            <el-button type="warning" size="small" :disabled="!(isParent || canWishExchange)" @click.stop="onExchange(w)">兑换</el-button>
           </div>
         </el-card>
       </div>
@@ -113,6 +113,7 @@ import { ElMessage } from 'element-plus'
 import { Edit, Delete, Coin } from '@element-plus/icons-vue'
 import { useAppState } from '@/stores/appState'
 import { useAuth } from '@/stores/auth'
+import { usePermissions } from '@/composables/permissions'
 import { listWishes, deleteWish, exchangeWish, listWishRecords, type Wish, type WishRecord } from '@/services/wishes'
 
 // 中文注释：全局状态与本页状态
@@ -121,6 +122,8 @@ const coins = computed(() => store.coins)
 // 中文注释：从认证状态读取当前登录用户ID；未登录时回退为 0（将触发默认心愿回退逻辑）
 const auth = useAuth()
 const userId = computed(() => auth.user?.id ?? 0)
+// 中文注释：权限解析与常用布尔值
+const { isParent, viewOnly, canWishCreate, canWishEdit, canWishDelete, canWishExchange } = usePermissions()
 
 // 心愿列表与表单/记录状态
 const wishList = ref<Wish[]>([])
@@ -218,16 +221,22 @@ onMounted(async () => {
 
 // 打开创建/编辑
 function openCreate() {
+  // 中文注释：权限校验：父账号允许；子账号需具备 wishes.create 权限
+  if (!isParent.value && !canWishCreate.value) { ElMessage.warning('当前权限不允许创建心愿'); return }
   // 中文注释：改为进入独立创建页面，提升移动端体验
   router.push('/wishes/create')
 }
 function openEdit(w: Wish) {
+  // 中文注释：权限校验：父账号允许；子账号需具备 wishes.edit 权限
+  if (!isParent.value && !canWishEdit.value) { ElMessage.warning('当前权限不允许编辑心愿'); return }
   // 中文注释：改为进入独立编辑页面
   router.push(`/wishes/${w.id}/edit`)
 }
 
 // 删除心愿
 async function onDelete(w: Wish) {
+  // 中文注释：权限校验：父账号允许；子账号需具备 wishes.delete 权限
+  if (!isParent.value && !canWishDelete.value) { ElMessage.warning('当前权限不允许删除心愿'); return }
   try {
     await deleteWish(w.id)
     await loadWishes()
@@ -238,6 +247,8 @@ async function onDelete(w: Wish) {
 
 // 兑换心愿：打开弹窗
 function onExchange(w: Wish) {
+  // 中文注释：权限校验：父账号允许；子账号需具备 wishes.exchange 权限
+  if (!isParent.value && !canWishExchange.value) { ElMessage.warning('当前权限不允许兑换心愿'); return }
   exchangeTarget.value = w
   exchangeCount.value = 1
   exchangeRemark.value = ''

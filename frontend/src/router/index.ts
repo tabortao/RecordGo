@@ -48,6 +48,8 @@ const router = createRouter({
       component: () => import('@/pages/MinePage.vue')
     }
     ,
+    // 中文注释：子账号管理页面（隐藏底部导航）
+    { path: '/mine/subaccounts', name: 'SubAccounts', component: () => import('../pages/SubAccountsPage.vue'), meta: { noNav: true } },
     // 中文注释：设置页面独立子路由
     { path: '/settings/profile', name: 'SettingsProfile', component: () => import('@/pages/SettingsProfilePage.vue'), meta: { noNav: true } },
     { path: '/settings/tomato', name: 'SettingsTomato', component: () => import('@/pages/SettingsTomatoPage.vue'), meta: { noNav: true } },

@@ -1,7 +1,7 @@
 {
-  "name": "作业积分小程序",
-  "short_name": "作业积分",
-  "description": "帮助学生记录作业完成情况、学习时间和积分兑换心愿的应用",
+  "name": "作业家",
+  "short_name": "作业家",
+  "description": "帮助学生记录任务完成情况、学习时间和积分兑换心愿的应用",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

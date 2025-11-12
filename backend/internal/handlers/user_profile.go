@@ -131,11 +131,29 @@ func UploadAvatar(c *gin.Context) {
     if userIDStr != "" {
         if v, err := strconv.Atoi(userIDStr); err == nil && v > 0 { uid = uint(v) }
     }
-    if uid == 0 {
-        uid = extractUserIDFromToken(c)
+    // 中文注释：权限校验——允许本人上传；家长可为其子账号上传（需有 manage_children 权限）
+    cl := extractClaims(c)
+    if cl == nil {
+        // 若无有效登录，则不允许上传
+        common.Error(c, 40100, "未登录或令牌无效")
+        return
     }
-    if uid == 0 {
-        common.Error(c, 40100, "未登录或缺少 user_id")
+    if uid == 0 { uid = cl.UserID }
+    // 本人上传：放行
+    allowed := (uid == cl.UserID)
+    if !allowed {
+        // 家长上传子账号头像：需权限，且目标用户的 ParentID 为当前家长
+        if cl.ParentID == nil {
+            if hasPermission(c, "account", "manage_children") {
+                var target models.User
+                if err := db.DB().First(&target, uid).Error; err == nil && target.ParentID != nil && *target.ParentID == cl.UserID {
+                    allowed = true
+                }
+            }
+        }
+    }
+    if !allowed {
+        deny(c, "无权限上传该用户头像")
         return
     }
     // 解析文件（兼容 image 与 file）

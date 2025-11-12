@@ -22,13 +22,13 @@
       </div>
       <!-- 响应式网格：移动端单列，桌面端多列 -->
       <div class="px-2 py-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-        <!-- 编辑个人信息：改为跳转到独立页面 -->
-        <button class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition" @click="router.push('/settings/profile')">
+        <!-- 编辑个人信息：子账号隐藏，仅主账号显示 -->
+        <button v-if="isParent" class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition" @click="router.push('/settings/profile')">
           <el-icon :size="18" style="color:#60a5fa"><Edit /></el-icon>
           <span class="text-gray-800">编辑个人信息</span>
         </button>
-        <!-- 子账号管理（占位） -->
-        <button class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition" @click="onChildManage">
+        <!-- 子账号管理：无权限时不显示（仅父账号或具备 manage_children 权限显示） -->
+        <button v-if="isParent || manageChildren" class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition" @click="onChildManage" title="仅父账号或具备权限的账号可管理子账号">
           <el-icon :size="18" style="color:#22c55e"><User /></el-icon>
           <span class="text-gray-800">子账号管理</span>
         </button>
@@ -52,7 +52,13 @@
       </div>
       <!-- 响应式网格：移动端单列，桌面端多列 -->
       <div class="px-2 py-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-        <button v-for="i in settingItems" :key="i.key" class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition text-left" @click="goSettingsTab(i.key)">
+        <button
+          v-for="i in settingItems"
+          :key="i.key"
+          class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition text-left disabled:opacity-60 disabled:cursor-not-allowed"
+          :disabled="isDisabled(i.key)"
+          @click="onOpenSetting(i.key)"
+        >
           <el-icon :size="18" :style="{ color: i.fg }"><component :is="i.icon" /></el-icon>
           <span class="text-gray-800">{{ i.label }}</span>
         </button>
@@ -64,10 +70,12 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useAppState } from '@/stores/appState'
 import defaultAvatar from '@/assets/avatars/default.png'
 import router from '@/router'
 import { useAuth } from '@/stores/auth'
+import { usePermissions } from '@/composables/permissions'
 import { ElMessage } from 'element-plus'
 import { User, Edit, SwitchButton, Setting, Timer, List, Microphone, Coin, InfoFilled } from '@element-plus/icons-vue'
 
@@ -107,8 +115,15 @@ const avatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))
 
 // 中文注释：编辑个人信息改为独立页面，移除弹窗相关状态与函数
 
+// 中文注释：权限（模板与交互使用）；父账号或具备 manage_children 权限时启用子账号管理
+const { isParent, manageChildren, canSettingTomato, canSettingTasks, canSettingCoins, canSettingReading } = usePermissions()
+
 function onChildManage() {
-  ElMessage.info('子账号管理功能将在后续版本提供')
+  if (!isParent.value && !manageChildren.value) {
+    ElMessage.warning('当前权限不允许管理子账号')
+    return
+  }
+  router.push('/mine/subaccounts')
 }
 
 function onLogout() {
@@ -145,6 +160,29 @@ function goSettingsTab(k: SettingsKey) {
     about: '/settings/about'
   }
   router.push(map[k])
+}
+
+// 中文注释：根据权限判断设置按钮是否禁用
+function isDisabled(k: SettingsKey): boolean {
+  if (k === 'about') return false
+  if (k === 'tomato') return !canSettingTomato.value
+  if (k === 'tasks') return !canSettingTasks.value
+  if (k === 'reading') return !canSettingReading.value
+  if (k === 'coins') return !canSettingCoins.value
+  return true
+}
+
+// 中文注释：拦截点击：无权限不跳转并提示
+function onOpenSetting(k: SettingsKey) {
+  if (isDisabled(k)) {
+    if (k === 'tasks' || k === 'coins') {
+      ElMessage.info('仅查看或无权限，无法打开该设置')
+    } else {
+      ElMessage.info('无权限，无法打开该设置')
+    }
+    return
+  }
+  goSettingsTab(k)
 }
 
 // （移除我的页内的设置入口列表，保留“系统设置”按钮跳转到独立页面）

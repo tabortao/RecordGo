@@ -27,6 +27,8 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         // 中文注释：认证路由（登录/注册）
         api.POST("/auth/register", handlers.Register)
         api.POST("/auth/login", handlers.Login)
+        // 中文注释：子账号令牌登录（免密码，仅限子账号）
+        api.POST("/auth/token-login", handlers.TokenLogin)
         // 中文注释：账号安全与资料
         api.POST("/auth/change-password", handlers.ChangePassword)
         api.PUT("/user/profile", handlers.UpdateProfile)
@@ -62,6 +64,13 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         api.GET("/tasks/recycle-bin", handlers.ListRecycleBin)
         api.POST("/tasks/recycle-bin/restore", handlers.RestoreTasks) // ?ids=1,2
         api.POST("/tasks/:id/tomato/complete", handlers.CompleteTomato)
+
+        // 中文注释：子账号管理（仅家长或具有权限的账号可操作）
+        api.GET("/subaccounts", handlers.ListSubAccounts)
+        api.POST("/subaccounts", handlers.CreateSubAccount)
+        api.PUT("/subaccounts/:id", handlers.UpdateSubAccount)
+        api.DELETE("/subaccounts/:id", handlers.DeleteSubAccount)
+        api.POST("/subaccounts/:id/token", handlers.GenerateChildToken)
     }
 
     return r

@@ -95,11 +95,16 @@ func ListWishes(c *gin.Context) {
 
 // CreateWish 创建心愿
 func CreateWish(c *gin.Context) {
-	var req CreateWishReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		common.Error(c, 40001, "参数错误")
-		return
-	}
+    // 中文注释：子账号权限校验——需要具备 wishes.create 权限；家长默认放行
+    if !hasPermission(c, "wishes", "create") {
+        deny(c, "无权限创建心愿")
+        return
+    }
+    var req CreateWishReq
+    if err := c.ShouldBindJSON(&req); err != nil {
+        common.Error(c, 40001, "参数错误")
+        return
+    }
 	if req.UserID == 0 || req.Name == "" || req.NeedCoins <= 0 {
 		common.Error(c, 40002, "用户、名称与所需金币必填且合法")
 		return
@@ -134,12 +139,17 @@ func GetWish(c *gin.Context) {
 
 // UpdateWish 编辑心愿
 func UpdateWish(c *gin.Context) {
-	id := c.Param("id")
-	var req UpdateWishReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		common.Error(c, 40001, "参数错误")
-		return
-	}
+    id := c.Param("id")
+    // 中文注释：子账号权限校验——需要具备 wishes.edit 权限；家长默认放行
+    if !hasPermission(c, "wishes", "edit") {
+        deny(c, "无权限编辑心愿")
+        return
+    }
+    var req UpdateWishReq
+    if err := c.ShouldBindJSON(&req); err != nil {
+        common.Error(c, 40001, "参数错误")
+        return
+    }
 	var w models.Wish
 	if err := db.DB().First(&w, id).Error; err != nil {
 		common.Error(c, 40401, "心愿不存在")
@@ -172,13 +182,18 @@ func UpdateWish(c *gin.Context) {
 
 // DeleteWish 删除心愿（允许删除内置心愿）
 func DeleteWish(c *gin.Context) {
-	// 中文注释：删除心愿时，若为自定义心愿且图标为上传到 storage/uploads 的文件，则同步删除对应图片
-	id := c.Param("id")
-	var w models.Wish
-	if err := db.DB().First(&w, id).Error; err != nil {
-		common.Error(c, 40401, "心愿不存在")
-		return
-	}
+    // 中文注释：删除心愿时，若为自定义心愿且图标为上传到 storage/uploads 的文件，则同步删除对应图片
+    // 中文注释：子账号权限校验——需要具备 wishes.delete 权限；家长默认放行
+    if !hasPermission(c, "wishes", "delete") {
+        deny(c, "无权限删除心愿")
+        return
+    }
+    id := c.Param("id")
+    var w models.Wish
+    if err := db.DB().First(&w, id).Error; err != nil {
+        common.Error(c, 40401, "心愿不存在")
+        return
+    }
 	// 条件：非内置且 Icon 指向 uploads 路径（相对路径）
 	// 注意：内置心愿的图标是内置 PNG 文件名（如 “看电视.png”），不应删除；
 	// 前端上传的自定义图标存储为 “uploads/images/wish/{用户id}/xxx.webp”。
@@ -210,12 +225,17 @@ type ExchangeReq struct {
 
 // ExchangeWish 兑换心愿：扣减金币、累计心愿兑换次数、写入兑换记录
 func ExchangeWish(c *gin.Context) {
-	id := c.Param("id")
-	var req ExchangeReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		common.Error(c, 40001, "参数错误")
-		return
-	}
+    id := c.Param("id")
+    // 中文注释：子账号权限校验——需要具备 wishes.exchange 权限；家长默认放行
+    if !hasPermission(c, "wishes", "exchange") {
+        deny(c, "无权限兑换心愿")
+        return
+    }
+    var req ExchangeReq
+    if err := c.ShouldBindJSON(&req); err != nil {
+        common.Error(c, 40001, "参数错误")
+        return
+    }
 	if req.Count <= 0 {
 		req.Count = 1
 	}

@@ -57,6 +57,11 @@ type TomatoCompleteReq struct {
 
 // CreateTask 创建任务
 func CreateTask(c *gin.Context) {
+    // 中文注释：子账号权限校验——需要具备 tasks.create 权限；家长默认放行
+    if !hasPermission(c, "tasks", "create") {
+        deny(c, "无权限创建任务")
+        return
+    }
     var req CreateTaskReq
     if err := c.ShouldBindJSON(&req); err != nil {
         zap.L().Warn("CreateTask: bind failed", zap.Error(err))
@@ -144,6 +149,11 @@ func GetTask(c *gin.Context) {
 // UpdateTask 编辑任务（记录历史）
 func UpdateTask(c *gin.Context) {
     id := c.Param("id")
+    // 中文注释：子账号权限校验——需要具备 tasks.edit 权限；家长默认放行
+    if !hasPermission(c, "tasks", "edit") {
+        deny(c, "无权限编辑任务")
+        return
+    }
     var req UpdateTaskReq
     if err := c.ShouldBindJSON(&req); err != nil {
         zap.L().Warn("UpdateTask: bind failed", zap.Error(err), zap.String("id", id))
@@ -185,6 +195,11 @@ func UpdateTask(c *gin.Context) {
 // UpdateStatus 状态变更（记录历史）
 func UpdateStatus(c *gin.Context) {
     id := c.Param("id")
+    // 中文注释：子账号权限校验——需要具备 tasks.status 权限；家长默认放行
+    if !hasPermission(c, "tasks", "status") {
+        deny(c, "无权限更改任务状态")
+        return
+    }
     var req UpdateStatusReq
     if err := c.ShouldBindJSON(&req); err != nil {
         common.Error(c, 40001, "参数错误")
@@ -237,6 +252,11 @@ func UpdateStatus(c *gin.Context) {
 // DeleteTask 软删除（进入回收站）
 func DeleteTask(c *gin.Context) {
     id := c.Param("id")
+    // 中文注释：子账号权限校验——需要具备 tasks.delete 权限；家长默认放行
+    if !hasPermission(c, "tasks", "delete") {
+        deny(c, "无权限删除任务")
+        return
+    }
     var t models.Task
     if err := db.DB().First(&t, id).Error; err != nil {
         common.Error(c, 40401, "任务不存在")
