@@ -87,6 +87,7 @@ function confirm() {
   // 中文注释：确定按钮保存设置并关闭页面
   store.updateTomato({
     mode: mode.value as 'countdown' | 'countup',
+    runningMode: null,
     durationMinutes: duration.value,
     fixedTomatoPage: fixed.value,
     keepAwakeEnabled: keepAwake.value

@@ -64,7 +64,7 @@ async function finalizeCountdown() {
 function tick() {
   // 中文注释：基于墙钟时间戳计算，避免锁屏/后台导致中断
   const now = Date.now()
-  const mode = store.tomato.mode
+  const mode = store.tomato.runningMode ?? store.tomato.mode
   if (mode === 'countdown') {
     const endAt = store.tomato.endAtMs ?? null
     if (endAt == null) return
@@ -73,7 +73,7 @@ function tick() {
     if (next <= 0 && !finishedOnce) {
       finishedOnce = true
       finalizeCountdown().finally(() => {
-        store.updateTomato({ running: false, showFloating: false, startAtMs: null, endAtMs: null })
+        store.updateTomato({ running: false, showFloating: false, startAtMs: null, endAtMs: null, runningMode: null })
         if (t) { clearInterval(t); t = null }
       })
     }

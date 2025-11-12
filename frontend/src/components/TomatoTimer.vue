@@ -127,7 +127,7 @@ const breakM = computed(() => props.breakMinutes ?? 5)
 
 type Phase = 'work' | 'break'
 const phase = ref<Phase>('work')
-const mode = ref<'countdown' | 'countup'>(store.tomato.mode)
+const mode = ref<'countdown' | 'countup'>(store.tomato.runningMode ?? store.tomato.mode)
 // 中文注释：夜间主题按钮与 Tag 样式（与深色背景协调）
 const nightBtnStyle = { backgroundColor: '#3a3a38', color: '#B8CEE8', borderColor: '#4a4a48' }
 const nightTagStyle = { backgroundColor: '#3a3a38', color: '#B8CEE8', borderColor: '#4a4a48' }
@@ -196,7 +196,7 @@ function toggleMode() {
   const wasRunning = running.value
   stopInternal()
   remaining.value = mode.value === 'countdown' ? workM.value * 60 : 0
-  store.updateTomato({ mode: mode.value, remainingSeconds: remaining.value })
+  store.updateTomato({ runningMode: mode.value, remainingSeconds: remaining.value })
   if (wasRunning) start()
 }
 
@@ -246,7 +246,7 @@ function start() {
     startAtMs.value = now
     endAtMs.value = null
   }
-  store.updateTomato({ running: true, mode: mode.value, durationMinutes: workM.value, remainingSeconds: remaining.value, currentTaskId: props.taskId ?? null, startAtMs: startAtMs.value, endAtMs: endAtMs.value })
+  store.updateTomato({ running: true, runningMode: mode.value, durationMinutes: workM.value, remainingSeconds: remaining.value, currentTaskId: props.taskId ?? null, startAtMs: startAtMs.value, endAtMs: endAtMs.value })
   if (!timer) timer = setInterval(tick, 1000)
   // 中文注释：开始后尝试申请常亮（移动端）
   if (store.tomato.keepAwakeEnabled) {
@@ -262,7 +262,7 @@ function pause() {
   // 中文注释：暂停时保留当前 remainingSeconds，并清空时间戳
   startAtMs.value = null
   endAtMs.value = null
-  store.updateTomato({ running: false, startAtMs: null, endAtMs: null })
+  store.updateTomato({ running: false, startAtMs: null, endAtMs: null, runningMode: null })
   // 中文注释：暂停时释放常亮
   releaseWakeLock().catch(() => {})
 }
@@ -312,7 +312,7 @@ function stopInternal() {
   }
   startAtMs.value = null
   endAtMs.value = null
-  store.updateTomato({ running: false, startAtMs: null, endAtMs: null })
+  store.updateTomato({ running: false, startAtMs: null, endAtMs: null, runningMode: null })
   // 中文注释：停止时释放常亮
   releaseWakeLock().catch(() => {})
 }
@@ -378,7 +378,7 @@ watch(() => store.tomato.keepAwakeEnabled, (enabled) => {
   else releaseWakeLock().catch(() => {})
 })
 // 中文注释：向父组件暴露停止/开始/暂停方法，便于页面“返回”时控制行为
-defineExpose({ stop: stopInternal, start, pause })
+defineExpose({ stop: stopInternal, start, pause, reset })
 </script>
 
 <style scoped>

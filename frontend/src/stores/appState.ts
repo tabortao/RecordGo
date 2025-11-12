@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 export interface TomatoState {
   running: boolean
   mode: 'countdown' | 'countup'
+  runningMode?: 'countdown' | 'countup' | null
   durationMinutes: number
   remainingSeconds: number
   fixedTomatoPage: boolean
@@ -52,6 +53,7 @@ const DEFAULT_STATE: AppState = {
   tomato: {
     running: false,
     mode: 'countdown',
+    runningMode: null,
     durationMinutes: 20,
     remainingSeconds: 20 * 60,
     fixedTomatoPage: true,
