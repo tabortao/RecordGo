@@ -132,7 +132,7 @@ const mode = ref<'countdown' | 'countup'>(store.tomato.mode)
 const nightBtnStyle = { backgroundColor: '#3a3a38', color: '#B8CEE8', borderColor: '#4a4a48' }
 const nightTagStyle = { backgroundColor: '#3a3a38', color: '#B8CEE8', borderColor: '#4a4a48' }
 const running = ref(store.tomato.running)
-const remaining = ref(store.tomato.remainingSeconds || (mode.value === 'countdown' ? workM.value * 60 : 0))
+const remaining = ref(store.tomato.running ? (store.tomato.remainingSeconds || (mode.value === 'countdown' ? workM.value * 60 : 0)) : (mode.value === 'countdown' ? workM.value * 60 : 0))
 const started = ref(false)
 const customMinutes = ref(workM.value)
 let timer: any = null
@@ -334,6 +334,13 @@ function applyCustom() {
 watch(phase, () => {
   // 中文注释：切换阶段时重置运行状态，避免自动继续
   pause()
+})
+
+watch(workM, (m) => {
+  if (running.value) return
+  const sec = (mode.value === 'countdown' ? m * 60 : 0)
+  remaining.value = sec
+  store.updateTomato({ durationMinutes: m, remainingSeconds: sec })
 })
 
 onUnmounted(() => {
