@@ -5,8 +5,8 @@
     <div class="flex items-center justify-center gap-3">
       <el-button text :icon="ArrowLeft" @click="prevWeek" />
       <div class="text-sm font-semibold">{{ weekTitle }}</div>
-      <el-button text :icon="ArrowRight" @click="nextWeek" />
       <el-tag type="success" class="ml-2 rounded-full px-3 py-1 cursor-pointer" @click="goThisWeek">本周</el-tag>
+      <el-button text :icon="ArrowRight" @click="nextWeek" />
     </div>
     <!-- 周一到周日日期格 -->
     <div class="grid grid-cols-7 gap-2">

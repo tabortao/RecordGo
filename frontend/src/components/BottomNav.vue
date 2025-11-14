@@ -5,11 +5,11 @@
       v-for="item in items"
       :key="item.to"
       :to="item.to"
-      class="flex flex-col items-center justify-center w-24 text-gray-600"
+      class="flex flex-col items-center justify-center w-24 text-gray-600 pt-1"
       :class="{ 'text-primary font-semibold': $route.path === item.to }"
     >
       <el-icon :size="20"><component :is="item.icon" /></el-icon>
-      <span class="text-xs mt-1">{{ item.label }}</span>
+      <span class="text-xs mt-1 mb-6">{{ item.label }}</span>
     </router-link>
   </nav>
 </template>

@@ -5,24 +5,24 @@
     <div class="fixed top-0 left-0 right-0 flex justify-center pointer-events-none" :style="{ opacity: (pullY>10||refreshing)?1:0 }">
       <div class="mt-2 text-xs text-gray-500 bg-white/80 rounded px-2 py-1 shadow">{{ refreshing ? '正在刷新...' : '下拉刷新' }}</div>
     </div>
-    <div class="p-4 space-y-4" :style="{ transform: pullY ? ('translateY(' + pullY + 'px)') : 'none', transition: pulling ? 'none' : 'transform 0.2s ease' }">
-    <!-- 顶部统计栏 -->
-      <div class="flex items-center justify-between">
+    <div class="fixed top-0 left-0 right-0 bg-white z-40 border-b">
+      <div class="px-4 py-2 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <!-- 中文注释：头像优先使用用户自定义头像；无则使用默认头像，与“我的”页面保持一致 -->
           <el-avatar :size="36" :src="tasksAvatarSrc" />
           <div class="font-semibold">今日统计</div>
         </div>
-      <!-- 中文注释：右侧取消回收站，改为彩色统计图标与金币显示 -->
-      <div class="flex items-center gap-3">
-        <div class="flex items-center gap-1">
-          <el-icon :size="20" style="color:#f59e0b"><Coin /></el-icon>
-          <!-- 中文注释：总金币 = 已完成任务奖励金币总和 - 心愿兑换扣除金币 -->
-          <span class="font-semibold">{{ totalCoins }}</span>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1">
+            <el-icon :size="20" style="color:#f59e0b"><Coin /></el-icon>
+            <span class="font-semibold">{{ totalCoins }}</span>
+          </div>
+          <el-icon :size="24" style="color:#ec4899"><DataAnalysis /></el-icon>
         </div>
-        <el-icon :size="24" style="color:#ec4899"><DataAnalysis /></el-icon>
       </div>
     </div>
+    <div class="h-14"></div>
+    <div class="p-4 space-y-4" :style="{ transform: pullY ? ('translateY(' + pullY + 'px)') : 'none', transition: pulling ? 'none' : 'transform 0.2s ease' }">
+    
 
     <!-- 顶部统计：四项一行，不同颜色图标；下方单独大“统计”卡片居中显示 -->
     <div class="grid grid-cols-4 gap-2">
@@ -30,28 +30,28 @@
         <div class="flex flex-col items-center">
           <el-icon style="color:#22c55e"><Clock /></el-icon>
           <div class="text-xs text-gray-500">日时长</div>
-          <div class="font-semibold">{{ dayMinutes }}</div>
+          <div class="font-bold" style="color:#22c55e">{{ dayMinutes }}</div>
         </div>
       </el-card>
       <el-card shadow="never" class="stat-card">
         <div class="flex flex-col items-center">
           <el-icon style="color:#3b82f6"><List /></el-icon>
           <div class="text-xs text-gray-500">任务数</div>
-          <div class="font-semibold">{{ completedTasksCount }}/{{ filteredTasks.length }}</div>
+          <div class="font-bold" style="color:#3b82f6">{{ completedTasksCount }}/{{ filteredTasks.length }}</div>
         </div>
       </el-card>
       <el-card shadow="never" class="stat-card">
         <div class="flex flex-col items-center">
           <el-icon style="color:#f59e0b"><Coin /></el-icon>
           <div class="text-xs text-gray-500">日金币</div>
-          <div class="font-semibold">{{ dayCoins }}</div>
+          <div class="font-bold" style="color:#f59e0b">{{ dayCoins }}</div>
         </div>
       </el-card>
       <el-card shadow="never" class="stat-card">
         <div class="flex flex-col items-center">
           <el-icon style="color:#14b8a6"><CircleCheck /></el-icon>
           <div class="text-xs text-gray-500">完成率</div>
-          <div class="font-semibold">{{ completeRate }}%</div>
+          <div class="font-bold" style="color:#14b8a6">{{ completeRate }}%</div>
         </div>
       </el-card>
     </div>
@@ -63,7 +63,7 @@
     </div>
 
     <!-- 任务列表卡片 -->
-    <el-card shadow="never">
+    <el-card shadow="never" class="no-frame">
       <template #header>
         <div class="flex items-center justify-between">
           <span class="font-semibold">今日任务</span>
@@ -1260,5 +1260,16 @@ const activeTaskId = ref<number | null>(null)
 }
 .section-card :deep(.el-card__header) {
   font-weight: 600;
+}
+.no-frame {
+  border: none !important;
+}
+.no-frame :deep(.el-card__header) {
+  padding-left: 0;
+  padding-right: 0;
+}
+.no-frame :deep(.el-card__body) {
+  padding-left: 0;
+  padding-right: 0;
 }
 </style>

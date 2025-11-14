@@ -1,18 +1,20 @@
 <template>
-  <!-- 中文注释：心愿页面，展示内置/自定义心愿卡片，支持编辑/删除/兑换与记录查看 -->
-  <div class="p-4 space-y-4">
-    <!-- 顶部：金币与操作按钮 -->
-  <div class="flex items-center justify-between">
-    <el-tag type="success">可用金币：{{ coins }}</el-tag>
-    <div class="flex items-center gap-2">
-      <el-button size="small" type="primary" @click="openRecords()">领取记录</el-button>
-      <el-button v-if="isParent || canWishCreate" size="small" type="success" @click="openCreate()">创建心愿</el-button>
+  <div class="fixed top-0 left-0 right-0 bg-white z-40 border-b">
+    <div class="px-4 py-2 font-semibold">兑换心愿</div>
+    <div class="px-4 pb-2 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <el-button size="small" type="success" plain disabled>可用金币：{{ coins }}</el-button>
+      </div>
+      <div class="flex items-center gap-2">
+        <el-button size="small" type="primary" @click="openRecords()">领取记录</el-button>
+        <el-button v-if="isParent || canWishCreate" size="small" type="success" @click="openCreate()">创建心愿</el-button>
+      </div>
     </div>
   </div>
+  <div class="h-20"></div>
+  <div class="p-4 space-y-4">
 
-    <!-- 心愿列表：新用户自动显示 6 个内置心愿图标（参考/复制到 assets/wishs） -->
     <div>
-      <div class="font-semibold mb-2">心愿</div>
       <!-- 中文注释：改为响应式网格布局，移动端单列，桌面端多列 -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         <el-card v-for="w in wishList" :key="w.id" shadow="hover" class="relative" @click="toggleOps(w.id)">

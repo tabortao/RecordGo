@@ -43,18 +43,19 @@
 </template>
 
 <script setup lang="ts">
-// 中文注释：创建心愿页面逻辑，沿用心愿表单字段，提交后返回
-import { reactive } from 'vue'
+import { reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Plus } from '@element-plus/icons-vue'
 import router from '@/router'
 import { createWish, uploadWishIcon, toWebp } from '@/services/wishes'
+import { useAuth } from '@/stores/auth'
 
-const userId = 1 // 中文注释：示例用户ID
+const auth = useAuth()
+const userId = computed(() => auth.user?.id ?? 0)
 function goBack() { router.back() }
 
 type WishForm = { user_id: number; name: string; content: string; icon?: string; icon_preview?: string; need_coins: number; exchange_amount: number; unit: string }
-const form = reactive<WishForm>({ user_id: userId, name: '', content: '', icon: '', icon_preview: '', need_coins: 1, exchange_amount: 1, unit: '次' })
+const form = reactive<WishForm>({ user_id: userId.value, name: '', content: '', icon: '', icon_preview: '', need_coins: 1, exchange_amount: 1, unit: '次' })
 
 async function onPickIcon(fileEvent: any) {
   const raw: File | undefined = fileEvent?.raw || fileEvent?.target?.files?.[0] || fileEvent?.file
@@ -62,7 +63,7 @@ async function onPickIcon(fileEvent: any) {
   try { form.icon_preview = URL.createObjectURL(raw) } catch {}
   const webp = await toWebp(raw)
   try {
-    const { path } = await uploadWishIcon(userId, webp)
+    const { path } = await uploadWishIcon(userId.value, webp)
     form.icon = path
     try { form.icon_preview && URL.revokeObjectURL(form.icon_preview as any) } catch {}
     form.icon_preview = ''
@@ -73,7 +74,10 @@ async function onPickIcon(fileEvent: any) {
 
 async function submitForm() {
   try {
-    await createWish({ user_id: form.user_id, name: form.name, content: form.content, icon: form.icon || '', need_coins: form.need_coins, exchange_amount: form.exchange_amount, unit: form.unit })
+    const uid = userId.value
+    if (!uid) { ElMessage.error('未登录或令牌无效'); return }
+    form.user_id = uid
+    await createWish({ user_id: uid, name: form.name, content: form.content, icon: form.icon || '', need_coins: form.need_coins, exchange_amount: form.exchange_amount, unit: form.unit })
     ElMessage.success('创建成功')
     router.back()
   } catch (e: any) {

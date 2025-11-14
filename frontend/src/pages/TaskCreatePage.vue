@@ -4,7 +4,7 @@
     <!-- 顶部栏：返回 + 标题 -->
     <div class="flex items-center gap-2">
       <el-icon :size="18" class="cursor-pointer text-gray-600" @click="goBack"><ArrowLeft /></el-icon>
-      <el-icon :size="18" class="text-emerald-600"><Plus /></el-icon>
+      <el-icon :size="27" class="text-emerald-600"><Plus /></el-icon>
       <h2 class="font-semibold">创建任务</h2>
     </div>
 
@@ -99,13 +99,13 @@
             <template #label>
               <div class="flex items-center gap-1"><el-icon><Clock /></el-icon><span>开始日期</span></div>
             </template>
-            <el-date-picker v-model="form.start_date" type="date" />
+            <el-date-picker v-model="form.start_date" type="date" :editable="false" />
           </el-form-item>
           <el-form-item prop="end_date">
             <template #label>
               <div class="flex items-center gap-1"><el-icon><Clock /></el-icon><span>截止日期</span></div>
             </template>
-            <el-date-picker v-model="form.end_date" type="date" />
+            <el-date-picker v-model="form.end_date" type="date" :editable="false" />
           </el-form-item>
         </el-form>
       </el-card>
@@ -137,7 +137,9 @@ import { createTask, uploadTaskImage, updateTask } from '@/services/tasks'
 import { prepareUpload } from '@/utils/image'
 import dayjs from 'dayjs'
 
-const userId = 1 // 中文注释：示例用户ID，后续接入登录信息
+import { useAuth } from '@/stores/auth'
+const auth = useAuth()
+const userId = auth.user?.id ?? 0
 function goBack() { router.back() }
 
 type FormModel = {
@@ -232,5 +234,8 @@ async function submitForm() {
 </script>
 
 <style scoped>
-/* 中文注释：页面内元素使用 Tailwind 类进行响应式布局，无需额外样式 */
+:deep(input.el-input__inner),
+:deep(textarea.el-textarea__inner) {
+  font-size: 16px;
+}
 </style>
