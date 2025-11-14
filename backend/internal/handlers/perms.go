@@ -81,3 +81,25 @@ func deny(c *gin.Context, msg string) {
     }
     common.Error(c, 40301, msg)
 }
+
+func canAccessUser(c *gin.Context, uid uint) bool {
+    cl := extractClaims(c)
+    if cl == nil {
+        return false
+    }
+    if uid == cl.UserID {
+        return true
+    }
+    if cl.ParentID == nil {
+        var u models.User
+        if err := db.DB().First(&u, uid).Error; err == nil && u.ParentID != nil && *u.ParentID == cl.UserID {
+            return true
+        }
+    }
+    if cl.ParentID != nil {
+        if uid == *cl.ParentID {
+            return true
+        }
+    }
+    return false
+}

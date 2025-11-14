@@ -14,7 +14,7 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item disabled>切换用户</el-dropdown-item>
+                <el-dropdown-item command="noop" class="font-semibold" style="pointer-events: none; cursor: default">切换用户</el-dropdown-item>
                 <el-dropdown-item v-for="acc in auth.accounts" :key="acc.user.id" :command="'switch:' + acc.user.id">
                   <div class="flex items-center gap-2">
                     <el-avatar :size="24" :src="resolveAvatarUrl(acc.user.avatar_path)" />
@@ -47,28 +47,36 @@
         <div class="flex flex-col items-center">
           <el-icon :size="19" style="color:#22c55e"><Clock /></el-icon>
           <div class="text-xs text-gray-500">日时长</div>
-          <div class="font-bold" style="color:#22c55e">{{ dayMinutes }}</div>
+          <el-tooltip :content="tipMinutes" placement="top">
+            <div class="font-bold" style="color:#22c55e">{{ dayMinutes }}</div>
+          </el-tooltip>
         </div>
       </el-card>
       <el-card shadow="never" class="stat-card">
         <div class="flex flex-col items-center">
           <el-icon style="color:#3b82f6"><List /></el-icon>
           <div class="text-xs text-gray-500">任务数</div>
-          <div class="font-bold" style="color:#3b82f6">{{ completedTasksCount }}/{{ filteredTasks.length }}</div>
+          <el-tooltip :content="tipTasks" placement="top">
+            <div class="font-bold" style="color:#3b82f6">{{ completedTasksCount }}/{{ filteredTasks.length }}</div>
+          </el-tooltip>
         </div>
       </el-card>
       <el-card shadow="never" class="stat-card">
         <div class="flex flex-col items-center">
           <el-icon :size="19" style="color:#f59e0b"><Money /></el-icon>
           <div class="text-xs text-gray-500">日金币</div>
-          <div class="font-bold" style="color:#f59e0b">{{ dayCoins }}</div>
+          <el-tooltip :content="tipCoins" placement="top">
+            <div class="font-bold" style="color:#f59e0b">{{ dayCoins }}</div>
+          </el-tooltip>
         </div>
       </el-card>
       <el-card shadow="never" class="stat-card">
         <div class="flex flex-col items-center">
           <el-icon :size="19" style="color:#14b8a6"><CircleCheck /></el-icon>
           <div class="text-xs text-gray-500">完成率</div>
-          <div class="font-bold" style="color:#14b8a6">{{ completeRate }}%</div>
+          <el-tooltip :content="tipRate" placement="top">
+            <div class="font-bold" style="color:#14b8a6">{{ completeRate }}%</div>
+          </el-tooltip>
         </div>
       </el-card>
     </div>
@@ -505,7 +513,7 @@
 
 <script setup lang="ts">
 // 中文注释：任务页面逻辑，统一使用服务层 API，实现表单校验与错误提示
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Plus, Clock, List, Coin, Money, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound, Sort, Headset } from '@element-plus/icons-vue'
@@ -663,6 +671,11 @@ const completeRate = computed(() => {
   return Math.round((completedTasksCount.value / filteredTasks.value.length) * 100)
 })
 
+const tipMinutes = computed(() => `今日已完成任务总用时${dayMinutes.value}分钟`)
+const tipTasks = computed(() => `今日已完成任务${completedTasksCount.value}个，总任务${filteredTasks.value.length}个`)
+const tipCoins = computed(() => `今日总共获得${dayCoins.value}个金币`)
+const tipRate = computed(() => `今日任务完成比例为${completeRate.value}%`)
+
 // 列表与筛选
 const tasks = ref<TaskItem[]>([])
 const filter = ref<'全部' | '已完成' | '待完成'>('全部')
@@ -792,11 +805,13 @@ const addUserName = ref('')
 const addUserPassword = ref('')
 
 function onAvatarCommand(cmd: string) {
+  if (cmd === 'noop') return
   if (cmd.startsWith('switch:')) {
     const id = Number(cmd.split(':')[1] || 0)
     if (id > 0) {
       auth.switchAccount(id)
       try { store.setCoins(Number(auth.user?.coins ?? 0)) } catch {}
+      fetchTasks()
     }
     return
   }
@@ -1295,6 +1310,10 @@ onMounted(() => {
   const updateMobile = () => { isMobile.value = window.innerWidth < 768 }
   updateMobile()
   window.addEventListener('resize', updateMobile)
+})
+
+watch(userId, async () => {
+  await fetchTasks()
 })
 
 // 菜单命令统一处理

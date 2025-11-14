@@ -109,7 +109,7 @@
 
 <script setup lang="ts">
 // 中文注释：引入必要的 Vue API、全局状态、服务方法与图标组件
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import router from '@/router'
 import { ElMessage } from 'element-plus'
 import { Edit, Delete, Coin } from '@element-plus/icons-vue'
@@ -217,6 +217,11 @@ async function loadWishes() {
 }
 
 onMounted(async () => {
+  await loadWishes()
+  await loadRecords()
+})
+
+watch(userId, async () => {
   await loadWishes()
   await loadRecords()
 })

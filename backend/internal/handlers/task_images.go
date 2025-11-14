@@ -48,15 +48,15 @@ func UploadTaskImage(c *gin.Context) {
         return
     }
     // 中文注释：将 user_id 与 task_id 转为数字，防止目录遍历与非法字符
-    uid, err := strconv.Atoi(userIDStr)
-    if err != nil || uid <= 0 {
-        zap.L().Warn("UploadTaskImage: invalid user_id", zap.String("user_id", userIDStr), zap.Error(err))
+    uid, parseErr := strconv.Atoi(userIDStr)
+    if parseErr != nil || uid <= 0 {
+        zap.L().Warn("UploadTaskImage: invalid user_id", zap.String("user_id", userIDStr), zap.Error(parseErr))
         common.Error(c, 40001, "非法 user_id")
         return
     }
-    tid, err := strconv.Atoi(taskIDStr)
-    if err != nil || tid <= 0 {
-        zap.L().Warn("UploadTaskImage: invalid task_id", zap.String("task_id", taskIDStr), zap.Error(err))
+    tid, parseErr2 := strconv.Atoi(taskIDStr)
+    if parseErr2 != nil || tid <= 0 {
+        zap.L().Warn("UploadTaskImage: invalid task_id", zap.String("task_id", taskIDStr), zap.Error(parseErr2))
         common.Error(c, 40003, "非法 task_id")
         return
     }
@@ -68,16 +68,29 @@ func UploadTaskImage(c *gin.Context) {
     if perr := c.Request.ParseMultipartForm(10 << 20); perr != nil {
         zap.L().Warn("UploadTaskImage: ParseMultipartForm error", zap.Error(perr))
     }
+    if !canAccessUser(c, uint(uid)) {
+        deny(c, "无权限上传该用户图片")
+        return
+    }
+    var t models.Task
+    if dbErr := db.DB().First(&t, tid).Error; dbErr != nil {
+        common.Error(c, 40401, "任务不存在")
+        return
+    }
+    if t.UserID != uint(uid) {
+        deny(c, "任务与用户不匹配")
+        return
+    }
 
     // 中文注释：优先兼容字段名 image 与 file（前端统一使用 image）；同时兼容常见数组键 image[]
-    file, err := c.FormFile("image")
-    if err != nil || file == nil {
-        file, err = c.FormFile("file")
+    file, formErr := c.FormFile("image")
+    if formErr != nil || file == nil {
+        file, formErr = c.FormFile("file")
     }
-    if (err != nil || file == nil) && c.Request.MultipartForm != nil {
+    if (formErr != nil || file == nil) && c.Request.MultipartForm != nil {
         if v := c.Request.MultipartForm.File["image[]"]; len(v) > 0 {
             file = v[0]
-            err = nil
+            formErr = nil
             zap.L().Info("UploadTaskImage: fallback via image[]", zap.String("filename", file.Filename))
         }
     }
@@ -89,11 +102,11 @@ func UploadTaskImage(c *gin.Context) {
         }
         zap.L().Info("UploadTaskImage: multipart parsed", zap.Strings("file_keys", parsedKeys))
         // 中文注释：如果常规获取失败但表单中存在文件，回退使用第一个可用文件
-        if (err != nil || file == nil) && len(mf.File) > 0 {
+        if (formErr != nil || file == nil) && len(mf.File) > 0 {
             for k, v := range mf.File {
                 if len(v) > 0 {
                     file = v[0]
-                    err = nil
+                    formErr = nil
                     zap.L().Info("UploadTaskImage: fallback file via multipart", zap.String("key", k), zap.String("filename", file.Filename))
                     break
                 }
@@ -104,8 +117,8 @@ func UploadTaskImage(c *gin.Context) {
             zap.L().Warn("UploadTaskImage: parse multipart failed", zap.Error(perr))
         }
     }
-    if err != nil || file == nil {
-        zap.L().Warn("UploadTaskImage: missing file", zap.Error(err), zap.Strings("available_keys", parsedKeys))
+    if formErr != nil || file == nil {
+        zap.L().Warn("UploadTaskImage: missing file", zap.Error(formErr), zap.Strings("available_keys", parsedKeys))
         common.Error(c, 40002, "缺少文件")
         return
     }
@@ -121,9 +134,9 @@ func UploadTaskImage(c *gin.Context) {
         common.Error(c, 40005, "文件过大，需小于5MB")
         return
     }
-    contentType, ext, err := sniffImageContentType(file)
-    if err != nil {
-        zap.L().Warn("UploadTaskImage: sniff type failed", zap.Error(err))
+    contentType, ext, sniffErr := sniffImageContentType(file)
+    if sniffErr != nil {
+        zap.L().Warn("UploadTaskImage: sniff type failed", zap.Error(sniffErr))
         common.Error(c, 40004, "无法识别文件类型")
         return
     }
@@ -136,10 +149,10 @@ func UploadTaskImage(c *gin.Context) {
 
     // 保存到约定目录：storage/uploads/images/task_images/{用户id}
     // 中文注释：根据最新规范，图片按用户维度进行归档，不再按任务ID分目录；任务ID保留在文件名中。
-    path, err := saveTaskImage(file, fmt.Sprintf("%d", uid), fmt.Sprintf("%d", tid), ext)
-    if err != nil {
+    path, saveErr := saveTaskImage(file, fmt.Sprintf("%d", uid), fmt.Sprintf("%d", tid), ext)
+    if saveErr != nil {
         zap.L().Error("UploadTaskImage: save failed",
-            zap.Error(err),
+            zap.Error(saveErr),
             zap.Int("user_id", uid),
             zap.Int("task_id", tid),
         )
@@ -164,14 +177,14 @@ func saveTaskImage(file *multipart.FileHeader, userID string, taskID string, ext
     }
     // 中文注释：按最新规范仅按用户ID分目录
     dir := filepath.Join(root, "uploads", "images", "task_images", userID)
-    if err := os.MkdirAll(dir, 0o755); err != nil {
-        return "", fmt.Errorf("创建目录失败: %w", err)
+    if mkdirErr := os.MkdirAll(dir, 0o755); mkdirErr != nil {
+        return "", fmt.Errorf("创建目录失败: %w", mkdirErr)
     }
     // 中文注释：文件命名为 task_任务ID_时间戳_uuid.后缀（uuid 用纳秒替代）；后缀来源于 MIME 检测
     filename := fmt.Sprintf("task_%s_%d_%d.%s", taskID, time.Now().Unix(), time.Now().UnixNano(), ext)
     full := filepath.Join(dir, filename)
-    if err := saveUploadedFileGeneric(file, full); err != nil {
-        return "", err
+    if writeErr := saveUploadedFileGeneric(file, full); writeErr != nil {
+        return "", writeErr
     }
     // 中文注释：记录保存路径信息
     zap.L().Debug("saveTaskImage: file saved",
@@ -186,18 +199,18 @@ func saveTaskImage(file *multipart.FileHeader, userID string, taskID string, ext
 
 // saveUploadedFileGeneric 兼容性的保存封装（避免跨平台路径问题）
 func saveUploadedFileGeneric(file *multipart.FileHeader, dst string) error {
-    src, err := file.Open()
-    if err != nil {
-        return err
+    src, openErr := file.Open()
+    if openErr != nil {
+        return openErr
     }
     defer src.Close()
-    out, err := os.Create(dst)
-    if err != nil {
-        return err
+    out, createErr := os.Create(dst)
+    if createErr != nil {
+        return createErr
     }
     defer out.Close()
-    if _, err := io.Copy(out, src); err != nil {
-        return err
+    if _, copyErr := io.Copy(out, src); copyErr != nil {
+        return copyErr
     }
     return nil
 }
@@ -205,9 +218,9 @@ func saveUploadedFileGeneric(file *multipart.FileHeader, dst string) error {
 // sniffImageContentType 读取少量内容检测 MIME，并返回建议扩展名（webp/jpg/png/gif）
 // 中文注释：防止用户伪造扩展名，后端以内容为准；失败时返回错误
 func sniffImageContentType(file *multipart.FileHeader) (string, string, error) {
-    f, err := file.Open()
-    if err != nil {
-        return "", "", err
+    f, openErr2 := file.Open()
+    if openErr2 != nil {
+        return "", "", openErr2
     }
     defer f.Close()
     buf := make([]byte, 1024)
@@ -245,7 +258,7 @@ func DeleteTaskImage(c *gin.Context) {
     path := strings.TrimSpace(c.Query("path"))
     if path == "" {
         var body struct{ Path string `json:"path"` }
-        if err := c.ShouldBindJSON(&body); err == nil {
+        if bindErr := c.ShouldBindJSON(&body); bindErr == nil {
             path = strings.TrimSpace(body.Path)
         }
     }
@@ -256,9 +269,13 @@ func DeleteTaskImage(c *gin.Context) {
     }
     // 中文注释：查询任务并解析现有图片列表
     var t models.Task
-    if err := db.DB().First(&t, idStr).Error; err != nil {
-        zap.L().Warn("DeleteTaskImage: task not found", zap.Error(err), zap.String("id", idStr))
+    if dbErr := db.DB().First(&t, idStr).Error; dbErr != nil {
+        zap.L().Warn("DeleteTaskImage: task not found", zap.Error(dbErr), zap.String("id", idStr))
         common.Error(c, 40401, "任务不存在")
+        return
+    }
+    if !canAccessUser(c, t.UserID) {
+        deny(c, "无权限删除该图片")
         return
     }
     // 中文注释：标准化路径，确保斜杠一致
@@ -287,16 +304,16 @@ func DeleteTaskImage(c *gin.Context) {
     root := os.Getenv("STORAGE_ROOT")
     if strings.TrimSpace(root) == "" { root = "storage" }
     full := filepath.Join(root, filepath.FromSlash(norm))
-    if err := os.Remove(full); err != nil {
-        zap.L().Warn("DeleteTaskImage: remove file failed", zap.String("full", full), zap.Error(err))
+    if rmErr := os.Remove(full); rmErr != nil {
+        zap.L().Warn("DeleteTaskImage: remove file failed", zap.String("full", full), zap.Error(rmErr))
     } else {
         zap.L().Info("DeleteTaskImage: removed file", zap.String("full", full))
     }
     // 中文注释：更新任务的 image_json
     b, _ := json.Marshal(kept)
     t.ImageJSON = string(b)
-    if err := db.DB().Save(&t).Error; err != nil {
-        zap.L().Error("DeleteTaskImage: db save failed", zap.Error(err), zap.Uint("task_id", t.ID))
+    if saveErr3 := db.DB().Save(&t).Error; saveErr3 != nil {
+        zap.L().Error("DeleteTaskImage: db save failed", zap.Error(saveErr3), zap.Uint("task_id", t.ID))
         common.Error(c, 50019, "更新任务图片列表失败")
         return
     }

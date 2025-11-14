@@ -6,10 +6,13 @@ import (
     "os"
     "path/filepath"
     "strings"
+    "strconv"
 
     "github.com/gin-gonic/gin"
     "go.uber.org/zap"
     "recordgo/internal/common"
+    "recordgo/internal/db"
+    "recordgo/internal/models"
 )
 
 // 中文注释：上传任务音频（wav/mp3），保存至与任务图片相同的目录：storage/uploads/images/task_images/{用户id}/{任务id}
@@ -44,6 +47,22 @@ func UploadTaskAudio(c *gin.Context) {
     if err != nil || file == nil {
         zap.L().Warn("UploadTaskAudio: missing file", zap.Error(err))
         c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "缺少音频文件", "data": nil})
+        return
+    }
+
+    uid, _ := strconv.Atoi(userID)
+    tid, _ := strconv.Atoi(taskID)
+    if !canAccessUser(c, uint(uid)) {
+        common.Error(c, 40301, "无权限上传该音频")
+        return
+    }
+    var t models.Task
+    if err := db.DB().First(&t, tid).Error; err != nil {
+        common.Error(c, 40401, "任务不存在")
+        return
+    }
+    if t.UserID != uint(uid) {
+        deny(c, "任务与用户不匹配")
         return
     }
 

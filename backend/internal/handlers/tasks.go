@@ -76,6 +76,18 @@ func CreateTask(c *gin.Context) {
         common.Error(c, 40002, "任务名称与计划时长必填且合法")
         return
     }
+    cl := extractClaims(c)
+    if cl == nil {
+        common.Error(c, 40100, "未登录或令牌无效")
+        return
+    }
+    if req.UserID == 0 {
+        if cl.ParentID != nil { req.UserID = *cl.ParentID } else { req.UserID = cl.UserID }
+    }
+    if !canAccessUser(c, req.UserID) {
+        deny(c, "无权限为该用户创建任务")
+        return
+    }
     zap.L().Info("CreateTask: creating",
         zap.Uint("user_id", req.UserID),
         zap.String("name", req.Name),
@@ -110,8 +122,25 @@ func CreateTask(c *gin.Context) {
 
 // ListTasks 列表查询（支持状态与分页）
 func ListTasks(c *gin.Context) {
+    cl := extractClaims(c)
+    if cl == nil {
+        common.Error(c, 40100, "未登录或令牌无效")
+        return
+    }
+    uid := cl.UserID
+    if cl.ParentID != nil { uid = *cl.ParentID }
+    if s := strings.TrimSpace(c.Query("user_id")); s != "" {
+        if v, err := strconv.Atoi(s); err == nil && v > 0 {
+            if canAccessUser(c, uint(v)) {
+                uid = uint(v)
+            } else {
+                deny(c, "无权限查看该用户任务")
+                return
+            }
+        }
+    }
     var tasks []models.Task
-    q := db.DB().Model(&models.Task{})
+    q := db.DB().Model(&models.Task{}).Where("user_id = ?", uid)
 
     // 过滤状态
     if s := c.Query("status"); s != "" {
@@ -146,6 +175,10 @@ func GetTask(c *gin.Context) {
         common.Error(c, 50003, "查询任务失败")
         return
     }
+    if !canAccessUser(c, t.UserID) {
+        deny(c, "无权限查看该任务")
+        return
+    }
     common.Ok(c, t)
 }
 
@@ -167,6 +200,10 @@ func UpdateTask(c *gin.Context) {
     if err := db.DB().First(&t, id).Error; err != nil {
         zap.L().Warn("UpdateTask: not found", zap.Error(err), zap.String("id", id))
         common.Error(c, 40401, "任务不存在")
+        return
+    }
+    if !canAccessUser(c, t.UserID) {
+        deny(c, "无权限编辑该任务")
         return
     }
     // 修改前快照
@@ -217,6 +254,10 @@ func UpdateStatus(c *gin.Context) {
     var t models.Task
     if err := db.DB().First(&t, id).Error; err != nil {
         common.Error(c, 40401, "任务不存在")
+        return
+    }
+    if !canAccessUser(c, t.UserID) {
+        deny(c, "无权限更改该任务状态")
         return
     }
     // 快照
@@ -273,6 +314,10 @@ func DeleteTask(c *gin.Context) {
     var t models.Task
     if err := db.DB().First(&t, id).Error; err != nil {
         common.Error(c, 40401, "任务不存在")
+        return
+    }
+    if !canAccessUser(c, t.UserID) {
+        deny(c, "无权限删除该任务")
         return
     }
     if err := db.DB().Delete(&t).Error; err != nil {
@@ -347,7 +392,17 @@ func BatchDelete(c *gin.Context) {
     // 中文注释：删除前查询图片路径并尝试删除文件
     var tasks []models.Task
     _ = db.DB().Where("id IN ?", ids).Find(&tasks).Error
-    if err := db.DB().Where("id IN ?", ids).Delete(&models.Task{}).Error; err != nil {
+    kept := make([]uint, 0, len(ids))
+    for _, t := range tasks {
+        if canAccessUser(c, t.UserID) {
+            kept = append(kept, t.ID)
+        }
+    }
+    if len(kept) == 0 {
+        common.Error(c, 40301, "无可删除任务")
+        return
+    }
+    if err := db.DB().Where("id IN ?", kept).Delete(&models.Task{}).Error; err != nil {
         common.Error(c, 50007, "批量删除失败")
         return
     }
@@ -355,6 +410,7 @@ func BatchDelete(c *gin.Context) {
         root := os.Getenv("STORAGE_ROOT")
         if strings.TrimSpace(root) == "" { root = "storage" }
         for _, t := range tasks {
+            if !containsID(kept, t.ID) { continue }
             if strings.TrimSpace(t.ImageJSON) == "" { continue }
             var paths []string
             _ = json.Unmarshal([]byte(t.ImageJSON), &paths)
@@ -393,8 +449,25 @@ func BatchDelete(c *gin.Context) {
 
 // ListRecycleBin 回收站任务
 func ListRecycleBin(c *gin.Context) {
+    cl := extractClaims(c)
+    if cl == nil {
+        common.Error(c, 40100, "未登录或令牌无效")
+        return
+    }
+    uid := cl.UserID
+    if cl.ParentID != nil { uid = *cl.ParentID }
+    if s := strings.TrimSpace(c.Query("user_id")); s != "" {
+        if v, err := strconv.Atoi(s); err == nil && v > 0 {
+            if canAccessUser(c, uint(v)) {
+                uid = uint(v)
+            } else {
+                deny(c, "无权限查看该用户回收站")
+                return
+            }
+        }
+    }
     var tasks []models.Task
-    if err := db.DB().Unscoped().Where("deleted_at IS NOT NULL").Order("deleted_at DESC").Find(&tasks).Error; err != nil {
+    if err := db.DB().Unscoped().Where("deleted_at IS NOT NULL AND user_id = ?", uid).Order("deleted_at DESC").Find(&tasks).Error; err != nil {
         common.Error(c, 50008, "查询回收站失败")
         return
     }
@@ -414,18 +487,20 @@ func RestoreTasks(c *gin.Context) {
             ids = append(ids, uint(v))
         }
     }
+    restored := 0
     for _, id := range ids {
         var t models.Task
         if err := db.DB().Unscoped().First(&t, id).Error; err == nil {
-            // 恢复软删除
+            if !canAccessUser(c, t.UserID) { continue }
             t.DeletedAt = gorm.DeletedAt{}
             if err := db.DB().Unscoped().Save(&t).Error; err == nil {
                 snapshot, _ := json.Marshal(t)
                 _ = db.DB().Create(&models.TaskHistory{TaskID: t.ID, ChangeType: "restore", SnapshotJSON: string(snapshot)}).Error
+                restored++
             }
         }
     }
-    common.Ok(c, gin.H{"restored": len(ids)})
+    common.Ok(c, gin.H{"restored": restored})
 }
 
 // CompleteTomato 番茄钟完成上报（累加任务番茄数与实际耗时）
@@ -440,6 +515,10 @@ func CompleteTomato(c *gin.Context) {
     var t models.Task
     if err := db.DB().First(&t, id).Error; err != nil {
         common.Error(c, 40401, "任务不存在")
+        return
+    }
+    if !canAccessUser(c, t.UserID) {
+        deny(c, "无权限操作该任务")
         return
     }
     // 更新番茄钟次数与实际耗时
@@ -467,4 +546,11 @@ func splitComma(s string) []string {
         }
     }
     return out
+}
+
+func containsID(arr []uint, id uint) bool {
+    for _, v := range arr {
+        if v == id { return true }
+    }
+    return false
 }
