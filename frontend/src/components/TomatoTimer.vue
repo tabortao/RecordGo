@@ -82,29 +82,17 @@
     </div>
 
     <!-- 中文注释：底部区域 - 包含时间预设/自定义与控制按钮，更贴近页面底部 -->
-    <div class="fixed bottom-12 left-0 right-0 space-y-3" data-bottom="tomato-controls">
-      <!-- 中文注释：倒计时模式下显示预设与自定义；正计时不显示这些 -->
-      <div class="flex items-center justify-center gap-3" v-if="mode==='countdown'">
-      <div class="flex items-center gap-2">
-        <el-tag class="cursor-pointer" @click="setDuration(10)" :style="nightTagStyle">10分钟</el-tag>
-        <el-tag class="cursor-pointer" @click="setDuration(20)" :style="nightTagStyle">20分钟</el-tag>
-      </div>
-      <!-- 中文注释：步进改为5分钟，点击 + / - 按5分钟增减 -->
-      <el-input-number v-model="customMinutes" :min="1" :max="240" :step="5" />
-      <el-button size="small" @click="applyCustom" :style="nightBtnStyle">应用</el-button>
-    </div>
-
-    <!-- 控制按钮（精简）：移除“重置”，合并“开始/继续”为一个主按钮；运行时显示“暂停” -->
-    <div class="flex justify-center gap-2 mt-2">
-      <template v-if="running">
-        <el-button @click="pause" :style="nightBtnStyle">暂停</el-button>
-      </template>
-      <template v-else>
-        <el-button @click="onMainAction" :style="nightBtnStyle">{{ started ? '继续' : '开始' }}</el-button>
-      </template>
-      <el-button @click="complete" :style="nightBtnStyle">完成</el-button>
-    </div>
-
+    <div class="fixed bottom-12 left-0 right-0 flex items-center justify-center" data-bottom="tomato-controls">
+      <button
+        class="w-24 h-24 rounded-full shadow-lg font-bold select-none"
+        :style="{ backgroundColor: '#F4A261', color: '#1F2937' }"
+        @click="onCircleTap"
+        @pointerdown="onCircleDown"
+        @pointerup="onCircleUp"
+        @pointerleave="onCircleUp"
+      >
+        {{ running ? '暂停' : (started ? '继续' : '开始') }}
+      </button>
     </div>
   </div>
 </template>
@@ -128,13 +116,14 @@ const breakM = computed(() => props.breakMinutes ?? 5)
 type Phase = 'work' | 'break'
 const phase = ref<Phase>('work')
 const mode = ref<'countdown' | 'countup'>(store.tomato.runningMode ?? store.tomato.mode)
-// 中文注释：夜间主题按钮与 Tag 样式（与深色背景协调）
-const nightBtnStyle = { backgroundColor: '#3a3a38', color: '#B8CEE8', borderColor: '#4a4a48' }
-const nightTagStyle = { backgroundColor: '#3a3a38', color: '#B8CEE8', borderColor: '#4a4a48' }
 const running = ref(store.tomato.running)
 const remaining = ref(store.tomato.running ? (store.tomato.remainingSeconds || (mode.value === 'countdown' ? workM.value * 60 : 0)) : (mode.value === 'countdown' ? workM.value * 60 : 0))
 const started = ref(false)
-const customMinutes = ref(workM.value)
+// 自定义分钟已迁移到页面级调整
+let pressTimer: any = null
+function onCircleTap() { if (!started.value) start(); else togglePauseResume() }
+function onCircleDown() { if (pressTimer) clearTimeout(pressTimer); pressTimer = setTimeout(() => { complete() }, 2000) }
+function onCircleUp() { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null } }
 let timer: any = null
 // 中文注释：墙钟时间戳，支持锁屏/后台后继续准确计时
 const startAtMs = ref<number | null>(store.tomato.startAtMs ?? null)
@@ -286,10 +275,7 @@ function togglePauseResume() {
   }
 }
 // 中文注释：主按钮动作（开始/继续）：未开始执行 start，已开始但暂停执行恢复
-function onMainAction() {
-  if (!started.value) start()
-  else togglePauseResume()
-}
+// 主按钮逻辑由大圆按钮事件统一处理
 function reset() {
   pause()
   phase.value = 'work'
@@ -316,19 +302,7 @@ function stopInternal() {
   // 中文注释：停止时释放常亮
   releaseWakeLock().catch(() => {})
 }
-function setDuration(min: number) {
-  customMinutes.value = min
-  applyCustom()
-}
-function applyCustom() {
-  // 中文注释：更新工作时长与剩余时间
-  const m = customMinutes.value
-  const wasRunning = running.value
-  stopInternal()
-  remaining.value = mode.value === 'countdown' ? m * 60 : 0
-  store.updateTomato({ durationMinutes: m, remainingSeconds: remaining.value })
-  if (wasRunning) start()
-}
+// 时长调整由页面菜单处理
 // 中文注释：关闭按钮已移除，使用对话框右上角默认关闭控件
 
 watch(phase, () => {

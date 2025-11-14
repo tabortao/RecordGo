@@ -8,6 +8,16 @@
       <h2 class="font-semibold" :style="{ color: '#B8CEE8' }">番茄钟</h2>
       <!-- 右上角系统时间显示（字号与标题一致） -->
       <h2 class="ml-auto font-mono font-semibold" :style="{ color: '#B8CEE8', fontSize: '1.3em' }">{{ systemTime }}</h2>
+      <el-dropdown @command="onTopMenu">
+        <span class="el-dropdown-link">
+          <el-icon :size="18" :style="{ color: '#B8CEE8' }"><MoreFilled /></el-icon>
+        </span>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="adjust">修改番茄钟倒计时</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
     </div>
     <!-- 任务标题：靠近页面标题，避免紧邻下方为时钟 -->
     <div class="mt-1 text-center font-bold" :style="{ color: '#B8CEE8', fontSize: '1.2em' }" v-if="taskName">任务：{{ taskName }}</div>
@@ -17,12 +27,24 @@
       <TomatoTimer ref="timerRef" :work-minutes="workMinutes" :break-minutes="5" :task-name="taskName" :task-remark="taskRemark" :task-id="taskId" @complete="onTomatoComplete" />
     </div>
   </div>
+  <el-dialog v-model="showAdjust" title="修改番茄钟倒计时" width="360px">
+    <div class="flex items-center justify-between">
+      <span>分钟</span>
+      <el-input-number v-model="adjustMinutes" :min="1" :max="240" :step="5" />
+    </div>
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <el-button @click="showAdjust=false">取消</el-button>
+        <el-button type="primary" @click="applyAdjust">应用</el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
 // 中文注释：番茄钟独立页面，从路由参数中读取任务ID并加载任务信息
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { ArrowLeft, Clock } from '@element-plus/icons-vue'
+import { ArrowLeft, Clock, MoreFilled } from '@element-plus/icons-vue'
 import router from '@/router'
 import TomatoTimer from '@/components/TomatoTimer.vue'
 import { useRoute } from 'vue-router'
@@ -53,6 +75,22 @@ const workMinutes = ref<number>(20)
 const taskName = ref<string>('')
 const taskRemark = ref<string>('')
 const systemTime = ref<string>('')
+// 顶部菜单：调整倒计时对话框
+const showAdjust = ref(false)
+const adjustMinutes = ref<number>(20)
+function onTopMenu(cmd: string) {
+  if (cmd === 'adjust') {
+    adjustMinutes.value = workMinutes.value || 20
+    showAdjust.value = true
+  }
+}
+function applyAdjust() {
+  const wasRunning = store.tomato.running
+  timerRef.value?.stop?.()
+  workMinutes.value = Math.max(1, Math.min(240, adjustMinutes.value))
+  if (wasRunning) timerRef.value?.start?.()
+  showAdjust.value = false
+}
 let clockTimer: any = null
 // 顶部与底部高度测量，用于计算中部容器高度
 const rootRef = ref<HTMLElement | null>(null)
