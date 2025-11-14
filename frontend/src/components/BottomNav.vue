@@ -1,11 +1,11 @@
 <template>
   <!-- 中文注释：底部导航，当前页面高亮 -->
-  <nav class="h-14 border-t bg-white flex items-center justify-around fixed bottom-0 left-0 right-0 z-50">
+  <nav class="h-20 border-t bg-white flex items-center justify-around fixed bottom-0 left-0 right-0 z-50">
     <router-link
       v-for="item in items"
       :key="item.to"
       :to="item.to"
-      class="flex flex-col items-center justify-center w-24 text-gray-600 pt-1"
+      class="flex flex-col items-center justify-center w-24 text-gray-600 pt-3"
       :class="{ 'text-primary font-semibold': $route.path === item.to }"
     >
       <el-icon :size="20"><component :is="item.icon" /></el-icon>
