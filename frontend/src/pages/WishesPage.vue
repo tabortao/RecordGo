@@ -12,7 +12,7 @@
     </div>
   </div>
   <div class="h-20"></div>
-  <div class="p-4 space-y-4">
+  <div class="p-4 space-y-4 pb-16">
 
     <div>
       <!-- 中文注释：改为响应式网格布局，移动端单列，桌面端多列 -->

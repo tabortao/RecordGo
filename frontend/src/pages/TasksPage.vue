@@ -25,7 +25,7 @@
     
 
     <!-- 顶部统计：四项一行，不同颜色图标；下方单独大“统计”卡片居中显示 -->
-    <div class="grid grid-cols-4 gap-2">
+    <div class="grid grid-cols-4 gap-1">
       <el-card shadow="never" class="stat-card">
         <div class="flex flex-col items-center">
           <el-icon :size="19" style="color:#22c55e"><Clock /></el-icon>
@@ -79,7 +79,7 @@
                   <el-dropdown-item command="已完成">已完成</el-dropdown-item>
                   <el-dropdown-item command="待完成">待完成</el-dropdown-item>
                 </el-dropdown-menu>
-              </template>
+</template>
             </el-dropdown>
             <!-- 中文注释：排序图标下拉菜单，点击选择排序方式（默认/时间顺序/任务分类/完成优先/添加时间） -->
             <el-dropdown trigger="click" @command="onSortCommand">
@@ -464,8 +464,7 @@
       @click="openCreate"
       title="创建任务"
     >
-      <!-- 中文注释：创建任务图标放大 0.5 倍（默认约 16px → 24px） -->
-      <el-icon :size="24"><Plus /></el-icon>
+      <el-icon :size="31"><Plus /></el-icon>
     </el-button>
 
     <!-- 中文注释：移除旧版任务页悬浮番茄钟，改用新的全局悬浮球（右下角橙色），避免重复显示 -->
@@ -1337,6 +1336,11 @@ const activeTaskId = ref<number | null>(null)
 .no-frame :deep(.el-card__body) {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+}
+/* 统计卡片更紧凑：减少上下内边距 */
+.stat-card :deep(.el-card__body) {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
 }
 :global(.confetti-local) {
   pointer-events: none;
