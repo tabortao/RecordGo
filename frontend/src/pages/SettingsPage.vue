@@ -52,6 +52,8 @@
       </template>
     </el-dialog>
 
+    <!-- 中文注释：主题外观改为独立页面 /settings/appearance，此处不再使用弹窗 -->
+
     <!-- 其他设置占位对话框：任务、朗读、学科、关于 -->
     <el-dialog v-model="showTasks" title="任务设置" width="520px"><div class="text-gray-500 text-sm">后续将提供任务默认分类、默认计划时长等设置。</div></el-dialog>
     <el-dialog v-model="showReading" title="朗读设置" width="520px"><div class="text-gray-500 text-sm">后续将提供朗读速度、发音人等设置。</div></el-dialog>
@@ -66,24 +68,26 @@ import { Setting, Timer, List, Microphone, Notebook, Coin, InfoFilled } from '@e
 import { useAppState } from '@/stores/appState'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import router from '@/router'
 
 // 中文注释：类型约束，修复模板中“string 不能分配到联合类型”的报错
-type SettingsKey = 'tomato' | 'tasks' | 'reading' | 'subjects' | 'coins' | 'about'
-const items: Array<{ key: SettingsKey; label: string; icon: any; fg: string }> = [
+ type SettingsKey = 'tomato' | 'tasks' | 'reading' | 'subjects' | 'coins' | 'appearance' | 'about'
+ const items: Array<{ key: SettingsKey; label: string; icon: any; fg: string }> = [
   { key: 'tomato', label: '番茄钟设置', icon: Timer, fg: '#ef4444' },
   { key: 'tasks', label: '任务设置', icon: List, fg: '#10b981' },
   { key: 'reading', label: '朗读设置', icon: Microphone, fg: '#7c3aed' },
   { key: 'subjects', label: '学科设置', icon: Notebook, fg: '#2563eb' },
   { key: 'coins', label: '金币设置', icon: Coin, fg: '#f59e0b' },
+  { key: 'appearance', label: '主题外观', icon: Setting, fg: '#7c3aed' },
   { key: 'about', label: '关于', icon: InfoFilled, fg: '#0ea5e9' }
 ]
-const active = ref<SettingsKey>('tomato')
+ const active = ref<SettingsKey>('tomato')
 
 // 中文注释：支持通过路由参数 tab 初始化当前设置分组（来自“我的”页入口）
 const route = useRoute()
 watchEffect(() => {
   const tab = String(route.query.tab || '')
-  const allowed: SettingsKey[] = ['tomato', 'tasks', 'reading', 'subjects', 'coins', 'about']
+ const allowed: SettingsKey[] = ['tomato', 'tasks', 'reading', 'subjects', 'coins', 'appearance', 'about']
   if (allowed.includes(tab as SettingsKey)) {
     active.value = tab as SettingsKey
   }
@@ -102,12 +106,12 @@ const newCoins = ref<number | null>(null)
 const reason = ref('')
 
 // 中文注释：对话框显示状态
-const showTomato = ref(false)
-const showCoins = ref(false)
-const showTasks = ref(false)
-const showReading = ref(false)
-const showSubjects = ref(false)
-const showAbout = ref(false)
+ const showTomato = ref(false)
+  const showCoins = ref(false)
+  const showTasks = ref(false)
+  const showReading = ref(false)
+  const showSubjects = ref(false)
+  const showAbout = ref(false)
 
 function openDialog(k: SettingsKey) {
   active.value = k
@@ -116,6 +120,7 @@ function openDialog(k: SettingsKey) {
   else if (k === 'tasks') showTasks.value = true
   else if (k === 'reading') showReading.value = true
   else if (k === 'subjects') showSubjects.value = true
+  else if (k === 'appearance') { router.push('/settings/appearance') }
   else if (k === 'about') showAbout.value = true
 }
 
@@ -130,6 +135,8 @@ function saveCoins() {
   ElMessage.success('金币已更新')
   showCoins.value = false
 }
+
+// 中文注释：主题外观改为独立页面设置，此处移除弹窗逻辑
 </script>
 
 <style scoped>

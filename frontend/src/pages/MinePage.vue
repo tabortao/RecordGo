@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed top-0 left-0 right-0 bg-white z-40 border-b">
+  <div class="fixed top-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur z-40 border-b border-gray-200 dark:border-gray-700">
     <div class="px-4 py-2 font-semibold">我的</div>
   </div>
   <div class="h-10"></div>
@@ -18,27 +18,27 @@
     </el-card>
 
     <!-- 中文注释：账号管理 UI（shadcn 风格 + tailwind），包含编辑个人信息/子账号管理/退出登录 -->
-    <div class="rounded-lg border bg-white">
+    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
       <div class="px-3 py-2 flex items-center gap-2">
         <el-icon :size="18" style="color:#3b82f6"><User /></el-icon>
-        <span class="font-semibold">账号管理</span>
+        <span class="font-semibold dark:text-gray-100">账号管理</span>
       </div>
       <!-- 响应式网格：移动端单列，桌面端多列 -->
       <div class="px-2 py-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
         <!-- 编辑个人信息：子账号隐藏，仅主账号显示 -->
-        <button v-if="isParent" class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition" @click="router.push('/settings/profile')">
+        <button v-if="isParent" class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition" @click="router.push('/settings/profile')">
           <el-icon :size="18" style="color:#60a5fa"><Edit /></el-icon>
-          <span class="text-gray-800">编辑个人信息</span>
+          <span class="text-gray-800 dark:text-gray-100">编辑个人信息</span>
         </button>
         <!-- 子账号管理：无权限时不显示（仅父账号或具备 manage_children 权限显示） -->
-        <button v-if="isParent || manageChildren" class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition" @click="onChildManage" title="仅父账号或具备权限的账号可管理子账号">
+        <button v-if="isParent || manageChildren" class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition" @click="onChildManage" title="仅父账号或具备权限的账号可管理子账号">
           <el-icon :size="18" style="color:#22c55e"><User /></el-icon>
-          <span class="text-gray-800">子账号管理</span>
+          <span class="text-gray-800 dark:text-gray-100">子账号管理</span>
         </button>
         <!-- 退出登录 -->
-        <button class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition" @click="onLogout">
+        <button class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition" @click="onLogout">
           <el-icon :size="18" style="color:#ef4444"><SwitchButton /></el-icon>
-          <span class="text-gray-800">退出登录</span>
+          <span class="text-gray-800 dark:text-gray-100">退出登录</span>
         </button>
       </div>
     </div>
@@ -48,10 +48,10 @@
     <!-- 中文注释：编辑个人信息对话框已移除，改为独立页面 /settings/profile -->
 
     <!-- 中文注释：设置模块（与账号管理同级），展示各设置按钮 -->
-    <div class="rounded-lg border bg-white">
+    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
       <div class="px-3 py-2 flex items-center gap-2">
         <el-icon :size="18" style="color:#0ea5e9"><Setting /></el-icon>
-        <span class="font-semibold">设置</span>
+        <span class="font-semibold dark:text-gray-100">设置</span>
       </div>
       <!-- 响应式网格：移动端单列，桌面端多列 -->
       <div class="px-2 py-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
@@ -63,7 +63,7 @@
           @click="onOpenSetting(i.key)"
         >
           <el-icon :size="18" :style="{ color: i.fg }"><component :is="i.icon" /></el-icon>
-          <span class="text-gray-800">{{ i.label }}</span>
+          <span class="text-gray-800 dark:text-gray-100">{{ i.label }}</span>
         </button>
       </div>
     </div>
@@ -154,12 +154,13 @@ function onLogout() {
 // 中文注释：移除系统设置按钮对应的旧跳转函数
 
 // 中文注释：设置模块按钮（图标统一 18，与“编辑个人信息”一致）
-type SettingsKey = 'tomato' | 'tasks' | 'reading' | 'coins' | 'about'
-const settingItems: Array<{ key: SettingsKey; label: string; icon: any; fg: string }> = [
+ type SettingsKey = 'tomato' | 'tasks' | 'reading' | 'coins' | 'appearance' | 'about'
+ const settingItems: Array<{ key: SettingsKey; label: string; icon: any; fg: string }> = [
   { key: 'tomato', label: '番茄钟设置', icon: Timer, fg: '#ef4444' },
   { key: 'tasks', label: '任务设置', icon: List, fg: '#10b981' },
   { key: 'reading', label: '朗读设置', icon: Microphone, fg: '#7c3aed' },
   { key: 'coins', label: '金币设置', icon: Coin, fg: '#f59e0b' },
+  { key: 'appearance', label: '主题外观', icon: Setting, fg: '#2563eb' },
   { key: 'about', label: '关于', icon: InfoFilled, fg: '#0ea5e9' }
 ]
 
@@ -170,6 +171,7 @@ function goSettingsTab(k: SettingsKey) {
     tasks: '/settings/tasks',
     reading: '/settings/reading',
     coins: '/settings/coins',
+    appearance: '/settings/appearance',
     about: '/settings/about'
   }
   router.push(map[k])
@@ -178,6 +180,7 @@ function goSettingsTab(k: SettingsKey) {
 // 中文注释：根据权限判断设置按钮是否禁用
 function isDisabled(k: SettingsKey): boolean {
   if (k === 'about') return false
+  if (k === 'appearance') return false
   if (k === 'tomato') return !canSettingTomato.value
   if (k === 'tasks') return !canSettingTasks.value
   if (k === 'reading') return !canSettingReading.value

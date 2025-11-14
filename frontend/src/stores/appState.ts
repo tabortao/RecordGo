@@ -43,6 +43,8 @@ export interface AppState {
   // 中文注释：任务自动排序开关（默认开启）。开启后：
   // 1）分类内已完成任务排在下方；2）全部完成的分类排在未完分类之后。
   taskAutoSortEnabled: boolean
+  // 中文注释：主题外观模式（system/dark/light），用于控制深浅色
+  themeMode: 'system' | 'dark' | 'light'
 }
 
 const DEFAULT_STATE: AppState = {
@@ -73,7 +75,9 @@ const DEFAULT_STATE: AppState = {
   taskNotesEnabled: true
   ,
   // 中文注释：任务自动排序默认开启
-  taskAutoSortEnabled: true
+  taskAutoSortEnabled: true,
+  // 中文注释：主题外观默认跟随系统
+  themeMode: 'system'
 }
 
 export const useAppState = defineStore('appState', {
@@ -134,6 +138,15 @@ export const useAppState = defineStore('appState', {
     // 中文注释：开启/关闭任务自动排序，并持久化
     setTaskAutoSortEnabled(enabled: boolean) {
       this.taskAutoSortEnabled = enabled
+      this.persist()
+    },
+    // 中文注释：设置主题外观（系统/深色/浅色），并立即应用到页面
+    setThemeMode(mode: 'system'|'dark'|'light') {
+      this.themeMode = mode
+      try {
+        const isDark = mode === 'dark' ? true : mode === 'light' ? false : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.classList.toggle('dark', !!isDark)
+      } catch {}
       this.persist()
     },
     reset() {

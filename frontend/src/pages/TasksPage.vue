@@ -5,7 +5,7 @@
     <div class="fixed top-0 left-0 right-0 flex justify-center pointer-events-none" :style="{ opacity: (pullY>10||refreshing)?1:0 }">
       <div class="mt-2 text-xs text-gray-500 bg-white/80 rounded px-2 py-1 shadow">{{ refreshing ? '正在刷新...' : '下拉刷新' }}</div>
     </div>
-    <div class="fixed top-0 left-0 right-0 bg-white z-40 border-b">
+    <div class="fixed top-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur z-40 border-b border-gray-200 dark:border-gray-700">
       <div class="px-4 py-2 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <el-dropdown trigger="click" @command="onAvatarCommand">
@@ -47,7 +47,7 @@
       <el-card shadow="never" class="stat-card">
         <div class="flex flex-col items-center">
           <el-icon :size="19" style="color:#22c55e"><Clock /></el-icon>
-          <div class="text-xs text-gray-500">日时长</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">日时长</div>
           <el-tooltip :content="tipMinutes" placement="top">
             <div class="font-bold" style="color:#22c55e">{{ dayMinutes }}</div>
           </el-tooltip>
@@ -56,7 +56,7 @@
       <el-card shadow="never" class="stat-card">
         <div class="flex flex-col items-center">
           <el-icon style="color:#3b82f6"><List /></el-icon>
-          <div class="text-xs text-gray-500">任务数</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">任务数</div>
           <el-tooltip :content="tipTasks" placement="top">
             <div class="font-bold" style="color:#3b82f6">{{ completedTasksCount }}/{{ filteredTasks.length }}</div>
           </el-tooltip>
@@ -65,7 +65,7 @@
       <el-card shadow="never" class="stat-card">
         <div class="flex flex-col items-center">
           <el-icon :size="19" style="color:#f59e0b"><Money /></el-icon>
-          <div class="text-xs text-gray-500">日金币</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">日金币</div>
           <el-tooltip :content="tipCoins" placement="top">
             <div class="font-bold" style="color:#f59e0b">{{ dayCoins }}</div>
           </el-tooltip>
@@ -74,7 +74,7 @@
       <el-card shadow="never" class="stat-card">
         <div class="flex flex-col items-center">
           <el-icon :size="19" style="color:#14b8a6"><CircleCheck /></el-icon>
-          <div class="text-xs text-gray-500">完成率</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">完成率</div>
           <el-tooltip :content="tipRate" placement="top">
             <div class="font-bold" style="color:#14b8a6">{{ completeRate }}%</div>
           </el-tooltip>
@@ -146,7 +146,7 @@
         <!-- 按分类分组显示 -->
         <div v-for="group in groupedTasks" :key="group.category" class="space-y-3">
           <!-- 中文注释：分组标题左侧展示分类颜色，颜色与设置保持一致 -->
-          <div class="text-base font-semibold flex items-center gap-2">
+          <div class="text-base font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100">
             <span class="inline-block w-2 h-2 rounded" :style="{ backgroundColor: categoryColor(group.category) }"></span>
             <span>{{ group.category }}</span>
           </div>
@@ -154,7 +154,7 @@
             v-for="t in group.items"
             :key="t.id"
             shadow="never"
-            class="relative border border-gray-300 hover:ring-1 hover:ring-blue-300 transition rounded-xl mx-1"
+            class="relative border border-gray-300 dark:border-gray-700 hover:ring-1 hover:ring-blue-300 dark:hover:ring-blue-200/30 transition rounded-xl mx-1"
             :data-task-id="t.id"
             :class="{ 'ring-2 ring-blue-500': activeTaskId === t.id }"
             @click="activeTaskId = t.id"
@@ -163,7 +163,7 @@
             <div class="absolute left-2 top-1/2 -translate-y-1/2">
               <div
                 class="w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer"
-                :class="t.status===2 ? 'bg-green-500 border-green-500 text-white' : 'border-gray-400 text-gray-400'"
+                :class="t.status===2 ? 'bg-green-500 border-green-500 text-white' : 'border-gray-400 dark:border-gray-500 text-gray-400 dark:text-gray-500'"
                 @click="() => onCheckComplete(t, t.status !== 2)"
                 title="点击切换完成状态"
               >
@@ -181,7 +181,7 @@
               <div class="flex items-center gap-1">
                 <!-- 中文注释：图片查看入口移动到“实际完成时间”左侧，避免顶部拥挤 -->
                 <!-- 中文注释：右侧状态与操作区：备注图标 + 小喇叭 + 番茄钟/状态标签 -->
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-2">
                   <!-- 备注图标：点击进入备注页，作用与菜单中的“备注”一致 -->
               <!-- 中文注释：备注入口图标（受开关控制）；关闭后不显示 -->
               <el-icon v-if="store.taskNotesEnabled" :size="16" class="cursor-pointer" title="备注" style="color:#f97316" @click="router.push(`/tasks/${t.id}/notes`)"><ChatDotRound /></el-icon>
@@ -227,16 +227,16 @@
             <el-icon v-if="hasImages(t)" class="cursor-pointer" :size="14" title="查看图片" style="color:#F97316 !important" @click="openTaskImages(t)"><Picture /></el-icon>
                 <!-- 中文注释：仅在已完成时显示“实际完成时间”，位于图片图标与计划用时之间 -->
                 <template v-if="t.status===2">
-            <div class="flex items-center gap-1 text-blue-600 text-xs" title="实际完成时间">
+            <div class="flex items-center gap-1 text-blue-600 dark:text-blue-400 text-xs" title="实际完成时间">
                     <el-icon :size="14"><Clock /></el-icon>
                     <span class="font-semibold">{{ formatHMS(actualSecondsLocal[t.id] ?? ((t.actual_minutes||0)*60)) }}</span>
                   </div>
                 </template>
-                <div class="flex items-center gap-1 text-green-600 text-xs" title="计划用时">
+                <div class="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs" title="计划用时">
                   <el-icon :size="14"><List /></el-icon>
                   <span class="font-semibold">{{ t.plan_minutes || 0 }} 分</span>
                 </div>
-                <div class="flex items-center gap-1 text-amber-600 text-xs" title="金币">
+                <div class="flex items-center gap-1 text-amber-600 dark:text-amber-500 text-xs" title="金币">
                   <el-icon :size="14"><Coin /></el-icon>
                   <span class="font-semibold">{{ t.score || 0 }}</span>
                 </div>

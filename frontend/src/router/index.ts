@@ -60,7 +60,9 @@ const router = createRouter({
     { path: '/settings/reading', name: 'SettingsReading', component: () => import('@/pages/SettingsReadingPage.vue'), meta: { noNav: true } },
     { path: '/settings/subjects', name: 'SettingsSubjects', component: () => import('@/pages/SettingsSubjectsPage.vue'), meta: { noNav: true } },
     { path: '/settings/coins', name: 'SettingsCoins', component: () => import('@/pages/SettingsCoinsPage.vue'), meta: { noNav: true } },
-    { path: '/settings/about', name: 'SettingsAbout', component: () => import('@/pages/SettingsAboutPage.vue'), meta: { noNav: true } }
+    { path: '/settings/about', name: 'SettingsAbout', component: () => import('@/pages/SettingsAboutPage.vue'), meta: { noNav: true } },
+    { path: '/settings', name: 'Settings', component: () => import('@/pages/SettingsPage.vue'), meta: { noNav: true } },
+    { path: '/settings/appearance', name: 'SettingsAppearance', component: () => import('@/pages/SettingsAppearancePage.vue'), meta: { noNav: true } }
   ]
 })
 

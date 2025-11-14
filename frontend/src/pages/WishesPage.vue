@@ -1,6 +1,6 @@
 <template>
-  <div class="fixed top-0 left-0 right-0 bg-white z-40 border-b">
-    <div class="px-4 py-2 font-semibold">兑换心愿</div>
+  <div class="fixed top-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur z-40 border-b border-gray-200 dark:border-gray-700">
+    <div class="px-4 py-2 font-semibold dark:text-gray-100">兑换心愿</div>
     <div class="px-4 pb-2 flex items-center justify-between">
       <div class="flex items-center gap-2">
         <el-button size="small" type="success" plain disabled>可用金币：{{ coins }}</el-button>
@@ -17,11 +17,11 @@
     <div>
       <!-- 中文注释：改为响应式网格布局，移动端单列，桌面端多列 -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-        <el-card v-for="w in wishList" :key="w.id" shadow="hover" class="relative rounded-xl overflow-hidden" @click="toggleOps(w.id)">
+        <el-card v-for="w in wishList" :key="w.id" shadow="hover" class="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md" @click="toggleOps(w.id)">
           <!-- 顶部右侧：先显示所需金币（图标+数量），点击卡片后显示编辑/删除图标 -->
           <div class="absolute top-2 right-2 flex items-center gap-2">
             <!-- 中文注释：所需金币常显，位于编辑/删除图标左侧 -->
-            <div class="flex items-center gap-1 text-amber-600" title="所需金币">
+            <div class="flex items-center gap-1 text-amber-600 dark:text-amber-500" title="所需金币">
               <el-icon :size="16"><Coin /></el-icon>
               <span class="text-sm font-medium">{{ w.need_coins }}</span>
             </div>
@@ -38,13 +38,13 @@
           <!-- 图标与名称 -->
           <div class="flex items-center gap-2">
             <img :src="resolveIcon(w.icon)" alt="icon" class="w-8 h-8 rounded" @error="onIconError" />
-            <span class="font-medium">{{ w.name }}</span>
+            <span class="font-medium dark:text-gray-100">{{ w.name }}</span>
           </div>
-          <div class="text-gray-500 text-sm mt-1">{{ w.content }}</div>
+          <div class="text-gray-500 dark:text-gray-400 text-sm mt-1">{{ w.content }}</div>
 
           <!-- 底部：左兑换次数，右兑换按钮 -->
           <div class="mt-2 flex items-center justify-between">
-            <div class="text-xs text-gray-600">已兑换：{{ w.exchanged }} 次</div>
+            <div class="text-xs text-gray-600 dark:text-gray-400">已兑换：{{ w.exchanged }} 次</div>
             <el-button type="warning" size="small" :disabled="!(isParent || canWishExchange)" @click.stop="onExchange(w)">兑换</el-button>
           </div>
         </el-card>
@@ -82,7 +82,7 @@
     >
       <!-- 自定义标题栏，使用 Tailwind 增加背景与圆角 -->
       <template #header>
-        <div class="bg-emerald-50 px-4 py-3 border-b border-emerald-100">
+        <div class="bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 border-b border-emerald-100 dark:border-emerald-800">
           <div class="flex items-center gap-2">
             <el-icon class="text-emerald-600"><Coin /></el-icon>
             <h3 class="text-emerald-800 font-semibold text-sm">{{ exchangeTarget ? `兑换：${exchangeTarget.name}` : '兑换心愿' }}</h3>
@@ -98,7 +98,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <div class="flex justify-end gap-2 bg-gray-50 px-4 py-3">
+        <div class="flex justify-end gap-2 bg-gray-50 dark:bg-gray-800 px-4 py-3">
           <el-button @click="cancelExchange">取消</el-button>
           <el-button type="primary" @click="confirmExchange">确认兑换</el-button>
         </div>

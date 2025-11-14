@@ -8,8 +8,26 @@ html, body, #app {
   height: 100%;
 }
 
+body, #app {
+  @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+}
+
 @media screen and (max-width: 768px) {
   input, textarea { font-size: 16px !important; }
   .el-input__inner { font-size: 16px !important; }
   .el-textarea__inner { font-size: 16px !important; }
+}
+
+/* 深色模式下统一 Element Plus 组件背景与文字颜色 */
+.dark .el-card {
+  background-color: #1f2937 !important; /* gray-800 */
+}
+.dark .el-card__header,
+.dark .el-card__body {
+  color: #e5e7eb; /* gray-200 */
+}
+.dark .el-dialog__body,
+.dark .el-drawer__body {
+  background-color: #1f2937 !important; /* gray-800 */
+  color: #e5e7eb; /* gray-200 */
 }
