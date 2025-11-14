@@ -1,6 +1,6 @@
 services:
   recordgo-server:
-    image: tabortoa/taskgo:latest
+    image: tabortoa/recordgo-server:0.1.0-beta.1
     container_name: recordgo-server
     restart: unless-stopped
     ports:
@@ -12,6 +12,6 @@ services:
       PORT: "8080"
       GIN_MODE: "release"
       PARENT_COINS_SYNC: "true"
-      ALLOW_ORIGINS: "https://recordgo.netlify.com"
+      ALLOW_ORIGINS: "https://recordgo.netlify.app"
     volumes:
       - ./storage:/app/storage
