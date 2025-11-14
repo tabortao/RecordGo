@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed top-0 left-0 right-0 bg-white z-40 border-b">
+  <div class="bg-white border-b">
     <div class="px-4 py-2 font-semibold">兑换心愿</div>
     <div class="px-4 pb-2 flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -11,13 +11,13 @@
       </div>
     </div>
   </div>
-  <div class="h-20"></div>
+  
   <div class="p-4 space-y-4">
 
     <div>
       <!-- 中文注释：改为响应式网格布局，移动端单列，桌面端多列 -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-        <el-card v-for="w in wishList" :key="w.id" shadow="hover" class="relative" @click="toggleOps(w.id)">
+        <el-card v-for="w in wishList" :key="w.id" shadow="hover" class="relative rounded-xl overflow-hidden" @click="toggleOps(w.id)">
           <!-- 顶部右侧：先显示所需金币（图标+数量），点击卡片后显示编辑/删除图标 -->
           <div class="absolute top-2 right-2 flex items-center gap-2">
             <!-- 中文注释：所需金币常显，位于编辑/删除图标左侧 -->
@@ -125,7 +125,7 @@ const coins = computed(() => store.coins)
 const auth = useAuth()
 const userId = computed(() => auth.user?.id ?? 0)
 // 中文注释：权限解析与常用布尔值
-const { isParent, viewOnly, canWishCreate, canWishEdit, canWishDelete, canWishExchange } = usePermissions()
+const { isParent, canWishCreate, canWishEdit, canWishDelete, canWishExchange } = usePermissions()
 
 // 心愿列表与表单/记录状态
 const wishList = ref<Wish[]>([])

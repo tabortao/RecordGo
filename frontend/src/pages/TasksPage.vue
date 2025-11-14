@@ -5,7 +5,7 @@
     <div class="fixed top-0 left-0 right-0 flex justify-center pointer-events-none" :style="{ opacity: (pullY>10||refreshing)?1:0 }">
       <div class="mt-2 text-xs text-gray-500 bg-white/80 rounded px-2 py-1 shadow">{{ refreshing ? '正在刷新...' : '下拉刷新' }}</div>
     </div>
-    <div class="fixed top-0 left-0 right-0 bg-white z-40 border-b">
+    <div class="bg-white border-b">
       <div class="px-4 py-2 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <el-avatar :size="36" :src="tasksAvatarSrc" />
@@ -20,7 +20,7 @@
         </div>
       </div>
     </div>
-    <div class="h-14"></div>
+    
     <div class="p-4 space-y-4" :style="{ transform: pullY ? ('translateY(' + pullY + 'px)') : 'none', transition: pulling ? 'none' : 'transform 0.2s ease' }">
     
 
@@ -66,7 +66,7 @@
     <el-card shadow="never" class="no-frame">
       <template #header>
         <div class="flex items-center justify-between">
-          <span class="font-semibold">今日任务</span>
+          <span class="font-semibold">{{ headerLabel }}</span>
           <div class="space-x-2 flex items-center">
             <!-- 中文注释：筛选图标下拉菜单，点击选择“全部/已完成/待完成” -->
             <el-dropdown trigger="click" @command="onFilterCommand">
@@ -128,7 +128,8 @@
             v-for="t in group.items"
             :key="t.id"
             shadow="never"
-            class="relative border border-gray-300 hover:ring-1 hover:ring-blue-300 transition"
+            class="relative border border-gray-300 hover:ring-1 hover:ring-blue-300 transition rounded-xl mx-1"
+            :data-task-id="t.id"
             :class="{ 'ring-2 ring-blue-500': activeTaskId === t.id }"
             @click="activeTaskId = t.id"
           >
@@ -146,7 +147,7 @@
               </div>
             </div>
             <!-- 第一行：左侧任务名，右侧状态与番茄钟入口 + 菜单 -->
-            <div class="flex items-center justify-between pl-6">
+            <div class="flex items-center justify-between pl-9">
               <div class="flex items-center gap-2">
                 <!-- 中文注释：番茄钟图标仅在未完成时显示，位于右侧“待完成”标签左侧，此处移除 -->
                 <div class="font-semibold text-left" :class="{'text-gray-500': t.status === 2}">{{ t.name }}</div>
@@ -159,7 +160,7 @@
               <!-- 中文注释：备注入口图标（受开关控制）；关闭后不显示 -->
               <el-icon v-if="store.taskNotesEnabled" :size="16" class="cursor-pointer" title="备注" style="color:#f97316" @click="router.push(`/tasks/${t.id}/notes`)"><ChatDotRound /></el-icon>
                   <!-- 小喇叭：朗读任务（关闭朗读时隐藏），替换为📢表情 -->
-                  <span v-if="store.speech.enabled" class="cursor-pointer select-none" title="朗读任务" style="font-size:16px; line-height:16px" @click="speakTask(t)">📢</span>
+                  <el-icon v-if="store.speech.enabled" :size="14" class="cursor-pointer select-none" title="朗读任务" @click="speakTask(t)"><Headset /></el-icon>
                   <!-- 番茄钟图标仅未完成时显示 -->
                   <img v-if="t.status !== 2" src="@/assets/tomato.png" alt="番茄钟" class="w-4 h-4 cursor-pointer" @click="openTomato(t)" />
                   <!-- 状态标签 -->
@@ -193,7 +194,7 @@
             </div>
 
             <!-- 第二行：左侧备注/描述；右侧实际/计划/金币（实际精确到秒） -->
-            <div class="flex items-center justify-between mt-1 pl-6">
+            <div class="flex items-center justify-between mt-1 pl-9">
               <div class="text-xs text-gray-500 truncate max-w-[60%] text-left">{{ t.remark || t.description }}</div>
               <div class="flex items-center gap-3 text-xs">
                 <!-- 中文注释：无论是否完成，只要有图片就显示图标；点击打开查看器（强制橙色避免主题覆盖） -->
@@ -476,7 +477,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound, Sort } from '@element-plus/icons-vue'
+import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound, Sort, Headset } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
@@ -498,7 +499,7 @@ const isMobile = ref(false)
 const auth = useAuth()
 const userId = computed(() => auth.user?.id ?? 0)
 // 中文注释：解析权限，父账号默认放行；子账号按动作校验
-const { isParent, viewOnly, canTaskCreate, canTaskEdit, canTaskDelete, canTaskStatus } = usePermissions()
+const { isParent, canTaskCreate, canTaskEdit, canTaskDelete, canTaskStatus } = usePermissions()
 const dialogWidth = computed(() => (isMobile.value ? '96vw' : '640px'))
 // 中文注释：任务分类 Store，用于动态筛选与分组颜色
 const cats = useTaskCategories()
@@ -635,6 +636,10 @@ const filter = ref<'全部' | '已完成' | '待完成'>('全部')
 // 中文注释：分类筛选使用字符串，完全由“任务分类设置”提供
 const categoryFilter = ref<string>('全部任务')
 const selectedDate = ref<string>(dayjs().format('YYYY-MM-DD'))
+const headerLabel = computed(() => {
+  const d = dayjs(selectedDate.value)
+  return d.isSame(dayjs(), 'day') ? '今日任务' : `${d.month() + 1}月${d.date()}日任务`
+})
 const taskCountMap = computed<Record<string, number>>(() => {
   const map: Record<string, number> = {}
   for (const t of tasks.value) {
@@ -1013,6 +1018,7 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
       t.actual_minutes = (t.actual_minutes || 0) + planM
       actualSecondsLocal[t.id] = planM * 60
       ElMessage.success('已标记为完成（按计划时长计）')
+      celebrate(t.id)
     } else {
       // 中文注释：取消完成：标记为未完成，并从日金币与总金币中扣除该任务金币
       await updateTaskStatus(t.id, 0)
@@ -1027,6 +1033,52 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
   } catch (e: any) {
     ElMessage.error(`状态变更失败：${e.message || e}`)
   }
+}
+function celebrate(taskId?: number) {
+  const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#14b8a6']
+  let rect: DOMRect | null = null
+  if (taskId) {
+    const el = document.querySelector(`[data-task-id="${taskId}"]`) as HTMLElement | null
+    rect = el?.getBoundingClientRect() || null
+  }
+  const container = document.createElement('div')
+  container.className = 'confetti-local'
+  container.style.position = 'fixed'
+  if (rect) {
+    container.style.left = `${rect.left}px`
+    container.style.top = `${rect.top}px`
+    container.style.width = `${rect.width}px`
+    container.style.height = `${rect.height}px`
+  } else {
+    container.style.left = '0'
+    container.style.top = '0'
+    container.style.width = '100vw'
+    container.style.height = '100vh'
+  }
+  container.style.pointerEvents = 'none'
+  container.style.zIndex = '9999'
+  document.body.appendChild(container)
+  const count = 28
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('div')
+    piece.className = 'confetti-burst'
+    const x = Math.random() * 100
+    const y = Math.random() * 100
+    const tx = (Math.random() * 60 - 30)
+    const ty = (Math.random() * 60 - 10)
+    const rotate = (Math.random() * 180 - 90).toFixed(0)
+    const color = colors[Math.floor(Math.random() * colors.length)]
+    piece.style.left = x + '%'
+    piece.style.top = y + '%'
+    piece.style.background = color
+    piece.style.transform = `translate(0,0) rotate(${rotate}deg)`
+    piece.style.setProperty('--tx', `${tx}px`)
+    piece.style.setProperty('--ty', `${ty}px`)
+    container.appendChild(piece)
+  }
+  setTimeout(() => {
+    try { document.body.removeChild(container) } catch {}
+  }, 1200)
 }
 // 取消切换状态功能：保留空函数避免引用错误（模板已移除）
 
@@ -1145,6 +1197,7 @@ async function onTomatoComplete(seconds?: number) {
     // 中文注释：dayMinutes 已改为计算属性，无需手动赋值
     // dayMinutes.value = tasks.value.reduce((sum, x) => sum + (x.actual_minutes || 0), 0)
     ElMessage.success('番茄钟完成，数据已记录')
+    celebrate(currentTask.value.id)
     tomatoVisible.value = false
   } catch (e: any) {
     ElMessage.error(`番茄上报失败：${e.message || e}`)
@@ -1269,7 +1322,23 @@ const activeTaskId = ref<number | null>(null)
   padding-right: 0;
 }
 .no-frame :deep(.el-card__body) {
-  padding-left: 0;
-  padding-right: 0;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+:global(.confetti-local) {
+  pointer-events: none;
+  z-index: 9999;
+}
+:global(.confetti-burst) {
+  position: absolute;
+  width: 6px;
+  height: 12px;
+  border-radius: 2px;
+  opacity: 0.95;
+  animation: confetti-burst 1s ease-out forwards;
+}
+@keyframes confetti-burst {
+  0% { transform: translate(0,0) rotate(0deg); opacity: 0.95; }
+  100% { transform: translate(var(--tx), var(--ty)) rotate(360deg); opacity: 0.2; }
 }
 </style>

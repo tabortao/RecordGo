@@ -2,11 +2,17 @@
   <!-- 中文注释：周视图组件，支持左右切周、返回本周、点击日期切换 -->
   <div class="space-y-2">
     <!-- 顶部周信息与控制 -->
-    <div class="flex items-center justify-center gap-3">
-      <el-button text :icon="ArrowLeft" @click="prevWeek" />
-      <div class="text-sm font-semibold">{{ weekTitle }}</div>
-      <el-tag type="success" class="ml-2 rounded-full px-3 py-1 cursor-pointer" @click="goThisWeek">本周</el-tag>
-      <el-button text :icon="ArrowRight" @click="nextWeek" />
+    <div class="flex items-center justify-between">
+      <el-button text class="text-green-700 font-semibold" @click="prevWeek">
+        <el-icon :size="20" style="color:#166534"><ArrowLeft /></el-icon>
+      </el-button>
+      <div class="flex items-center gap-2">
+        <div class="text-sm font-semibold">{{ weekTitle }}</div>
+        <el-tag type="success" class="ml-2 rounded-full px-3 py-1 cursor-pointer" @click="goThisWeek">本周</el-tag>
+      </div>
+      <el-button text class="text-green-700 font-semibold" @click="nextWeek">
+        <el-icon :size="20" style="color:#166534"><ArrowRight /></el-icon>
+      </el-button>
     </div>
     <!-- 周一到周日日期格 -->
     <div class="grid grid-cols-7 gap-2">

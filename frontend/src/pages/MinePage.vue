@@ -1,8 +1,7 @@
 <template>
-  <div class="fixed top-0 left-0 right-0 bg-white z-40 border-b">
+  <div class="bg-white border-b">
     <div class="px-4 py-2 font-semibold">我的</div>
   </div>
-  <div class="h-12"></div>
   <div class="p-4 space-y-4">
     <el-card shadow="never">
       <div class="flex items-center gap-3">
