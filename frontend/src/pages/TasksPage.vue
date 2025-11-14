@@ -19,6 +19,7 @@
                   <div class="flex items-center gap-2">
                     <el-avatar :size="24" :src="resolveAvatarUrl(acc.user.avatar_path)" />
                     <span>{{ (acc.user.nickname || '').trim() || acc.user.username }}</span>
+                    <el-icon v-if="auth.user?.id === acc.user.id" :size="16" style="color:#22c55e"><CircleCheck /></el-icon>
                   </div>
                 </el-dropdown-item>
                 <el-dropdown-item divided command="add">添加新用户</el-dropdown-item>
@@ -497,9 +498,14 @@
       <template #header>
         <div class="font-semibold">添加新用户</div>
       </template>
-      <el-form label-width="80px">
-        <el-form-item label="用户名"><el-input v-model="addUserName" /></el-form-item>
-        <el-form-item label="密码"><el-input v-model="addUserPassword" type="password" /></el-form-item>
+      <el-form label-width="90px">
+        <template v-if="isParent">
+          <el-form-item label="用户名"><el-input v-model="addUserName" /></el-form-item>
+          <el-form-item label="密码"><el-input v-model="addUserPassword" type="password" /></el-form-item>
+        </template>
+        <template v-else>
+          <el-form-item label="子账号令牌"><el-input v-model="addUserToken" placeholder="请输入子账号令牌" /></el-form-item>
+        </template>
       </el-form>
       <template #footer>
         <div class="flex justify-end gap-2">
@@ -522,7 +528,7 @@ import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
 import { usePermissions } from '@/composables/permissions'
 import router from '@/router'
-import { apiLogin } from '@/services/auth'
+import { apiLogin, apiTokenLogin } from '@/services/auth'
 import TomatoTimer from '@/components/TomatoTimer.vue'
 import WeekCalendar from '@/components/WeekCalendar.vue'
 import TaskImageUploader from '@/components/TaskImageUploader.vue'
@@ -803,12 +809,23 @@ const tasksAvatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))
 const addUserVisible = ref(false)
 const addUserName = ref('')
 const addUserPassword = ref('')
+const addUserToken = ref('')
 
 function onAvatarCommand(cmd: string) {
   if (cmd === 'noop') return
   if (cmd.startsWith('switch:')) {
     const id = Number(cmd.split(':')[1] || 0)
     if (id > 0) {
+      if (!isParent.value) {
+        try {
+          const target = auth.accounts.find(a => a.user.id === id)
+          const targetIsParent = !target?.user?.parent_id || Number(target?.user?.parent_id) === 0
+          if (targetIsParent) {
+            ElMessage.warning('子账号不可切换到父账户，请使用令牌登录子账号')
+            return
+          }
+        } catch {}
+      }
       auth.switchAccount(id)
       try { store.setCoins(Number(auth.user?.coins ?? 0)) } catch {}
       fetchTasks()
@@ -831,14 +848,24 @@ function onAvatarCommand(cmd: string) {
 }
 
 async function doAddUser() {
-  if (!addUserName.value || !addUserPassword.value) return
   try {
-    const resp = await apiLogin(addUserName.value, addUserPassword.value)
-    auth.setLogin(resp.token, resp.user, true)
-    try { store.setCoins(Number(resp.user?.coins ?? 0)) } catch {}
-    addUserVisible.value = false
-    addUserName.value = ''
-    addUserPassword.value = ''
+    if (isParent.value) {
+      if (!addUserName.value || !addUserPassword.value) { ElMessage.warning('请输入用户名和密码'); return }
+      const resp = await apiLogin(addUserName.value, addUserPassword.value)
+      auth.setLogin(resp.token, resp.user, true)
+      try { store.setCoins(Number(resp.user?.coins ?? 0)) } catch {}
+      addUserVisible.value = false
+      addUserName.value = ''
+      addUserPassword.value = ''
+    } else {
+      const token = addUserToken.value.trim()
+      if (!token) { ElMessage.warning('请输入子账号令牌'); return }
+      const resp = await apiTokenLogin(token)
+      auth.setLogin(resp.token, resp.user, true)
+      try { store.setCoins(Number(resp.user?.coins ?? 0)) } catch {}
+      addUserVisible.value = false
+      addUserToken.value = ''
+    }
   } catch (e: any) {
     ElMessage.error(e?.message || '添加失败')
   }
