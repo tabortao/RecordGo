@@ -1,19 +1,15 @@
 <template>
   <!-- 中文注释：子账号管理页面，支持列表、创建、编辑、删除与令牌生成 -->
   <div class="p-4 space-y-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <el-icon :size="18" class="cursor-pointer" title="返回" @click="router.push('/mine')"><ArrowLeft /></el-icon>
+        <el-icon :size="18" style="color:#22c55e"><User /></el-icon>
+        <span class="font-semibold">子账号管理</span>
+      </div>
+      <div class="text-sm text-gray-500">共 {{ children.length }} 个子账号</div>
+    </div>
     <el-card shadow="never">
-      <template #header>
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <!-- 中文注释：返回到“我的”页，与编辑个人信息页一致的返回交互 -->
-            <el-icon :size="18" class="cursor-pointer" title="返回" @click="router.push('/mine')"><ArrowLeft /></el-icon>
-            <!-- 中文注释：子账号图标（绿色）与标题文案 -->
-            <el-icon :size="18" style="color:#22c55e"><User /></el-icon>
-            <span class="font-semibold">子账号管理</span>
-          </div>
-          <div class="text-sm text-gray-500">共 {{ children.length }} 个子账号</div>
-        </div>
-      </template>
 
       <!-- 权限不足提示 -->
       <div v-if="!allowManage" class="py-6">

@@ -1,9 +1,15 @@
 /* 中文注释：全局样式入口，集成 Tailwind */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 /* 中文注释：基础布局与滚动优化 */
 html, body, #app {
   height: 100%;
+}
+
+@media screen and (max-width: 768px) {
+  input, textarea { font-size: 16px !important; }
+  .el-input__inner { font-size: 16px !important; }
+  .el-textarea__inner { font-size: 16px !important; }
 }

@@ -33,7 +33,7 @@
       <TomatoTimer ref="timerRef" :work-minutes="workMinutes" :break-minutes="5" :task-name="taskName" :task-remark="taskRemark" :task-id="taskId" @complete="onTomatoComplete" />
     </div>
   </div>
-  <el-dialog v-model="showAdjust" title="修改番茄钟倒计时" width="360px" :teleported="false" class="dark-dialog" :modal-class="'dark-overlay'">
+  <el-dialog v-model="showAdjust" title="修改番茄钟倒计时" width="360px" :teleported="false" :modal="false" class="dark-dialog">
     <div class="flex items-center justify-between">
       <span>分钟</span>
       <el-input-number v-model="adjustMinutes" :min="1" :max="240" :step="5" />
@@ -204,4 +204,5 @@ async function onTomatoComplete(seconds?: number) {
 .dark-btn-primary { background-color: #3a3a38 !important; color: #B8CEE8 !important; border-color: #4a4a48 !important; }
 :global(.el-dropdown__popper .el-popper__content) { background-color: rgb(48,48,46); color: #B8CEE8; border: 1px solid #4a4a48; }
 :global(.el-dropdown-menu__item) { color: #B8CEE8; }
+:global(.el-dropdown-menu__item:hover) { background-color: rgb(48,48,46) !important; color: #B8CEE8 !important; }
 </style>

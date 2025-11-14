@@ -9,7 +9,7 @@
       <div class="px-4 py-2 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <el-avatar :size="36" :src="tasksAvatarSrc" />
-          <div class="font-semibold">今日统计</div>
+          <div class="font-semibold">任务统计</div>
         </div>
         <div class="flex items-center gap-3">
           <div class="flex items-center gap-1">
@@ -28,7 +28,7 @@
     <div class="grid grid-cols-4 gap-2">
       <el-card shadow="never" class="stat-card">
         <div class="flex flex-col items-center">
-          <el-icon style="color:#22c55e"><Clock /></el-icon>
+          <el-icon :size="19" style="color:#22c55e"><Clock /></el-icon>
           <div class="text-xs text-gray-500">日时长</div>
           <div class="font-bold" style="color:#22c55e">{{ dayMinutes }}</div>
         </div>
@@ -42,14 +42,14 @@
       </el-card>
       <el-card shadow="never" class="stat-card">
         <div class="flex flex-col items-center">
-          <el-icon style="color:#f59e0b"><Coin /></el-icon>
+          <el-icon :size="19" style="color:#f59e0b"><Money /></el-icon>
           <div class="text-xs text-gray-500">日金币</div>
           <div class="font-bold" style="color:#f59e0b">{{ dayCoins }}</div>
         </div>
       </el-card>
       <el-card shadow="never" class="stat-card">
         <div class="flex flex-col items-center">
-          <el-icon style="color:#14b8a6"><CircleCheck /></el-icon>
+          <el-icon :size="19" style="color:#14b8a6"><CircleCheck /></el-icon>
           <div class="text-xs text-gray-500">完成率</div>
           <div class="font-bold" style="color:#14b8a6">{{ completeRate }}%</div>
         </div>
@@ -477,7 +477,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { Plus, Clock, List, Coin, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound, Sort, Headset } from '@element-plus/icons-vue'
+import { Plus, Clock, List, Coin, Money, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound, Sort, Headset } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'

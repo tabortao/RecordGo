@@ -83,8 +83,8 @@
     <!-- 中文注释：底部区域 - 包含时间预设/自定义与控制按钮，更贴近页面底部 -->
     <div class="fixed bottom-12 left-0 right-0 flex items-center justify-center" data-bottom="tomato-controls">
       <button
-        class="w-20 h-20 rounded-full shadow-lg font-bold select-none text-[14px]"
-        :style="{ backgroundColor: '#F4A261', color: '#1F2937' }"
+        class="w-20 h-20 rounded-full shadow-lg font-bold select-none text-[16px]"
+        :style="{ backgroundColor: '#3a3a38', color: '#B8CEE8', boxShadow: '0 0 0 1px #4a4a48 inset' }"
         @click="onCircleTap"
         @pointerdown="onCircleDown"
         @pointerup="onCircleUp"
