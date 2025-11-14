@@ -8,7 +8,18 @@
     <div class="fixed top-0 left-0 right-0 bg-white z-40 border-b">
       <div class="px-4 py-2 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <el-avatar :size="36" :src="tasksAvatarSrc" />
+          <el-dropdown trigger="click" @command="onAvatarCommand">
+            <span class="el-dropdown-link">
+              <el-avatar :size="36" :src="tasksAvatarSrc" class="cursor-pointer" />
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="switch">切换用户</el-dropdown-item>
+                <el-dropdown-item command="register">注册新用户</el-dropdown-item>
+                <el-dropdown-item command="logout" style="color:#f56c6c">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
           <div class="font-semibold">任务统计</div>
         </div>
         <div class="flex items-center gap-3">
@@ -16,7 +27,7 @@
             <el-icon :size="20" style="color:#f59e0b"><Coin /></el-icon>
             <span class="font-semibold">{{ totalCoins }}</span>
           </div>
-          <el-icon :size="24" style="color:#ec4899"><DataAnalysis /></el-icon>
+          <el-icon :size="24" style="color:#ec4899" class="cursor-pointer" @click="router.push('/tasks/stats')"><DataAnalysis /></el-icon>
         </div>
       </div>
     </div>
@@ -754,6 +765,26 @@ function resolveAvatarUrl(p?: string | null) {
   return `${base}/api/${s.replace(/^\/+/, '')}`
 }
 const tasksAvatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))
+
+function onAvatarCommand(cmd: 'switch' | 'register' | 'logout') {
+  if (cmd === 'switch') {
+    router.push({ path: '/login', query: { redirect: '/tasks' } })
+    return
+  }
+  if (cmd === 'register') {
+    router.push('/register')
+    return
+  }
+  if (cmd === 'logout') {
+    try {
+      auth.logout()
+      store.reset()
+      router.replace('/login')
+    } catch {
+      location.reload()
+    }
+  }
+}
 const groupedTasks = computed(() => {
   const map = new Map<string, TaskItem[]>()
   for (const t of sortedTasks.value) {

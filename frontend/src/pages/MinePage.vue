@@ -2,8 +2,8 @@
   <div class="fixed top-0 left-0 right-0 bg-white z-40 border-b">
     <div class="px-4 py-2 font-semibold">我的</div>
   </div>
-  <div class="h-12"></div>
-  <div class="p-4 space-y-4">
+  <div class="h-10"></div>
+  <div class="p-3 space-y-3">
     <el-card shadow="never">
       <div class="flex items-center gap-3">
         <!-- 中文注释：头像优先显示用户自定义头像，未设置则使用默认头像；修复相对路径未加 API 前缀导致无法显示的问题 -->
@@ -19,12 +19,12 @@
 
     <!-- 中文注释：账号管理 UI（shadcn 风格 + tailwind），包含编辑个人信息/子账号管理/退出登录 -->
     <div class="rounded-lg border bg-white">
-      <div class="px-4 py-3 flex items-center gap-2">
+      <div class="px-3 py-2 flex items-center gap-2">
         <el-icon :size="18" style="color:#3b82f6"><User /></el-icon>
         <span class="font-semibold">账号管理</span>
       </div>
       <!-- 响应式网格：移动端单列，桌面端多列 -->
-      <div class="px-2 py-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+      <div class="px-2 py-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
         <!-- 编辑个人信息：子账号隐藏，仅主账号显示 -->
         <button v-if="isParent" class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition" @click="router.push('/settings/profile')">
           <el-icon :size="18" style="color:#60a5fa"><Edit /></el-icon>
@@ -49,12 +49,12 @@
 
     <!-- 中文注释：设置模块（与账号管理同级），展示各设置按钮 -->
     <div class="rounded-lg border bg-white">
-      <div class="px-4 py-3 flex items-center gap-2">
+      <div class="px-3 py-2 flex items-center gap-2">
         <el-icon :size="18" style="color:#0ea5e9"><Setting /></el-icon>
         <span class="font-semibold">设置</span>
       </div>
       <!-- 响应式网格：移动端单列，桌面端多列 -->
-      <div class="px-2 py-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+      <div class="px-2 py-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
         <button
           v-for="i in settingItems"
           :key="i.key"
