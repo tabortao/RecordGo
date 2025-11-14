@@ -29,6 +29,13 @@ export const useAuth = defineStore('auth', {
       const lu = localStorage.getItem('auth_user')
       const s = su || lu || ''
       try { return s ? JSON.parse(s) as AuthUser : null } catch { return null }
+    })(),
+    accounts: ((): { token: string; user: AuthUser; remember: boolean }[] => {
+      try {
+        const raw = localStorage.getItem('auth_accounts') || '[]'
+        const arr = JSON.parse(raw)
+        return Array.isArray(arr) ? arr.filter((a: any) => a && a.user && a.token) : []
+      } catch { return [] }
     })()
   }),
   actions: {
@@ -53,6 +60,13 @@ export const useAuth = defineStore('auth', {
           localStorage.removeItem('auth_user')
         }
       } catch {}
+      try {
+        const idx = this.accounts.findIndex(a => a.user.id === user.id)
+        const acc = { token, user, remember }
+        if (idx >= 0) this.accounts.splice(idx, 1, acc)
+        else this.accounts.push(acc)
+        localStorage.setItem('auth_accounts', JSON.stringify(this.accounts))
+      } catch {}
     },
     // 中文注释：退出登录，清除持久化并重置状态
     logout() {
@@ -66,6 +80,15 @@ export const useAuth = defineStore('auth', {
       } catch {}
     }
     ,
+    switchAccount(userId: number) {
+      const acc = this.accounts.find(a => a.user.id === userId)
+      if (!acc) return
+      this.setLogin(acc.token, acc.user, acc.remember)
+    },
+    removeAccount(userId: number) {
+      this.accounts = this.accounts.filter(a => a.user.id !== userId)
+      try { localStorage.setItem('auth_accounts', JSON.stringify(this.accounts)) } catch {}
+    },
     // 中文注释：更新用户的部分字段（如昵称、头像路径等），并持久化
     updateUser(partial: Partial<AuthUser>) {
       if (!this.user) return

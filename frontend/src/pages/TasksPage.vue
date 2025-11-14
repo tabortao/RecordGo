@@ -14,8 +14,14 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="switch">切换用户</el-dropdown-item>
-                <el-dropdown-item command="register">注册新用户</el-dropdown-item>
+                <el-dropdown-item disabled>切换用户</el-dropdown-item>
+                <el-dropdown-item v-for="acc in auth.accounts" :key="acc.user.id" :command="'switch:' + acc.user.id">
+                  <div class="flex items-center gap-2">
+                    <el-avatar :size="24" :src="resolveAvatarUrl(acc.user.avatar_path)" />
+                    <span>{{ (acc.user.nickname || '').trim() || acc.user.username }}</span>
+                  </div>
+                </el-dropdown-item>
+                <el-dropdown-item divided command="add">添加新用户</el-dropdown-item>
                 <el-dropdown-item command="logout" style="color:#f56c6c">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -479,6 +485,21 @@
     </el-button>
 
     <!-- 中文注释：移除旧版任务页悬浮番茄钟，改用新的全局悬浮球（右下角橙色），避免重复显示 -->
+    <el-dialog v-model="addUserVisible" width="360px">
+      <template #header>
+        <div class="font-semibold">添加新用户</div>
+      </template>
+      <el-form label-width="80px">
+        <el-form-item label="用户名"><el-input v-model="addUserName" /></el-form-item>
+        <el-form-item label="密码"><el-input v-model="addUserPassword" type="password" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <el-button @click="addUserVisible=false">取消</el-button>
+          <el-button type="primary" @click="doAddUser">添加并登录</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
  </template>
 
@@ -493,6 +514,7 @@ import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
 import { usePermissions } from '@/composables/permissions'
 import router from '@/router'
+import { apiLogin } from '@/services/auth'
 import TomatoTimer from '@/components/TomatoTimer.vue'
 import WeekCalendar from '@/components/WeekCalendar.vue'
 import TaskImageUploader from '@/components/TaskImageUploader.vue'
@@ -765,14 +787,21 @@ function resolveAvatarUrl(p?: string | null) {
   return `${base}/api/${s.replace(/^\/+/, '')}`
 }
 const tasksAvatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))
+const addUserVisible = ref(false)
+const addUserName = ref('')
+const addUserPassword = ref('')
 
-function onAvatarCommand(cmd: 'switch' | 'register' | 'logout') {
-  if (cmd === 'switch') {
-    router.push({ path: '/login', query: { redirect: '/tasks' } })
+function onAvatarCommand(cmd: string) {
+  if (cmd.startsWith('switch:')) {
+    const id = Number(cmd.split(':')[1] || 0)
+    if (id > 0) {
+      auth.switchAccount(id)
+      try { store.setCoins(Number(auth.user?.coins ?? 0)) } catch {}
+    }
     return
   }
-  if (cmd === 'register') {
-    router.push('/register')
+  if (cmd === 'add') {
+    addUserVisible.value = true
     return
   }
   if (cmd === 'logout') {
@@ -783,6 +812,20 @@ function onAvatarCommand(cmd: 'switch' | 'register' | 'logout') {
     } catch {
       location.reload()
     }
+  }
+}
+
+async function doAddUser() {
+  if (!addUserName.value || !addUserPassword.value) return
+  try {
+    const resp = await apiLogin(addUserName.value, addUserPassword.value)
+    auth.setLogin(resp.token, resp.user, true)
+    try { store.setCoins(Number(resp.user?.coins ?? 0)) } catch {}
+    addUserVisible.value = false
+    addUserName.value = ''
+    addUserPassword.value = ''
+  } catch (e: any) {
+    ElMessage.error(e?.message || '添加失败')
   }
 }
 const groupedTasks = computed(() => {
