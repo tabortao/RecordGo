@@ -220,7 +220,17 @@ function resolveAvatarUrl(p?: string | null) {
   const s = String(p)
   if (/^https?:\/\//i.test(s)) return s
   if (!/uploads\//i.test(s)) return ''
-  return `/api/${s}`.replace(/\/+/g, '/').replace(/\/$/, '')
+  let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
+  if (!base) {
+    try {
+      const url = new URL(window.location.href)
+      const host = url.hostname || 'localhost'
+      base = `${url.protocol}//${host}:8080`
+    } catch {
+      base = 'http://localhost:8080'
+    }
+  }
+  return `${base}/api/${s.replace(/^\/+/, '')}`
 }
 
 function applyTemplate(tpl: string) {

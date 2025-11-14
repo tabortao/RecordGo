@@ -10,7 +10,11 @@
       <h2 class="ml-auto font-mono font-semibold" :style="{ color: '#B8CEE8', fontSize: '1.3em' }">{{ systemTime }}</h2>
       <el-dropdown @command="onTopMenu">
         <span class="el-dropdown-link">
-          <el-icon :size="18" :style="{ color: '#B8CEE8' }"><MoreFilled /></el-icon>
+          <svg width="18" height="18" viewBox="0 0 24 24" :style="{ color: '#B8CEE8' }">
+            <rect x="3" y="5" width="18" height="2" rx="1" fill="currentColor" />
+            <rect x="3" y="11" width="18" height="2" rx="1" fill="currentColor" />
+            <rect x="3" y="17" width="18" height="2" rx="1" fill="currentColor" />
+          </svg>
         </span>
         <template #dropdown>
           <el-dropdown-menu>
@@ -21,21 +25,23 @@
     </div>
     <!-- 任务标题：靠近页面标题，避免紧邻下方为时钟 -->
     <div class="mt-1 text-center font-bold" :style="{ color: '#B8CEE8', fontSize: '1.2em' }" v-if="taskName">任务：{{ taskName }}</div>
+    <!-- 备注：显示在任务描述下方，颜色与番茄钟页面统一 -->
+    <div class="text-center text-xs" :style="{ color: '#9aa8b8' }" v-if="taskRemark">备注：{{ taskRemark }}</div>
     </div>
     <!-- 中文注释：中部容器高度按 calc(100vh - 顶部高度 - 底部高度) 计算，确保垂直居中且无滚动 -->
     <div class="flex items-center justify-center" :style="{ height: midHeight }">
       <TomatoTimer ref="timerRef" :work-minutes="workMinutes" :break-minutes="5" :task-name="taskName" :task-remark="taskRemark" :task-id="taskId" @complete="onTomatoComplete" />
     </div>
   </div>
-  <el-dialog v-model="showAdjust" title="修改番茄钟倒计时" width="360px">
+  <el-dialog v-model="showAdjust" title="修改番茄钟倒计时" width="360px" :teleported="false" class="dark-dialog" :modal-class="'dark-overlay'">
     <div class="flex items-center justify-between">
       <span>分钟</span>
       <el-input-number v-model="adjustMinutes" :min="1" :max="240" :step="5" />
     </div>
     <template #footer>
       <div class="flex justify-end gap-2">
-        <el-button @click="showAdjust=false">取消</el-button>
-        <el-button type="primary" @click="applyAdjust">应用</el-button>
+        <el-button @click="showAdjust=false" class="dark-btn">取消</el-button>
+        <el-button type="primary" @click="applyAdjust" class="dark-btn-primary">应用</el-button>
       </div>
     </template>
   </el-dialog>
@@ -44,7 +50,7 @@
 <script setup lang="ts">
 // 中文注释：番茄钟独立页面，从路由参数中读取任务ID并加载任务信息
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { ArrowLeft, Clock, MoreFilled } from '@element-plus/icons-vue'
+import { ArrowLeft, Clock } from '@element-plus/icons-vue'
 import router from '@/router'
 import TomatoTimer from '@/components/TomatoTimer.vue'
 import { useRoute } from 'vue-router'
@@ -181,4 +187,21 @@ async function onTomatoComplete(seconds?: number) {
 
 <style scoped>
 /* 中文注释：页面使用网格进行信息分区，移动端单列显示 */
+:global(.el-overlay) { background-color: rgba(0,0,0,0.5); }
+.dark-dialog { background-color: rgb(48,48,46); color: #B8CEE8; }
+.dark-dialog :deep(.el-dialog) { background-color: rgb(48,48,46) !important; color: #B8CEE8 !important; border: 1px solid #4a4a48; }
+.dark-dialog :deep(.el-dialog__header) { background-color: rgb(48,48,46); color: #B8CEE8; border-bottom: 1px solid #4a4a48; }
+.dark-dialog :deep(.el-dialog__body) { background-color: rgb(48,48,46); color: #B8CEE8; }
+.dark-dialog :deep(.el-dialog__footer) { background-color: rgb(48,48,46); border-top: 1px solid #4a4a48; }
+/* 覆盖遮罩层与弹窗背景（通过 modal-class 传入）*/
+:global(.dark-overlay) { background-color: rgba(0,0,0,0.6); }
+:global(.dark-overlay) .el-overlay-dialog .el-dialog { background-color: rgb(48,48,46) !important; color: #B8CEE8 !important; border: 1px solid #4a4a48; }
+.dark-dialog :deep(.el-input__wrapper),
+.dark-dialog :deep(.el-input-number__decrease),
+.dark-dialog :deep(.el-input-number__increase) { background-color: #3a3a38 !important; color: #B8CEE8 !important; box-shadow: 0 0 0 1px #4a4a48 inset !important; }
+.dark-dialog :deep(.el-input__inner) { color: #B8CEE8 !important; }
+.dark-btn { background-color: #3a3a38 !important; color: #B8CEE8 !important; border-color: #4a4a48 !important; }
+.dark-btn-primary { background-color: #3a3a38 !important; color: #B8CEE8 !important; border-color: #4a4a48 !important; }
+:global(.el-dropdown__popper .el-popper__content) { background-color: rgb(48,48,46); color: #B8CEE8; border: 1px solid #4a4a48; }
+:global(.el-dropdown-menu__item) { color: #B8CEE8; }
 </style>

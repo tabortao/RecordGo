@@ -25,8 +25,9 @@
 import { ref, reactive, watch, onMounted, computed, withDefaults } from 'vue'
 import { Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
- import { prepareUpload } from '@/utils/image'
- import { uploadTaskImage, deleteTaskImage } from '@/services/tasks'
+import { prepareUpload } from '@/utils/image'
+import { uploadTaskImage, deleteTaskImage } from '@/services/tasks'
+import { normalizeUploadPath } from '@/services/wishes'
 
 type Item = { key: string; name: string; url: string; uploading: boolean; progress: number; serverPath?: string; localFile?: File }
 
@@ -178,9 +179,10 @@ async function onPicked(e: Event) {
 onMounted(() => {
   // 先显示已上传图片
   if (props.serverPaths?.length) {
-    for (const p of props.serverPaths) {
+    for (const raw of props.serverPaths) {
+      const p = normalizeUploadPath(raw)
       const base = (import.meta as any).env.VITE_API_BASE || ''
-      const full = `${base}/api/${p}`.replace(/\/$/, '')
+      const full = `${base.replace(/\/+$/, '')}/api/${p}`
       items.push({ key: `${p}-${Date.now()}`, name: p.split('/').pop() || 'image', url: full, uploading: false, progress: 100, serverPath: p })
     }
   }
@@ -203,8 +205,9 @@ watch(() => [props.serverPaths.length, props.localFiles.length, props.editing], 
   const base = (import.meta as any).env.VITE_API_BASE || ''
   const next: Item[] = []
   if (props.editing) {
-    for (const p of props.serverPaths) {
-      const full = `${base}/api/${p}`.replace(/\/$/, '')
+    for (const raw of props.serverPaths) {
+      const p = normalizeUploadPath(raw)
+      const full = `${base.replace(/\/+$/, '')}/api/${p}`
       next.push({ key: `${p}`, name: p.split('/').pop() || 'image', url: full, uploading: false, progress: 100, serverPath: p })
     }
   } else {

@@ -77,14 +77,13 @@
           <RefreshRight />
         </el-icon>
       </div>
-      <div class="text-center text-xs" :style="{ color: '#9aa8b8' }" v-if="props.taskRemark">备注：{{ props.taskRemark }}</div>
       <!-- 中文注释：移除预计时长的小字提示，界面更简洁 -->
     </div>
 
     <!-- 中文注释：底部区域 - 包含时间预设/自定义与控制按钮，更贴近页面底部 -->
     <div class="fixed bottom-12 left-0 right-0 flex items-center justify-center" data-bottom="tomato-controls">
       <button
-        class="w-24 h-24 rounded-full shadow-lg font-bold select-none"
+        class="w-20 h-20 rounded-full shadow-lg font-bold select-none text-[14px]"
         :style="{ backgroundColor: '#F4A261', color: '#1F2937' }"
         @click="onCircleTap"
         @pointerdown="onCircleDown"
@@ -128,8 +127,36 @@ let timer: any = null
 // 中文注释：墙钟时间戳，支持锁屏/后台后继续准确计时
 const startAtMs = ref<number | null>(store.tomato.startAtMs ?? null)
 const endAtMs = ref<number | null>(store.tomato.endAtMs ?? null)
-// 中文注释：Wake Lock API 哨兵，用于保持设备常亮（移动端）
+// 中文注释：Wake Lock API 哨兵，用于保持设备常亮（移动端）；iOS Chrome 回退为隐藏视频循环播放
 let wakeLock: any = null
+let keepAwakeVideo: HTMLVideoElement | null = null
+function ensureVideoFallback() {
+  try {
+    if (keepAwakeVideo) { keepAwakeVideo.play().catch(() => {}); return }
+    const video = document.createElement('video')
+    video.setAttribute('playsinline', '')
+    video.muted = true
+    video.loop = true
+    video.style.position = 'fixed'
+    video.style.opacity = '0'
+    video.style.width = '1px'
+    video.style.height = '1px'
+    video.style.pointerEvents = 'none'
+    video.style.zIndex = '-1'
+    const addSource = (type: string, dataURI: string) => {
+      const s = document.createElement('source')
+      s.src = dataURI
+      s.type = `video/${type}`
+      video.appendChild(s)
+    }
+    // 中文注释：内置极小的视频数据，来源于公开示例（用于保持唤醒）
+    addSource('webm', 'data:video/webm;base64,GkXfo0AgQoaBAUL3gQFC8oEEQvOBCEKCQAR3ZWJtQoeBAkKFgQIYU4BnQI0VSalmQCgq17FAAw9CQE2AQAZ3aGFtbXlXQUAGd2hhbW15RIlACECPQAAAAAAAFlSua0AxrkAu14EBY8WBAZyBACK1nEADdW5khkAFVl9WUDglhohAA1ZQOIOBAeBABrCBCLqBCB9DtnVAIueBAKNAHIEAAIAwAQCdASoIAAgAAUAmJaQAA3AA/vz0AAA=')
+    addSource('mp4', 'data:video/mp4;base64,AAAAHGZ0eXBpc29tAAACAGlzb21pc28ybXA0MQAAAAhmcmVlAAAAG21kYXQAAAGzABAHAAABthADAowdbb9/AAAC6W1vb3YAAABsbXZoZAAAAAB8JbCAfCWwgAAAA+gAAAAAAAEAAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAIVdHJhawAAAFx0a2hkAAAAD3wlsIB8JbCAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAIAAAACAAAAAABsW1kaWEAAAAgbWRoZAAAAAB8JbCAfCWwgAAAA+gAAAAAVcQAAAAAAC1oZGxyAAAAAAAAAAB2aWRlAAAAAAAAAAAAAAAAVmlkZW9IYW5kbGVyAAAAAVxtaW5mAAAAFHZtaGQAAAABAAAAAAAAAAAAAAAkZGluZgAAABxkcmVmAAAAAAAAAAEAAAAMdXJsIAAAAAEAAAEcc3RibAAAALhzdHNkAAAAAAAAAAEAAACobXA0dgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAIAAgASAAAAEgAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABj//wAAAFJlc2RzAAAAAANEAAEABDwgEQAAAAADDUAAAAAABS0AAAGwAQAAAbWJEwAAAQAAAAEgAMSNiB9FAEQBFGMAAAGyTGF2YzUyLjg3LjQGAQIAAAAYc3R0cwAAAAAAAAABAAAAAQAAAAAAAAAcc3RzYwAAAAAAAAABAAAAAQAAAAEAAAABAAAAFHN0c3oAAAAAAAAAEwAAAAEAAAAUc3RjbwAAAAAAAAABAAAALAAAAGB1ZHRhAAAAWG1ldGEAAAAAAAAAIWhkbHIAAAAAAAAAAG1kaXJhcHBsAAAAAAAAAAAAAAAAK2lsc3QAAAAjqXRvbwAAABtkYXRhAAAAAQAAAABMYXZmNTIuNzguMw==')
+    document.body.appendChild(video)
+    keepAwakeVideo = video
+    video.play().catch(() => {})
+  } catch {}
+}
 async function requestWakeLock() {
   try {
     const nav: any = navigator as any
@@ -142,13 +169,19 @@ async function requestWakeLock() {
           requestWakeLock().catch(() => {})
         }
       })
+    } else {
+      // 中文注释：iOS Chrome 等不支持 Wake Lock，使用隐藏视频回退
+      ensureVideoFallback()
     }
   } catch (e: any) {
-    ElMessage.warning('保持常亮失败，请手动关闭自动息屏')
+    // 中文注释：Wake Lock 失败时启用视频回退方案
+    ensureVideoFallback()
+    ElMessage.warning('保持常亮失败，已启用兼容方案')
   }
 }
 async function releaseWakeLock() {
   try { if (wakeLock) { await wakeLock.release(); wakeLock = null } } catch {}
+  try { if (keepAwakeVideo) { keepAwakeVideo.pause(); keepAwakeVideo.remove(); keepAwakeVideo = null } } catch {}
 }
 
 // 中文注释：移除未使用的文本计算，避免无用警告

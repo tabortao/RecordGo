@@ -79,11 +79,11 @@
           </el-form-item>
           <el-form-item prop="start_date" required>
             <template #label><div class="flex items-center gap-1"><el-icon><Clock /></el-icon><span>开始日期</span></div></template>
-            <el-date-picker v-model="form.start_date" type="date" :editable="false" />
+            <el-date-picker v-model="form.start_date" type="date" :editable="false" :clearable="false" />
           </el-form-item>
           <el-form-item prop="end_date">
             <template #label><div class="flex items-center gap-1"><el-icon><Clock /></el-icon><span>截止日期</span></div></template>
-            <el-date-picker v-model="form.end_date" type="date" :editable="false" />
+            <el-date-picker v-model="form.end_date" type="date" :editable="false" :clearable="false" />
           </el-form-item>
         </el-form>
       </el-card>

@@ -490,6 +490,7 @@ import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 dayjs.extend(utc)
 import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, uploadTaskImage, batchDelete, type TaskItem } from '@/services/tasks'
+import { normalizeUploadPath } from '@/services/wishes'
 import { Picture } from '@element-plus/icons-vue'
 import { prepareUpload } from '@/utils/image'
 import { speak } from '@/utils/speech'
@@ -741,7 +742,17 @@ function resolveAvatarUrl(p?: string | null) {
   const s = String(p)
   if (/^https?:\/\//i.test(s)) return s
   if (!/uploads\//i.test(s)) return defaultAvatar
-  return `/api/${s}`.replace(/\/+/g, '/').replace(/\/$/, '')
+  let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
+  if (!base) {
+    try {
+      const url = new URL(window.location.href)
+      const host = url.hostname || 'localhost'
+      base = `${url.protocol}//${host}:8080`
+    } catch {
+      base = 'http://localhost:8080'
+    }
+  }
+  return `${base}/api/${s.replace(/^\/+/, '')}`
 }
 const tasksAvatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))
 const groupedTasks = computed(() => {
@@ -864,8 +875,10 @@ function openEdit(t: TaskItem) {
 }
 
 function resolveUploadUrl(rel: string) {
-  const base = (import.meta as any).env.VITE_API_BASE || ''
-  return `${base}/api/${rel}`.replace(/\/$/, '')
+  const base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
+  // 中文注释：兼容旧数据（可能包含 storage/ 或反斜杠），统一为 uploads/... 相对路径
+  rel = normalizeUploadPath(rel)
+  return `${base}/api/${String(rel).replace(/^\/+/, '')}`
 }
 
 // 中文注释：判断任务是否有图片

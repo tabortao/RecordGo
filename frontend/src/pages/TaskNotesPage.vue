@@ -84,6 +84,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useNotesStore, type TaskNote, type NoteAttachment } from '@/stores/notes'
 import { useAuth } from '@/stores/auth'
 import { uploadTaskImage, uploadTaskAudio } from '@/services/tasks'
+import { normalizeUploadPath } from '@/services/wishes'
 import { toWebp } from '@/utils/image'
 import { ArrowLeft, Microphone } from '@element-plus/icons-vue'
 import { speak } from '@/utils/speech'
@@ -110,8 +111,21 @@ function goBack() { router.back() }
 const existingNotes = computed(() => store.list(taskId))
 
 function resolveUrl(att: NoteAttachment) {
-  // 若有后端相对路径则转为可访问的静态资源路径
-  if (att.serverPath) return `/api/${att.serverPath}`
+  // 若有后端相对路径则转为可访问的静态资源完整地址（含基址）
+  if (att.serverPath) {
+    let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
+    if (!base) {
+      try {
+        const url = new URL(window.location.href)
+        const host = url.hostname || 'localhost'
+        base = `${url.protocol}//${host}:8080`
+      } catch {
+        base = 'http://localhost:8080'
+      }
+    }
+    const rel = normalizeUploadPath(att.serverPath)
+    return `${base}/api/${rel}`
+  }
   return att.url
 }
 

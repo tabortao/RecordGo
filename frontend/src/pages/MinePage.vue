@@ -111,7 +111,17 @@ function resolveAvatarUrl(p?: string | null) {
   // 中文注释：仅当为完整 URL 或包含 uploads 路径时才走后端；否则回退到内置默认头像
   if (/^https?:\/\//i.test(s)) return s
   if (!/uploads\//i.test(s)) return defaultAvatar
-  return `/api/${s}`.replace(/\/+/g, '/').replace(/\/$/, '')
+  let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
+  if (!base) {
+    try {
+      const url = new URL(window.location.href)
+      const host = url.hostname || 'localhost'
+      base = `${url.protocol}//${host}:8080`
+    } catch {
+      base = 'http://localhost:8080'
+    }
+  }
+  return `${base}/api/${s.replace(/^\/+/, '')}`
 }
 
 const avatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))

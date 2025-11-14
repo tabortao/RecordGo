@@ -72,8 +72,18 @@ function resolveAvatarUrl(p?: string | null) {
   const s = String(p)
   if (/^https?:\/\//i.test(s)) return s
   if (!/uploads\//i.test(s)) return defaultAvatar
-  // 中文注释：为相对路径统一加上 /api 前缀并规范化多余斜杠
-  return `/api/${s}`.replace(/\/+/g, '/').replace(/\/$/, '')
+  // 中文注释：为相对路径拼接后端基址与 /api 前缀；在 Docker 环境下确保跨域访问正常
+  let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
+  if (!base) {
+    try {
+      const url = new URL(window.location.href)
+      const host = url.hostname || 'localhost'
+      base = `${url.protocol}//${host}:8080`
+    } catch {
+      base = 'http://localhost:8080'
+    }
+  }
+  return `${base}/api/${s.replace(/^\/+/, '')}`
 }
 
 const avatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))
