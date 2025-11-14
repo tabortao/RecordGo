@@ -116,6 +116,7 @@ import { Edit, Delete, Coin } from '@element-plus/icons-vue'
 import { useAppState } from '@/stores/appState'
 import { useAuth } from '@/stores/auth'
 import { usePermissions } from '@/composables/permissions'
+import { getStaticBase } from '@/services/http'
 import { listWishes, deleteWish, exchangeWish, listWishRecords, type Wish, type WishRecord } from '@/services/wishes'
 
 // 中文注释：全局状态与本页状态
@@ -152,17 +153,7 @@ function resolveIcon(icon: string | undefined) {
   if (/\.(png|jpg|jpeg|webp)$/i.test(icon) && !icon.includes('/')) {
     return new URL(`../assets/wishs/${icon}`, import.meta.url).href
   }
-  // 中文注释：静态文件走后端基址，无需 /api 前缀；若未设置基址则回退到本机 8080
-  let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
-  if (!base) {
-    try {
-      const url = new URL(window.location.href)
-      const host = url.hostname || 'localhost'
-      base = `${url.protocol}//${host}:8080`
-    } catch {
-      base = 'http://localhost:8080'
-    }
-  }
+  const base = getStaticBase()
   const path = String(icon).replace(/^\/+/, '')
   // 中文注释：后端静态文件映射为 /api/uploads，需要加上 /api 前缀
   return `${base}/api/${path}`

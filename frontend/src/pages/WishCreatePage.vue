@@ -47,7 +47,8 @@ import { reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Plus } from '@element-plus/icons-vue'
 import router from '@/router'
-import { createWish, uploadWishIcon, toWebp } from '@/services/wishes'
+import { createWish, uploadWishIcon, toWebp, normalizeUploadPath } from '@/services/wishes'
+import { getStaticBase } from '@/services/http'
 import { useAuth } from '@/stores/auth'
 
 const auth = useAuth()
@@ -91,18 +92,8 @@ function resolveIcon(icon?: string) {
   if (/\.(png|jpg|jpeg|webp)$/i.test(icon) && !icon.includes('/')) {
     return new URL(`../assets/wishs/${icon}`, import.meta.url).href
   }
-  let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
-  if (!base) {
-    try {
-      const url = new URL(window.location.href)
-      const host = url.hostname || 'localhost'
-      base = `${url.protocol}//${host}:8080`
-    } catch {
-      base = 'http://localhost:8080'
-    }
-  }
-  const path = String(icon).replace(/^\/+/, '')
-  // 中文注释：后端静态资源路径为 /api/uploads，需加上 /api 前缀
+  const base = getStaticBase()
+  const path = normalizeUploadPath(icon)
   return `${base}/api/${path}`
 }
 

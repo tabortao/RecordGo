@@ -28,6 +28,7 @@ import { ElMessage } from 'element-plus'
 import { prepareUpload } from '@/utils/image'
 import { uploadTaskImage, deleteTaskImage } from '@/services/tasks'
 import { normalizeUploadPath } from '@/services/wishes'
+import { getStaticBase } from '@/services/http'
 
 type Item = { key: string; name: string; url: string; uploading: boolean; progress: number; serverPath?: string; localFile?: File }
 
@@ -181,8 +182,8 @@ onMounted(() => {
   if (props.serverPaths?.length) {
     for (const raw of props.serverPaths) {
       const p = normalizeUploadPath(raw)
-      const base = (import.meta as any).env.VITE_API_BASE || ''
-      const full = `${base.replace(/\/+$/, '')}/api/${p}`
+      const base = getStaticBase()
+      const full = `${base}/api/${p}`
       items.push({ key: `${p}-${Date.now()}`, name: p.split('/').pop() || 'image', url: full, uploading: false, progress: 100, serverPath: p })
     }
   }
@@ -202,12 +203,12 @@ onMounted(() => {
 
 // 同步：当 v-model 的 serverPaths 或 localFiles 外部变化时，保持列表一致（简单重建）
 watch(() => [props.serverPaths.length, props.localFiles.length, props.editing], () => {
-  const base = (import.meta as any).env.VITE_API_BASE || ''
+  const base = getStaticBase()
   const next: Item[] = []
   if (props.editing) {
     for (const raw of props.serverPaths) {
       const p = normalizeUploadPath(raw)
-      const full = `${base.replace(/\/+$/, '')}/api/${p}`
+      const full = `${base}/api/${p}`
       next.push({ key: `${p}`, name: p.split('/').pop() || 'image', url: full, uploading: false, progress: 100, serverPath: p })
     }
   } else {

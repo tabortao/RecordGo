@@ -64,6 +64,7 @@ import { ElMessage } from 'element-plus'
 import { Edit, ArrowLeft } from '@element-plus/icons-vue'
 import router from '@/router'
 import defaultAvatar from '@/assets/avatars/default.png'
+import { getStaticBase } from '@/services/http'
 
 const auth = useAuth()
 
@@ -73,16 +74,7 @@ function resolveAvatarUrl(p?: string | null) {
   if (/^https?:\/\//i.test(s)) return s
   if (!/uploads\//i.test(s)) return defaultAvatar
   // 中文注释：为相对路径拼接后端基址与 /api 前缀；在 Docker 环境下确保跨域访问正常
-  let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
-  if (!base) {
-    try {
-      const url = new URL(window.location.href)
-      const host = url.hostname || 'localhost'
-      base = `${url.protocol}//${host}:8080`
-    } catch {
-      base = 'http://localhost:8080'
-    }
-  }
+  const base = getStaticBase()
   return `${base}/api/${s.replace(/^\/+/, '')}`
 }
 

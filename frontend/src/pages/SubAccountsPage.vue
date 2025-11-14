@@ -150,6 +150,7 @@
 import { ref, onMounted, computed } from 'vue'
 import router from '@/router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getStaticBase } from '@/services/http'
 import { usePermissions } from '@/composables/permissions'
 import { listSubAccounts, createSubAccount, updateSubAccount, deleteSubAccount, generateChildToken, type ChildAccount } from '@/services/subaccounts'
 import { prepareUpload } from '@/utils/image'
@@ -216,16 +217,7 @@ function resolveAvatarUrl(p?: string | null) {
   const s = String(p)
   if (/^https?:\/\//i.test(s)) return s
   if (!/uploads\//i.test(s)) return ''
-  let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
-  if (!base) {
-    try {
-      const url = new URL(window.location.href)
-      const host = url.hostname || 'localhost'
-      base = `${url.protocol}//${host}:8080`
-    } catch {
-      base = 'http://localhost:8080'
-    }
-  }
+  const base = getStaticBase()
   return `${base}/api/${s.replace(/^\/+/, '')}`
 }
 

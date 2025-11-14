@@ -79,6 +79,7 @@ import defaultAvatar from '@/assets/avatars/default.png'
 import router from '@/router'
 import { useAuth } from '@/stores/auth'
 import { usePermissions } from '@/composables/permissions'
+import { getStaticBase } from '@/services/http'
 import { ElMessage } from 'element-plus'
 import { User, Edit, SwitchButton, Setting, Timer, List, Microphone, Coin, InfoFilled } from '@element-plus/icons-vue'
 
@@ -111,16 +112,7 @@ function resolveAvatarUrl(p?: string | null) {
   // 中文注释：仅当为完整 URL 或包含 uploads 路径时才走后端；否则回退到内置默认头像
   if (/^https?:\/\//i.test(s)) return s
   if (!/uploads\//i.test(s)) return defaultAvatar
-  let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
-  if (!base) {
-    try {
-      const url = new URL(window.location.href)
-      const host = url.hostname || 'localhost'
-      base = `${url.protocol}//${host}:8080`
-    } catch {
-      base = 'http://localhost:8080'
-    }
-  }
+  const base = getStaticBase()
   return `${base}/api/${s.replace(/^\/+/, '')}`
 }
 

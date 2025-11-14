@@ -90,6 +90,7 @@ import { ArrowLeft, Microphone } from '@element-plus/icons-vue'
 import { speak } from '@/utils/speech'
 import { useAppState } from '@/stores/appState'
 import { ElMessage } from 'element-plus'
+import { getStaticBase } from '@/services/http'
 
 const route = useRoute()
 const router = useRouter()
@@ -113,16 +114,7 @@ const existingNotes = computed(() => store.list(taskId))
 function resolveUrl(att: NoteAttachment) {
   // 若有后端相对路径则转为可访问的静态资源完整地址（含基址）
   if (att.serverPath) {
-    let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
-    if (!base) {
-      try {
-        const url = new URL(window.location.href)
-        const host = url.hostname || 'localhost'
-        base = `${url.protocol}//${host}:8080`
-      } catch {
-        base = 'http://localhost:8080'
-      }
-    }
+    const base = getStaticBase()
     const rel = normalizeUploadPath(att.serverPath)
     return `${base}/api/${rel}`
   }

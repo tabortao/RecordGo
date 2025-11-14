@@ -541,6 +541,7 @@ import { Picture } from '@element-plus/icons-vue'
 import { prepareUpload } from '@/utils/image'
 import { speak } from '@/utils/speech'
 import { useTaskCategories } from '@/stores/categories'
+import { getStaticBase } from '@/services/http'
 const isMobile = ref(false)
 // 中文注释：接入认证状态获取真实用户ID（未登录回退为 0）
 const auth = useAuth()
@@ -793,16 +794,7 @@ function resolveAvatarUrl(p?: string | null) {
   const s = String(p)
   if (/^https?:\/\//i.test(s)) return s
   if (!/uploads\//i.test(s)) return defaultAvatar
-  let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
-  if (!base) {
-    try {
-      const url = new URL(window.location.href)
-      const host = url.hostname || 'localhost'
-      base = `${url.protocol}//${host}:8080`
-    } catch {
-      base = 'http://localhost:8080'
-    }
-  }
+  const base = getStaticBase()
   return `${base}/api/${s.replace(/^\/+/, '')}`
 }
 const tasksAvatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))
@@ -990,7 +982,7 @@ function openEdit(t: TaskItem) {
 }
 
 function resolveUploadUrl(rel: string) {
-  const base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
+  const base = getStaticBase()
   // 中文注释：兼容旧数据（可能包含 storage/ 或反斜杠），统一为 uploads/... 相对路径
   rel = normalizeUploadPath(rel)
   return `${base}/api/${String(rel).replace(/^\/+/, '')}`
@@ -1479,3 +1471,4 @@ const activeTaskId = ref<number | null>(null)
   100% { transform: translate(var(--tx), var(--ty)) rotate(360deg); opacity: 0.2; }
 }
 </style>
+import { getStaticBase } from '@/services/http'

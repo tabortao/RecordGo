@@ -94,6 +94,23 @@ export async function post<T = any>(url: string, data?: any, config?: AxiosReque
 export async function put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
   return (await instance.put(url, data, config)) as any
 }
+
+// 中文注释：静态资源基址（用于拼接 /api/uploads/... 的完整地址）
+// 说明：
+// - 开发环境使用 Vite 代理，Axios baseURL 为 '/api'，此时静态基址应为空字符串，最终形成 '/api/uploads/...'
+// - 生产环境若配置了 VITE_API_BASE（可为 'https://host' 或 'https://host/api'），需要安全地去掉末尾的 '/api' 前缀，避免出现重复 '/api/api/...'
+// - 若未配置 VITE_API_BASE，则回退为相对路径（空字符串），依赖前端托管平台的反向代理规则
+export function getStaticBase(): string {
+  let b = instance.defaults.baseURL || '/api'
+  if (!b) return ''
+  b = String(b).trim()
+  // 相对路径 '/api'：静态基址置空
+  if (b === '/api') return ''
+  // 去除尾部斜杠与可能存在的 '/api' 后缀
+  b = b.replace(/\/+$/, '')
+  b = b.replace(/\/api$/i, '')
+  return b
+}
 // 中文注释：补充 PATCH 方法（用于部分更新，如任务状态切换）
 export async function patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
   return (await instance.patch(url, data, config)) as any

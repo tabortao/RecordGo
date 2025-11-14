@@ -48,6 +48,7 @@ import { ref, onMounted } from 'vue'
 import router from '@/router'
 import { ArrowLeft, List } from '@element-plus/icons-vue'
 import { listWishRecords, listWishes, type WishRecord, type Wish } from '@/services/wishes'
+import { getStaticBase } from '@/services/http'
 
 const userId = 1 // 中文注释：示例用户ID
 function goBack() { router.back() }
@@ -79,16 +80,7 @@ function resolveIcon(icon?: string) {
   if (/\.(png|jpg|jpeg|webp)$/i.test(icon) && !icon.includes('/')) {
     return new URL(`../assets/wishs/${icon}`, import.meta.url).href
   }
-  let base = ((import.meta as any).env.VITE_API_BASE || '').replace(/\/+$/, '')
-  if (!base) {
-    try {
-      const url = new URL(window.location.href)
-      const host = url.hostname || 'localhost'
-      base = `${url.protocol}//${host}:8080`
-    } catch {
-      base = 'http://localhost:8080'
-    }
-  }
+  const base = getStaticBase()
   const path = String(icon).replace(/^\/+/, '')
   // 中文注释：后端将 uploads 映射到 /api/uploads，这里需要补上 /api 前缀
   return `${base}/api/${path}`
