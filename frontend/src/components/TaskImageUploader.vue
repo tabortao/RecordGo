@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 // 中文注释：属性定义——编辑模式下立即上传到后端；创建模式下仅本地暂存；支持是否使用/恢复草稿的开关
-import { ref, reactive, watch, onMounted, computed, withDefaults } from 'vue'
+import { ref, reactive, watch, onMounted, computed } from 'vue'
 import { Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { prepareUpload } from '@/utils/image'
