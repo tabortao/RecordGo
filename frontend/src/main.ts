@@ -25,10 +25,21 @@ function setThemeColor(color: string) {
 }
 
 function currentPageColor(): string {
-  const path = router.currentRoute.value.path || ''
-  if (path.startsWith('/tomato')) return 'rgb(48, 48, 46)'
-  const isDark = document.documentElement.classList.contains('dark')
-  return isDark ? 'rgb(17, 24, 39)' : 'rgb(254, 254, 254)'
+  const x = Math.max(0, Math.floor(window.innerWidth / 2))
+  const y = 2
+  let el = document.elementFromPoint(x, y) as HTMLElement | null
+  const isTransparent = (c: string) => !c || c === 'transparent' || c === 'rgba(0, 0, 0, 0)'
+  let color = ''
+  while (el) {
+    const c = getComputedStyle(el).backgroundColor
+    if (!isTransparent(c)) { color = c; break }
+    el = el.parentElement
+  }
+  if (!color) {
+    const bodyC = getComputedStyle(document.body).backgroundColor
+    color = isTransparent(bodyC) ? getComputedStyle(document.documentElement).backgroundColor : bodyC
+  }
+  return color || 'rgb(254, 254, 254)'
 }
 
 function updateThemeBar() { setThemeColor(currentPageColor()) }
@@ -51,6 +62,15 @@ try {
   media.addEventListener('change', (e) => apply(e.matches))
 }
 
-router.afterEach(() => updateThemeBar())
+router.afterEach(() => { setTimeout(updateThemeBar, 0) })
+
+let ticking = false
+function scheduleUpdate() {
+  if (ticking) return
+  ticking = true
+  requestAnimationFrame(() => { ticking = false; updateThemeBar() })
+}
+window.addEventListener('scroll', scheduleUpdate, { passive: true })
+window.addEventListener('resize', scheduleUpdate)
 
 updateThemeBar()
