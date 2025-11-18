@@ -94,6 +94,11 @@ export async function post<T = any>(url: string, data?: any, config?: AxiosReque
 export async function put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
   return (await instance.put(url, data, config)) as any
 }
+export async function putExternal<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  const c = { ...(config || {}) }
+  const client = axios.create({ timeout: c.timeout || 10000 })
+  return (await client.put(url, data, c)) as any
+}
 
 // 中文注释：静态资源基址（用于拼接 /api/uploads/... 的完整地址）
 // 说明：
@@ -120,6 +125,6 @@ export async function del<T = any>(url: string, config?: AxiosRequestConfig): Pr
 }
 
 // 中文注释：统一导出，包含 patch 与 delete（命名为 delete 以便直觉调用）
-const http = { get, post, put, patch, delete: del }
+const http = { get, post, put, patch, delete: del, putExternal }
 
 export default http

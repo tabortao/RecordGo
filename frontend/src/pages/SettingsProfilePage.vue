@@ -65,6 +65,7 @@ import { Edit, ArrowLeft } from '@element-plus/icons-vue'
 import router from '@/router'
 import defaultAvatar from '@/assets/avatars/default.png'
 import { getStaticBase } from '@/services/http'
+import { prepareUpload } from '@/utils/image'
 
 const auth = useAuth()
 
@@ -90,12 +91,13 @@ const oldPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
 
-function onSelectAvatar(e: Event) {
+async function onSelectAvatar(e: Event) {
   const input = e.target as HTMLInputElement
   const f = input.files && input.files[0]
   if (!f) return
-  avatarFile.value = f
-  avatarPreview.value = URL.createObjectURL(f)
+  const webp = await prepareUpload(f)
+  avatarFile.value = webp
+  avatarPreview.value = URL.createObjectURL(webp)
 }
 
 // 中文注释：取消返回（不保存，仅关闭页面）

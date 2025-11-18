@@ -12,7 +12,7 @@
         <el-form :model="form" label-width="90px">
           <el-form-item label="心愿图标">
             <div class="flex items-center gap-2">
-              <img v-if="form.icon_preview || form.icon" :src="form.icon_preview || resolveIcon(form.icon)" class="w-10 h-10 rounded" @error="onIconError" />
+              <img v-if="form.icon_preview || form.icon" :src="form.icon_preview || iconResolved" class="w-10 h-10 rounded" @error="onIconError" />
               <el-upload :auto-upload="false" :show-file-list="false" accept="image/*" @change="onPickIcon">
                 <el-button type="primary" size="small">更换图片</el-button>
               </el-upload>
@@ -41,13 +41,14 @@
 
 <script setup lang="ts">
 // 中文注释：编辑心愿页面逻辑，加载现有心愿并提交更新；图标上传仍转换为 webp 并走后端 uploads
-import { reactive, onMounted } from 'vue'
+import { reactive, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Edit } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 import router from '@/router'
 import { getWish, updateWish, uploadWishIcon, toWebp, normalizeUploadPath, type Wish } from '@/services/wishes'
 import { getStaticBase } from '@/services/http'
+import { presignView } from '@/services/storage'
 
 const route = useRoute()
 const userId = 1 // 中文注释：示例用户ID
@@ -55,11 +56,13 @@ function goBack() { router.back() }
 
 type WishForm = Partial<Wish> & { icon_preview?: string }
 const form = reactive<WishForm>({ name: '', content: '', need_coins: 1, unit: '次', exchange_amount: 1, icon: '', icon_preview: '' })
+const iconResolved = ref('')
 
 onMounted(async () => {
   const id = Number(route.params.id)
   const w = await getWish(id)
   Object.assign(form, w)
+  await updateIconResolved()
 })
 
 async function onPickIcon(fileEvent: any) {
@@ -96,18 +99,21 @@ async function submitForm() {
   }
 }
 
-// 中文注释：解析图标路径，兼容内置与后端 uploads
-function resolveIcon(icon?: string) {
-  if (!icon) return new URL('../assets/wishs/领取记录.png', import.meta.url).href
+// 中文注释：解析并设置图标展示地址（异步），模板中仅绑定字符串
+async function updateIconResolved() {
+  const icon = form.icon
+  if (!icon) { iconResolved.value = new URL('../assets/wishs/领取记录.png', import.meta.url).href; return }
   if (/\.(png|jpg|jpeg|webp)$/i.test(icon) && !icon.includes('/')) {
-    return new URL(`../assets/wishs/${icon}`, import.meta.url).href
+    iconResolved.value = new URL(`../assets/wishs/${icon}`, import.meta.url).href
+    return
   }
-  // 规范化路径并拼接基址
   const base = getStaticBase()
   const path = normalizeUploadPath(icon)
-  // 中文注释：后端静态文件映射在 /api/uploads，这里需要拼接 /api 前缀
-  return `${base}/api/${path}`
+  if (path.startsWith('uploads/')) { iconResolved.value = `${base}/api/${path}`; return }
+  try { iconResolved.value = await presignView(path) } catch { iconResolved.value = new URL('../assets/wishs/领取记录.png', import.meta.url).href }
 }
+
+watch(() => form.icon, async () => { await updateIconResolved() })
 
 // 中文注释：心愿图标加载失败时采用占位图，提升容错体验
 function onIconError(e: Event) {

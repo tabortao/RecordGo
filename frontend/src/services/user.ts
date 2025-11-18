@@ -1,5 +1,7 @@
 // 中文注释：用户资料与安全相关服务封装
 import http from './http'
+import { presignUpload, putToURL } from './storage'
+import { prepareUpload } from '@/utils/image'
 
 // 中文注释：更新昵称（与后端字段保持一致）
 export async function updateNickname(nickname: string) {
@@ -19,9 +21,9 @@ export async function changePassword(old_password: string, new_password: string)
 
 // 中文注释：上传用户头像（前端需先压缩并转换为 webp）
 export async function uploadAvatar(userId: number, file: File) {
-  const form = new FormData()
-  form.append('user_id', String(userId))
-  form.append('image', file)
-  // 后端应返回 { path } 为相对路径：uploads/images/avatars/{用户id}/xxx.webp
-  return await http.post('/upload/avatar', form, { timeout: 30000 } as any) as { path: string }
+  const webp = await prepareUpload(file)
+  const sign = await presignUpload({ resource_type: 'avatar', user_id: userId, content_type: 'image/webp', ext: 'webp' })
+  await putToURL(sign.upload_url, webp, sign.headers)
+  const saved = await http.post('/upload/avatar/object', { object_key: sign.object_key } as any)
+  return saved as { path: string }
 }

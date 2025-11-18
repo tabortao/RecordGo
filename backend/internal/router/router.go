@@ -79,7 +79,11 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         api.POST("/upload/task-audio", handlers.UploadTaskAudio)
         // 中文注释：用户头像上传
         api.POST("/upload/avatar", handlers.UploadAvatar)
+        api.POST("/upload/avatar/object", handlers.UploadAvatarObject)
         api.DELETE("/tasks/:id/image", handlers.DeleteTaskImage)
+        api.GET("/storage/info", handlers.StorageInfo)
+        api.POST("/storage/presign", handlers.StoragePresign)
+        api.GET("/storage/presign-view", handlers.StoragePresignView)
 
         // 中文注释：任务管理 RESTful 路由
         api.POST("/tasks", handlers.CreateTask)
@@ -106,5 +110,6 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         api.GET("/coins", handlers.GetCoins)
     }
 
+    r.PUT("/api/storage/put", handlers.StoragePut)
     return r
 }

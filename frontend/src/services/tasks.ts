@@ -1,4 +1,6 @@
 import http from './http'
+import { presignUpload, putToURL } from './storage'
+import { prepareUpload } from '@/utils/image'
 
 // 中文注释：任务服务封装，统一使用 RESTful 接口并返回数据
 export interface TaskItem {
@@ -73,27 +75,10 @@ export async function uploadTaskImage(
   taskId: number,
   onProgress?: (percentage: number) => void
 ): Promise<{ path: string }> {
-  const form = new FormData()
-  form.append('user_id', String(userId))
-  form.append('task_id', String(taskId))
-  // 中文注释：后端期望字段名为 image（兼容 file）
-  // 中文注释：显式附带文件名，提升后端解析稳定性（中文文件名也可正常传递）
-  form.append('image', file, (file as any).name || 'image.webp')
-  // 中文注释：为最大兼容性，额外附带 file 键（服务端会择一使用）
-  form.append('file', file, (file as any).name || 'image.webp')
-  // 中文注释：不手动设置 Content-Type，浏览器自动带 boundary，避免连接被重置；支持上传进度回调
-  const resp = await http.post('/upload/task-image', form, {
-    timeout: 30000,
-    onUploadProgress: (e: any) => {
-      try {
-        const total = e?.total || 0
-        const loaded = e?.loaded || 0
-        const p = total > 0 ? Math.round((loaded * 100) / total) : 0
-        onProgress && onProgress(p)
-      } catch {}
-    }
-  } as any)
-  return resp as { path: string }
+  const webp = await prepareUpload(file)
+  const sign = await presignUpload({ resource_type: 'task_image', user_id: userId, task_id: taskId, content_type: 'image/webp', ext: 'webp' })
+  await putToURL(sign.upload_url, webp, sign.headers, onProgress)
+  return { path: sign.object_key }
 }
 
 // 删除单个任务图片（物理文件 + 数据库 image_json 更新）
@@ -111,22 +96,10 @@ export async function uploadTaskAudio(
   taskId: number,
   onProgress?: (percentage: number) => void
 ): Promise<{ path: string }> {
-  const form = new FormData()
-  form.append('user_id', String(userId))
-  form.append('task_id', String(taskId))
-  // 中文注释：优先使用 audio 字段，兼容 file 字段
-  form.append('audio', file, (file as any).name || 'audio.wav')
-  form.append('file', file, (file as any).name || 'audio.wav')
-  const resp = await http.post('/upload/task-audio', form, {
-    timeout: 30000,
-    onUploadProgress: (e: any) => {
-      try {
-        const total = e?.total || 0
-        const loaded = e?.loaded || 0
-        const p = total > 0 ? Math.round((loaded * 100) / total) : 0
-        onProgress && onProgress(p)
-      } catch {}
-    }
-  } as any)
-  return resp as { path: string }
+  const name = String((file as any).name || '')
+  const ext = name.toLowerCase().endsWith('.wav') ? 'wav' : (name.toLowerCase().endsWith('.mp3') ? 'mp3' : 'mp3')
+  const ct = ext === 'wav' ? 'audio/wav' : 'audio/mpeg'
+  const sign = await presignUpload({ resource_type: 'task_attachment_audio', user_id: userId, task_id: taskId, content_type: ct, ext })
+  await putToURL(sign.upload_url, file, sign.headers, onProgress)
+  return { path: sign.object_key }
 }

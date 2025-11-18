@@ -31,6 +31,15 @@ func main() {
     }
 
     // 初始化路由与服务
+    var st storage.Storage
+    if cfg.StorageDriver == "s3" && cfg.S3Bucket != "" && cfg.S3Region != "" {
+        s3st, err := storage.NewS3(cfg.S3Region, cfg.S3Endpoint, cfg.S3AccessKeyID, cfg.S3SecretAccessKey, cfg.S3Bucket, cfg.S3ForcePathStyle, cfg.S3PublicBaseURL)
+        if err == nil { st = s3st }
+    }
+    if st == nil {
+        st = storage.NewLocal(cfg.StorageRoot)
+    }
+    storage.Set(st)
     r := router.New(cfg, lg)
     lg.Sugar().Infof("RecordGo API 启动，端口: %s", cfg.Port)
     if err := r.Run(":" + cfg.Port); err != nil {

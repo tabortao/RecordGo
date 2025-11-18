@@ -124,6 +124,34 @@ func ChangePassword(c *gin.Context) {
     common.Ok(c, gin.H{"message": "ok"})
 }
 
+type AvatarObjectReq struct {
+    ObjectKey string `json:"object_key"`
+}
+
+func UploadAvatarObject(c *gin.Context) {
+    var req AvatarObjectReq
+    if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.ObjectKey) == "" {
+        common.Error(c, 40001, "参数错误")
+        return
+    }
+    uid := extractUserIDFromToken(c)
+    if uid == 0 {
+        common.Error(c, 40100, "未登录或令牌无效")
+        return
+    }
+    var u models.User
+    if err := db.DB().First(&u, uid).Error; err != nil {
+        common.Error(c, 40401, "用户不存在")
+        return
+    }
+    u.AvatarPath = strings.TrimSpace(req.ObjectKey)
+    if err := db.DB().Save(&u).Error; err != nil {
+        common.Error(c, 50018, "保存头像失败")
+        return
+    }
+    common.Ok(c, gin.H{"path": u.AvatarPath})
+}
+
 // UploadAvatar 上传用户头像（前端需先转换为 webp），并更新用户 AvatarPath
 func UploadAvatar(c *gin.Context) {
     userIDStr := strings.TrimSpace(c.PostForm("user_id"))

@@ -1,4 +1,5 @@
 import http from './http'
+import { presignUpload, putToURL } from './storage'
 
 // 中文注释：心愿服务，统一封装心愿相关的 API 调用，保证字段与后端一致
 export interface Wish {
@@ -126,15 +127,10 @@ export async function listWishRecords(userId: number, page = 1, pageSize = 10) {
 
 // 上传心愿图标（前端先转换为 webp）
 export async function uploadWishIcon(userId: number, file: File) {
-  const form = new FormData()
-  form.append('user_id', String(userId))
-  // 中文注释：显式传递文件名，并额外附带 file 键以增强后端兼容性
-  form.append('image', file, (file as any).name || 'icon.webp')
-  form.append('file', file, (file as any).name || 'icon.webp')
-  const resp = await http.post('/upload/wish-icon', form, { timeout: 30000 } as any)
-  // 中文注释：后端返回 { path }，可能包含 storage 或绝对路径，统一规范化为 uploads/... 相对路径
-  const r = resp as { path: string }
-  return { path: normalizeUploadPath(r?.path || '') }
+  const webp = await toWebp(file)
+  const sign = await presignUpload({ resource_type: 'wish_image', user_id: userId, content_type: 'image/webp', ext: 'webp' })
+  await putToURL(sign.upload_url, webp, sign.headers)
+  return { path: sign.object_key }
 }
 
 // 中文注释：获取单个心愿详情（编辑页面使用）

@@ -22,13 +22,14 @@
 
 <script setup lang="ts">
 // 中文注释：属性定义——编辑模式下立即上传到后端；创建模式下仅本地暂存；支持是否使用/恢复草稿的开关
-import { ref, reactive, watch, onMounted, computed } from 'vue'
+import { ref, reactive, watch, onMounted } from 'vue'
 import { Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { prepareUpload } from '@/utils/image'
 import { uploadTaskImage, deleteTaskImage } from '@/services/tasks'
 import { normalizeUploadPath } from '@/services/wishes'
 import { getStaticBase } from '@/services/http'
+import { presignView } from '@/services/storage'
 
 type Item = { key: string; name: string; url: string; uploading: boolean; progress: number; serverPath?: string; localFile?: File }
 
@@ -56,7 +57,6 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const items = reactive<Item[]>([])
 const DRAFT_KEY = 'task_draft_images'
 // 中文注释：预览列表（用于点击缩略图打开大图查看与翻看）
-const previewUrls = computed(() => items.map(i => i.url))
 
 function triggerPick() {
   fileInput.value?.click()
@@ -177,13 +177,18 @@ async function onPicked(e: Event) {
 }
 
 // 初始化：编辑模式显示已有服务端图片；创建模式恢复草稿
-onMounted(() => {
+onMounted(async () => {
   // 先显示已上传图片
   if (props.serverPaths?.length) {
     for (const raw of props.serverPaths) {
       const p = normalizeUploadPath(raw)
-      const base = getStaticBase()
-      const full = `${base}/api/${p}`
+      let full = ''
+      if (p.startsWith('uploads/')) {
+        const base = getStaticBase()
+        full = `${base}/api/${p}`
+      } else {
+        try { full = await presignView(p) } catch { full = '' }
+      }
       items.push({ key: `${p}-${Date.now()}`, name: p.split('/').pop() || 'image', url: full, uploading: false, progress: 100, serverPath: p })
     }
   }
@@ -202,13 +207,18 @@ onMounted(() => {
 })
 
 // 同步：当 v-model 的 serverPaths 或 localFiles 外部变化时，保持列表一致（简单重建）
-watch(() => [props.serverPaths.length, props.localFiles.length, props.editing], () => {
-  const base = getStaticBase()
+watch(() => [props.serverPaths.length, props.localFiles.length, props.editing], async () => {
   const next: Item[] = []
   if (props.editing) {
     for (const raw of props.serverPaths) {
       const p = normalizeUploadPath(raw)
-      const full = `${base}/api/${p}`
+      let full = ''
+      if (p.startsWith('uploads/')) {
+        const base = getStaticBase()
+        full = `${base}/api/${p}`
+      } else {
+        try { full = await presignView(p) } catch { full = '' }
+      }
       next.push({ key: `${p}`, name: p.split('/').pop() || 'image', url: full, uploading: false, progress: 100, serverPath: p })
     }
   } else {
