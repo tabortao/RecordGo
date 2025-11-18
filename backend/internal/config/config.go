@@ -28,6 +28,8 @@ type Config struct {
     S3PublicBaseURL  string
     MaxUploadSizeMB  int
     AllowMIME        string
+    JWTExpireDays    int
+    S3KeyPrefix      string
 }
 
 // Load 读取环境变量并提供默认值
@@ -42,6 +44,8 @@ func Load() (*Config, error) {
     v.SetDefault("S3_PRESIGN_EXPIRE", 300)
     v.SetDefault("MAX_UPLOAD_SIZE_MB", 10)
     v.SetDefault("ALLOW_MIME", "image/webp,audio/mpeg,audio/wav")
+    v.SetDefault("JWT_EXPIRE_DAYS", 365)
+    v.SetDefault("S3_KEY_PREFIX", "")
 
     cfg := &Config{
         SecretKey:   v.GetString("SECRET_KEY"),
@@ -63,6 +67,8 @@ func Load() (*Config, error) {
         S3PublicBaseURL:  v.GetString("S3_PUBLIC_BASE_URL"),
         MaxUploadSizeMB:  v.GetInt("MAX_UPLOAD_SIZE_MB"),
         AllowMIME:        v.GetString("ALLOW_MIME"),
+        JWTExpireDays:    v.GetInt("JWT_EXPIRE_DAYS"),
+        S3KeyPrefix:      v.GetString("S3_KEY_PREFIX"),
     }
 
 	originsRaw := v.GetString("ALLOW_ORIGINS")

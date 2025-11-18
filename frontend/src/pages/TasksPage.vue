@@ -486,11 +486,14 @@
       v-if="isParent || canTaskCreate"
       type="success"
       circle
-      class="fixed bottom-20 right-6 shadow-lg"
+      class="fixed shadow-lg"
+      :style="{ left: fabPos.x + 'px', top: fabPos.y + 'px' }"
+      @mousedown="onFabDown"
+      @touchstart.prevent="onFabTouchStart"
       @click="openCreate"
       title="创建任务"
     >
-      <el-icon :size="31"><Plus /></el-icon>
+      <el-icon :size="46"><Plus /></el-icon>
     </el-button>
 
     <!-- 中文注释：移除旧版任务页悬浮番茄钟，改用新的全局悬浮球（右下角橙色），避免重复显示 -->
@@ -542,6 +545,7 @@ import { prepareUpload } from '@/utils/image'
 import { speak } from '@/utils/speech'
 import { useTaskCategories } from '@/stores/categories'
 import { getStaticBase } from '@/services/http'
+import { presignView } from '@/services/storage'
 const isMobile = ref(false)
 // 中文注释：接入认证状态获取真实用户ID（未登录回退为 0）
 const auth = useAuth()
@@ -981,11 +985,11 @@ function openEdit(t: TaskItem) {
   router.push(`/tasks/${t.id}/edit`)
 }
 
-function resolveUploadUrl(rel: string) {
+async function resolveUploadUrlAsync(rel: string): Promise<string> {
   const base = getStaticBase()
-  // 中文注释：兼容旧数据（可能包含 storage/ 或反斜杠），统一为 uploads/... 相对路径
-  rel = normalizeUploadPath(rel)
-  return `${base}/api/${String(rel).replace(/^\/+/, '')}`
+  let p = normalizeUploadPath(rel)
+  if (p.startsWith('uploads/')) return `${base}/api/${String(p).replace(/^\/+/, '')}`
+  try { return await presignView(p) } catch { return '' }
 }
 
 // 中文注释：判断任务是否有图片
@@ -1018,9 +1022,10 @@ function hasImages(t: TaskItem) {
 const imagesViewerVisible = ref(false)
 const imageViewerList = ref<string[]>([])
 const imageViewerIndex = ref(0)
-function openTaskImages(t: TaskItem) {
+async function openTaskImages(t: TaskItem) {
   const rels = parseImageList(t.image_json)
-  imageViewerList.value = rels.map(resolveUploadUrl)
+  const urls = await Promise.all(rels.map((r) => resolveUploadUrlAsync(r)))
+  imageViewerList.value = urls.filter(Boolean)
   if (imageViewerList.value.length > 0) {
     imageViewerIndex.value = 0
     imagesViewerVisible.value = true
@@ -1329,6 +1334,7 @@ onMounted(() => {
   const updateMobile = () => { isMobile.value = window.innerWidth < 768 }
   updateMobile()
   window.addEventListener('resize', updateMobile)
+  initFab()
 })
 
 watch(userId, async () => {
@@ -1399,6 +1405,70 @@ function generateRepeatDates(start: Date, end: Date | undefined, type: 'none' | 
 const activeTaskId = ref<number | null>(null)
 
 // 中文注释：移除未使用的函数（toggleStatus、openRecycle），消除编译器警告
+
+// 创建任务浮动按钮：可拖动并持久化位置；默认靠近底部导航栏并与右侧保持间距
+const fabPos = ref<{ x: number; y: number }>({ x: 0, y: 0 })
+const fabKey = 'createTaskFabPos'
+function initFab() {
+  try {
+    const raw = localStorage.getItem(fabKey)
+    if (raw) {
+      const p = JSON.parse(raw)
+      if (typeof p?.x === 'number' && typeof p?.y === 'number') {
+        fabPos.value = p
+        return
+      }
+    }
+  } catch {}
+  const margin = 24
+  fabPos.value = { x: window.innerWidth - 64 - margin, y: window.innerHeight - 64 - (isMobile.value ? 96 : 80) }
+}
+function saveFab() {
+  try { localStorage.setItem(fabKey, JSON.stringify(fabPos.value)) } catch {}
+}
+let draggingFab = false
+let fabStart: { x: number; y: number } = { x: 0, y: 0 }
+let pointerStart: { x: number; y: number } = { x: 0, y: 0 }
+function onFabDown(e: MouseEvent) {
+  draggingFab = true
+  fabStart = { ...fabPos.value }
+  pointerStart = { x: e.clientX, y: e.clientY }
+  window.addEventListener('mousemove', onFabMove)
+  window.addEventListener('mouseup', onFabUp)
+}
+function onFabMove(e: MouseEvent) {
+  if (!draggingFab) return
+  const dx = e.clientX - pointerStart.x
+  const dy = e.clientY - pointerStart.y
+  fabPos.value = { x: Math.max(8, Math.min(window.innerWidth - 64, fabStart.x + dx)), y: Math.max(8, Math.min(window.innerHeight - 64, fabStart.y + dy)) }
+}
+function onFabUp() {
+  draggingFab = false
+  window.removeEventListener('mousemove', onFabMove)
+  window.removeEventListener('mouseup', onFabUp)
+  saveFab()
+}
+function onFabTouchStart(e: TouchEvent) {
+  draggingFab = true
+  const t = e.touches[0]
+  fabStart = { ...fabPos.value }
+  pointerStart = { x: t.clientX, y: t.clientY }
+  window.addEventListener('touchmove', onFabTouchMove, { passive: false })
+  window.addEventListener('touchend', onFabTouchEnd)
+}
+function onFabTouchMove(e: TouchEvent) {
+  if (!draggingFab) return
+  const t = e.touches[0]
+  const dx = t.clientX - pointerStart.x
+  const dy = t.clientY - pointerStart.y
+  fabPos.value = { x: Math.max(8, Math.min(window.innerWidth - 64, fabStart.x + dx)), y: Math.max(8, Math.min(window.innerHeight - 64, fabStart.y + dy)) }
+}
+function onFabTouchEnd() {
+  draggingFab = false
+  window.removeEventListener('touchmove', onFabTouchMove)
+  window.removeEventListener('touchend', onFabTouchEnd)
+  saveFab()
+}
 </script>
 
 <style scoped>
@@ -1471,4 +1541,3 @@ const activeTaskId = ref<number | null>(null)
   100% { transform: translate(var(--tx), var(--ty)) rotate(360deg); opacity: 0.2; }
 }
 </style>
-import { getStaticBase } from '@/services/http'

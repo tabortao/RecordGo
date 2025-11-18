@@ -80,6 +80,7 @@ import router from '@/router'
 import { useAuth } from '@/stores/auth'
 import { usePermissions } from '@/composables/permissions'
 import { getStaticBase } from '@/services/http'
+import { presignView } from '@/services/storage'
 import { ElMessage } from 'element-plus'
 import { User, Edit, SwitchButton, Setting, Timer, List, Microphone, Coin, InfoFilled } from '@element-plus/icons-vue'
 
@@ -106,17 +107,27 @@ const displayId = computed(() => {
 
 // 中文注释：头像地址优先使用用户头像路径，未设置则用默认头像
 // 中文注释：头像地址解析——支持完整 URL；后端返回的相对路径（如 uploads/images/avatars/...）统一加上 /api 前缀通过 Vite 代理
-function resolveAvatarUrl(p?: string | null) {
+const avatarSrc = computed(() => {
+  const p = auth.user?.avatar_path
   if (!p) return defaultAvatar
   const s = String(p)
-  // 中文注释：仅当为完整 URL 或包含 uploads 路径时才走后端；否则回退到内置默认头像
   if (/^https?:\/\//i.test(s)) return s
-  if (!/uploads\//i.test(s)) return defaultAvatar
   const base = getStaticBase()
-  return `${base}/api/${s.replace(/^\/+/, '')}`
-}
+  if (/uploads\//i.test(s)) return `${base}/api/${s.replace(/^\/+/, '')}`
+  return ''
+})
 
-const avatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))
+onMounted(async () => {
+  if (!avatarSrc.value) {
+    const p = auth.user?.avatar_path
+    if (p) {
+      try {
+        const url = await presignView(String(p))
+        ;(avatarSrc as any).value = url
+      } catch {}
+    }
+  }
+})
 
 // 中文注释：编辑个人信息改为独立页面，移除弹窗相关状态与函数
 

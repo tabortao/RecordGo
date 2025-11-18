@@ -117,6 +117,7 @@ import { useAppState } from '@/stores/appState'
 import { useAuth } from '@/stores/auth'
 import { usePermissions } from '@/composables/permissions'
 import { getStaticBase } from '@/services/http'
+import { presignView } from '@/services/storage'
 import { listWishes, deleteWish, exchangeWish, listWishRecords, type Wish, type WishRecord } from '@/services/wishes'
 
 // 中文注释：全局状态与本页状态
@@ -146,17 +147,24 @@ function toggleOps(id: number) {
 }
 
 // 中文注释：解析图标路径，内置图标在 assets/wishs 中，用户上传图标走后端 uploads 路径
+const iconResolvedMap = ref<Record<string, string>>({})
 function resolveIcon(icon: string | undefined) {
-  // 中文注释：默认图标改为相对路径，避免 @ 别名在 new URL 中解析异常
   if (!icon) return new URL('../assets/wishs/看电视.png', import.meta.url).href
-  // 内置：文件名.png；自定义：uploads/... 路径
   if (/\.(png|jpg|jpeg|webp)$/i.test(icon) && !icon.includes('/')) {
     return new URL(`../assets/wishs/${icon}`, import.meta.url).href
   }
   const base = getStaticBase()
-  const path = String(icon).replace(/^\/+/, '')
-  // 中文注释：后端静态文件映射为 /api/uploads，需要加上 /api 前缀
-  return `${base}/api/${path}`
+  const p = String(icon).replace(/^\/+/, '')
+  if (p.startsWith('uploads/')) return `${base}/api/${p}`
+  return iconResolvedMap.value[p] || new URL('../assets/wishs/领取记录.png', import.meta.url).href
+}
+async function resolveIconsForList(list: Wish[]) {
+  const targets = list
+    .map(w => String(w.icon || ''))
+    .filter(p => !!p && !p.startsWith('uploads/') && p.includes('/'))
+  await Promise.all(targets.map(async (k) => {
+    try { iconResolvedMap.value[k] = await presignView(k) } catch {}
+  }))
 }
 // 记录图标可复用 wish 名称对应文件
 function resolveRecordIcon(name: string) {
@@ -209,11 +217,13 @@ async function loadWishes() {
 
 onMounted(async () => {
   await loadWishes()
+  await resolveIconsForList(wishList.value)
   await loadRecords()
 })
 
 watch(userId, async () => {
   await loadWishes()
+  await resolveIconsForList(wishList.value)
   await loadRecords()
 })
 

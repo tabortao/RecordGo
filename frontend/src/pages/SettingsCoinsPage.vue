@@ -59,6 +59,7 @@ import { ElMessage } from 'element-plus'
 import { Coin, ArrowLeft } from '@element-plus/icons-vue'
 import router from '@/router'
 import { useMediaQuery } from '@vueuse/core'
+import { setCoins } from '@/services/coins'
 
 const store = useAppState()
 // 中文注释：根据屏幕宽度判断移动端，用于控制控件大小与布局细节
@@ -71,7 +72,7 @@ const reason = ref<string>('')
 function onCancel() { router.back() }
 
 // 中文注释：确定（校验后保存并关闭）
-function onSave() {
+async function onSave() {
   const current = Number(store.coins)
   const isNoChange = (newTotal.value === null) || (Number(newTotal.value) === current)
   if (isNoChange) { router.back(); return }
@@ -82,9 +83,14 @@ function onSave() {
   const r = reason.value.trim()
   if (!r) { ElMessage.error('请填写修改原因'); return }
 
-  store.setCoins(v)
-  // 中文注释：如需记录操作日志，可在此调用后端 API（预留）
-  ElMessage.success('金币总数已更新')
+  try {
+    const resp = await setCoins(v, r)
+    store.setCoins(Number(resp.coins || v))
+    ElMessage.success('金币总数已更新')
+  } catch (e: any) {
+    ElMessage.error(e?.message || '保存失败')
+    return
+  }
   router.back()
 }
 </script>

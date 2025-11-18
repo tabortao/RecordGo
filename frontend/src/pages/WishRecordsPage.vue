@@ -49,6 +49,7 @@ import router from '@/router'
 import { ArrowLeft, List } from '@element-plus/icons-vue'
 import { listWishRecords, listWishes, type WishRecord, type Wish } from '@/services/wishes'
 import { getStaticBase } from '@/services/http'
+import { presignView } from '@/services/storage'
 
 const userId = 1 // 中文注释：示例用户ID
 function goBack() { router.back() }
@@ -72,9 +73,10 @@ async function load() {
 
 function onPageChange(p: number) { page.value = p; load() }
 
-onMounted(load)
+onMounted(async () => { await load(); await resolveIconsForRecords(records.value) })
 
 // 中文注释：解析心愿图标路径（兼容内置 assets 与后端 uploads 相对路径）
+const iconResolvedMap = ref<Record<string,string>>({})
 function resolveIcon(icon?: string) {
   if (!icon) return new URL('../assets/wishs/领取记录.png', import.meta.url).href
   if (/\.(png|jpg|jpeg|webp)$/i.test(icon) && !icon.includes('/')) {
@@ -82,8 +84,12 @@ function resolveIcon(icon?: string) {
   }
   const base = getStaticBase()
   const path = String(icon).replace(/^\/+/, '')
-  // 中文注释：后端将 uploads 映射到 /api/uploads，这里需要补上 /api 前缀
-  return `${base}/api/${path}`
+  if (path.startsWith('uploads/')) return `${base}/api/${path}`
+  return iconResolvedMap.value[path] || new URL('../assets/wishs/领取记录.png', import.meta.url).href
+}
+async function resolveIconsForRecords(list: WishRecord[]) {
+  const targets = list.map((r: any) => String(r?.icon || '')).filter(p => !!p && !p.startsWith('uploads/') && p.includes('/'))
+  await Promise.all(targets.map(async (k) => { try { iconResolvedMap.value[k] = await presignView(k) } catch {} }))
 }
 
 function getIconSrc(r: WishRecord) {

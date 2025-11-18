@@ -119,7 +119,7 @@ func Login(c *gin.Context) {
         // 中文注释：若为子账号，附带当前登录令牌；用于服务端校验令牌是否已刷新
         LoginToken: lt,
         RegisteredClaims: jwt.RegisteredClaims{
-            ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+            ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(cfg.JWTExpireDays) * 24 * time.Hour)),
             IssuedAt:  jwt.NewNumericDate(time.Now()),
         },
     }

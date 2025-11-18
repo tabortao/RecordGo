@@ -69,6 +69,7 @@ import { useAppState } from '@/stores/appState'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
+import { setCoins } from '@/services/coins'
 
 // 中文注释：类型约束，修复模板中“string 不能分配到联合类型”的报错
  type SettingsKey = 'tomato' | 'tasks' | 'reading' | 'subjects' | 'coins' | 'appearance' | 'about'
@@ -124,15 +125,20 @@ function openDialog(k: SettingsKey) {
   else if (k === 'about') showAbout.value = true
 }
 
-function saveCoins() {
+async function saveCoins() {
   const v = Number(newCoins.value ?? coins.value)
   if (isNaN(v) || v < 0) {
     ElMessage.error('请输入有效的金币数量（≥ 0）')
     return
   }
-  // 中文注释：保存到全局状态，任务页“总金币”和心愿页“可用金币”都读取该值
-  store.setCoins(v)
-  ElMessage.success('金币已更新')
+  try {
+    const resp = await setCoins(v, reason.value.trim() || '设置页面修改')
+    store.setCoins(Number(resp.coins || v))
+    ElMessage.success('金币已更新')
+  } catch (e: any) {
+    ElMessage.error(e?.message || '保存失败')
+    return
+  }
   showCoins.value = false
 }
 
