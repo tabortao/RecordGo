@@ -1,0 +1,22 @@
+version: "3.9"
+services:
+  recordgo-server:
+    image: tabortoa/recordgo-server:0.2.0
+    container_name: recordgo-server
+    ports:
+      - "8082:8082"
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      DB_PATH: ${DB_PATH}
+      STORAGE_ROOT: ${STORAGE_ROOT}
+      PORT: ${PORT}
+      GIN_MODE: ${GIN_MODE}
+      PARENT_COINS_SYNC: "true"
+      ALLOW_ORIGINS: ${ALLOW_ORIGINS}
+      JWT_EXPIRE_DAYS: ${JWT_EXPIRE_DAYS}
+      STORAGE_DRIVER: ${STORAGE_DRIVER}
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB}
+      ALLOW_MIME: ${ALLOW_MIME}
+    volumes:
+      - ./storage:/app/storage
+    restart: unless-stopped
