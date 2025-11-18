@@ -251,7 +251,7 @@
     <el-dialog v-model="formVisible" :width="dialogWidth">
       <template #header>
         <div class="flex items-center gap-2">
-          <el-icon class="text-green-600"><Plus /></el-icon>
+          <el-icon class="text-green-600"><CirclePlusFilled /></el-icon>
           <span class="font-semibold">{{ editing ? '编辑任务' : '创建任务' }}</span>
         </div>
       </template>
@@ -486,14 +486,14 @@
       v-if="isParent || canTaskCreate"
       type="success"
       circle
-      class="fixed shadow-lg"
+      class="fixed no-pull"
       :style="{ left: fabPos.x + 'px', top: fabPos.y + 'px' }"
       @mousedown="onFabDown"
-      @touchstart.prevent="onFabTouchStart"
+      @touchstart="onFabTouchStart"
       @click="openCreate"
       title="创建任务"
     >
-      <el-icon :size="46"><Plus /></el-icon>
+      <el-icon :size="46" class="text-white"><CirclePlusFilled/></el-icon>
     </el-button>
 
     <!-- 中文注释：移除旧版任务页悬浮番茄钟，改用新的全局悬浮球（右下角橙色），避免重复显示 -->
@@ -525,7 +525,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { Plus, Clock, List, Coin, Money, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound, Sort, Headset } from '@element-plus/icons-vue'
+import { Plus, Clock, List, Coin, Money, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound, Sort, Headset, CirclePlusFilled } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
@@ -608,11 +608,13 @@ const pulling = ref(false) // 是否正在拉动
 const pullY = ref(0) // 下拉位移
 const startY = ref(0)
 const refreshing = ref(false)
-const pullThreshold = 150
+const pullThreshold = 80
 
 function onTouchStart(e: TouchEvent) {
   // 仅在页面滚动到顶部时允许下拉刷新
   if (window.scrollY > 0) return
+  const target = e.target as HTMLElement
+  if (target && target.closest('.no-pull')) return
   const t = e.touches[0]
   startY.value = t.clientY
   pullY.value = 0
@@ -1487,6 +1489,7 @@ function onFabTouchMove(e: TouchEvent) {
   const t = e.touches[0]
   const dx = t.clientX - pointerStart.x
   const dy = t.clientY - pointerStart.y
+  e.preventDefault()
   fabPos.value = { x: Math.max(8, Math.min(window.innerWidth - 64, fabStart.x + dx)), y: Math.max(8, Math.min(window.innerHeight - 64, fabStart.y + dy)) }
 }
 function onFabTouchEnd() {

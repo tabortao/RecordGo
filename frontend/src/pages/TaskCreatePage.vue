@@ -4,7 +4,7 @@
     <!-- 顶部栏：返回 + 标题 -->
     <div class="flex items-center gap-2">
       <el-icon :size="18" class="cursor-pointer text-gray-600" @click="goBack"><ArrowLeft /></el-icon>
-      <el-icon :size="27" class="text-emerald-600"><Plus /></el-icon>
+      <el-icon :size="27" class="text-emerald-600"><CirclePlusFilled /></el-icon>
       <h2 class="font-semibold">创建任务</h2>
     </div>
 
@@ -129,7 +129,7 @@ import { useTaskCategories } from '@/stores/categories'
 // 中文注释：联动任务分类设置，创建页下拉选项与颜色一致
 const cats = useTaskCategories()
 const categories = computed(() => cats.list())
-import { ArrowLeft, Plus, Edit, List, Clock, Coin } from '@element-plus/icons-vue'
+import { ArrowLeft, Plus, Edit, List, Clock, Coin, CirclePlusFilled } from '@element-plus/icons-vue'
 import router from '@/router'
 import TaskImageUploader from '@/components/TaskImageUploader.vue'
 // 中文注释：补充导入 updateTask，用于在图片上传后写入 image_json，避免未定义错误
