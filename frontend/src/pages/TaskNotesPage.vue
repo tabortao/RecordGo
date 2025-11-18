@@ -26,7 +26,7 @@
               <el-image v-if="att.type==='image'" :src="resolveUrl(att)" :preview-src-list="imageList(n.attachments)" :initial-index="imageIndex(n.attachments, att)" fit="contain" style="width:96px;height:96px;border-radius:8px" />
               <div v-else class="flex items-center gap-2">
                 <el-icon><Microphone /></el-icon>
-                <audio :src="resolveUrl(att)" controls preload="metadata" />
+                <audio :src="resolveUrl(att)" controls preload="none" />
               </div>
             </template>
           </div>
@@ -62,7 +62,7 @@
             <div v-for="(att, idx) in attachments" :key="att.name + idx" class="relative">
               <el-image v-if="att.type==='image'" :src="att.url" :preview-src-list="previewList()" :initial-index="previewIndex(att)" fit="contain" style="width:96px;height:96px;border-radius:8px" />
               <div v-else class="w-[200px]">
-                <audio :src="att.url" controls preload="metadata" class="w-full" />
+                <audio :src="att.url" controls preload="none" class="w-full" />
               </div>
               <el-button size="small" type="danger" class="absolute -top-2 -right-2" @click="removeAttachment(idx)">删除</el-button>
             </div>
@@ -133,7 +133,7 @@ function resolveUrl(att: NoteAttachment) {
     const base = getStaticBase()
     const rel = normalizeUploadPath(att.serverPath)
     if (rel.startsWith('uploads/')) return `${base}/api/${rel}`
-    return resolvedMap.value[rel] || ''
+    return resolvedMap.value[rel] || att.url
   }
   return att.url
 }
