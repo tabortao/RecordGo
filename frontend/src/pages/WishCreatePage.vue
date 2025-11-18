@@ -14,7 +14,7 @@
         <el-form :model="form" label-width="90px">
           <el-form-item label="心愿图标">
             <div class="flex items-center gap-2">
-              <img v-if="form.icon_preview || form.icon" :src="form.icon_preview || resolveIcon(form.icon)" class="w-10 h-10 rounded" @error="onIconError" />
+              <img v-if="form.icon_preview || form.icon" :src="form.icon_preview || iconResolved" class="w-10 h-10 rounded" @error="onIconError" />
               <el-upload :auto-upload="false" :show-file-list="false" accept="image/*" @change="onPickIcon">
                 <el-button type="primary" size="small">选择图片</el-button>
               </el-upload>
@@ -43,11 +43,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed } from 'vue'
+import { reactive, computed, ref, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Plus } from '@element-plus/icons-vue'
 import router from '@/router'
 import { createWish, uploadWishIcon, toWebp, normalizeUploadPath } from '@/services/wishes'
+import { presignView } from '@/services/storage'
 import { getStaticBase } from '@/services/http'
 import { useAuth } from '@/stores/auth'
 
@@ -57,6 +58,21 @@ function goBack() { router.back() }
 
 type WishForm = { user_id: number; name: string; content: string; icon?: string; icon_preview?: string; need_coins: number; exchange_amount: number; unit: string }
 const form = reactive<WishForm>({ user_id: userId.value, name: '', content: '', icon: '', icon_preview: '', need_coins: 1, exchange_amount: 1, unit: '次' })
+const iconResolved = ref('')
+async function updateIconResolved() {
+  const icon = form.icon
+  if (!icon) { iconResolved.value = new URL('../assets/wishs/领取记录.png', import.meta.url).href; return }
+  if (/\.(png|jpg|jpeg|webp)$/i.test(icon) && !icon.includes('/')) {
+    iconResolved.value = new URL(`../assets/wishs/${icon}`, import.meta.url).href
+    return
+  }
+  const base = getStaticBase()
+  const path = normalizeUploadPath(icon)
+  if (path.startsWith('uploads/')) { iconResolved.value = `${base}/api/${path}`; return }
+  try { iconResolved.value = await presignView(path) } catch { iconResolved.value = new URL('../assets/wishs/领取记录.png', import.meta.url).href }
+}
+onMounted(updateIconResolved)
+watch(() => form.icon, async () => { await updateIconResolved() })
 
 async function onPickIcon(fileEvent: any) {
   const raw: File | undefined = fileEvent?.raw || fileEvent?.target?.files?.[0] || fileEvent?.file
@@ -68,6 +84,7 @@ async function onPickIcon(fileEvent: any) {
     form.icon = path
     try { form.icon_preview && URL.revokeObjectURL(form.icon_preview as any) } catch {}
     form.icon_preview = ''
+    await updateIconResolved()
   } catch (e) {
     try { form.icon_preview = URL.createObjectURL(raw) } catch {}
     form.icon = raw.name
@@ -87,16 +104,7 @@ async function submitForm() {
   }
 }
 
-// 中文注释：解析图标路径（与心愿页保持一致），支持内置 assets 与后端 uploads 相对路径
-function resolveIcon(icon?: string) {
-  if (!icon) return new URL('../assets/wishs/领取记录.png', import.meta.url).href
-  if (/\.(png|jpg|jpeg|webp)$/i.test(icon) && !icon.includes('/')) {
-    return new URL(`../assets/wishs/${icon}`, import.meta.url).href
-  }
-  const base = getStaticBase()
-  const path = normalizeUploadPath(icon)
-  return `${base}/api/${path}`
-}
+// 解析已改为 iconResolved（异步字符串），移除旧的 resolveIcon
 
 // 中文注释：上传后预览失败时回退占位图，避免破图
 function onIconError(e: Event) {
