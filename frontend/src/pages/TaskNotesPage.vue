@@ -79,7 +79,7 @@
 
 <script setup lang="ts">
 // 中文注释：任务备注页面逻辑，支持图片压缩为 webp 与音频录音保存为 wav
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useNotesStore, type TaskNote, type NoteAttachment } from '@/stores/notes'
 import { useAuth } from '@/stores/auth'
@@ -108,10 +108,13 @@ const fileInput = ref<HTMLInputElement | null>(null)
 
 // 顶部返回
 function goBack() { router.back() }
-onMounted(async () => { await resolveServerPaths(existingNotes.value) })
 
 // 历史备注
 const existingNotes = computed(() => store.list(taskId))
+onMounted(async () => { await resolveServerPaths(existingNotes.value) })
+watch(() => JSON.stringify(existingNotes.value.map(n => (n.attachments||[]).map(a => a.serverPath || '').join(','))), async () => {
+  await resolveServerPaths(existingNotes.value)
+})
 const resolvedMap = ref<Record<string,string>>({})
 async function resolveServerPaths(notes: TaskNote[]) {
   const keys: string[] = []
@@ -315,6 +318,7 @@ async function saveNote() {
     created_at: new Date().toISOString()
   }
   store.add(note)
+  try { await resolveServerPaths([note]) } catch {}
   noteText.value = ''
   attachments.value = []
   ElMessage.success('备注已保存')
