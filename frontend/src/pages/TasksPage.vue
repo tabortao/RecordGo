@@ -17,7 +17,7 @@
                 <el-dropdown-item command="noop" class="font-semibold" style="pointer-events: none; cursor: default">切换用户</el-dropdown-item>
                 <el-dropdown-item v-for="acc in auth.accounts" :key="acc.user.id" :command="'switch:' + acc.user.id">
                   <div class="flex items-center gap-2">
-                    <el-avatar :size="24" :src="resolveAvatarUrl(acc.user.avatar_path)" />
+                    <el-avatar :size="24" :src="accountAvatarSrc(acc.user)" />
                     <span>{{ (acc.user.nickname || '').trim() || acc.user.username }}</span>
                     <el-icon v-if="auth.user?.id === acc.user.id" :size="16" style="color:#22c55e"><CircleCheck /></el-icon>
                   </div>
@@ -793,15 +793,41 @@ const sortedTasks = computed(() => {
 // 中文注释：按分类分组，便于移动端展示与筛选
 
 // 中文注释：解析头像地址（与“我的”页一致，仅当包含 uploads/ 或完整 URL 时使用后端路径）
-function resolveAvatarUrl(p?: string | null) {
-  if (!p) return defaultAvatar
+const tasksAvatarSrc = ref<string>(defaultAvatar)
+async function updateTasksAvatar() {
+  const p = auth.user?.avatar_path
+  if (!p) { tasksAvatarSrc.value = defaultAvatar; return }
   const s = String(p)
-  if (/^https?:\/\//i.test(s)) return s
-  if (!/uploads\//i.test(s)) return defaultAvatar
+  if (/storage\/images\/avatars\/default\.png$/i.test(s) || /(^|\/)default\.png$/i.test(s)) { tasksAvatarSrc.value = defaultAvatar; return }
+  if (/^https?:\/\//i.test(s)) { tasksAvatarSrc.value = s; return }
   const base = getStaticBase()
-  return `${base}/api/${s.replace(/^\/+/, '')}`
+  if (/uploads\//i.test(s)) { tasksAvatarSrc.value = `${base}/api/${s.replace(/^\/+/, '')}`; return }
+  try { tasksAvatarSrc.value = await presignView(s) } catch { tasksAvatarSrc.value = defaultAvatar }
 }
-const tasksAvatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))
+onMounted(updateTasksAvatar)
+watch(() => auth.user?.avatar_path, () => { updateTasksAvatar() })
+
+const accountsAvatarMap = ref<Record<number,string>>({})
+async function resolveAccountsAvatars(list: { user: { id: number, avatar_path?: string|null } }[]) {
+  const base = getStaticBase()
+  for (const a of list) {
+    const p = a.user?.avatar_path
+    const s = String(p || '')
+    if (!s) { accountsAvatarMap.value[a.user.id] = defaultAvatar; continue }
+    if (/^https?:\/\//i.test(s)) { accountsAvatarMap.value[a.user.id] = s; continue }
+    if (/uploads\//i.test(s)) { accountsAvatarMap.value[a.user.id] = `${base}/api/${s.replace(/^\/+/, '')}`; continue }
+    try { accountsAvatarMap.value[a.user.id] = await presignView(s) } catch { accountsAvatarMap.value[a.user.id] = defaultAvatar }
+  }
+}
+function accountAvatarSrc(u: { id: number, avatar_path?: string|null }) {
+  const s = String(u?.avatar_path || '')
+  if (/storage\/images\/avatars\/default\.png$/i.test(s) || /(^|\/)default\.png$/i.test(s)) return defaultAvatar
+  if (/^https?:\/\//i.test(s)) return s
+  if (/uploads\//i.test(s)) return `${getStaticBase()}/api/${s.replace(/^\/+/, '')}`
+  return accountsAvatarMap.value[u.id] || defaultAvatar
+}
+onMounted(async () => { await resolveAccountsAvatars(auth.accounts || []) })
+watch(() => auth.accounts.map(a => a.user.id + ':' + (a.user.avatar_path || '')), async () => { await resolveAccountsAvatars(auth.accounts || []) })
 const addUserVisible = ref(false)
 const addUserName = ref('')
 const addUserPassword = ref('')

@@ -68,8 +68,8 @@ onMounted(async () => {
 async function onPickIcon(fileEvent: any) {
   const raw: File | undefined = fileEvent?.raw || fileEvent?.target?.files?.[0] || fileEvent?.file
   if (!raw) return
-  try { form.icon_preview = URL.createObjectURL(raw) } catch {}
   const webp = await toWebp(raw)
+  try { form.icon_preview = URL.createObjectURL(webp) } catch {}
   try {
     const { path } = await uploadWishIcon(userId, webp)
     form.icon = normalizeUploadPath(path)
@@ -77,6 +77,7 @@ async function onPickIcon(fileEvent: any) {
     form.icon_preview = ''
   } catch (e) {
     // 失败则保留预览，不更新服务器路径
+    try { form.icon_preview = URL.createObjectURL(raw) } catch {}
   }
 }
 

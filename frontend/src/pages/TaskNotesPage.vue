@@ -91,6 +91,7 @@ import { speak } from '@/utils/speech'
 import { useAppState } from '@/stores/appState'
 import { ElMessage } from 'element-plus'
 import { getStaticBase } from '@/services/http'
+import { presignView } from '@/services/storage'
 
 const route = useRoute()
 const router = useRouter()
@@ -107,22 +108,35 @@ const fileInput = ref<HTMLInputElement | null>(null)
 
 // 顶部返回
 function goBack() { router.back() }
+onMounted(async () => { await resolveServerPaths(existingNotes.value) })
 
 // 历史备注
 const existingNotes = computed(() => store.list(taskId))
+const resolvedMap = ref<Record<string,string>>({})
+async function resolveServerPaths(notes: TaskNote[]) {
+  const keys: string[] = []
+  for (const n of notes) {
+    for (const a of n.attachments) {
+      const p = normalizeUploadPath(a.serverPath || '')
+      if (p && !p.startsWith('uploads/')) keys.push(p)
+    }
+  }
+  const uniques = Array.from(new Set(keys))
+  await Promise.all(uniques.map(async (k) => { try { resolvedMap.value[k] = await presignView(k) } catch {} }))
+}
 
 function resolveUrl(att: NoteAttachment) {
-  // 若有后端相对路径则转为可访问的静态资源完整地址（含基址）
   if (att.serverPath) {
     const base = getStaticBase()
     const rel = normalizeUploadPath(att.serverPath)
-    return `${base}/api/${rel}`
+    if (rel.startsWith('uploads/')) return `${base}/api/${rel}`
+    return resolvedMap.value[rel] || ''
   }
   return att.url
 }
 
 function imageList(atts: NoteAttachment[]): string[] {
-  return atts.filter(a => a.type==='image').map(a => resolveUrl(a))
+  return atts.filter(a => a.type==='image').map(a => resolveUrl(a)).filter(Boolean)
 }
 
 function imageIndex(atts: NoteAttachment[], att: NoteAttachment): number {

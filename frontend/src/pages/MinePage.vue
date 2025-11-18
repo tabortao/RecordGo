@@ -105,29 +105,20 @@ const displayId = computed(() => {
   return String(u.id).padStart(6, '0')
 })
 
-// 中文注释：头像地址优先使用用户头像路径，未设置则用默认头像
-// 中文注释：头像地址解析——支持完整 URL；后端返回的相对路径（如 uploads/images/avatars/...）统一加上 /api 前缀通过 Vite 代理
-const avatarSrc = computed(() => {
+// 中文注释：头像展示地址，支持 uploads 相对路径与 S3 对象键
+const avatarSrc = ref<string>(defaultAvatar)
+async function updateAvatar() {
   const p = auth.user?.avatar_path
-  if (!p) return defaultAvatar
+  if (!p) { avatarSrc.value = defaultAvatar; return }
   const s = String(p)
-  if (/^https?:\/\//i.test(s)) return s
+  if (/storage\/images\/avatars\/default\.png$/i.test(s) || /(^|\/)default\.png$/i.test(s)) { avatarSrc.value = defaultAvatar; return }
+  if (/^https?:\/\//i.test(s)) { avatarSrc.value = s; return }
   const base = getStaticBase()
-  if (/uploads\//i.test(s)) return `${base}/api/${s.replace(/^\/+/, '')}`
-  return ''
-})
-
-onMounted(async () => {
-  if (!avatarSrc.value) {
-    const p = auth.user?.avatar_path
-    if (p) {
-      try {
-        const url = await presignView(String(p))
-        ;(avatarSrc as any).value = url
-      } catch {}
-    }
-  }
-})
+  if (/uploads\//i.test(s)) { avatarSrc.value = `${base}/api/${s.replace(/^\/+/, '')}`; return }
+  try { avatarSrc.value = await presignView(s) } catch { avatarSrc.value = defaultAvatar }
+}
+onMounted(updateAvatar)
+watch(() => auth.user?.avatar_path, () => { updateAvatar() })
 
 // 中文注释：编辑个人信息改为独立页面，移除弹窗相关状态与函数
 

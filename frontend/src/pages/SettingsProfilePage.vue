@@ -65,21 +65,24 @@ import { Edit, ArrowLeft } from '@element-plus/icons-vue'
 import router from '@/router'
 import defaultAvatar from '@/assets/avatars/default.png'
 import { getStaticBase } from '@/services/http'
+import { presignView } from '@/services/storage'
 import { prepareUpload } from '@/utils/image'
 
 const auth = useAuth()
 
-function resolveAvatarUrl(p?: string | null) {
-  if (!p) return defaultAvatar
+const avatarSrc = ref<string>(defaultAvatar)
+async function updateAvatarSrc() {
+  const p = auth.user?.avatar_path
+  if (!p) { avatarSrc.value = defaultAvatar; return }
   const s = String(p)
-  if (/^https?:\/\//i.test(s)) return s
-  if (!/uploads\//i.test(s)) return defaultAvatar
-  // 中文注释：为相对路径拼接后端基址与 /api 前缀；在 Docker 环境下确保跨域访问正常
+  if (/storage\/images\/avatars\/default\.png$/i.test(s) || /(^|\/)default\.png$/i.test(s)) { avatarSrc.value = defaultAvatar; return }
+  if (/^https?:\/\//i.test(s)) { avatarSrc.value = s; return }
   const base = getStaticBase()
-  return `${base}/api/${s.replace(/^\/+/, '')}`
+  if (/uploads\//i.test(s)) { avatarSrc.value = `${base}/api/${s.replace(/^\/+/, '')}`; return }
+  try { avatarSrc.value = await presignView(s) } catch { avatarSrc.value = defaultAvatar }
 }
-
-const avatarSrc = computed(() => resolveAvatarUrl(auth.user?.avatar_path))
+onMounted(updateAvatarSrc)
+watch(() => auth.user?.avatar_path, () => { updateAvatarSrc() })
 
 // 字段状态
 const editNickname = ref(auth.user?.nickname || '')

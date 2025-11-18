@@ -61,14 +61,15 @@ const form = reactive<WishForm>({ user_id: userId.value, name: '', content: '', 
 async function onPickIcon(fileEvent: any) {
   const raw: File | undefined = fileEvent?.raw || fileEvent?.target?.files?.[0] || fileEvent?.file
   if (!raw) return
-  try { form.icon_preview = URL.createObjectURL(raw) } catch {}
   const webp = await toWebp(raw)
+  try { form.icon_preview = URL.createObjectURL(webp) } catch {}
   try {
     const { path } = await uploadWishIcon(userId.value, webp)
     form.icon = path
     try { form.icon_preview && URL.revokeObjectURL(form.icon_preview as any) } catch {}
     form.icon_preview = ''
   } catch (e) {
+    try { form.icon_preview = URL.createObjectURL(raw) } catch {}
     form.icon = raw.name
   }
 }
