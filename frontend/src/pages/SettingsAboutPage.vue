@@ -22,24 +22,24 @@
       <!-- 中文注释：移动端单列、平板/桌面两列并排 -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <!-- 关注小红书 -->
-        <button class="w-full flex items-center justify-between px-3 py-3 rounded-lg border hover:bg-gray-50 transition"
+        <button class="w-full flex items-center justify-between px-3 py-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                 :disabled="!xhsUrl"
                 @click="openXHS">
           <div class="flex items-center gap-3">
             <el-icon :size="18" style="color:#ef4444"><Link /></el-icon>
-            <span class="text-gray-800">关注小红书</span>
+            <span class="text-gray-800 dark:text-gray-200">关注小红书</span>
           </div>
-          <el-icon :size="18" style="color:#cbd5e1"><ArrowRight /></el-icon>
+          <el-icon :size="18" class="text-gray-500 dark:text-gray-400"><ArrowRight /></el-icon>
         </button>
 
         <!-- 邮件联系 -->
-        <button class="w-full flex items-center justify-between px-3 py-3 rounded-lg border hover:bg-gray-50 transition"
+        <button class="w-full flex items-center justify-between px-3 py-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                 @click="openMail">
           <div class="flex items-center gap-3">
             <el-icon :size="18" style="color:#0ea5e9"><Message /></el-icon>
-            <span class="text-gray-800">邮件联系</span>
+            <span class="text-gray-800 dark:text-gray-200">邮件联系</span>
           </div>
-          <el-icon :size="18" style="color:#cbd5e1"><ArrowRight /></el-icon>
+          <el-icon :size="18" class="text-gray-500 dark:text-gray-400"><ArrowRight /></el-icon>
         </button>
       </div>
     </el-card>
