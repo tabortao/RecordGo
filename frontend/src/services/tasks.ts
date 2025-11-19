@@ -75,7 +75,7 @@ export async function uploadTaskImage(
   taskId: number,
   onProgress?: (percentage: number) => void
 ): Promise<{ path: string }> {
-  const webp = await prepareUpload(file)
+  const webp = await prepareUpload(file, 0.75)
   const sign = await presignUpload({ resource_type: 'task_image', user_id: userId, task_id: taskId, content_type: 'image/webp', ext: 'webp' })
   await putToURL(sign.upload_url, webp, sign.headers, onProgress)
   return { path: sign.object_key }
@@ -86,6 +86,105 @@ export async function uploadTaskImage(
 export async function deleteTaskImage(taskId: number, path: string): Promise<{ images: string[] }> {
   // Axios 的 delete 支持 data 字段传递 JSON 请求体
   return (await http.delete(`/tasks/${taskId}/image`, { data: { path } })) as any
+}
+
+const OFFLINE_KEY = 'recordgo_offline_tasks'
+type OfflineCreateEntry = {
+  name: string
+  description: string
+  category: string
+  score: number
+  plan_minutes: number
+  start_date: string
+  end_date?: string
+  repeat_type: 'none'|'daily'|'weekdays'|'weekly'|'monthly'
+  weekly_days: number[]
+  images: { name: string; type: string; dataURL: string }[]
+}
+
+function readOfflineQueue(): OfflineCreateEntry[] {
+  try {
+    const raw = localStorage.getItem(OFFLINE_KEY) || '[]'
+    const arr = JSON.parse(raw)
+    return Array.isArray(arr) ? arr : []
+  } catch { return [] }
+}
+function writeOfflineQueue(arr: OfflineCreateEntry[]) {
+  try { localStorage.setItem(OFFLINE_KEY, JSON.stringify(arr)) } catch {}
+}
+export function enqueueOfflineTask(entry: OfflineCreateEntry) {
+  const arr = readOfflineQueue()
+  arr.push(entry)
+  writeOfflineQueue(arr)
+}
+function dataURLToFile(dataURL: string, name: string, type: string): File {
+  const arr = dataURL.split(',')
+  const bstr = atob(arr[1] || '')
+  const len = bstr.length
+  const u8 = new Uint8Array(len)
+  for (let i = 0; i < len; i++) u8[i] = bstr.charCodeAt(i)
+  return new File([u8], name, { type })
+}
+export async function syncOfflineTasks(userId: number): Promise<{ synced: number }> {
+  const queue = readOfflineQueue()
+  if (!queue.length) return { synced: 0 }
+  let synced = 0
+  const rest: OfflineCreateEntry[] = []
+  for (const q of queue) {
+    try {
+      const s = new Date(q.start_date)
+      const e = q.end_date ? new Date(q.end_date) : undefined
+      const dates: Date[] = []
+      if (!e || q.repeat_type === 'none') {
+        dates.push(s)
+      } else {
+        let d = new Date(s)
+        if (q.repeat_type === 'daily') {
+          while (d <= (e as Date)) { dates.push(new Date(d)); d.setDate(d.getDate()+1) }
+        } else if (q.repeat_type === 'weekdays') {
+          while (d <= (e as Date)) { const w = d.getDay(); if (w>=1&&w<=5) dates.push(new Date(d)); d.setDate(d.getDate()+1) }
+        } else if (q.repeat_type === 'weekly') {
+          const set = new Set(q.weekly_days && q.weekly_days.length ? q.weekly_days : [((s.getDay()||7))])
+          while (d <= (e as Date)) { const w = d.getDay()===0?7:d.getDay(); if (set.has(w)) dates.push(new Date(d)); d.setDate(d.getDate()+1) }
+        } else if (q.repeat_type === 'monthly') {
+          const dom = s.getDate()
+          const cur = new Date(s)
+          while (cur <= (e as Date)) { const cand = new Date(cur.getFullYear(), cur.getMonth(), dom); if (cand.getMonth()===cur.getMonth() && cand <= (e as Date)) dates.push(cand); cur.setMonth(cur.getMonth()+1) }
+        }
+      }
+      const created: TaskItem[] = []
+      for (const d of dates) {
+        const t = await createTask({
+          user_id: userId,
+          name: q.name,
+          description: q.description,
+          category: q.category,
+          score: q.score,
+          plan_minutes: q.plan_minutes,
+          start_date: d,
+          end_date: undefined
+        })
+        created.push(t)
+      }
+      if (q.images && q.images.length) {
+        for (const t of created) {
+          const paths: string[] = []
+          for (const img of q.images) {
+            const file = dataURLToFile(img.dataURL, img.name, img.type)
+            const webp = await prepareUpload(file, 0.75)
+            const { path } = await uploadTaskImage(userId, webp, t.id)
+            paths.push(path)
+          }
+          if (paths.length) await updateTask(t.id, { image_json: JSON.stringify(paths) })
+        }
+      }
+      synced++
+    } catch {
+      rest.push(q)
+    }
+  }
+  writeOfflineQueue(rest)
+  return { synced }
 }
 
 // 上传任务音频（wav/mp3），保存到与图片相同的目录

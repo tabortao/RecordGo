@@ -75,6 +75,7 @@ async function onPicked(e: Event) {
     ElMessage.warning(`最多选择${props.limit ?? 6}张，已为你截取前${remain}张`)
   }
   const pick = files.slice(0, Math.max(0, remain))
+  if (pick.length >= 3) { try { ElMessage.info('已选择多张图片，正在压缩与上传，请稍候') } catch {} }
 
   for (const f of pick) {
     // 大小限制：< 5MB（与后端一致）
@@ -83,7 +84,7 @@ async function onPicked(e: Event) {
       continue
     }
     try {
-      const webp = await prepareUpload(f)
+      const webp = await prepareUpload(f, 0.7)
       const url = URL.createObjectURL(webp)
       if (props.editing) {
         // 编辑模式：立即上传，显示进度

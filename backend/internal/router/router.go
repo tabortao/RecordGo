@@ -109,6 +109,10 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         // 中文注释：金币查询（返回当前登录用户的有效金币，父子同步时返回父账号金币）
         api.GET("/coins", handlers.GetCoins)
         api.POST("/coins/set", handlers.SetCoins)
+
+        api.GET("/task-categories", handlers.ListTaskCategories)
+        api.PUT("/task-categories", handlers.PutTaskCategories)
+        api.PATCH("/task-categories/order", handlers.PatchTaskCategoryOrder)
     }
 
     r.PUT("/api/storage/put", handlers.StoragePut)

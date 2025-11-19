@@ -1,6 +1,6 @@
 <template>
   <!-- 中文注释：任务页面，包含统计、列表、创建/编辑、批量删除、番茄钟功能；支持下拉刷新 -->
-  <div class="pull-refresh-wrapper" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd">
+  <div ref="wrapperRef" class="pull-refresh-wrapper" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd" @touchcancel="onTouchCancel" style="overscroll-behavior-y: contain; touch-action: pan-y;">
     <!-- 下拉刷新指示器（固定在顶部），拉动或刷新时淡入显示） -->
     <div class="fixed top-0 left-0 right-0 flex justify-center pointer-events-none" :style="{ opacity: (pullY>10||refreshing)?1:0 }">
       <div class="mt-2 text-xs text-gray-500 bg-white/80 rounded px-2 py-1 shadow">{{ refreshing ? '正在刷新...' : '下拉刷新' }}</div>
@@ -392,7 +392,7 @@
               <span>截止日期</span>
             </div>
           </template>
-          <el-date-picker v-model="form.end_date" type="date" style="width: 100%" />
+          <el-date-picker v-model="form.end_date" type="date" style="width: 100%" :disabled="form.repeat_type==='none'" />
         </el-form-item>
 
         
@@ -538,7 +538,7 @@ import TaskImageUploader from '@/components/TaskImageUploader.vue'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 dayjs.extend(utc)
-import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, uploadTaskImage, batchDelete, type TaskItem } from '@/services/tasks'
+import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, uploadTaskImage, batchDelete, type TaskItem, syncOfflineTasks } from '@/services/tasks'
 import { normalizeUploadPath } from '@/services/wishes'
 import { Picture } from '@element-plus/icons-vue'
 import { prepareUpload } from '@/utils/image'
@@ -604,15 +604,17 @@ const categoriesForDay = computed(() => {
 })
 
 // ===== 下拉刷新逻辑（移动端触摸） =====
-const pulling = ref(false) // 是否正在拉动
-const pullY = ref(0) // 下拉位移
+const pulling = ref(false)
+const pullY = ref(0)
 const startY = ref(0)
 const refreshing = ref(false)
 const pullThreshold = 80
+const wrapperRef = ref<HTMLElement | null>(null)
 
 function onTouchStart(e: TouchEvent) {
   // 仅在页面滚动到顶部时允许下拉刷新
-  if (window.scrollY > 0) return
+  const top = (document.scrollingElement?.scrollTop || window.scrollY || document.documentElement.scrollTop || 0)
+  if (top > 0) return
   const target = e.target as HTMLElement
   if (target && target.closest('.no-pull')) return
   const t = e.touches[0]
@@ -632,6 +634,11 @@ function onTouchMove(e: TouchEvent) {
   } else {
     pullY.value = 0
   }
+}
+
+function onTouchCancel() {
+  pulling.value = false
+  pullY.value = 0
 }
 
 async function onTouchEnd() {
@@ -1357,16 +1364,16 @@ async function onTomatoComplete(seconds?: number) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  try { await syncOfflineTasks(userId.value) } catch {}
   fetchTasks()
   const updateMobile = () => { isMobile.value = window.innerWidth < 768 }
   updateMobile()
   window.addEventListener('resize', updateMobile)
   initFab()
-})
-
-watch(userId, async () => {
-  await fetchTasks()
+  if (wrapperRef.value) {
+    wrapperRef.value.addEventListener('touchmove', onTouchMove as any, { passive: false })
+  }
 })
 
 // 菜单命令统一处理

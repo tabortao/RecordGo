@@ -30,12 +30,11 @@ function replaceExt(name: string, ext: string): string {
 }
 
 // 中文注释：示例上传流程（调用接口前转换 webp）
-export async function prepareUpload(file: File): Promise<File> {
+export async function prepareUpload(file: File, quality = 0.8): Promise<File> {
   try {
-    const webp = await toWebp(file)
+    const webp = await toWebp(file, quality)
     return webp
   } catch {
-    // 转换失败回退原文件
     return file
   }
 }

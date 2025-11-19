@@ -105,7 +105,7 @@
             <template #label>
               <div class="flex items-center gap-1"><el-icon><Clock /></el-icon><span>截止日期</span></div>
             </template>
-            <el-date-picker v-model="form.end_date" type="date" :editable="false" :clearable="false" />
+            <el-date-picker v-model="form.end_date" type="date" :editable="false" :clearable="false" :disabled="form.repeat_type==='none'" />
           </el-form-item>
         </el-form>
       </el-card>
@@ -133,7 +133,7 @@ import { ArrowLeft, Plus, Edit, List, Clock, Coin, CirclePlusFilled } from '@ele
 import router from '@/router'
 import TaskImageUploader from '@/components/TaskImageUploader.vue'
 // 中文注释：补充导入 updateTask，用于在图片上传后写入 image_json，避免未定义错误
-import { createTask, uploadTaskImage, updateTask } from '@/services/tasks'
+import { createTask, uploadTaskImage, updateTask, enqueueOfflineTask } from '@/services/tasks'
 import { prepareUpload } from '@/utils/image'
 import dayjs from 'dayjs'
 
@@ -170,10 +170,8 @@ const rules = {
 
 async function submitForm() {
   try {
-    // 中文注释：先创建任务，再上传本地图片，并更新 image_json
     const start = new Date(form.start_date)
     const end = form.end_date ? new Date(form.end_date) : undefined
-    // 中文注释：生成重复发生日期；若未设置重复或没有截止日期，则只创建一个实例
     const dates = (() => {
       const out: Date[] = []
       if (!end || form.repeat_type === 'none') return [start]
@@ -185,7 +183,6 @@ async function submitForm() {
       } else if (form.repeat_type === 'weekdays') {
         let d = s.clone(); while (!d.isAfter(e)) { const w = d.day(); if (w>=1 && w<=5) out.push(d.toDate()); d = d.add(1,'day') }
       } else if (form.repeat_type === 'weekly') {
-        // 中文注释：若未选择星期，默认使用开始日期对应的星期
         const dow = s.day()===0?7:s.day()
         const set = new Set((form.weekly_days && form.weekly_days.length>0) ? form.weekly_days : [dow])
         let d = s.clone(); while (!d.isAfter(e)) { const w = d.day()===0?7:d.day(); if (set.has(w)) out.push(d.toDate()); d = d.add(1,'day') }
@@ -207,28 +204,54 @@ async function submitForm() {
         start_date: d,
         end_date: undefined
       })
-      // 中文注释：为每个实例上传图片，并更新 image_json
       if ((form.local_images || []).length > 0) {
         const paths: string[] = []
-        for (const f of form.local_images) {
-          try {
-            const webp = await prepareUpload(f as File)
-            const { path } = await uploadTaskImage(userId, webp, t.id)
-            paths.push(path)
-          } catch (err: any) {
-            console.error('上传任务图片失败', { task_id: t.id, filename: (f as File)?.name, message: err?.message || err })
-          }
+        const files = [...form.local_images]
+        const limit = 3
+        for (let i = 0; i < files.length; i += limit) {
+          const chunk = files.slice(i, i + limit)
+          const results = await Promise.all(chunk.map(async (f: any) => {
+            try {
+              const webp = await prepareUpload(f as File, 0.75)
+              const { path } = await uploadTaskImage(userId, webp, t.id)
+              return path
+            } catch (_) { return '' }
+          }))
+          for (const p of results) { if (p) paths.push(p) }
         }
-        if (paths.length > 0) {
-          try { await updateTask(t.id, { image_json: JSON.stringify(paths) }) } catch {}
-        }
+        if (paths.length > 0) { try { await updateTask(t.id, { image_json: JSON.stringify(paths) }) } catch {} }
       }
       created.push(t.id)
     }
     ElMessage.success(`创建成功${created.length>1?`（${created.length}条）`:''}`)
     router.back()
   } catch (e: any) {
-    ElMessage.error(e.message || '创建失败')
+    try {
+      const images: { name: string; type: string; dataURL: string }[] = []
+      for (const f of form.local_images) {
+        const reader = new FileReader()
+        await new Promise<void>((resolve) => {
+          reader.onload = () => { images.push({ name: (f as any).name || 'image.webp', type: 'image/webp', dataURL: String(reader.result || '') }); resolve() }
+          reader.readAsDataURL(f as any)
+        })
+      }
+      enqueueOfflineTask({
+        name: form.name,
+        description: form.description,
+        category: form.category,
+        score: form.score,
+        plan_minutes: form.plan_minutes,
+        start_date: new Date(form.start_date).toISOString(),
+        end_date: form.end_date ? new Date(form.end_date).toISOString() : undefined,
+        repeat_type: form.repeat_type,
+        weekly_days: form.weekly_days || [],
+        images
+      })
+      ElMessage.success('网络异常，任务已保存到本地，恢复网络后将自动同步')
+      router.back()
+    } catch {
+      ElMessage.error(e.message || '创建失败')
+    }
   }
 }
 </script>
