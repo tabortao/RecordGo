@@ -114,6 +114,10 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         api.GET("/task-categories", handlers.ListTaskCategories)
         api.PUT("/task-categories", handlers.PutTaskCategories)
         api.PATCH("/task-categories/order", handlers.PatchTaskCategoryOrder)
+
+        api.GET("/tasks/occurrences", handlers.ListTaskOccurrences)
+        api.POST("/tasks/:id/occurrences/complete", handlers.CompleteTaskOccurrence)
+        api.POST("/tasks/:id/occurrences/uncomplete", handlers.UncompleteTaskOccurrence)
     }
 
     r.PUT("/api/storage/put", handlers.StoragePut)

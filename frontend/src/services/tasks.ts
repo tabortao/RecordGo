@@ -71,6 +71,16 @@ export async function completeTomato(id: number, minutes = 25): Promise<TaskItem
   return (await http.post(`/tasks/${id}/tomato/complete`, { minutes })) as any
 }
 
+export async function listTaskOccurrences(params: { date?: string; start?: string; end?: string }): Promise<{ items: { task_id: number, date: string, status: number, minutes: number }[] }> {
+  return (await http.get('/tasks/occurrences', { params })) as any
+}
+export async function completeOccurrence(id: number, payload: { date: string; minutes?: number }): Promise<{ task_id: number, date: string, status: number, minutes: number }> {
+  return (await http.post(`/tasks/${id}/occurrences/complete`, payload)) as any
+}
+export async function uncompleteOccurrence(id: number, payload: { date: string }): Promise<{ task_id: number, date: string, status: number }> {
+  return (await http.post(`/tasks/${id}/occurrences/uncomplete`, payload)) as any
+}
+
 // 上传任务图片（前端已转换为 webp）
 // 中文注释：后端返回 { path }，相对路径 uploads/images/task_images/{用户id}/xxx.webp
 export async function uploadTaskImage(

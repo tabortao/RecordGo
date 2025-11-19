@@ -163,8 +163,8 @@
             <div class="absolute left-2 top-1/2 -translate-y-1/2">
               <div
                 class="w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer"
-                :class="t.status===2 ? 'bg-green-500 border-green-500 text-white' : 'border-gray-400 dark:border-gray-500 text-gray-400 dark:text-gray-500'"
-                @click="() => onCheckComplete(t, t.status !== 2)"
+                :class="isCompletedOnSelected(t) ? 'bg-green-500 border-green-500 text-white' : 'border-gray-400 dark:border-gray-500 text-gray-400 dark:text-gray-500'"
+                @click="() => onCheckComplete(t, !isCompletedOnSelected(t))"
                 title="点击切换完成状态"
               >
                 <el-icon :size="12">
@@ -176,7 +176,7 @@
             <div class="flex items-center justify-between pl-9">
               <div class="flex items-center gap-2">
                 <!-- 中文注释：番茄钟图标仅在未完成时显示，位于右侧“待完成”标签左侧，此处移除 -->
-                <div class="font-semibold text-left" :class="{'text-gray-500': t.status === 2}">{{ t.name }}</div>
+                <div class="font-semibold text-left" :class="{'text-gray-500': isCompletedOnSelected(t)}">{{ t.name }}</div>
               </div>
               <div class="flex items-center gap-1">
                 <!-- 中文注释：图片查看入口移动到“实际完成时间”左侧，避免顶部拥挤 -->
@@ -538,7 +538,7 @@ import TaskImageUploader from '@/components/TaskImageUploader.vue'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 dayjs.extend(utc)
-import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, uploadTaskImage, batchDelete, type TaskItem, syncOfflineTasks } from '@/services/tasks'
+import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, uploadTaskImage, batchDelete, type TaskItem, syncOfflineTasks, listTaskOccurrences, completeOccurrence, uncompleteOccurrence } from '@/services/tasks'
 import { normalizeUploadPath } from '@/services/wishes'
 import { Picture } from '@element-plus/icons-vue'
 import { prepareUpload } from '@/utils/image'
@@ -559,8 +559,8 @@ function categoryColor(name: string) { return cats.colorOf(name) }
 // 中文注释：按日期与完成筛选得到当日可见任务（不含分类筛选），用于动态生成分类筛选项
 const dateStatusFilteredTasks = computed(() => {
   let result = tasks.value
-  if (filter.value === '已完成') result = result.filter((t) => t.status === 2)
-  else if (filter.value === '待完成') result = result.filter((t) => t.status !== 2)
+  if (filter.value === '已完成') result = result.filter((t) => isCompletedOnSelected(t))
+  else if (filter.value === '待完成') result = result.filter((t) => !isCompletedOnSelected(t))
   const selKey = dayjs(selectedDate.value).format('YYYY-MM-DD')
   result = result.filter((t) => {
     const sDate = t.start_date ? dayjs(t.start_date).toDate() : null
@@ -659,11 +659,20 @@ async function onTouchEnd() {
 const store = useAppState()
 // 中文注释：总金币改为直接读取全局 store.coins（由后端任务完成/取消与心愿兑换实时更新），与心愿页保持一致
 const totalCoins = computed(() => store.coins)
+const occurMap = ref<Record<number, { status: number; minutes?: number }>>({})
+function isRepeatTask(t: TaskItem) {
+  const rep = String((t as any).repeat || 'none').toLowerCase()
+  return !/^(none|无|)$/i.test(rep)
+}
+function isCompletedOnSelected(t: TaskItem) {
+  if (isRepeatTask(t)) return (occurMap.value[t.id]?.status || 0) === 2
+  return t.status === 2
+}
 const completedTasksCount = computed(() => {
-  return filteredTasks.value.filter(t => t.status === 2).length
+  return filteredTasks.value.filter((t) => isCompletedOnSelected(t)).length
 })
 const dayCoins = computed(() => {
-  return filteredTasks.value.filter((t) => t.status === 2).reduce((sum, t) => sum + (t.score || 0), 0)
+  return filteredTasks.value.filter((t) => isCompletedOnSelected(t)).reduce((sum, t) => sum + (t.score || 0), 0)
 })
 
 // 中文注释：朗读任务内容（格式："{任务分类}，{任务标题}，备注：{任务描述}"）
@@ -785,7 +794,9 @@ const sortedTasks = computed(() => {
     return byDateAsc(a, b)
   }
   const byCompletedFirst = (a: TaskItem, b: TaskItem) => {
-    if ((a.status === 2) !== (b.status === 2)) return a.status === 2 ? -1 : 1
+    const ac = isCompletedOnSelected(a)
+    const bc = isCompletedOnSelected(b)
+    if (ac !== bc) return ac ? -1 : 1
     return byDateAsc(a, b)
   }
   const byAddedTime = (a: TaskItem, b: TaskItem) => {
@@ -1144,18 +1155,32 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
     if (checked) {
       // 中文注释：勾选为完成：按计划时长计入实际，并标记为已完成
       const planM = t.plan_minutes || 20
-      await updateTask(t.id, { actual_minutes: planM })
-      await updateTaskStatus(t.id, 2)
-      t.status = 2
-      t.actual_minutes = (t.actual_minutes || 0) + planM
-      actualSecondsLocal[t.id] = planM * 60
-      ElMessage.success('已标记为完成（按计划时长计）')
+      const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
+      if (isRepeatTask(t)) {
+        await completeOccurrence(t.id, { date: dateStr, minutes: planM })
+        occurMap.value[t.id] = { status: 2, minutes: planM }
+        ElMessage.success('已标记为当次完成')
+      } else {
+        await updateTask(t.id, { actual_minutes: planM })
+        await updateTaskStatus(t.id, 2)
+        t.status = 2
+        t.actual_minutes = (t.actual_minutes || 0) + planM
+        actualSecondsLocal[t.id] = planM * 60
+        ElMessage.success('已标记为完成（按计划时长计）')
+      }
       celebrate(t.id)
     } else {
       // 中文注释：取消完成：标记为未完成，并从日金币与总金币中扣除该任务金币
-      await updateTaskStatus(t.id, 0)
-      t.status = 0
-      ElMessage.success('已取消完成，金币已扣除')
+      const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
+      if (isRepeatTask(t)) {
+        await uncompleteOccurrence(t.id, { date: dateStr })
+        occurMap.value[t.id] = { status: 0 }
+        ElMessage.success('已取消当次完成')
+      } else {
+        await updateTaskStatus(t.id, 0)
+        t.status = 0
+        ElMessage.success('已取消完成')
+      }
     }
     // 统一刷新统计
     // dayMinutes.value = filteredTasks.value.reduce((sum, x) => sum + (x.actual_minutes || 0), 0)
@@ -1319,13 +1344,19 @@ async function onTomatoComplete(seconds?: number) {
     // 中文注释：按实际秒数精确展示，后端按分钟上报（四舍五入）；无秒数则按计划时长
     const usedSec = Math.max(1, seconds || (currentTask.value.plan_minutes || 20) * 60)
     const reportMinutes = Math.max(1, Math.round(usedSec / 60))
-    const updated = await completeTomato(currentTask.value.id, reportMinutes)
-    const idx = tasks.value.findIndex((x) => x.id === currentTask.value!.id)
-    if (idx >= 0) tasks.value[idx] = updated
-    actualSecondsLocal[currentTask.value.id] = usedSec
-    // 完成后标记任务为已完成
-    await updateTaskStatus(currentTask.value.id, 2)
-    if (idx >= 0) tasks.value[idx].status = 2
+    if (isRepeatTask(currentTask.value)) {
+      const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
+      await completeOccurrence(currentTask.value.id, { date: dateStr, minutes: reportMinutes })
+      occurMap.value[currentTask.value.id] = { status: 2, minutes: reportMinutes }
+      actualSecondsLocal[currentTask.value.id] = usedSec
+    } else {
+      const updated = await completeTomato(currentTask.value.id, reportMinutes)
+      const idx = tasks.value.findIndex((x) => x.id === currentTask.value!.id)
+      if (idx >= 0) tasks.value[idx] = updated
+      actualSecondsLocal[currentTask.value.id] = usedSec
+      await updateTaskStatus(currentTask.value.id, 2)
+      if (idx >= 0) tasks.value[idx].status = 2
+    }
     // 中文注释：dayMinutes 已改为计算属性，无需手动赋值
     // dayMinutes.value = tasks.value.reduce((sum, x) => sum + (x.actual_minutes || 0), 0)
     ElMessage.success('番茄钟完成，数据已记录')
@@ -1346,7 +1377,19 @@ onMounted(async () => {
   if (wrapperRef.value) {
     wrapperRef.value.addEventListener('touchmove', onTouchMove as any, { passive: false })
   }
+  await fetchOccurrences()
 })
+
+async function fetchOccurrences() {
+  try {
+    const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
+    const res = await listTaskOccurrences({ date: dateStr })
+    const map: Record<number, { status: number; minutes?: number }> = {}
+    for (const it of res.items || []) { map[it.task_id] = { status: it.status, minutes: it.minutes } }
+    occurMap.value = map
+  } catch {}
+}
+watch(selectedDate, async () => { await fetchOccurrences() })
 
 // 菜单命令统一处理
 function onMenu(cmd: string, t: TaskItem) {

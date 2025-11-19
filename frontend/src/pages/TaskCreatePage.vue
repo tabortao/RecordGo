@@ -135,7 +135,6 @@ import TaskImageUploader from '@/components/TaskImageUploader.vue'
 // 中文注释：补充导入 updateTask，用于在图片上传后写入 image_json，避免未定义错误
 import { createTask, uploadTaskImage, updateTask, enqueueOfflineTask } from '@/services/tasks'
 import { prepareUpload } from '@/utils/image'
-import dayjs from 'dayjs'
 
 import { useAuth } from '@/stores/auth'
 const auth = useAuth()
