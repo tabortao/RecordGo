@@ -172,56 +172,45 @@ async function submitForm() {
   try {
     const start = new Date(form.start_date)
     const end = form.end_date ? new Date(form.end_date) : undefined
-    const dates = (() => {
-      const out: Date[] = []
-      if (!end || form.repeat_type === 'none') return [start]
-      const s = dayjs(start).startOf('day')
-      const e = dayjs(end).startOf('day')
-      if (e.isBefore(s)) return [start]
-      if (form.repeat_type === 'daily') {
-        let d = s.clone(); while (!d.isAfter(e)) { out.push(d.toDate()); d = d.add(1, 'day') }
-      } else if (form.repeat_type === 'weekdays') {
-        let d = s.clone(); while (!d.isAfter(e)) { const w = d.day(); if (w>=1 && w<=5) out.push(d.toDate()); d = d.add(1,'day') }
-      } else if (form.repeat_type === 'weekly') {
-        const dow = s.day()===0?7:s.day()
-        const set = new Set((form.weekly_days && form.weekly_days.length>0) ? form.weekly_days : [dow])
-        let d = s.clone(); while (!d.isAfter(e)) { const w = d.day()===0?7:d.day(); if (set.has(w)) out.push(d.toDate()); d = d.add(1,'day') }
-      } else if (form.repeat_type === 'monthly') {
-        let d = s.clone(); const dom = s.date(); while (!d.isAfter(e)) { const c = d.date(dom); if (c.month()===d.month() && !c.isAfter(e)) out.push(c.toDate()); d = d.add(1,'month') }
-      }
-      return out.length>0 ? out : [start]
-    })()
+    // 改为仅创建一条任务，重复规则保存在后端字段，不再为每一天生成多条任务
 
     const created: number[] = []
-    for (const d of dates) {
-      const t = await createTask({
-        user_id: userId,
-        name: form.name,
-        description: form.description,
-        category: form.category,
-        score: form.score,
-        plan_minutes: form.plan_minutes,
-        start_date: d,
-        end_date: undefined
-      })
-      if ((form.local_images || []).length > 0) {
+    const webps: File[] = []
+    if ((form.local_images || []).length > 0) {
+      const files = [...form.local_images]
+      const conv = await Promise.all(files.map(async (f: any) => {
+        try { return await prepareUpload(f as File, 0.75) } catch { return f as File }
+      }))
+      for (const w of conv) webps.push(w as File)
+    }
+    const t = await createTask({
+      user_id: userId,
+      name: form.name,
+      description: form.description,
+      category: form.category,
+      score: form.score,
+      plan_minutes: form.plan_minutes,
+      start_date: start,
+      end_date: end,
+      repeat_type: form.repeat_type,
+      weekly_days: form.weekly_days || []
+    })
+    const batchTasks = [t]
+    created.push(t.id)
+
+    if (webps.length > 0 && batchTasks.length > 0) {
+      for (const t of batchTasks) {
         const paths: string[] = []
-        const files = [...form.local_images]
         const limit = 3
-        for (let i = 0; i < files.length; i += limit) {
-          const chunk = files.slice(i, i + limit)
-          const results = await Promise.all(chunk.map(async (f: any) => {
-            try {
-              const webp = await prepareUpload(f as File, 0.75)
-              const { path } = await uploadTaskImage(userId, webp, t.id)
-              return path
-            } catch (_) { return '' }
+        for (let j = 0; j < webps.length; j += limit) {
+          const chunk = webps.slice(j, j + limit)
+          const results = await Promise.all(chunk.map(async (wf: File) => {
+            try { const { path } = await uploadTaskImage(userId, wf, t.id); return path } catch { return '' }
           }))
           for (const p of results) { if (p) paths.push(p) }
         }
         if (paths.length > 0) { try { await updateTask(t.id, { image_json: JSON.stringify(paths) }) } catch {} }
       }
-      created.push(t.id)
     }
     ElMessage.success(`创建成功${created.length>1?`（${created.length}条）`:''}`)
     router.back()

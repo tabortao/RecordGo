@@ -83,7 +83,7 @@
           </el-form-item>
           <el-form-item prop="end_date">
             <template #label><div class="flex items-center gap-1"><el-icon><Clock /></el-icon><span>截止日期</span></div></template>
-            <el-date-picker v-model="form.end_date" type="date" :editable="false" :clearable="false" />
+            <el-date-picker v-model="form.end_date" type="date" :editable="false" :clearable="false" :disabled="form.repeat_type==='none'" />
           </el-form-item>
         </el-form>
       </el-card>
@@ -157,6 +157,8 @@ onMounted(async () => {
     form.plan_minutes = t.plan_minutes
     form.start_date = new Date(t.start_date)
     form.end_date = t.end_date ? new Date(t.end_date) : undefined
+    form.repeat_type = String((t as any).repeat || 'none') as any
+    form.weekly_days = Array.isArray((t as any).weekly_days) ? ((t as any).weekly_days as number[]) : []
     form.images = t.image_json ? (JSON.parse(t.image_json) as string[]) : []
     taskLoaded.value = true
   } catch (e: any) {
@@ -173,7 +175,9 @@ async function submitForm() {
       score: form.score,
       plan_minutes: form.plan_minutes,
       start_date: form.start_date,
-      end_date: form.end_date
+      end_date: form.end_date,
+      repeat_type: form.repeat_type,
+      weekly_days: form.weekly_days
     }
     const t = await updateTask(taskId, payload)
     // 中文注释：如有新增本地图片，上传后将返回的相对路径写入 image_json，保证编辑页也能持久化图片列表

@@ -30,6 +30,8 @@ type CreateTaskReq struct {
     StartDate    time.Time `json:"start_date"`
     EndDate      *time.Time `json:"end_date"`
     ImageJSON    string    `json:"image_json"` // 中文注释：任务图片 JSON 数组字符串
+    RepeatType   string    `json:"repeat_type"`
+    WeeklyDays   []int     `json:"weekly_days"`
 }
 
 // 中文注释：编辑请求结构体（允许全部可变更字段）
@@ -44,6 +46,8 @@ type UpdateTaskReq struct {
     EndDate      **time.Time `json:"end_date"`
     Remark       *string    `json:"remark"`
     ImageJSON    *string    `json:"image_json"`
+    RepeatType   *string    `json:"repeat_type"`
+    WeeklyDays   []int      `json:"weekly_days"`
 }
 
 // 中文注释：状态变更请求结构体
@@ -108,6 +112,18 @@ func CreateTask(c *gin.Context) {
         ImageJSON: req.ImageJSON,
         Status: 0,
     }
+    // 规范 repeat 字段
+    switch strings.ToLower(strings.TrimSpace(req.RepeatType)) {
+    case "daily": t.Repeat = "daily"
+    case "weekdays": t.Repeat = "weekdays"
+    case "weekly": t.Repeat = "weekly"
+    case "monthly": t.Repeat = "monthly"
+    default: t.Repeat = "none"
+    }
+    if len(req.WeeklyDays) > 0 {
+        b, _ := json.Marshal(req.WeeklyDays)
+        t.RepeatDaysJSON = string(b)
+    }
     if err := db.DB().Create(&t).Error; err != nil {
         zap.L().Error("CreateTask: db create failed", zap.Error(err))
         common.Error(c, 50001, "创建任务失败")
@@ -160,6 +176,15 @@ func ListTasks(c *gin.Context) {
         common.Error(c, 50002, "查询任务失败")
         return
     }
+    for i := range tasks {
+        s := strings.TrimSpace(tasks[i].RepeatDaysJSON)
+        if s != "" {
+            var arr []int
+            if jsonErr := json.Unmarshal([]byte(s), &arr); jsonErr == nil {
+                tasks[i].WeeklyDays = arr
+            }
+        }
+    }
     common.Ok(c, gin.H{"items": tasks, "total": total, "page": page, "page_size": size})
 }
 
@@ -178,6 +203,11 @@ func GetTask(c *gin.Context) {
     if !canAccessUser(c, t.UserID) {
         deny(c, "无权限查看该任务")
         return
+    }
+    s := strings.TrimSpace(t.RepeatDaysJSON)
+    if s != "" {
+        var arr []int
+        if jsonErr := json.Unmarshal([]byte(s), &arr); jsonErr == nil { t.WeeklyDays = arr }
     }
     common.Ok(c, t)
 }
@@ -220,6 +250,19 @@ func UpdateTask(c *gin.Context) {
     if req.EndDate != nil { t.EndDate = *req.EndDate }
     if req.Remark != nil { t.Remark = *req.Remark }
     if req.ImageJSON != nil { t.ImageJSON = *req.ImageJSON }
+    if req.RepeatType != nil {
+        switch strings.ToLower(strings.TrimSpace(*req.RepeatType)) {
+        case "daily": t.Repeat = "daily"
+        case "weekdays": t.Repeat = "weekdays"
+        case "weekly": t.Repeat = "weekly"
+        case "monthly": t.Repeat = "monthly"
+        default: t.Repeat = "none"
+        }
+    }
+    if len(req.WeeklyDays) > 0 {
+        b, _ := json.Marshal(req.WeeklyDays)
+        t.RepeatDaysJSON = string(b)
+    }
 
     if err := db.DB().Save(&t).Error; err != nil {
         zap.L().Error("UpdateTask: db save failed", zap.Error(err), zap.String("id", id))
@@ -470,6 +513,10 @@ func ListRecycleBin(c *gin.Context) {
     if err := db.DB().Unscoped().Where("deleted_at IS NOT NULL AND user_id = ?", uid).Order("deleted_at DESC").Find(&tasks).Error; err != nil {
         common.Error(c, 50008, "查询回收站失败")
         return
+    }
+    for i := range tasks {
+        s := strings.TrimSpace(tasks[i].RepeatDaysJSON)
+        if s != "" { var arr []int; _ = json.Unmarshal([]byte(s), &arr); tasks[i].WeeklyDays = arr }
     }
     common.Ok(c, tasks)
 }

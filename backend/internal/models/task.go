@@ -18,6 +18,8 @@ type Task struct {
     ActualMinutes int             `gorm:"default:0" json:"actual_minutes"`
     Score         int             `gorm:"default:1" json:"score"` // 可为负数
     Repeat        string          `gorm:"size:32" json:"repeat"`   // 无/每天/每周/每月/自定义星期
+    RepeatDaysJSON string         `gorm:"type:text" json:"repeat_days_json"` // 周期附加数据（如 weekly 的星期集合）
+    WeeklyDays    []int           `gorm:"-" json:"weekly_days,omitempty"`    // 运行时解包，数据库不存该列
     StartDate     time.Time       `json:"start_date"`
     EndDate       *time.Time      `json:"end_date,omitempty"`
     Status        int             `gorm:"default:0" json:"status"` // 0待完成 1进行中 2已完成

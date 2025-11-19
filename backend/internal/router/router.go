@@ -87,6 +87,7 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 
         // 中文注释：任务管理 RESTful 路由
         api.POST("/tasks", handlers.CreateTask)
+        api.POST("/tasks/batch", handlers.CreateTasksBatch)
         api.GET("/tasks", handlers.ListTasks)
         api.GET("/tasks/:id", handlers.GetTask)
         api.PUT("/tasks/:id", handlers.UpdateTask)

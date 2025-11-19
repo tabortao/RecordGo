@@ -980,7 +980,7 @@ const rules: FormRules = {
 
 async function fetchTasks() {
   try {
-    const res = await listTasks()
+    const res = await listTasks({ page_size: 1000 })
     tasks.value = res.items || []
     // 中文注释：日时长、日金币、完成率均改为统计当日任务
     // dayMinutes.value = filteredTasks.value.reduce((sum, t) => sum + (t.actual_minutes || 0), 0)
@@ -1091,61 +1091,33 @@ async function submitForm() {
     } else {
       // 中文注释：创建权限校验
       if (!isParent.value && !canTaskCreate.value) { ElMessage.warning('当前权限不允许创建任务'); return }
-      // 中文注释：根据重复类型批量创建任务实例
-      const dates = generateRepeatDates(form.start_date, form.end_date, form.repeat_type, form.weekly_days)
-      if (dates.length === 0) {
-        // 无重复或未设置截止日期则创建单个
-        dates.push(form.start_date)
-      }
-      const createdTasks: TaskItem[] = []
-      for (const d of dates) {
-        const t = await createTask({
-          user_id: userId,
-          name: form.name,
-          description: form.description,
-          category: form.category,
-          score: form.score,
-          plan_minutes: form.plan_minutes,
-          start_date: d,
-          end_date: undefined
-        })
-        createdTasks.push(t)
-      }
-      // 中文注释：创建后按任务ID上传本地图片，并写入 image_json
+      // 改为仅创建一条任务，重复规则由后端保存
+      const t = await createTask({
+        user_id: userId,
+        name: form.name,
+        description: form.description,
+        category: form.category,
+        score: form.score,
+        plan_minutes: form.plan_minutes,
+        start_date: form.start_date,
+        end_date: form.end_date,
+        repeat_type: form.repeat_type,
+        weekly_days: form.weekly_days || []
+      })
       if ((form.local_images || []).length > 0) {
-        for (const t of createdTasks) {
-          const paths: string[] = []
-          for (const f of form.local_images) {
-            try {
-              const webp = await prepareUpload(f as File)
-              // 中文注释：前端调试日志，确认文件对象与元信息
-              console.debug('准备上传任务图片', {
-                task_id: t.id,
-                filename: (webp as File)?.name,
-                size: (webp as File)?.size,
-                type: (webp as File)?.type,
-                isFile: webp instanceof File,
-              })
-              const { path } = await uploadTaskImage(userId.value, webp, t.id)
-              paths.push(path)
-            } catch (err: any) {
-              // 中文注释：详细前端错误日志，包含任务ID、文件名与后端返回信息
-              console.error('上传任务图片失败', {
-                task_id: t.id,
-                filename: (f as File)?.name,
-                message: err?.message || err,
-                response: err?.response?.data
-              })
-              ElMessage.error(`图片上传失败：${(f as File)?.name || ''} → ${err?.response?.data?.message || err?.message || '未知错误'}`)
-            }
-          }
-          if (paths.length > 0) {
-            await updateTask(t.id, { image_json: JSON.stringify(paths) })
-            console.info('任务图片已更新到 image_json', { task_id: t.id, count: paths.length })
+        const paths: string[] = []
+        for (const f of form.local_images) {
+          try {
+            const webp = await prepareUpload(f as File)
+            const { path } = await uploadTaskImage(userId.value, webp, t.id)
+            paths.push(path)
+          } catch (err: any) {
+            ElMessage.error(`图片上传失败：${(f as File)?.name || ''} → ${err?.response?.data?.message || err?.message || '未知错误'}`)
           }
         }
+        if (paths.length > 0) { await updateTask(t.id, { image_json: JSON.stringify(paths) }) }
       }
-      ElMessage.success(`任务已创建${dates.length>1?`（${dates.length}条）`:''}`)
+      ElMessage.success('任务已创建')
     }
     // 中文注释：创建成功后清理草稿（组件已管理缩略图）
     try { localStorage.removeItem('task_draft_images') } catch {}

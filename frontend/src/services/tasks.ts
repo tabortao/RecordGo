@@ -32,6 +32,10 @@ export async function createTask(payload: any): Promise<TaskItem> {
   return (await http.post('/tasks', payload)) as any
 }
 
+export async function createTasksBatch(payload: any): Promise<{ items: TaskItem[]; count: number }> {
+  return (await http.post('/tasks/batch', payload)) as any
+}
+
 export async function updateTask(id: number, payload: any): Promise<TaskItem> {
   return (await http.put(`/tasks/${id}`, payload)) as any
 }
@@ -134,49 +138,27 @@ export async function syncOfflineTasks(userId: number): Promise<{ synced: number
     try {
       const s = new Date(q.start_date)
       const e = q.end_date ? new Date(q.end_date) : undefined
-      const dates: Date[] = []
-      if (!e || q.repeat_type === 'none') {
-        dates.push(s)
-      } else {
-        let d = new Date(s)
-        if (q.repeat_type === 'daily') {
-          while (d <= (e as Date)) { dates.push(new Date(d)); d.setDate(d.getDate()+1) }
-        } else if (q.repeat_type === 'weekdays') {
-          while (d <= (e as Date)) { const w = d.getDay(); if (w>=1&&w<=5) dates.push(new Date(d)); d.setDate(d.getDate()+1) }
-        } else if (q.repeat_type === 'weekly') {
-          const set = new Set(q.weekly_days && q.weekly_days.length ? q.weekly_days : [((s.getDay()||7))])
-          while (d <= (e as Date)) { const w = d.getDay()===0?7:d.getDay(); if (set.has(w)) dates.push(new Date(d)); d.setDate(d.getDate()+1) }
-        } else if (q.repeat_type === 'monthly') {
-          const dom = s.getDate()
-          const cur = new Date(s)
-          while (cur <= (e as Date)) { const cand = new Date(cur.getFullYear(), cur.getMonth(), dom); if (cand.getMonth()===cur.getMonth() && cand <= (e as Date)) dates.push(cand); cur.setMonth(cur.getMonth()+1) }
-        }
-      }
-      const created: TaskItem[] = []
-      for (const d of dates) {
-        const t = await createTask({
-          user_id: userId,
-          name: q.name,
-          description: q.description,
-          category: q.category,
-          score: q.score,
-          plan_minutes: q.plan_minutes,
-          start_date: d,
-          end_date: undefined
-        })
-        created.push(t)
-      }
+      const t = await createTask({
+        user_id: userId,
+        name: q.name,
+        description: q.description,
+        category: q.category,
+        score: q.score,
+        plan_minutes: q.plan_minutes,
+        start_date: s,
+        end_date: e,
+        repeat_type: q.repeat_type,
+        weekly_days: q.weekly_days || []
+      })
       if (q.images && q.images.length) {
-        for (const t of created) {
-          const paths: string[] = []
-          for (const img of q.images) {
-            const file = dataURLToFile(img.dataURL, img.name, img.type)
-            const webp = await prepareUpload(file, 0.75)
-            const { path } = await uploadTaskImage(userId, webp, t.id)
-            paths.push(path)
-          }
-          if (paths.length) await updateTask(t.id, { image_json: JSON.stringify(paths) })
+        const paths: string[] = []
+        for (const img of q.images) {
+          const file = dataURLToFile(img.dataURL, img.name, img.type)
+          const webp = await prepareUpload(file, 0.75)
+          const { path } = await uploadTaskImage(userId, webp, t.id)
+          paths.push(path)
         }
+        if (paths.length) await updateTask(t.id, { image_json: JSON.stringify(paths) })
       }
       synced++
     } catch {
