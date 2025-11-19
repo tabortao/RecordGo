@@ -118,6 +118,8 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         api.GET("/tasks/occurrences", handlers.ListTaskOccurrences)
         api.POST("/tasks/:id/occurrences/complete", handlers.CompleteTaskOccurrence)
         api.POST("/tasks/:id/occurrences/uncomplete", handlers.UncompleteTaskOccurrence)
+
+        api.POST("/data/clear", handlers.ClearData)
     }
 
     r.PUT("/api/storage/put", handlers.StoragePut)

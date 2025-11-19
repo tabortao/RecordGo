@@ -30,6 +30,7 @@ const router = createRouter({
     { path: '/tasks/stats', name: 'TasksStats', component: () => import('../pages/TasksStatsPage.vue'), meta: { noNav: true } },
     // 中文注释：任务独立页面路由（创建、编辑、番茄钟），隐藏底部导航
     { path: '/tasks/create', name: 'TaskCreate', component: () => import('@/pages/TaskCreatePage.vue'), meta: { noNav: true } },
+    { path: '/data/records', name: 'DataRecords', component: () => import('@/pages/DataRecordsPage.vue'), meta: { noNav: true } },
     { path: '/tasks/:id/edit', name: 'TaskEdit', component: () => import('@/pages/TaskEditPage.vue'), meta: { noNav: true } },
     { path: '/tasks/:id/tomato', name: 'TaskTomato', component: () => import('@/pages/TomatoPage.vue'), meta: { noNav: true } },
     // 中文注释：任务备注独立页面，支持多条备注与附件（图片/音频），隐藏底部导航

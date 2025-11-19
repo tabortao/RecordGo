@@ -9,6 +9,8 @@ import (
     "recordgo/internal/common"
     "recordgo/internal/db"
     "recordgo/internal/models"
+    "recordgo/internal/config"
+    "fmt"
 )
 
 func normalizeDate(d time.Time) time.Time {
@@ -95,7 +97,19 @@ func CompleteTaskOccurrence(c *gin.Context) {
     occ.Status = 2
     occ.Minutes = m
     if occ.ID == 0 { _ = db.DB().Create(&occ).Error } else { _ = db.DB().Save(&occ).Error }
-    common.Ok(c, gin.H{"task_id": t.ID, "date": req.Date, "status": 2, "minutes": m})
+    var owner models.User
+    if err := db.DB().First(&owner, t.UserID).Error; err != nil {
+        owner = models.User{ID: t.UserID, Username: fmt.Sprintf("user%d", t.UserID), Role: "user", Coins: 0, Nickname: "测试用户"}
+        if ierr := db.DB().Create(&owner).Error; ierr != nil { common.Error(c, 50005, "初始化用户失败"); return }
+    }
+    target := owner
+    if cfg2, _ := config.Load(); cfg2 != nil && cfg2.ParentCoinsSync && owner.ParentID != nil {
+        var parent models.User
+        if err := db.DB().First(&parent, *owner.ParentID).Error; err == nil { target = parent }
+    }
+    target.Coins += int64(t.Score)
+    if err := db.DB().Save(&target).Error; err != nil { common.Error(c, 50005, "更新用户金币失败"); return }
+    common.Ok(c, gin.H{"task_id": t.ID, "date": req.Date, "status": 2, "minutes": m, "user_coins": target.Coins})
 }
 
 type OccurrenceUncompleteReq struct { Date string `json:"date"` }
@@ -111,7 +125,19 @@ func UncompleteTaskOccurrence(c *gin.Context) {
     d, err := parseDate(req.Date)
     if err != nil { common.Error(c, 40001, "日期格式错误"); return }
     _ = db.DB().Where("task_id = ? AND date = ?", t.ID, normalizeDate(d)).Delete(&models.TaskOccurrence{}).Error
-    common.Ok(c, gin.H{"task_id": t.ID, "date": req.Date, "status": 0})
+    var owner models.User
+    if err := db.DB().First(&owner, t.UserID).Error; err != nil {
+        owner = models.User{ID: t.UserID, Username: fmt.Sprintf("user%d", t.UserID), Role: "user", Coins: 0, Nickname: "测试用户"}
+        if ierr := db.DB().Create(&owner).Error; ierr != nil { common.Error(c, 50005, "初始化用户失败"); return }
+    }
+    target := owner
+    if cfg2, _ := config.Load(); cfg2 != nil && cfg2.ParentCoinsSync && owner.ParentID != nil {
+        var parent models.User
+        if err := db.DB().First(&parent, *owner.ParentID).Error; err == nil { target = parent }
+    }
+    target.Coins -= int64(t.Score)
+    if err := db.DB().Save(&target).Error; err != nil { common.Error(c, 50005, "更新用户金币失败"); return }
+    common.Ok(c, gin.H{"task_id": t.ID, "date": req.Date, "status": 0, "user_coins": target.Coins})
 }
 
 func ListTaskOccurrences(c *gin.Context) {
