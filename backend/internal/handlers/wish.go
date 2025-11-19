@@ -333,6 +333,18 @@ func ListWishRecords(c *gin.Context) {
         }
     }
     q := db.DB().Model(&models.WishRecord{}).Where("user_id = ?", uid)
+    start := strings.TrimSpace(c.Query("start"))
+    end := strings.TrimSpace(c.Query("end"))
+    if start != "" {
+        if t, err := time.Parse("2006-01-02", start); err == nil {
+            q = q.Where("created_at >= ?", t)
+        }
+    }
+    if end != "" {
+        if t, err := time.Parse("2006-01-02", end); err == nil {
+            q = q.Where("created_at < ?", t.Add(24*time.Hour))
+        }
+    }
 	var total int64
 	q.Count(&total)
 	var items []models.WishRecord

@@ -487,7 +487,7 @@
       type="success"
       circle
       class="fixed no-pull"
-      :style="{ left: fabPos.x + 'px', top: fabPos.y + 'px' }"
+      :style="{ left: fabPos.x + 'px', top: fabPos.y + 'px', backgroundColor: '#22c55e', borderColor: '#22c55e' }"
       @mousedown="onFabDown"
       @touchstart="onFabTouchStart"
       @click="openCreate"

@@ -106,8 +106,11 @@ export async function exchangeWish(id: number, userId: number, count = 1, remark
 }
 
 // 兑换记录
-export async function listWishRecords(userId: number, page = 1, pageSize = 10) {
-  const resp = await http.get('/wishes/records', { params: { user_id: userId, page, page_size: pageSize } } as any)
+export async function listWishRecords(userId: number, page = 1, pageSize = 10, opts?: { start?: string; end?: string }) {
+  const params: any = { user_id: userId, page, page_size: pageSize }
+  if (opts?.start) params.start = opts.start
+  if (opts?.end) params.end = opts.end
+  const resp = await http.get('/wishes/records', { params } as any)
   // 中文注释：兼容后端可能返回的大小写字段，统一映射为前端使用的下划线命名
   const raw = resp as any
   const items = Array.isArray(raw.items) ? raw.items.map((x: any) => ({

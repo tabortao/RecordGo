@@ -47,7 +47,25 @@
 
     <!-- 中文注释：编辑个人信息对话框已移除，改为独立页面 /settings/profile -->
 
-    <!-- 中文注释：设置模块（与账号管理同级），展示各设置按钮 -->
+    <!-- 中文注释：数据管理模块置于设置模块之前（更靠上显示） -->
+    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div class="px-3 py-2 flex items-center gap-2">
+        <el-icon :size="18" style="color:#0ea5e9"><Setting /></el-icon>
+        <span class="font-semibold dark:text-gray-100">数据管理</span>
+      </div>
+      <div class="px-2 py-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
+        <button class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition" @click="router.push('/data/records')">
+          <el-icon :size="18" style="color:#60a5fa"><List /></el-icon>
+          <span class="text-gray-800 dark:text-gray-100">操作记录</span>
+        </button>
+        <button class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition" @click="showClearDialog = true">
+          <el-icon :size="18" style="color:#ef4444"><SwitchButton /></el-icon>
+          <span class="text-gray-800 dark:text-gray-100">清除数据</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 中文注释：设置模块（顺序后移，位于数据管理下方），展示各设置按钮 -->
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
       <div class="px-3 py-2 flex items-center gap-2">
         <el-icon :size="18" style="color:#0ea5e9"><Setting /></el-icon>
@@ -58,29 +76,12 @@
         <button
           v-for="i in settingItems"
           :key="i.key"
-          class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition text-left disabled:opacity-60 disabled:cursor-not-allowed"
+          class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition text-left disabled:opacity-60 disabled:cursor-not-allowed"
           :disabled="isDisabled(i.key)"
           @click="onOpenSetting(i.key)"
         >
           <el-icon :size="18" :style="{ color: i.fg }"><component :is="i.icon" /></el-icon>
           <span class="text-gray-800 dark:text-gray-100">{{ i.label }}</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-      <div class="px-3 py-2 flex items-center gap-2">
-        <el-icon :size="18" style="color:#0ea5e9"><Setting /></el-icon>
-        <span class="font-semibold dark:text-gray-100">数据管理</span>
-      </div>
-      <div class="px-2 py-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
-        <button class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition" @click="router.push('/data/records')">
-          <el-icon :size="18" style="color:#60a5fa"><List /></el-icon>
-          <span class="text-gray-800 dark:text-gray-100">操作记录</span>
-        </button>
-        <button class="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition" @click="showClearDialog = true">
-          <el-icon :size="18" style="color:#ef4444"><SwitchButton /></el-icon>
-          <span class="text-gray-800 dark:text-gray-100">清除数据</span>
         </button>
       </div>
     </div>

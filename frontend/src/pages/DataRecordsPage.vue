@@ -5,7 +5,20 @@
         <el-icon :size="18" class="cursor-pointer text-gray-600" @click="goBack"><ArrowLeft /></el-icon>
         <h2 class="font-semibold">操作记录</h2>
       </div>
-      <el-date-picker v-model="selectedDate" type="date" placeholder="选择日期" :editable="false" />
+      <div class="flex items-center gap-2">
+        <el-popover placement="bottom-end" trigger="click">
+          <template #reference>
+            <el-button link type="primary">
+              <el-icon :size="18"><Filter /></el-icon>
+              <span class="ml-1">筛选</span>
+            </el-button>
+          </template>
+          <div class="space-y-2">
+            <div class="text-sm text-gray-500">按日期筛选</div>
+            <el-date-picker v-model="selectedDate" type="date" placeholder="选择日期" :editable="false" value-format="YYYY-MM-DD" />
+          </div>
+        </el-popover>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -56,10 +69,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { ArrowLeft, CircleCheck, Coin, Document } from '@element-plus/icons-vue'
+import { ArrowLeft, CircleCheck, Coin, Document, Filter } from '@element-plus/icons-vue'
 import router from '@/router'
 import dayjs from 'dayjs'
-import { listTaskOccurrences, listTasks } from '@/services/tasks'
+import { listTaskOccurrences, listTasks, type TaskItem } from '@/services/tasks'
 import { listWishRecords } from '@/services/wishes'
 import { useAuth } from '@/stores/auth'
 
@@ -69,6 +82,7 @@ const selectedDate = ref<string>(dayjs().format('YYYY-MM-DD'))
 const tasksMap = ref<Record<number, { name: string; score: number }>>({})
 const taskRecords = ref<{ key: string; name: string; coins: number; date: string }[]>([])
 const wishRecords = ref<any[]>([])
+const allTasks = ref<TaskItem[]>([])
 
 function formatDate(ts: string) { return dayjs(ts).format('YYYY-MM-DD HH:mm') }
 
@@ -76,20 +90,38 @@ async function loadTasksMap() {
   try {
     const resp = await listTasks({ page_size: 500 })
     const map: Record<number, { name: string; score: number }> = {}
-    for (const t of resp.items || []) map[t.id] = { name: t.name, score: t.score }
+    const items = resp.items || []
+    for (const t of items) map[t.id] = { name: t.name, score: t.score }
     tasksMap.value = map
+    allTasks.value = items as TaskItem[]
   } catch { tasksMap.value = {} }
 }
 
 async function loadTaskRecords() {
   try {
-    const resp = await listTaskOccurrences({ date: selectedDate.value })
+    const d = selectedDate.value
+    const resp = await listTaskOccurrences({ start: d, end: d })
     const out: { key: string; name: string; coins: number; date: string }[] = []
+    const added = new Set<string>()
     for (const it of resp.items || []) {
       if (Number(it.status) !== 2) continue
       const t = tasksMap.value[it.task_id]
       if (!t) continue
-      out.push({ key: `${it.task_id}:${it.date}`, name: t.name, coins: t.score, date: it.date })
+      const key = `${it.task_id}:${dayjs(it.date).format('YYYY-MM-DD')}`
+      added.add(key)
+      out.push({ key, name: t.name, coins: t.score, date: it.date })
+    }
+    const dKey = dayjs(d).format('YYYY-MM-DD')
+    for (const t of allTasks.value || []) {
+      const rep = String((t as any).repeat || 'none').toLowerCase()
+      const isNonRepeat = /none|无|^$/i.test(rep) || !(t as any).end_date
+      if (!isNonRepeat) continue
+      if (Number(t.status) !== 2) continue
+      const sKey = dayjs(t.start_date).format('YYYY-MM-DD')
+      if (sKey !== dKey) continue
+      const key = `${t.id}:${dKey}`
+      if (added.has(key)) continue
+      out.push({ key, name: t.name, coins: t.score, date: dayjs(t.start_date).format('YYYY-MM-DD HH:mm') })
     }
     taskRecords.value = out
   } catch { taskRecords.value = [] }
@@ -98,7 +130,8 @@ async function loadTaskRecords() {
 async function loadWishRecords() {
   try {
     const uid = auth.user?.id || 0
-    const resp = await listWishRecords(uid, 1, 100)
+    const d = selectedDate.value
+    const resp = await listWishRecords(uid, 1, 200, { start: d, end: d })
     wishRecords.value = resp.items || []
   } catch { wishRecords.value = [] }
 }
@@ -109,7 +142,7 @@ const wishRecordsForDay = computed(() => {
 })
 
 onMounted(async () => { await loadTasksMap(); await loadTaskRecords(); await loadWishRecords() })
-watch(selectedDate, async () => { await loadTaskRecords() })
+watch(selectedDate, async () => { await loadTaskRecords(); await loadWishRecords() })
 </script>
 
 <style scoped>

@@ -4,7 +4,9 @@
     <!-- 顶部栏：返回 + 标题 -->
     <div class="flex items-center gap-2">
       <el-icon :size="18" class="cursor-pointer text-gray-600" @click="goBack"><ArrowLeft /></el-icon>
-      <el-icon :size="27" class="text-emerald-600"><CirclePlusFilled /></el-icon>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center bg-emerald-100 dark:bg-emerald-900">
+        <el-icon :size="20" class="text-emerald-600"><CirclePlusFilled /></el-icon>
+      </div>
       <h2 class="font-semibold">创建任务</h2>
     </div>
 
