@@ -22,10 +22,29 @@ export interface TaskItem {
   tomato_count?: number
 }
 
-export async function listTasks(params?: { status?: number; page?: number; page_size?: number }): Promise<{ items: TaskItem[]; total: number; page: number; page_size: number }>
-{
-  // 中文注释：返回值显式类型，避免 AxiosResponse 推断造成的 TS 报错
-  return (await http.get('/tasks', { params })) as any
+export async function listTasks(params?: { status?: number; page?: number; page_size?: number }): Promise<{ items: TaskItem[]; total: number; page: number; page_size: number }>{
+  const raw = await http.get('/tasks', { params }) as any
+  const arr: any[] = Array.isArray(raw.items) ? raw.items : []
+  const items: TaskItem[] = arr.map((x: any) => ({
+    id: Number(x.id ?? x.ID ?? 0),
+    user_id: Number(x.user_id ?? x.UserID ?? 0),
+    series_id: x.series_id != null ? Number(x.series_id) : (x.SeriesID != null ? Number(x.SeriesID) : undefined),
+    name: String(x.name ?? x.Name ?? ''),
+    description: String(x.description ?? x.Description ?? ''),
+    category: String(x.category ?? x.Category ?? ''),
+    score: Number(x.score ?? x.Score ?? 0),
+    plan_minutes: Number(x.plan_minutes ?? x.PlanMinutes ?? 0),
+    actual_minutes: Number(x.actual_minutes ?? x.ActualMinutes ?? 0),
+    status: Number(x.status ?? x.Status ?? 0),
+    start_date: String(x.start_date ?? x.StartDate ?? ''),
+    end_date: (x.end_date ?? x.EndDate) ? String(x.end_date ?? x.EndDate) : undefined,
+    remark: String(x.remark ?? x.Remark ?? ''),
+    image_json: String(x.image_json ?? x.ImageJSON ?? ''),
+    tomato_count: Number(x.tomato_count ?? x.TomatoCount ?? 0),
+    ...(x.repeat != null || x.Repeat != null ? { repeat: String(x.repeat ?? x.Repeat ?? 'none') } : {}),
+    ...(Array.isArray(x.weekly_days ?? x.WeeklyDays) ? { weekly_days: (x.weekly_days ?? x.WeeklyDays) } : {})
+  }))
+  return { items, total: Number(raw.total ?? arr.length ?? 0), page: Number(raw.page ?? 1), page_size: Number(raw.page_size ?? (params?.page_size ?? 20)) }
 }
 
 export async function createTask(payload: any): Promise<TaskItem> {

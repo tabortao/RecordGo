@@ -717,29 +717,43 @@ const headerLabel = computed(() => {
 })
 const taskCountMap = computed<Record<string, number>>(() => {
   const map: Record<string, number> = {}
+  const base = dayjs(selectedDate.value)
+  const weekday = base.day()
+  const monday = base.subtract((weekday === 0 ? 6 : weekday - 1), 'day').startOf('day')
+  const days: dayjs.Dayjs[] = []
+  for (let i = 0; i < 7; i++) { days.push(monday.add(i, 'day')) }
   for (const t of tasks.value) {
-    const sDate = t.start_date ? dayjs(t.start_date).toDate() : null
-    const eDate = t.end_date ? dayjs(t.end_date).toDate() : undefined
+    const sDate = t.start_date ? dayjs(t.start_date) : null
+    const eDate = t.end_date ? dayjs(t.end_date) : undefined
     if (!sDate) continue
-    const rawRepeat = (t as any).repeat || 'none'
-    const rep = String(rawRepeat).toLowerCase()
+    const rep = String((t as any).repeat || 'none').toLowerCase()
     const type: 'none'|'daily'|'weekdays'|'weekly'|'monthly' =
       /none|无|^$/i.test(rep) ? 'none' :
       /daily|每天/i.test(rep) ? 'daily' :
       /weekdays|工作日/i.test(rep) ? 'weekdays' :
       /weekly|每周/i.test(rep) ? 'weekly' :
       /monthly|每月/i.test(rep) ? 'monthly' : 'none'
-    if (type === 'none' || !eDate) {
-      const key = dayjs(sDate).format('YYYY-MM-DD')
-      map[key] = (map[key] || 0) + 1
+    const startKey = sDate.format('YYYY-MM-DD')
+    if (type === 'none') { map[startKey] = (map[startKey] || 0) + 1; continue }
+    const dowStart = sDate.day() === 0 ? 7 : sDate.day()
+    const weeklyDays: number[] = Array.isArray((t as any).weekly_days) ? ((t as any).weekly_days as number[]) : [dowStart]
+    if (eDate) {
+      const dates = generateRepeatDates(sDate.toDate(), eDate.toDate(), type, weeklyDays)
+      for (const d of dates) { const key = dayjs(d).format('YYYY-MM-DD'); map[key] = (map[key] || 0) + 1 }
       continue
     }
-    const dow = dayjs(sDate).day() === 0 ? 7 : dayjs(sDate).day()
-    const weeklyDays: number[] = Array.isArray((t as any).weekly_days) ? ((t as any).weekly_days as number[]) : [dow]
-    const dates = generateRepeatDates(sDate, eDate, type, weeklyDays)
-    for (const d of dates) {
-      const key = dayjs(d).format('YYYY-MM-DD')
-      map[key] = (map[key] || 0) + 1
+    for (const d of days) {
+      if (d.isBefore(sDate.startOf('day'))) continue
+      const w = d.day() === 0 ? 7 : d.day()
+      if (type === 'daily') { const key = d.format('YYYY-MM-DD'); map[key] = (map[key] || 0) + 1; continue }
+      if (type === 'weekdays') { if (w >= 1 && w <= 5) { const key = d.format('YYYY-MM-DD'); map[key] = (map[key] || 0) + 1 } continue }
+      if (type === 'weekly') {
+        const sw = dowStart
+        const ok = (weeklyDays && weeklyDays.length) ? weeklyDays.includes(w) : (w === sw)
+        if (ok) { const key = d.format('YYYY-MM-DD'); map[key] = (map[key] || 0) + 1 }
+        continue
+      }
+      if (type === 'monthly') { if (d.date() === sDate.date()) { const key = d.format('YYYY-MM-DD'); map[key] = (map[key] || 0) + 1 } continue }
     }
   }
   return map
@@ -752,9 +766,11 @@ const filteredTasks = computed(() => {
   // 中文注释：日期过滤，使用重复规则生成发生日期，匹配选中日期
   const selKey = dayjs(selectedDate.value).format('YYYY-MM-DD')
   result = result.filter((t) => {
-    const sDate = t.start_date ? dayjs(t.start_date).toDate() : null
-    const eDate = t.end_date ? dayjs(t.end_date).toDate() : undefined
-    if (!sDate) return false
+    const sDateStr = t.start_date ? String(t.start_date) : ''
+    const eDateStr = t.end_date ? String(t.end_date) : ''
+    if (!sDateStr) return false
+    const sDate = dayjs(sDateStr).toDate()
+    const eDate = eDateStr ? dayjs(eDateStr).toDate() : undefined
     const rawRepeat = (t as any).repeat || 'none'
     const rep = String(rawRepeat).toLowerCase()
     const type: 'none'|'daily'|'weekdays'|'weekly'|'monthly' =
@@ -763,11 +779,26 @@ const filteredTasks = computed(() => {
       /weekdays|工作日/i.test(rep) ? 'weekdays' :
       /weekly|每周/i.test(rep) ? 'weekly' :
       /monthly|每月/i.test(rep) ? 'monthly' : 'none'
-    if (type === 'none' || !eDate) {
+    if (type === 'none') {
       return dayjs(sDate).format('YYYY-MM-DD') === selKey
     }
     const dow = dayjs(sDate).day() === 0 ? 7 : dayjs(sDate).day()
     const weeklyDays: number[] = Array.isArray((t as any).weekly_days) ? ((t as any).weekly_days as number[]) : [dow]
+    if (!eDate) {
+      const d = dayjs(selectedDate.value)
+      const w = d.day() === 0 ? 7 : d.day()
+      const sd = dayjs(sDate)
+      if (d.isBefore(sd.startOf('day'))) return false
+      if (type === 'daily') return true
+      if (type === 'weekdays') return w >= 1 && w <= 5
+      if (type === 'weekly') {
+        const set = new Set(weeklyDays || [])
+        const sw = sd.day() === 0 ? 7 : sd.day()
+        return set.size ? set.has(w) : (w === sw)
+      }
+      if (type === 'monthly') return d.date() === sd.date()
+      return false
+    }
     const dates = generateRepeatDates(sDate, eDate, type, weeklyDays)
     const keys = new Set(dates.map((d) => dayjs(d).format('YYYY-MM-DD')))
     return keys.has(selKey)
