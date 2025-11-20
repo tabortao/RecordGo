@@ -100,6 +100,12 @@ func CreateTask(c *gin.Context) {
         zap.String("category", req.Category),
         zap.Time("start_date", req.StartDate),
     )
+    s := time.Date(req.StartDate.Year(), req.StartDate.Month(), req.StartDate.Day(), 0, 0, 0, 0, time.UTC)
+    var e *time.Time
+    if req.EndDate != nil {
+        ez := time.Date(req.EndDate.Year(), req.EndDate.Month(), req.EndDate.Day(), 0, 0, 0, 0, time.UTC)
+        e = &ez
+    }
     t := models.Task{
         UserID: req.UserID,
         Name: req.Name,
@@ -107,8 +113,8 @@ func CreateTask(c *gin.Context) {
         Category: req.Category,
         Score: req.Score,
         PlanMinutes: req.PlanMinutes,
-        StartDate: req.StartDate,
-        EndDate: req.EndDate,
+        StartDate: s,
+        EndDate: e,
         ImageJSON: req.ImageJSON,
         Status: 0,
     }
@@ -124,6 +130,15 @@ func CreateTask(c *gin.Context) {
         b, _ := json.Marshal(req.WeeklyDays)
         t.RepeatDaysJSON = string(b)
     }
+    zap.L().Info(
+        "CreateTask: normalized",
+        zap.Uint("user_id", req.UserID),
+        zap.String("repeat", t.Repeat),
+        zap.String("start_raw", req.StartDate.Format(time.RFC3339)),
+        zap.String("start_norm", t.StartDate.Format(time.RFC3339)),
+        zap.String("end_raw", func() string { if req.EndDate != nil { return req.EndDate.Format(time.RFC3339) } ; return "" }()),
+        zap.String("end_norm", func() string { if t.EndDate != nil { return t.EndDate.Format(time.RFC3339) } ; return "" }()),
+    )
     if err := db.DB().Create(&t).Error; err != nil {
         zap.L().Error("CreateTask: db create failed", zap.Error(err))
         common.Error(c, 50001, "创建任务失败")
@@ -246,8 +261,13 @@ func UpdateTask(c *gin.Context) {
     if req.Score != nil { t.Score = *req.Score }
     if req.PlanMinutes != nil { t.PlanMinutes = *req.PlanMinutes }
     if req.ActualMinutes != nil { t.ActualMinutes = *req.ActualMinutes }
-    if req.StartDate != nil { t.StartDate = *req.StartDate }
-    if req.EndDate != nil { t.EndDate = *req.EndDate }
+    if req.StartDate != nil {
+        t.StartDate = time.Date(req.StartDate.Year(), req.StartDate.Month(), req.StartDate.Day(), 0, 0, 0, 0, time.UTC)
+    }
+    if req.EndDate != nil {
+        ez := time.Date((*req.EndDate).Year(), (*req.EndDate).Month(), (*req.EndDate).Day(), 0, 0, 0, 0, time.UTC)
+        t.EndDate = &ez
+    }
     if req.Remark != nil { t.Remark = *req.Remark }
     if req.ImageJSON != nil { t.ImageJSON = *req.ImageJSON }
     if req.RepeatType != nil {

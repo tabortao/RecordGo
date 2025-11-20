@@ -13,12 +13,17 @@ const instance = axios.create({
 })
 
 // 请求拦截器：可附加 JWT 等
+let __envLogged = false
 instance.interceptors.request.use((config) => {
   // 中文注释：为兼容“未勾选记住我”的会话，优先读取 sessionStorage，其次读取 localStorage
   const token = (sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token'))
   if (token) {
     config.headers = config.headers || {}
     ;(config.headers as any).Authorization = `Bearer ${token}`
+  }
+  if (!__envLogged) {
+    __envLogged = true
+    try { console.info('[API] baseURL=', instance.defaults.baseURL, 'host=', location.host) } catch {}
   }
   return config
 })
@@ -27,6 +32,9 @@ instance.interceptors.request.use((config) => {
 instance.interceptors.response.use(
   async (resp) => {
     const payload = resp.data
+    if (typeof payload === 'string' && /<html[\s\S]*<\/html>/i.test(payload)) {
+      return Promise.reject(new Error(`API响应异常：收到HTML内容。请在生产环境设置VITE_API_BASE指向后端，如 https://your-api-host`))
+    }
     if (payload && typeof payload.code !== 'undefined') {
       if (payload.code === 0) {
         // 中文注释：统一在成功响应中同步最新金币，避免页面各处手动维护导致不一致
@@ -83,6 +91,12 @@ instance.interceptors.response.use(
         // 为避免循环依赖，这里不直接导入路由；页面调用处可根据返回错误重定向
       }
     } catch (_) {}
+    try {
+      const data = error?.response?.data
+      if (typeof data === 'string' && /<html[\s\S]*<\/html>/i.test(data)) {
+        return Promise.reject(new Error(`API响应异常：收到HTML内容。可能是静态托管未配置后端代理，请设置VITE_API_BASE`))
+      }
+    } catch {}
     return Promise.reject(error)
   }
 )

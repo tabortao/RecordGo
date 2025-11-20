@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import ElementPlus from 'element-plus'
+import ElementPlus, { ElMessage } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
@@ -9,6 +9,7 @@ import 'element-plus/theme-chalk/dark/css-vars.css'
 import './styles/index.css'
 import router from './router'
 import App from './App.vue'
+import http from './services/http'
 
 // 中文注释：应用入口，注册 Pinia、路由与 Element Plus
 const app = createApp(App)
@@ -78,3 +79,23 @@ window.addEventListener('scroll', scheduleUpdate, { passive: true })
 window.addEventListener('resize', scheduleUpdate)
 
 updateThemeBar()
+
+try { (async () => { try { await http.get('/health') } catch { ElMessage.warning('后端API不可访问，请检查 VITE_API_BASE 或反向代理配置') } })() } catch {}
+
+window.addEventListener('error', (e) => {
+  try { ElMessage.error(`前端错误：${e.message || '未知错误'}`) } catch {}
+  console.error('GlobalError', e)
+})
+window.addEventListener('unhandledrejection', (e: PromiseRejectionEvent) => {
+  try { ElMessage.error(`请求失败：${(e.reason && e.reason.message) || '未知错误'}`) } catch {}
+  console.error('UnhandledRejection', e.reason)
+})
+
+try {
+  const isProd = !(import.meta as any).env?.DEV
+  const base = (import.meta as any).env?.VITE_API_BASE
+  const host = window.location.hostname
+  if (isProd && !base && !/^(localhost|127\.0\.0\.1)$/i.test(host)) {
+    console.warn('生产环境未配置 VITE_API_BASE，API 将走相对路径 /api，需在托管平台配置反向代理或设置 VITE_API_BASE 指向后端')
+  }
+} catch {}

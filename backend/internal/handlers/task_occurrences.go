@@ -11,6 +11,7 @@ import (
     "recordgo/internal/models"
     "recordgo/internal/config"
     "fmt"
+    "go.uber.org/zap"
 )
 
 func normalizeDate(d time.Time) time.Time {
@@ -86,7 +87,18 @@ func CompleteTaskOccurrence(c *gin.Context) {
     if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.Date) == "" { common.Error(c, 40001, "参数错误"); return }
     d, err := parseDate(req.Date)
     if err != nil { common.Error(c, 40001, "日期格式错误"); return }
-    if !matchRepeat(t, d) { common.Error(c, 40003, "日期不在重复规则范围内"); return }
+    if !matchRepeat(t, d) {
+        zap.L().Warn("CompleteTaskOccurrence: repeat mismatch",
+            zap.Uint("task_id", t.ID),
+            zap.String("repeat", strings.ToLower(strings.TrimSpace(t.Repeat))),
+            zap.Time("start", t.StartDate),
+            zap.String("date", req.Date),
+            zap.String("weekly_days", t.RepeatDaysJSON),
+            zap.Any("end", t.EndDate),
+        )
+        common.Error(c, 40003, "日期不在重复规则范围内")
+        return
+    }
     m := req.Minutes
     if m <= 0 { m = t.PlanMinutes }
     occ := models.TaskOccurrence{}

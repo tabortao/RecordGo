@@ -44,9 +44,9 @@ func normalizeRepeatType(s string) string {
 }
 
 func genDates(start time.Time, end *time.Time, repeatType string, weeklyDays []int) []time.Time {
-    if end == nil || repeatType == "none" { return []time.Time{start} }
-    s := time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, start.Location())
-    e := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, end.Location())
+    if end == nil || repeatType == "none" { return []time.Time{time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, time.UTC)} }
+    s := time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, time.UTC)
+    e := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, time.UTC)
     if e.Before(s) { return []time.Time{s} }
     out := make([]time.Time, 0, 32)
     if repeatType == "daily" {
@@ -121,7 +121,14 @@ func CreateTasksBatch(c *gin.Context) {
         common.Error(c, 40006, "重复范围过大，请缩短截止日期")
         return
     }
-    zap.L().Info("CreateTasksBatch: creating", zap.Uint("user_id", uid), zap.String("name", req.Name), zap.Int("count", len(dates)))
+    zap.L().Info("CreateTasksBatch: creating",
+        zap.Uint("user_id", uid),
+        zap.String("name", req.Name),
+        zap.Int("count", len(dates)),
+        zap.String("repeat_type", rtype),
+        zap.Time("start_date_raw", req.StartDate),
+        zap.String("weekly_days", func() string { b, _ := json.Marshal(req.WeeklyDays); return string(b) }()),
+    )
     var created []models.Task
     err := db.DB().Transaction(func(tx *gorm.DB) error {
         // 构造任务切片并批量写入

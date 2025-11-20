@@ -48,7 +48,18 @@ export async function listTasks(params?: { status?: number; page?: number; page_
 }
 
 export async function createTask(payload: any): Promise<TaskItem> {
-  return (await http.post('/tasks', payload)) as any
+  const norm = { ...payload }
+  if (norm.start_date) {
+    const d = new Date(norm.start_date)
+    const y = d.getFullYear(), m = d.getMonth(), day = d.getDate()
+    norm.start_date = new Date(Date.UTC(y, m, day, 0, 0, 0))
+  }
+  if (norm.end_date) {
+    const d = new Date(norm.end_date)
+    const y = d.getFullYear(), m = d.getMonth(), day = d.getDate()
+    norm.end_date = new Date(Date.UTC(y, m, day, 0, 0, 0))
+  }
+  return (await http.post('/tasks', norm)) as any
 }
 
 export async function createTasksBatch(payload: any): Promise<{ items: TaskItem[]; count: number }> {
@@ -56,7 +67,18 @@ export async function createTasksBatch(payload: any): Promise<{ items: TaskItem[
 }
 
 export async function updateTask(id: number, payload: any): Promise<TaskItem> {
-  return (await http.put(`/tasks/${id}`, payload)) as any
+  const norm = { ...payload }
+  if (norm.start_date) {
+    const d = new Date(norm.start_date)
+    const y = d.getFullYear(), m = d.getMonth(), day = d.getDate()
+    norm.start_date = new Date(Date.UTC(y, m, day, 0, 0, 0))
+  }
+  if (norm.end_date) {
+    const d = new Date(norm.end_date)
+    const y = d.getFullYear(), m = d.getMonth(), day = d.getDate()
+    norm.end_date = new Date(Date.UTC(y, m, day, 0, 0, 0))
+  }
+  return (await http.put(`/tasks/${id}`, norm)) as any
 }
 
 export async function updateTaskStatus(id: number, status: number, opts?: { allowByTomato?: boolean }): Promise<TaskItem> {

@@ -44,14 +44,17 @@
 
 <script setup lang="ts">
 // 中文注释：加载心愿兑换记录，支持分页，点击返回图标返回上一页
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import router from '@/router'
 import { ArrowLeft, List } from '@element-plus/icons-vue'
 import { listWishRecords, listWishes, type WishRecord, type Wish } from '@/services/wishes'
 import { getStaticBase } from '@/services/http'
 import { presignView } from '@/services/storage'
+import { ElMessage } from 'element-plus'
+import { useAuth } from '@/stores/auth'
 
-const userId = 1 // 中文注释：示例用户ID
+const auth = useAuth()
+const userId = computed(() => auth.user?.id ?? 0)
 function goBack() { router.back() }
 
 const records = ref<WishRecord[]>([])
@@ -61,14 +64,18 @@ const total = ref(0)
 const wishMap = ref<Record<number, Wish>>({})
 
 async function load() {
-  const resp = await listWishRecords(userId, page.value, pageSize.value)
-  records.value = resp.items
-  total.value = resp.total
-  // 中文注释：并行加载心愿列表，构建 id -> 心愿 的映射用于取图标
-  const wishes = await listWishes(userId)
-  const map: Record<number, Wish> = {}
-  for (const w of wishes) map[w.id] = w
-  wishMap.value = map
+  try {
+    const resp = await listWishRecords(userId.value, page.value, pageSize.value)
+    records.value = resp.items
+    total.value = resp.total
+    const wishes = await listWishes(userId.value)
+    const map: Record<number, Wish> = {}
+    for (const w of wishes) map[w.id] = w
+    wishMap.value = map
+  } catch (e: any) {
+    const msg = e?.message || '加载失败'
+    ElMessage.error(`兑换记录加载失败：${msg}`)
+  }
 }
 
 function onPageChange(p: number) { page.value = p; load() }
