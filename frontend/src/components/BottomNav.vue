@@ -5,8 +5,8 @@
       v-for="item in items"
       :key="item.to"
       :to="item.to"
-      class="flex flex-col items-center justify-center w-24 text-gray-600 dark:text-gray-300 pt-3"
-      :class="{ 'text-primary font-semibold': $route.path === item.to }"
+      class="flex flex-col items-center justify-center w-24 pt-3"
+      :class="$route.path === item.to ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-gray-600 dark:text-gray-300 opacity-80'"
     >
       <el-icon :size="20"><component :is="item.icon" /></el-icon>
       <span class="text-xs mt-1 mb-6">{{ item.label }}</span>

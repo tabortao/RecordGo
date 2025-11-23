@@ -5,6 +5,7 @@ import (
     "encoding/hex"
     "fmt"
     "strings"
+    "time"
 
     "github.com/gin-gonic/gin"
     "gorm.io/gorm"
@@ -202,13 +203,24 @@ func GenerateChildToken(c *gin.Context) {
         }
         return
     }
+    type reqBody struct { ExpiresInSeconds *int `json:"expires_in_seconds"` }
+    var body reqBody
+    _ = c.ShouldBindJSON(&body)
     token := randHex(32)
     child.LoginToken = token
+    if body.ExpiresInSeconds != nil && *body.ExpiresInSeconds > 0 {
+        t := time.Now().Add(time.Duration(*body.ExpiresInSeconds) * time.Second)
+        child.LoginTokenExpireAt = &t
+    } else {
+        child.LoginTokenExpireAt = nil
+    }
     if err := db.DB().Save(&child).Error; err != nil {
         common.Error(c, 50057, "保存令牌失败")
         return
     }
-    common.Ok(c, gin.H{"token": token})
+    resp := gin.H{"token": token}
+    if child.LoginTokenExpireAt != nil { resp["expires_at"] = child.LoginTokenExpireAt.Format(time.RFC3339) }
+    common.Ok(c, resp)
 }
 
 func randHex(n int) string {

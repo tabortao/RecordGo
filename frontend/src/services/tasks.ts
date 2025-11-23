@@ -122,6 +122,10 @@ export async function uncompleteOccurrence(id: number, payload: { date: string }
   return (await http.post(`/tasks/${id}/occurrences/uncomplete`, payload)) as any
 }
 
+export async function deleteOccurrence(id: number, payload: { date: string }): Promise<{ task_id: number, date: string, status: number }> {
+  return (await http.post(`/tasks/${id}/occurrences/delete`, payload)) as any
+}
+
 // 上传任务图片（前端已转换为 webp）
 // 中文注释：后端返回 { path }，相对路径 uploads/images/task_images/{用户id}/xxx.webp
 export async function uploadTaskImage(

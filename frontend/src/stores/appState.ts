@@ -146,6 +146,17 @@ export const useAppState = defineStore('appState', {
       try {
         const isDark = mode === 'dark' ? true : mode === 'light' ? false : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
         document.documentElement.classList.toggle('dark', !!isDark)
+        const meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null
+        if (meta) meta.setAttribute('content', isDark ? '#0f172a' : '#fefefe')
+        if (mode === 'system' && window.matchMedia) {
+          const mq = window.matchMedia('(prefers-color-scheme: dark)')
+          const fn = () => {
+            const d = mq.matches
+            if (meta) meta.setAttribute('content', d ? '#0f172a' : '#fefefe')
+            document.documentElement.classList.toggle('dark', d)
+          }
+          try { mq.addEventListener('change', fn) } catch { try { mq.addListener(fn) } catch {} }
+        }
       } catch {}
       this.persist()
     },

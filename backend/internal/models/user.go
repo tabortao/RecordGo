@@ -18,6 +18,7 @@ type User struct {
     Phone       string    `gorm:"size:32"`
     Email       string    `gorm:"size:128"`
     ParentID    *uint
+    LoginTokenExpireAt *time.Time
     CreatedAt   time.Time
     UpdatedAt   time.Time
 }

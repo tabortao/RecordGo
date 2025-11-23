@@ -46,7 +46,7 @@ func TokenLogin(c *gin.Context) {
         ParentID:   u.ParentID,
         LoginToken: strings.TrimSpace(u.LoginToken),
         RegisteredClaims: jwt.RegisteredClaims{
-            ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+            ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(cfg.JWTExpireDays) * 24 * time.Hour)),
             IssuedAt:  jwt.NewNumericDate(time.Now()),
         },
     }
@@ -54,6 +54,10 @@ func TokenLogin(c *gin.Context) {
     tokenStr, err := token.SignedString([]byte(cfg.SecretKey))
     if err != nil {
         common.Error(c, 50021, "令牌签发失败")
+        return
+    }
+    if u.LoginTokenExpireAt != nil && time.Now().After(*u.LoginTokenExpireAt) {
+        common.Error(c, 40303, "令牌已过期")
         return
     }
     // 中文注释：计算返回的金币值——若启用了父子金币同步，则使用父账号金币

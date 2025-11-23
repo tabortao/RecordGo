@@ -188,9 +188,9 @@
                   <!-- 小喇叭：朗读任务（关闭朗读时隐藏），替换为📢表情 -->
                   <el-icon v-if="store.speech.enabled" :size="14" class="cursor-pointer select-none" title="朗读任务" @click="speakTask(t)"><Headset /></el-icon>
                   <!-- 番茄钟图标仅未完成时显示 -->
-                  <img v-if="t.status !== 2" src="@/assets/tomato.png" alt="番茄钟" class="w-4 h-4 cursor-pointer" @click="openTomato(t)" />
+                  <img v-if="!isCompletedOnSelected(t)" src="@/assets/tomato.png" alt="番茄钟" class="w-4 h-4 cursor-pointer" @click="openTomato(t)" />
                   <!-- 状态标签 -->
-                  <el-tag v-if="t.status !== 2" type="danger" size="small">待完成</el-tag>
+                  <el-tag v-if="!isCompletedOnSelected(t)" type="danger" size="small">待完成</el-tag>
                   <el-tag v-else type="success" size="small">已完成</el-tag>
                 </div>
                 <el-dropdown trigger="click" @command="(cmd)=>onMenu(cmd, t)">
@@ -226,10 +226,10 @@
                 <!-- 中文注释：无论是否完成，只要有图片就显示图标；点击打开查看器（强制橙色避免主题覆盖） -->
             <el-icon v-if="hasImages(t)" class="cursor-pointer" :size="14" title="查看图片" style="color:#F97316 !important" @click="openTaskImages(t)"><Picture /></el-icon>
                 <!-- 中文注释：仅在已完成时显示“实际完成时间”，位于图片图标与计划用时之间 -->
-                <template v-if="t.status===2">
+                <template v-if="isCompletedOnSelected(t)">
             <div class="flex items-center gap-1 text-blue-600 dark:text-blue-400 text-xs" title="实际完成时间">
                     <el-icon :size="14"><Clock /></el-icon>
-                    <span class="font-semibold">{{ formatHMS(actualSecondsLocal[t.id] ?? ((t.actual_minutes||0)*60)) }}</span>
+                    <span class="font-semibold">{{ formatHMS(getActualSeconds(t)) }}</span>
                   </div>
                 </template>
                 <div class="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs" title="计划用时">
@@ -538,7 +538,7 @@ import TaskImageUploader from '@/components/TaskImageUploader.vue'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 dayjs.extend(utc)
-import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, uploadTaskImage, batchDelete, type TaskItem, syncOfflineTasks, listTaskOccurrences, completeOccurrence, uncompleteOccurrence } from '@/services/tasks'
+import { listTasks, createTask, updateTask, updateTaskStatus, deleteTask, completeTomato, listRecycleBin, restoreTasks, uploadTaskImage, type TaskItem, syncOfflineTasks, listTaskOccurrences, completeOccurrence, uncompleteOccurrence, deleteOccurrence } from '@/services/tasks'
 import { normalizeUploadPath } from '@/services/wishes'
 import { Picture } from '@element-plus/icons-vue'
 import { prepareUpload } from '@/utils/image'
@@ -668,6 +668,15 @@ function isCompletedOnSelected(t: TaskItem) {
   if (isRepeatTask(t)) return (occurMap.value[t.id]?.status || 0) === 2
   return t.status === 2
 }
+function getActualSeconds(t: TaskItem): number {
+  if (isRepeatTask(t)) {
+    const m = occurMap.value[t.id]?.minutes || 0
+    if (m > 0) return m * 60
+    return (t.plan_minutes || 0) * 60
+  }
+  const sec = (actualSecondsLocal[t.id] ?? ((t.actual_minutes || 0) * 60))
+  return sec || ((t.plan_minutes || 0) * 60)
+}
 const completedTasksCount = computed(() => {
   return filteredTasks.value.filter((t) => isCompletedOnSelected(t)).length
 })
@@ -760,12 +769,14 @@ const taskCountMap = computed<Record<string, number>>(() => {
 })
 const filteredTasks = computed(() => {
   let result = tasks.value
-  if (filter.value === '已完成') result = result.filter((t) => t.status === 2)
-  else if (filter.value === '待完成') result = result.filter((t) => t.status !== 2)
+  if (filter.value === '已完成') result = result.filter((t) => isCompletedOnSelected(t))
+  else if (filter.value === '待完成') result = result.filter((t) => !isCompletedOnSelected(t))
   if (categoryFilter.value !== '全部任务') result = result.filter((t) => (t.category || '') === categoryFilter.value)
   // 中文注释：日期过滤，使用重复规则生成发生日期，匹配选中日期
   const selKey = dayjs(selectedDate.value).format('YYYY-MM-DD')
   result = result.filter((t) => {
+    const occ = occurMap.value[t.id]?.status
+    if (occ === -1) return false
     const sDateStr = t.start_date ? String(t.start_date) : ''
     const eDateStr = t.end_date ? String(t.end_date) : ''
     if (!sDateStr) return false
@@ -1303,10 +1314,18 @@ function confirmDelete(t: TaskItem) {
 
 async function doDeleteCurrent(t: TaskItem) {
   try {
-    await deleteTask(t.id)
-    ElMessage.success('已删除当前日程')
-    deleteDialogVisible.value = false
-    await fetchTasks()
+    if (isRepeatTask(t)) {
+      const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
+      await deleteOccurrence(t.id, { date: dateStr })
+      occurMap.value[t.id] = { status: -1 }
+      ElMessage.success('已删除当前日程')
+      deleteDialogVisible.value = false
+    } else {
+      await deleteTask(t.id)
+      ElMessage.success('已删除当前任务')
+      deleteDialogVisible.value = false
+      await fetchTasks()
+    }
   } catch (e: any) {
     ElMessage.error(`删除失败：${e.message || e}`)
   }
@@ -1328,23 +1347,27 @@ async function doDeleteSeries(scope: 'future'|'all') {
   if (!deleteTarget.value) return
   const target = deleteTarget.value
   try {
-    // 中文注释：按 series_id 分组，若无则用“名称 + 分类”兜底
-    const group = tasks.value.filter((x) => {
-      if (target.series_id) return x.series_id === target.series_id
-      return x.name === target.name && (x.category || '') === (target.category || '')
-    })
-    // 仅当前及未来：筛选 start_date >= 选中日期；全部：整组
-    let candidates = group
-    if (scope === 'future') {
-      const th = dayjs(selectedDate.value).startOf('day')
-      candidates = group.filter((x) => dayjs(x.start_date).startOf('day').isSame(th) || dayjs(x.start_date).startOf('day').isAfter(th))
+    if (!isRepeatTask(target)) {
+      await deleteTask(target.id)
+      ElMessage.success('已删除')
+      deleteDialogVisible.value = false
+      await fetchTasks()
+      return
     }
-    const ids = candidates.map((x) => x.id)
-    if (ids.length === 0) { ElMessage.info('未找到可删除的系列任务'); return }
-    await batchDelete(ids)
-    ElMessage.success(`已删除${scope==='all'?'整个系列':'当前及未来'}共 ${ids.length} 条`)
-    deleteDialogVisible.value = false
-    await fetchTasks()
+    if (scope === 'all') {
+      await deleteTask(target.id)
+      ElMessage.success('已删除整个系列')
+      deleteDialogVisible.value = false
+      await fetchTasks()
+    } else {
+      const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
+      await deleteOccurrence(target.id, { date: dateStr })
+      occurMap.value[target.id] = { status: -1 }
+      const cutoff = dayjs(selectedDate.value).subtract(1, 'day').toDate()
+      await updateTask(target.id, { end_date: cutoff })
+      ElMessage.success('已删除当前及未来日程')
+      deleteDialogVisible.value = false
+    }
   } catch (e: any) {
     ElMessage.error(`批量删除失败：${e.message || e}`)
   }

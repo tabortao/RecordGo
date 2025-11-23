@@ -2,7 +2,7 @@
   <!-- 中文注释：顶层布局，包含页面内容与底部导航 -->
   <div class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <!-- 中文注释：为页面内容增加底部留白，避免被固定底部导航遮挡 -->
-    <router-view class="flex-1 pb-16" />
+    <router-view class="flex-1 pb-20" />
     <!-- 中文注释：登录/注册页面隐藏底部导航 -->
     <BottomNav v-if="!noNav" />
   </div>

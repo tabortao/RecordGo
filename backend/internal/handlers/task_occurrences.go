@@ -152,6 +152,30 @@ func UncompleteTaskOccurrence(c *gin.Context) {
     common.Ok(c, gin.H{"task_id": t.ID, "date": req.Date, "status": 0, "user_coins": target.Coins})
 }
 
+type OccurrenceDeleteReq struct { Date string `json:"date"` }
+
+func DeleteTaskOccurrence(c *gin.Context) {
+    id := c.Param("id")
+    if !hasPermission(c, "tasks", "status") { deny(c, "无权限修改任务状态"); return }
+    var t models.Task
+    if err := db.DB().First(&t, id).Error; err != nil { common.Error(c, 40401, "任务不存在"); return }
+    if !canAccessUser(c, t.UserID) { deny(c, "无权限"); return }
+    var req OccurrenceDeleteReq
+    if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.Date) == "" { common.Error(c, 40001, "参数错误"); return }
+    d, err := parseDate(req.Date)
+    if err != nil { common.Error(c, 40001, "日期格式错误"); return }
+    if !matchRepeat(t, d) { common.Error(c, 40003, "日期不在重复规则范围内"); return }
+    occ := models.TaskOccurrence{}
+    if err := db.DB().Where("task_id = ? AND date = ?", t.ID, normalizeDate(d)).First(&occ).Error; err != nil {
+        occ.TaskID = t.ID
+        occ.Date = normalizeDate(d)
+    }
+    occ.Status = -1
+    occ.Minutes = 0
+    if occ.ID == 0 { _ = db.DB().Create(&occ).Error } else { _ = db.DB().Save(&occ).Error }
+    common.Ok(c, gin.H{"task_id": t.ID, "date": req.Date, "status": -1})
+}
+
 func ListTaskOccurrences(c *gin.Context) {
     cl := extractClaims(c)
     if cl == nil { common.Error(c, 40100, "未登录"); return }

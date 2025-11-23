@@ -23,10 +23,10 @@
           <el-button type="success" @click="openCreate">创建子账号</el-button>
         </div>
 
-        <el-table :data="children" v-loading="loading" border>
+          <el-table :data="children" v-loading="loading" border>
           <el-table-column label="头像" width="80">
             <template #default="{ row }">
-              <el-avatar :size="36" :src="resolveAvatarUrl(row.avatar_path)" />
+              <el-avatar :size="36" :src="avatarsMap[row.id] || defaultAvatar" />
             </template>
           </el-table-column>
           <el-table-column prop="nickname" label="昵称" min-width="140" />
@@ -63,7 +63,7 @@
     </el-card>
 
     <!-- 创建/编辑 子账号弹窗 -->
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑子账号' : '创建子账号'" width="720px">
+    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑子账号' : '创建子账号'" :width="isMobile ? '92vw' : '720px'">
       <el-form label-position="top" @submit.prevent>
         <el-form-item label="昵称" required>
           <el-input v-model="form.nickname" placeholder="请输入子账号昵称" />
@@ -71,7 +71,7 @@
         <!-- 中文注释：头像上传（前端转 webp），创建时先暂存，保存后再上传并写入子账号头像路径 -->
         <el-form-item label="头像">
           <div class="flex items-center gap-3">
-            <el-avatar :size="48" :src="avatarPreview || resolveAvatarUrl(currentAvatarPath)" />
+            <el-avatar :size="48" :src="avatarPreview || avatarDialogSrc" />
             <el-button size="small" @click="triggerAvatarPick">选择头像</el-button>
             <input ref="avatarInput" type="file" accept="image/*" class="hidden" @change="onAvatarPicked" />
             <el-button v-if="avatarPreview" size="small" @click="clearAvatar">移除</el-button>
@@ -151,6 +151,8 @@ import { ref, onMounted, computed } from 'vue'
 import router from '@/router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getStaticBase } from '@/services/http'
+import { presignView } from '@/services/storage'
+import defaultAvatar from '@/assets/avatars/default.png'
 import { usePermissions } from '@/composables/permissions'
 import { listSubAccounts, createSubAccount, updateSubAccount, deleteSubAccount, generateChildToken, type ChildAccount } from '@/services/subaccounts'
 import { prepareUpload } from '@/utils/image'
@@ -212,13 +214,27 @@ async function onAvatarPicked(e: Event) {
 }
 function clearAvatar() { avatarFile.value = null; avatarPreview.value = '' }
 
-function resolveAvatarUrl(p?: string | null) {
-  if (!p) return ''
+const avatarsMap = ref<Record<number, string>>({})
+const avatarDialogSrc = ref<string>(defaultAvatar)
+function updateDialogAvatar() {
+  const p = currentAvatarPath.value
+  if (!p) { avatarDialogSrc.value = defaultAvatar; return }
   const s = String(p)
-  if (/^https?:\/\//i.test(s)) return s
-  if (!/uploads\//i.test(s)) return ''
+  if (/storage\/images\/avatars\/default\.png$/i.test(s) || /(^|\/)default\.png$/i.test(s)) { avatarDialogSrc.value = defaultAvatar; return }
+  if (/^https?:\/\//i.test(s)) { avatarDialogSrc.value = s; return }
   const base = getStaticBase()
-  return `${base}/api/${s.replace(/^\/+/, '')}`
+  if (/uploads\//i.test(s)) { avatarDialogSrc.value = `${base}/api/${s.replace(/^\/+/, '')}`; return }
+  try { presignView(s).then(u => avatarDialogSrc.value = u).catch(() => { avatarDialogSrc.value = defaultAvatar }) } catch { avatarDialogSrc.value = defaultAvatar }
+}
+async function resolveListAvatars(list: ChildAccount[]) {
+  const base = getStaticBase()
+  for (const c of list) {
+    const s = String(c.avatar_path || '')
+    if (!s || /storage\/images\/avatars\/default\.png$/i.test(s) || /(^|\/)default\.png$/i.test(s)) { avatarsMap.value[c.id] = defaultAvatar; continue }
+    if (/^https?:\/\//i.test(s)) { avatarsMap.value[c.id] = s; continue }
+    if (/uploads\//i.test(s)) { avatarsMap.value[c.id] = `${base}/api/${s.replace(/^\/+/, '')}`; continue }
+    try { avatarsMap.value[c.id] = await presignView(s) } catch { avatarsMap.value[c.id] = defaultAvatar }
+  }
 }
 
 function applyTemplate(tpl: string) {
@@ -305,6 +321,7 @@ async function loadList() {
     children.value = await listSubAccounts()
     // 中文注释：为每个子账号初始化令牌有效期（默认永久）
     children.value.forEach(c => { if (expiresMap.value[c.id] == null) expiresMap.value[c.id] = 0 })
+    await resolveListAvatars(children.value)
   } catch (e: any) {
     ElMessage.error(e?.message || '加载子账号失败')
   } finally {
@@ -320,6 +337,7 @@ function openCreate() {
   form.value = { nickname: '' }
   permModel.value = { ...defaultPerms }
   currentAvatarPath.value = ''
+  updateDialogAvatar()
   clearAvatar()
   dialogVisible.value = true
 }
@@ -332,6 +350,7 @@ function openEdit(row: ChildAccount) {
   form.value = { nickname: row.nickname || '' }
   parsePermsJSON(row.permissions)
   currentAvatarPath.value = row.avatar_path || ''
+  updateDialogAvatar()
   clearAvatar()
   dialogVisible.value = true
 }
@@ -413,3 +432,9 @@ onMounted(() => { loadList() })
 
 <style scoped>
 </style>
+const isMobile = ref(false)
+onMounted(() => {
+  const update = () => { isMobile.value = window.innerWidth < 768 }
+  update()
+  window.addEventListener('resize', update)
+})
