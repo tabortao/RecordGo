@@ -83,7 +83,10 @@ updateThemeBar()
 try { (async () => { try { await http.get('/health') } catch { ElMessage.warning('后端API不可访问，请检查 VITE_API_BASE 或反向代理配置') } })() } catch {}
 
 window.addEventListener('error', (e) => {
-  try { ElMessage.error(`前端错误：${e.message || '未知错误'}`) } catch {}
+  const msg = String(e.message || '')
+  if (/ResizeObserver/i.test(msg)) { console.warn('Ignored ResizeObserver warning:', msg); return }
+  if (msg === 'Script error.') { console.warn('Ignored cross-origin script error'); return }
+  try { ElMessage.error(`前端错误：${msg || '未知错误'}`) } catch {}
   console.error('GlobalError', e)
 })
 window.addEventListener('unhandledrejection', (e: PromiseRejectionEvent) => {

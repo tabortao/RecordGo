@@ -1290,13 +1290,7 @@ const deleteTarget = ref<TaskItem | null>(null)
 // 中文注释：非重复任务删除确认对话框（仅取消/确定）
 const simpleDeleteDialogVisible = ref(false)
 
-function isRepeatedTask(t: TaskItem): boolean {
-  const rep = String((t as any).repeat || '').trim()
-  if (!!t.series_id || !!t.end_date || rep !== '') return true
-  // 中文注释：后端暂未持久化 repeat/series_id 时，按“名称+分类”在列表中出现多次来判断为重复系列
-  const sameGroup = tasks.value.filter((x) => x.name === t.name && (x.category || '') === (t.category || ''))
-  return sameGroup.length >= 2
-}
+ 
 
 function confirmDelete(t: TaskItem) {
   // 中文注释：删除权限校验

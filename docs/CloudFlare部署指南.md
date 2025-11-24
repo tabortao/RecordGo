@@ -1,4 +1,6 @@
-         
+
+https://juejin.cn/post/7480604184564465700
+
 **部署目标**
 - 将 `frontend` 作为纯前端静态站点部署到 Cloudflare Pages，前端通过 `VITE_API_BASE` 直连后端 `https://recordgo-server.a.top/api`。
 

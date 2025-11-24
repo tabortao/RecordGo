@@ -49,6 +49,7 @@
 - 已安装 Go 1.24.1（64 位）
 - 可选：Docker Desktop（用于容器化运行）
 - Git（拉取代码与版本管理）
+- 项目会推送到github，使用cloudflare部署，前端地址是https://recordgo.sdgarden.top，后端地址是https://recordgo-server.sdgarden.top
 
 ### 2.2 前端（Vue 3）安装与运行
 
