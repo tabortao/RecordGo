@@ -85,7 +85,7 @@
         <div class="bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 border-b border-emerald-100 dark:border-emerald-800">
           <div class="flex items-center gap-2">
             <el-icon class="text-emerald-600"><Coin /></el-icon>
-            <h3 class="text-emerald-800 font-semibold text-sm">{{ exchangeTarget ? `兑换：${exchangeTarget.name}` : '兑换心愿' }}</h3>
+            <h3 class="text-emerald-800 dark:text-emerald-300 font-semibold text-base truncate">{{ exchangeTarget ? `兑换：${exchangeTarget.name}` : '兑换心愿' }}</h3>
           </div>
         </div>
       </template>
@@ -302,5 +302,9 @@ function openRecords() {
 /* 中文注释：美化兑换弹窗的主体内边距，限定作用于当前组件 */
 :deep(.pretty-exchange-dialog .el-dialog__body) {
   padding: 16px;
+}
+/* 自适应移动端对话框宽度 */
+:deep(.pretty-exchange-dialog .el-dialog) {
+  max-width: calc(100vw - 24px);
 }
 </style>

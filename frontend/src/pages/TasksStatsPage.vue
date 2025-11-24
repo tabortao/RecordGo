@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-sky-50 to-indigo-100">
-    <div class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur z-40 border-b">
+  <div class="min-h-screen bg-gradient-to-b from-sky-50 to-indigo-100 dark:bg-gray-900">
+    <div class="fixed top-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur z-40 border-b border-gray-200 dark:border-gray-700">
       <div class="px-4 py-2 flex items-center gap-2">
         <el-icon :size="18" class="cursor-pointer" @click="goBack"><ArrowLeft /></el-icon>
-        <el-icon :size="18" class="text-indigo-600"><DataAnalysis /></el-icon>
-        <div class="font-semibold text-indigo-700">任务统计</div>
+        <el-icon :size="18" class="text-indigo-600 dark:text-gray-100"><DataAnalysis /></el-icon>
+        <div class="font-semibold text-indigo-700 dark:text-gray-100">任务统计</div>
       </div>
     </div>
     <div class="h-12"></div>
@@ -20,40 +20,40 @@
       </el-card>
 
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        <el-card shadow="never" class="rounded-xl bg-sky-50">
+        <el-card shadow="never" class="rounded-xl bg-sky-50 dark:bg-gray-800">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 text-sky-600"><el-icon :size="18"><List /></el-icon><span class="text-xs">总任务数</span></div>
-            <div class="font-bold text-sky-700">{{ metrics.totalTasks }}</div>
+            <div class="flex items-center gap-2 text-sky-600 dark:text-sky-400"><el-icon :size="18"><List /></el-icon><span class="text-xs">总任务数</span></div>
+            <div class="font-bold text-sky-700 dark:text-sky-400">{{ metrics.totalTasks }}</div>
           </div>
         </el-card>
-        <el-card shadow="never" class="rounded-xl bg-amber-50">
+        <el-card shadow="never" class="rounded-xl bg-amber-50 dark:bg-gray-800">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 text-amber-600"><el-icon :size="18"><Clock /></el-icon><span class="text-xs">总时长（分）</span></div>
-            <div class="font-bold text-amber-700">{{ metrics.totalMinutes }}</div>
+            <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400"><el-icon :size="18"><Clock /></el-icon><span class="text-xs">总时长（分）</span></div>
+            <div class="font-bold text-amber-700 dark:text-amber-400">{{ metrics.totalMinutes }}</div>
           </div>
         </el-card>
-        <el-card shadow="never" class="rounded-xl bg-emerald-50">
+        <el-card shadow="never" class="rounded-xl bg-emerald-50 dark:bg-gray-800">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 text-emerald-600"><el-icon :size="18"><CircleCheck /></el-icon><span class="text-xs">已完成</span></div>
-            <div class="font-bold text-emerald-700">{{ metrics.completed }}</div>
+            <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400"><el-icon :size="18"><CircleCheck /></el-icon><span class="text-xs">已完成</span></div>
+            <div class="font-bold text-emerald-700 dark:text-emerald-400">{{ metrics.completed }}</div>
           </div>
         </el-card>
-        <el-card shadow="never" class="rounded-xl bg-indigo-50">
+        <el-card shadow="never" class="rounded-xl bg-indigo-50 dark:bg-gray-800">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 text-indigo-600"><el-icon :size="18"><Clock /></el-icon><span class="text-xs">日均时长（分）</span></div>
-            <div class="font-bold text-indigo-700">{{ metrics.avgDailyMinutes }}</div>
+            <div class="flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><el-icon :size="18"><Clock /></el-icon><span class="text-xs">日均时长（分）</span></div>
+            <div class="font-bold text-indigo-700 dark:text-indigo-400">{{ metrics.avgDailyMinutes }}</div>
           </div>
         </el-card>
-        <el-card shadow="never" class="rounded-xl bg-violet-50">
+        <el-card shadow="never" class="rounded-xl bg-violet-50 dark:bg-gray-800">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 text-violet-600"><el-icon :size="18"><DataAnalysis /></el-icon><span class="text-xs">平均完成率</span></div>
-            <div class="font-bold text-violet-700">{{ metrics.rate }}%</div>
+            <div class="flex items-center gap-2 text-violet-600 dark:text-violet-400"><el-icon :size="18"><DataAnalysis /></el-icon><span class="text-xs">平均完成率</span></div>
+            <div class="font-bold text-violet-700 dark:text-violet-400">{{ metrics.rate }}%</div>
           </div>
         </el-card>
-        <el-card shadow="never" class="rounded-xl bg-pink-50">
+        <el-card shadow="never" class="rounded-xl bg-pink-50 dark:bg-gray-800">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 text-pink-600"><el-icon :size="18"><Coin /></el-icon><span class="text-xs">总金币数</span></div>
-            <div class="font-bold text-pink-700">{{ metrics.totalCoins }}</div>
+            <div class="flex items-center gap-2 text-pink-600 dark:text-pink-400"><el-icon :size="18"><Coin /></el-icon><span class="text-xs">总金币数</span></div>
+            <div class="font-bold text-pink-700 dark:text-pink-400">{{ metrics.totalCoins }}</div>
           </div>
         </el-card>
       </div>

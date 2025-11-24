@@ -3,7 +3,7 @@
     <div class="px-4 py-2 font-semibold">我的</div>
   </div>
   <div class="h-10"></div>
-  <div class="p-3 space-y-3">
+  <div class="p-3 space-y-3" style="padding-bottom: env(safe-area-inset-bottom)">
     <el-card shadow="never">
       <div class="flex items-center gap-3">
         <!-- 中文注释：头像优先显示用户自定义头像，未设置则使用默认头像；修复相对路径未加 API 前缀导致无法显示的问题 -->
@@ -101,6 +101,7 @@
 
     <!-- 中文注释：按需求取消“最近金币变动”卡片展示 -->
   </div>
+  <div style="height: env(safe-area-inset-bottom)"></div>
 </template>
 
 <script setup lang="ts">
