@@ -661,8 +661,10 @@ const store = useAppState()
 const totalCoins = computed(() => store.coins)
 const occurMap = ref<Record<number, { status: number; minutes?: number }>>({})
 function isRepeatTask(t: TaskItem) {
-  const rep = String((t as any).repeat || 'none').toLowerCase()
-  return !/^(none|无|)$/i.test(rep)
+  const rep = String((t as any).repeat || (t as any).repeat_type || 'none').trim().toLowerCase()
+  const type = /^(daily|weekdays|weekly|monthly)$/.test(rep) ? rep : 'none'
+  const e = (t as any).end_date
+  return type !== 'none' && (!!e || (t as any).series_id != null)
 }
 function isCompletedOnSelected(t: TaskItem) {
   if (isRepeatTask(t)) return (occurMap.value[t.id]?.status || 0) === 2
@@ -1302,7 +1304,7 @@ function confirmDelete(t: TaskItem) {
     ElMessage.warning('当前权限不允许删除任务')
     return
   }
-  if (isRepeatedTask(t)) {
+  if (isRepeatTask(t)) {
     deleteTarget.value = t
     deleteScope.value = 'current'
     deleteDialogVisible.value = true

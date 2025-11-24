@@ -166,6 +166,12 @@ const allowManage = computed(() => isParent.value || manageChildren.value)
 const children = ref<ChildAccount[]>([])
 const loading = ref(false)
 const expiresMap = ref<Record<number, number>>({})
+const isMobile = ref(false)
+onMounted(() => {
+  const update = () => { isMobile.value = window.innerWidth < 768 }
+  update()
+  window.addEventListener('resize', update)
+})
 
 // 创建/编辑弹窗状态
 const dialogVisible = ref(false)
@@ -432,9 +438,3 @@ onMounted(() => { loadList() })
 
 <style scoped>
 </style>
-const isMobile = ref(false)
-onMounted(() => {
-  const update = () => { isMobile.value = window.innerWidth < 768 }
-  update()
-  window.addEventListener('resize', update)
-})
