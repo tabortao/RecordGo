@@ -110,7 +110,7 @@ const fileInput = ref<HTMLInputElement | null>(null)
 function goBack() { router.back() }
 
 // 历史备注
-const existingNotes = computed(() => store.list(taskId))
+const existingNotes = computed<TaskNote[]>(() => store.list(taskId))
 onMounted(async () => { await resolveServerPaths(existingNotes.value) })
 watch(() => JSON.stringify(existingNotes.value.map(n => (n.attachments||[]).map(a => a.serverPath || '').join(','))), async () => {
   await resolveServerPaths(existingNotes.value)
@@ -139,19 +139,19 @@ function resolveUrl(att: NoteAttachment) {
 }
 
 function imageList(atts: NoteAttachment[]): string[] {
-  return atts.filter(a => a.type==='image').map(a => resolveUrl(a)).filter(Boolean)
+  return atts.filter((a: NoteAttachment) => a.type === 'image').map((a: NoteAttachment) => resolveUrl(a)).filter(Boolean)
 }
 
 function imageIndex(atts: NoteAttachment[], att: NoteAttachment): number {
-  return atts.filter(a => a.type==='image').findIndex(a => a.url === att.url || a.serverPath === att.serverPath)
+  return atts.filter((a: NoteAttachment) => a.type === 'image').findIndex((a: NoteAttachment) => a.url === att.url || a.serverPath === att.serverPath)
 }
 
 function previewList(): string[] {
-  return attachments.value.filter(a => a.type==='image').map(a => a.url)
+  return attachments.value.filter((a: TmpAttachment) => a.type === 'image').map((a: TmpAttachment) => a.url)
 }
 
 function previewIndex(att: { type: 'image' | 'audio'; url: string }): number {
-  return attachments.value.filter(a => a.type==='image').findIndex(a => a.url === att.url)
+  return attachments.value.filter((a: TmpAttachment) => a.type === 'image').findIndex((a: TmpAttachment) => a.url === att.url)
 }
 
 // 触发文件选择

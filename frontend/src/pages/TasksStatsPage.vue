@@ -246,7 +246,7 @@ const timeSeries = computed(() => {
     })
   }
   if (tab === 'all') {
-    const years = Array.from(new Set(filtered.value.map((t: TaskItem) => dayjs(t.start_date).year()))).sort((a: number, b: number) => a - b)
+    const years = Array.from(new Set<number>(filtered.value.map((t: TaskItem) => dayjs(t.start_date).year()))).sort((a, b) => a - b)
     const byYear: Record<string, { [c: string]: number }> = {}
     for (const y of years) byYear[String(y)] = {}
     for (const day of periodDays.value) {
