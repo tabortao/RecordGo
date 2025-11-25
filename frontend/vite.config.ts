@@ -7,7 +7,7 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 // 中文注释：Vite 配置，集成 Vue、自动导入、Element Plus 组件解析，支持根据环境代理后端 API
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
-  const apiBase = env.VITE_API_BASE || 'http://localhost:8080'
+  const apiBase = env.VITE_API_BASE || 'http://localhost:8082'
 
   return {
     plugins: [
