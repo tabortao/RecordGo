@@ -1,25 +1,13 @@
-// 中文注释：浏览器端图片压缩与 webp 转换工具，失败时回退到原格式
-export async function toWebp(file: File, quality = 0.8): Promise<File> {
-  // 非图片直接返回
+// 中文注释：统一使用 image-conversion 进行高效压缩与 webp 转换
+import { compressAccurately } from 'image-conversion'
+
+export async function toWebp(file: File): Promise<File> {
   if (!file.type.startsWith('image/')) return file
-
-  const bitmap = await createImageBitmap(file).catch(() => null)
-  if (!bitmap) return file
-
-  const canvas = document.createElement('canvas')
-  canvas.width = bitmap.width
-  canvas.height = bitmap.height
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return file
-  ctx.drawImage(bitmap, 0, 0)
-
-  // 尝试导出 webp 数据
-  const blob: Blob | null = await new Promise((resolve) =>
-    canvas.toBlob((b) => resolve(b), 'image/webp', quality)
-  )
-
+  if (file.type === 'image/webp') return file
+  const originalKB = Math.max(1, Math.round(file.size / 1024))
+  const targetKB = Math.min(220, Math.max(60, Math.round(originalKB * 0.2)))
+  const blob = await compressAccurately(file, { size: targetKB, accuracy: 0.92, type: 'image/webp' }).catch(() => null)
   if (!blob) return file
-
   return new File([blob], replaceExt(file.name, 'webp'), { type: 'image/webp' })
 }
 
@@ -32,8 +20,14 @@ function replaceExt(name: string, ext: string): string {
 // 中文注释：示例上传流程（调用接口前转换 webp）
 export async function prepareUpload(file: File, quality = 0.8): Promise<File> {
   try {
-    const webp = await toWebp(file, quality)
-    return webp
+    if (!file.type.startsWith('image/')) return file
+    if (file.type === 'image/webp') return file
+    const originalSize = file.size
+    const converted = await toWebp(file)
+    const preferOriginalIfClose = quality >= 0.8
+    if (!converted) return file
+    if (preferOriginalIfClose ? converted.size >= Math.max(1, Math.floor(originalSize * 0.98)) : converted.size >= originalSize) return file
+    return converted
   } catch {
     return file
   }

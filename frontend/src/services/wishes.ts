@@ -1,5 +1,6 @@
 import http from './http'
 import { presignUpload, putToURL } from './storage'
+import { prepareUpload } from '@/utils/image'
 
 // 中文注释：心愿服务，统一封装心愿相关的 API 调用，保证字段与后端一致
 export interface Wish {
@@ -130,7 +131,7 @@ export async function listWishRecords(userId: number, page = 1, pageSize = 10, o
 
 // 上传心愿图标（前端先转换为 webp）
 export async function uploadWishIcon(userId: number, file: File) {
-  const webp = await toWebp(file)
+  const webp = await prepareUpload(file, 0.8)
   const sign = await presignUpload({ resource_type: 'wish_image', user_id: userId, content_type: 'image/webp', ext: 'webp' })
   await putToURL(sign.upload_url, webp, sign.headers)
   return { path: sign.object_key }
@@ -144,26 +145,4 @@ export async function getWish(id: number): Promise<Wish> {
   return { ...(w as any), icon }
 }
 
-// 工具：将图片转换为 webp（质量 0.8），失败则返回原文件
-export async function toWebp(file: File, quality = 0.8): Promise<File> {
-  return new Promise((resolve) => {
-    const img = new Image()
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width = img.width
-      canvas.height = img.height
-      const ctx = canvas.getContext('2d')!
-      ctx.drawImage(img, 0, 0)
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const webp = new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' })
-          resolve(webp)
-        } else {
-          resolve(file)
-        }
-      }, 'image/webp', quality)
-    }
-    img.onerror = () => resolve(file)
-    img.src = URL.createObjectURL(file)
-  })
-}
+// 统一到 utils/image.prepareUpload

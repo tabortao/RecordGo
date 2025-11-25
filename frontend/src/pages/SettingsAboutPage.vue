@@ -1,6 +1,6 @@
 <template>
   <!-- 中文注释：关于页面，展示图标、名称、版本号，以及外部跳转按钮（小红书、邮件联系） -->
-  <div class="p-4 space-y-4">
+  <div class="p-4 space-y-4 pb-16">
     <!-- 标题栏：返回 + 关于图标 + 文本 -->
     <div class="flex items-center gap-2">
       <el-icon :size="18" class="cursor-pointer" style="color:#64748b" @click="goBack"><ArrowLeft /></el-icon>

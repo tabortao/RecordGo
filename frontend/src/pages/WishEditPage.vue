@@ -46,12 +46,15 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft, Edit } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 import router from '@/router'
-import { getWish, updateWish, uploadWishIcon, toWebp, normalizeUploadPath, type Wish } from '@/services/wishes'
+import { getWish, updateWish, uploadWishIcon, normalizeUploadPath, type Wish } from '@/services/wishes'
+import { useAuth } from '@/stores/auth'
+import { prepareUpload } from '@/utils/image'
 import { getStaticBase } from '@/services/http'
 import { presignView } from '@/services/storage'
 
 const route = useRoute()
-const userId = 1 // 中文注释：示例用户ID
+const auth = useAuth()
+const userId = computed(() => auth.user?.id ?? 0)
 function goBack() { router.back() }
 
 type WishForm = Partial<Wish> & { icon_preview?: string }
@@ -68,10 +71,10 @@ onMounted(async () => {
 async function onPickIcon(fileEvent: any) {
   const raw: File | undefined = fileEvent?.raw || fileEvent?.target?.files?.[0] || fileEvent?.file
   if (!raw) return
-  const webp = await toWebp(raw)
+  const webp = await prepareUpload(raw, 0.8)
   try { form.icon_preview = URL.createObjectURL(webp) } catch {}
   try {
-    const { path } = await uploadWishIcon(userId, webp)
+    const { path } = await uploadWishIcon(userId.value, webp)
     form.icon = normalizeUploadPath(path)
     try { form.icon_preview && URL.revokeObjectURL(form.icon_preview as any) } catch {}
     form.icon_preview = ''

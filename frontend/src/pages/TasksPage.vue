@@ -193,7 +193,7 @@
                   <el-tag v-if="!isCompletedOnSelected(t)" type="danger" size="small">待完成</el-tag>
                   <el-tag v-else type="success" size="small">已完成</el-tag>
                 </div>
-                <el-dropdown trigger="click" @command="(cmd)=>onMenu(cmd, t)">
+                <el-dropdown trigger="click" @command="(cmd: string)=>onMenu(cmd, t)">
                   <span class="el-dropdown-link">
                     <el-icon class="cursor-pointer"><MoreFilled /></el-icon>
                   </span>
@@ -451,7 +451,7 @@
 
     <!-- 回收站对话框 -->
     <el-dialog v-model="recycleVisible" title="回收站" width="600px">
-      <el-table :data="recycleList" style="width: 100%">
+      <el-table :data="recycleList" :style="{ width: '100%' }">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="任务" />
         <el-table-column prop="category" label="分类" width="100" />
@@ -586,16 +586,17 @@ const dateStatusFilteredTasks = computed(() => {
   return result
 })
 // 中文注释：仅展示当日存在任务的分类；若任务包含“未分类”，也纳入筛选项
+import type { TaskCategory } from '@/stores/categories'
 const categoriesForDay = computed(() => {
   const present = new Set<string>()
   for (const t of dateStatusFilteredTasks.value) present.add((t.category || '未分类'))
-  const list = cats.list().filter(c => present.has(c.name))
+  const list: TaskCategory[] = cats.list().filter((c: TaskCategory) => present.has(c.name))
   // 兼容任务出现未在设置页定义的分类
   for (const name of Array.from(present)) {
-    if (!list.some(c => c.name === name)) list.push({ name, color: cats.colorOf(name), order: cats.orderOf(name) } as any)
+    if (!list.some((c: TaskCategory) => c.name === name)) list.push({ name, color: cats.colorOf(name), order: cats.orderOf(name) } as TaskCategory)
   }
   // 按自定义顺序排序
-  return list.sort((a, b) => {
+  return list.sort((a: TaskCategory, b: TaskCategory) => {
     const oa = cats.orderOf(a.name)
     const ob = cats.orderOf(b.name)
     if (oa !== ob) return oa - ob
@@ -650,6 +651,7 @@ async function onTouchEnd() {
       await fetchTasks()
     } finally {
       refreshing.value = false
+      try { ElMessage.success('已刷新') } catch {}
     }
   }
   pullY.value = 0
@@ -891,7 +893,7 @@ function accountAvatarSrc(u: { id: number, avatar_path?: string|null }) {
   return accountsAvatarMap.value[u.id] || defaultAvatar
 }
 onMounted(async () => { await resolveAccountsAvatars(auth.accounts || []) })
-watch(() => auth.accounts.map(a => a.user.id + ':' + (a.user.avatar_path || '')), async () => { await resolveAccountsAvatars(auth.accounts || []) })
+watch(() => auth.accounts.map((a: { user: { id: number; avatar_path?: string|null } }) => a.user.id + ':' + (a.user.avatar_path || '')), async () => { await resolveAccountsAvatars(auth.accounts || []) })
 const addUserVisible = ref(false)
 const addUserName = ref('')
 const addUserPassword = ref('')
@@ -904,7 +906,7 @@ function onAvatarCommand(cmd: string) {
     if (id > 0) {
       if (!isParent.value) {
         try {
-          const target = auth.accounts.find(a => a.user.id === id)
+      const target = auth.accounts.find((a: { user: { id: number; parent_id?: number|null } }) => a.user.id === id)
           const targetIsParent = !target?.user?.parent_id || Number(target?.user?.parent_id) === 0
           if (targetIsParent) {
             ElMessage.warning('子账号不可切换到父账户，请使用令牌登录子账号')

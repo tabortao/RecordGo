@@ -47,7 +47,8 @@ import { reactive, computed, ref, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Plus } from '@element-plus/icons-vue'
 import router from '@/router'
-import { createWish, uploadWishIcon, toWebp, normalizeUploadPath } from '@/services/wishes'
+import { createWish, uploadWishIcon, normalizeUploadPath } from '@/services/wishes'
+import { prepareUpload } from '@/utils/image'
 import { presignView } from '@/services/storage'
 import { getStaticBase } from '@/services/http'
 import { useAuth } from '@/stores/auth'
@@ -77,7 +78,7 @@ watch(() => form.icon, async () => { await updateIconResolved() })
 async function onPickIcon(fileEvent: any) {
   const raw: File | undefined = fileEvent?.raw || fileEvent?.target?.files?.[0] || fileEvent?.file
   if (!raw) return
-  const webp = await toWebp(raw)
+  const webp = await prepareUpload(raw, 0.8)
   try { form.icon_preview = URL.createObjectURL(webp) } catch {}
   try {
     const { path } = await uploadWishIcon(userId.value, webp)

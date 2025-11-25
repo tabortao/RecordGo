@@ -111,9 +111,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import dayjs from 'dayjs'
-import { listTasks, type TaskItem } from '@/services/tasks'
+import { listTasks, listTaskOccurrences, type TaskItem } from '@/services/tasks'
 import router from '@/router'
 import { ArrowLeft, DataAnalysis, Histogram, PieChart, List, Clock, CircleCheck, Coin } from '@element-plus/icons-vue'
 import { useTaskCategories } from '@/stores/categories'
@@ -150,27 +150,69 @@ function periodRange(tab: 'week'|'month'|'year'|'all') {
   return { start: monday, end: sunday }
 }
 
+const periodDays = computed(() => {
+  const { start, end } = periodRange(activeTab.value)
+  const keys: string[] = []
+  let p = start.startOf('day')
+  while (p.isBefore(end.add(1, 'millisecond'))) {
+    keys.push(p.format('YYYY-MM-DD'))
+    p = p.add(1, 'day')
+  }
+  return keys
+})
+
+const occMap = ref<Record<string, Record<number, { status: number; minutes: number }>>>({})
+async function fetchOccurrences() {
+  const { start, end } = periodRange(activeTab.value)
+  const resp = await listTaskOccurrences({ start: start.format('YYYY-MM-DD'), end: end.format('YYYY-MM-DD') })
+  const map: Record<string, Record<number, { status: number; minutes: number }>> = {}
+  for (const it of (resp.items || [])) {
+    const day = dayjs(it.date).format('YYYY-MM-DD')
+    if (!map[day]) map[day] = {}
+    map[day][Number(it.task_id)] = { status: Number(it.status || 0), minutes: Number(it.minutes || 0) }
+  }
+  occMap.value = map
+}
+
 const filtered = computed(() => {
   const { start, end } = periodRange(activeTab.value)
-  return allTasks.value.filter(t => {
-    const d = t.start_date ? dayjs(t.start_date) : null
-    if (!d) return false
-    return d.isAfter(start.subtract(1, 'millisecond')) && d.isBefore(end.add(1, 'millisecond'))
+  return allTasks.value.filter((t: TaskItem) => {
+    const s = t.start_date ? dayjs(t.start_date) : null
+    if (!s) return false
+    return s.isBefore(end.add(1, 'millisecond')) && s.isAfter(start.subtract(1, 'millisecond'))
   })
 })
 
 const metrics = computed(() => {
   const tasks = filtered.value
-  const totalTasks = tasks.length
-  const completed = tasks.filter(t => t.status === 2).length
-  const rate = totalTasks === 0 ? 0 : Math.round((completed / totalTasks) * 100)
-  const totalMinutes = tasks.reduce((s, t) => s + (t.actual_minutes || 0), 0)
-  const days = (() => {
-    const { start, end } = periodRange(activeTab.value)
-    return end.diff(start, 'day') + 1
-  })()
+  let totalTasks = 0
+  let completed = 0
+  let totalMinutes = 0
+  let totalCoins = 0
+  for (const day of periodDays.value) {
+    const occ = occMap.value[day] || {}
+    for (const t of tasks) {
+      const isRepeat = !!((t as any).end_date || (t as any).series_id != null) && /daily|weekdays|weekly|monthly/i.test(String((t as any).repeat || (t as any).repeat_type || 'none'))
+      if (isRepeat) {
+        const entry = occ[t.id]
+        if (entry) {
+          totalTasks++
+          if (entry.status === 2) { completed++; totalCoins += (t.score || 0) }
+          totalMinutes += Number(entry.minutes || 0)
+        }
+        continue
+      }
+      const key = day
+      if (dayjs(t.start_date).format('YYYY-MM-DD') === key) {
+        totalTasks++
+        if (t.status === 2) { completed++; totalCoins += (t.score || 0); totalMinutes += Number(t.actual_minutes || 0) }
+      }
+    }
+  }
+  const { start, end } = periodRange(activeTab.value)
+  const days = end.diff(start, 'day') + 1
   const avgDailyMinutes = days > 0 ? Math.round(totalMinutes / days) : 0
-  const totalCoins = tasks.filter(t => t.status === 2).reduce((s, t) => s + (t.score || 0), 0)
+  const rate = totalTasks === 0 ? 0 : Math.round((completed / totalTasks) * 100)
   return { totalTasks, completed, rate, totalMinutes, avgDailyMinutes, totalCoins }
 })
 
@@ -182,11 +224,20 @@ const timeSeries = computed(() => {
     const year = now.year()
     const byMonth: Record<string, { [c: string]: number }> = {}
     for (let m = 1; m <= 12; m++) byMonth[`${year}-${String(m).padStart(2, '0')}`] = {}
-    for (const t of filtered.value) {
-      const key = dayjs(t.start_date).format('YYYY-MM')
-      const c = (t.category || '未分类')
-      const minutes = Number(t.actual_minutes || 0)
-      byMonth[key][c] = (byMonth[key][c] || 0) + minutes
+    for (const day of periodDays.value) {
+      const occ = occMap.value[day] || {}
+      const monthKey = dayjs(day).format('YYYY-MM')
+      for (const t of filtered.value) {
+        const isRepeat = !!((t as any).end_date || (t as any).series_id != null) && /daily|weekdays|weekly|monthly/i.test(String((t as any).repeat || (t as any).repeat_type || 'none'))
+        const c = (t.category || '未分类')
+        if (isRepeat) {
+          const minutes = Number((occ[t.id]?.minutes) || 0)
+          if (minutes > 0) byMonth[monthKey][c] = (byMonth[monthKey][c] || 0) + minutes
+        } else if (dayjs(t.start_date).format('YYYY-MM-DD') === day && t.status === 2) {
+          const minutes = Number(t.actual_minutes || 0)
+          if (minutes > 0) byMonth[monthKey][c] = (byMonth[monthKey][c] || 0) + minutes
+        }
+      }
     }
     return Object.entries(byMonth).map(([key, m]) => {
       const segments = Object.entries(m).map(([category, minutes]) => ({ category, minutes: Number(minutes), color: cats.colorOf(category) }))
@@ -195,14 +246,23 @@ const timeSeries = computed(() => {
     })
   }
   if (tab === 'all') {
-    const years = Array.from(new Set(filtered.value.map(t => dayjs(t.start_date).year()))).sort((a, b) => a - b)
+    const years = Array.from(new Set(filtered.value.map((t: TaskItem) => dayjs(t.start_date).year()))).sort((a: number, b: number) => a - b)
     const byYear: Record<string, { [c: string]: number }> = {}
     for (const y of years) byYear[String(y)] = {}
-    for (const t of filtered.value) {
-      const key = String(dayjs(t.start_date).year())
-      const c = (t.category || '未分类')
-      const minutes = Number(t.actual_minutes || 0)
-      byYear[key][c] = (byYear[key][c] || 0) + minutes
+    for (const day of periodDays.value) {
+      const occ = occMap.value[day] || {}
+      const yearKey = dayjs(day).format('YYYY')
+      for (const t of filtered.value) {
+        const isRepeat = !!((t as any).end_date || (t as any).series_id != null) && /daily|weekdays|weekly|monthly/i.test(String((t as any).repeat || (t as any).repeat_type || 'none'))
+        const c = (t.category || '未分类')
+        if (isRepeat) {
+          const minutes = Number((occ[t.id]?.minutes) || 0)
+          if (minutes > 0) byYear[yearKey][c] = (byYear[yearKey][c] || 0) + minutes
+        } else if (dayjs(t.start_date).format('YYYY-MM-DD') === day && t.status === 2) {
+          const minutes = Number(t.actual_minutes || 0)
+          if (minutes > 0) byYear[yearKey][c] = (byYear[yearKey][c] || 0) + minutes
+        }
+      }
     }
     return Object.entries(byYear).map(([key, m]) => {
       const segments = Object.entries(m).map(([category, minutes]) => ({ category, minutes: Number(minutes), color: cats.colorOf(category) }))
@@ -211,18 +271,21 @@ const timeSeries = computed(() => {
     })
   }
   // week / month → 按日
-  const { start, end } = periodRange(tab)
   const byDay: Record<string, { [c: string]: number }> = {}
-  let p = start.startOf('day')
-  while (p.isBefore(end.add(1, 'millisecond'))) {
-    byDay[p.format('YYYY-MM-DD')] = {}
-    p = p.add(1, 'day')
-  }
-  for (const t of filtered.value) {
-    const key = dayjs(t.start_date).format('YYYY-MM-DD')
-    const c = (t.category || '未分类')
-    const minutes = Number(t.actual_minutes || 0)
-    byDay[key][c] = (byDay[key][c] || 0) + minutes
+  for (const day of periodDays.value) byDay[day] = {}
+  for (const day of periodDays.value) {
+    const occ = occMap.value[day] || {}
+    for (const t of filtered.value) {
+      const c = (t.category || '未分类')
+      const isRepeat = !!((t as any).end_date || (t as any).series_id != null) && /daily|weekdays|weekly|monthly/i.test(String((t as any).repeat || (t as any).repeat_type || 'none'))
+      if (isRepeat) {
+        const minutes = Number((occ[t.id]?.minutes) || 0)
+        if (minutes > 0) byDay[day][c] = (byDay[day][c] || 0) + minutes
+      } else if (dayjs(t.start_date).format('YYYY-MM-DD') === day && t.status === 2) {
+        const minutes = Number(t.actual_minutes || 0)
+        if (minutes > 0) byDay[day][c] = (byDay[day][c] || 0) + minutes
+      }
+    }
   }
   return Object.entries(byDay).map(([key, m]) => {
     const segments = Object.entries(m).map(([category, minutes]) => ({ category, minutes: Number(minutes), color: cats.colorOf(category) }))
@@ -231,7 +294,7 @@ const timeSeries = computed(() => {
   })
 })
 
-const maxSeriesTotal = computed(() => Math.max(1, ...timeSeries.value.map(r => r.total)))
+const maxSeriesTotal = computed(() => Math.max(1, ...timeSeries.value.map((r: { total: number }) => r.total)))
 function segHeight(minutes: number) {
   const hMax = 120
   return Math.round((minutes / maxSeriesTotal.value) * hMax)
@@ -259,9 +322,10 @@ function labelOf(key: string) {
 
 const categoryShare = computed(() => {
   const sumByCat: Record<string, number> = {}
-  for (const t of filtered.value) {
-    const c = (t.category || '未分类')
-    sumByCat[c] = (sumByCat[c] || 0) + Number(t.actual_minutes || 0)
+  for (const d of timeSeries.value) {
+    for (const seg of d.segments) {
+      sumByCat[seg.category] = (sumByCat[seg.category] || 0) + Number(seg.minutes || 0)
+    }
   }
   const total = Object.values(sumByCat).reduce((s, x) => s + x, 0) || 1
   const arr = Object.entries(sumByCat).map(([name, minutes]) => {
@@ -273,7 +337,7 @@ const categoryShare = computed(() => {
 
 const donutGradient = computed(() => {
   let acc = 0
-  const parts = categoryShare.value.map(c => {
+  const parts = categoryShare.value.map((c: { color: string; percent: number }) => {
     const start = acc
     const end = acc + c.percent
     acc = end
@@ -284,6 +348,11 @@ const donutGradient = computed(() => {
 
 onMounted(async () => {
   await fetchAll()
+  await fetchOccurrences()
+})
+
+watch(activeTab, async () => {
+  await fetchOccurrences()
 })
 
 function onTabChange() {

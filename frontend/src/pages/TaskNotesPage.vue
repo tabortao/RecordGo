@@ -85,7 +85,7 @@ import { useNotesStore, type TaskNote, type NoteAttachment } from '@/stores/note
 import { useAuth } from '@/stores/auth'
 import { uploadTaskImage, uploadTaskAudio } from '@/services/tasks'
 import { normalizeUploadPath } from '@/services/wishes'
-import { toWebp } from '@/utils/image'
+import { prepareUpload } from '@/utils/image'
 import { ArrowLeft, Microphone } from '@element-plus/icons-vue'
 import { speak } from '@/utils/speech'
 import { useAppState } from '@/stores/appState'
@@ -164,7 +164,7 @@ async function onFileChange(e: Event) {
   for (const f of files) {
     if (f.type.startsWith('image/')) {
       try {
-        const webp = await toWebp(f)
+        const webp = await prepareUpload(f, 0.8)
         const url = URL.createObjectURL(webp)
         attachments.value.push({ type: 'image', name: webp.name, url, file: webp })
       } catch (err: any) {
