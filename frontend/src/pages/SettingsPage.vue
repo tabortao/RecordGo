@@ -1,6 +1,6 @@
 <template>
   <!-- 中文注释：系统设置页，左侧分类列表，右侧对应设置内容；样式采用 tailwind/shadcn 风格 -->
-  <div class="p-4">
+  <div class="p-4 pb-24" style="padding-bottom: calc(env(safe-area-inset-bottom) + 96px)">
     <div class="text-xl font-semibold mb-3 flex items-center gap-2">
       <el-icon :size="18" style="color:#3b82f6"><Setting /></el-icon>
       <span>设置</span>
