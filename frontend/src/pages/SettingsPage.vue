@@ -58,7 +58,7 @@
     <el-dialog v-model="showTasks" title="任务设置" width="520px"><div class="text-gray-500 text-sm">后续将提供任务默认分类、默认计划时长等设置。</div></el-dialog>
     <el-dialog v-model="showReading" title="朗读设置" width="520px"><div class="text-gray-500 text-sm">后续将提供朗读速度、发音人等设置。</div></el-dialog>
     <el-dialog v-model="showSubjects" title="任务分类设置" width="520px"><div class="text-gray-500 text-sm">后续将提供常用分类与色彩标签设置。</div></el-dialog>
-    <el-dialog v-model="showAbout" title="关于" width="520px"><div class="text-gray-500 text-sm">RecordGo 任务与积分助手。前端 Vue3 + Vite，后端 Gin + GORM。</div></el-dialog>
+    
   </div>
 </template>
 
@@ -122,7 +122,7 @@ function openDialog(k: SettingsKey) {
   else if (k === 'reading') showReading.value = true
   else if (k === 'subjects') showSubjects.value = true
   else if (k === 'appearance') { router.push('/settings/appearance') }
-  else if (k === 'about') showAbout.value = true
+  else if (k === 'about') { router.push('/settings/about') }
 }
 
 async function saveCoins() {

@@ -74,7 +74,7 @@ import { List, ArrowLeft, Plus, Edit, Delete, Sort } from '@element-plus/icons-v
 import 'element-plus/es/components/color-picker/style/css'
 import router from '@/router'
 import { useAppState } from '@/stores/appState'
-import { computed, reactive, ref, watchEffect } from 'vue'
+import { computed, reactive, ref, watchEffect, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useTaskCategories } from '@/stores/categories'
 function goBack() { router.back() }
@@ -93,6 +93,7 @@ const taskAutoSortEnabled = computed({
 // ===== 分类管理逻辑（与原“任务分类设置”保持一致） =====
 const cats = useTaskCategories()
 const categories = computed(() => cats.list())
+onMounted(async () => { try { await cats.syncFromServer() } catch {} })
 // 可排序显示数组
 const sortable = ref<{ name: string; color: string }[]>([])
 watchEffect(() => {

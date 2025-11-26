@@ -147,6 +147,7 @@ const rules = {
 }
 
 onMounted(async () => {
+  try { await cats.syncFromServer() } catch {}
   try {
     const t = await getTask(taskId)
     // 中文注释：填充表单

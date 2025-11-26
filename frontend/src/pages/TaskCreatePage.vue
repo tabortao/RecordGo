@@ -123,7 +123,7 @@
 
 <script setup lang="ts">
 // 中文注释：创建任务页面逻辑，与列表页表单一致但独立路由展示
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { computed } from 'vue'
 import { useTaskCategories } from '@/stores/categories'
@@ -131,6 +131,7 @@ import { useTaskCategories } from '@/stores/categories'
 // 中文注释：联动任务分类设置，创建页下拉选项与颜色一致
 const cats = useTaskCategories()
 const categories = computed(() => cats.list())
+onMounted(async () => { try { await cats.syncFromServer() } catch {} })
 import { ArrowLeft, Plus, Edit, List, Clock, Coin, CirclePlusFilled } from '@element-plus/icons-vue'
 import router from '@/router'
 import TaskImageUploader from '@/components/TaskImageUploader.vue'

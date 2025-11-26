@@ -14,6 +14,7 @@
         <img :src="iconSrc" alt="App Icon" class="w-12 h-12 mb-2 rounded-lg shadow-md" />
         <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-1">{{ appName }}</h3>
         <p class="text-sm text-gray-600 dark:text-gray-300">版本 {{ versionDisplay }}</p>
+        <p class="text-sm text-gray-600 dark:text-gray-300">{{ dateDisplay }}</p>
       </div>
     </el-card>
 
@@ -61,6 +62,7 @@ function goBack() { router.back() }
 // 中文注释：从 JSON 配置读取软件名称与版本；为防止字段缺失，增加回退值
 const appName = (appInfo as any)?.name || '任务积分助手'
 const versionDisplay = (appInfo as any)?.version || '未配置版本'
+const dateDisplay = (appInfo as any)?.date || '未配置日期'
 const xhsUrl: string | null = ((appInfo as any)?.xhs_url || '').trim() || null
 const contactEmail: string = ((appInfo as any)?.contact_email || 'terlun@foxmail.com').trim()
 

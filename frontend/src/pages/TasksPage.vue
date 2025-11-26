@@ -648,7 +648,9 @@ async function onTouchEnd() {
   if (pullY.value >= pullThreshold) {
     try {
       refreshing.value = true
+      try { await cats.syncFromServer() } catch {}
       await fetchTasks()
+      await fetchOccurrences()
     } finally {
       refreshing.value = false
       try { ElMessage.success('已刷新') } catch {}
@@ -1421,6 +1423,7 @@ async function onTomatoComplete(seconds?: number) {
 
 onMounted(async () => {
   try { await syncOfflineTasks(userId.value) } catch {}
+  try { await cats.syncFromServer() } catch {}
   fetchTasks()
   const updateMobile = () => { isMobile.value = window.innerWidth < 768 }
   updateMobile()
