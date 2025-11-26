@@ -107,12 +107,11 @@ const newCoins = ref<number | null>(null)
 const reason = ref('')
 
 // 中文注释：对话框显示状态
- const showTomato = ref(false)
+  const showTomato = ref(false)
   const showCoins = ref(false)
   const showTasks = ref(false)
   const showReading = ref(false)
   const showSubjects = ref(false)
-  const showAbout = ref(false)
 
 function openDialog(k: SettingsKey) {
   active.value = k
