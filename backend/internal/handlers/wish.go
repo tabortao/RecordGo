@@ -388,7 +388,7 @@ func saveWishIcon(file *multipart.FileHeader, userID string) (string, error) {
 	if strings.TrimSpace(root) == "" {
 		root = "storage"
 	}
-	dir := filepath.Join(root, "uploads", "images", "wish", userID)
+    dir := filepath.Join(root, "uploads", "images", userID, "wish")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", fmt.Errorf("创建目录失败: %w", err)
 	}
@@ -399,8 +399,8 @@ func saveWishIcon(file *multipart.FileHeader, userID string) (string, error) {
 		return "", err
 	}
 	// 返回相对路径，前端与后端均可记录
-	rel := filepath.ToSlash(filepath.Join("uploads", "images", "wish", userID, filename))
-	return rel, nil
+    rel := filepath.ToSlash(filepath.Join("uploads", "images", userID, "wish", filename))
+    return rel, nil
 }
 
 // cSaveUploadedFile 兼容性的保存封装（避免跨平台路径问题）

@@ -227,7 +227,7 @@ func UploadAvatar(c *gin.Context) {
 func saveAvatarFile(file *multipart.FileHeader, userID string, ext string) (string, error) {
     root := os.Getenv("STORAGE_ROOT")
     if strings.TrimSpace(root) == "" { root = "storage" }
-    dir := filepath.Join(root, "uploads", "images", "avatars", userID)
+    dir := filepath.Join(root, "uploads", "images", userID, "avatars")
     if err := os.MkdirAll(dir, 0o755); err != nil {
         return "", fmt.Errorf("创建目录失败: %w", err)
     }
@@ -236,6 +236,6 @@ func saveAvatarFile(file *multipart.FileHeader, userID string, ext string) (stri
     if err := saveUploadedFileGeneric(file, full); err != nil {
         return "", err
     }
-    rel := filepath.ToSlash(filepath.Join("uploads", "images", "avatars", userID, filename))
+    rel := filepath.ToSlash(filepath.Join("uploads", "images", userID, "avatars", filename))
     return rel, nil
 }

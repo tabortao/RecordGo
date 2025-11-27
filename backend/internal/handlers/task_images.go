@@ -176,7 +176,7 @@ func saveTaskImage(file *multipart.FileHeader, userID string, taskID string, ext
         root = "storage"
     }
     // 中文注释：按最新规范仅按用户ID分目录
-    dir := filepath.Join(root, "uploads", "images", "task_images", userID)
+    dir := filepath.Join(root, "uploads", "images", userID, "task_images")
     if mkdirErr := os.MkdirAll(dir, 0o755); mkdirErr != nil {
         return "", fmt.Errorf("创建目录失败: %w", mkdirErr)
     }
@@ -193,7 +193,7 @@ func saveTaskImage(file *multipart.FileHeader, userID string, taskID string, ext
         zap.String("full", full),
     )
     // 中文注释：返回相对路径 uploads/images/task_images/{用户id}/{文件名}
-    rel := filepath.ToSlash(filepath.Join("uploads", "images", "task_images", userID, filename))
+    rel := filepath.ToSlash(filepath.Join("uploads", "images", userID, "task_images", filename))
     return rel, nil
 }
 

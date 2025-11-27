@@ -7,6 +7,7 @@ import (
     "path/filepath"
     "strings"
     "strconv"
+    "time"
 
     "github.com/gin-gonic/gin"
     "go.uber.org/zap"
@@ -85,8 +86,9 @@ func UploadTaskAudio(c *gin.Context) {
     if strings.TrimSpace(root) == "" {
         root = "storage"
     }
-    filename := strings.TrimSuffix(file.Filename, filepath.Ext(file.Filename)) + ext
-    full := filepath.Join(root, "uploads", "images", "task_images", userID, taskID, filename)
+    // 统一到 images/{user_id}/task_images 目录；文件名包含任务ID与时间戳，避免冲突
+    filename := fmt.Sprintf("audio_%s_%s_%d_%d%s", userID, taskID, time.Now().Unix(), time.Now().UnixNano(), ext)
+    full := filepath.Join(root, "uploads", "images", userID, "task_images", filename)
     // 确保目录存在
     if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
         zap.L().Error("UploadTaskAudio: mkdir failed", zap.Error(err))
@@ -98,6 +100,6 @@ func UploadTaskAudio(c *gin.Context) {
         common.Error(c, 50018, fmt.Sprintf("保存失败: %v", err))
         return
     }
-    rel := filepath.ToSlash(filepath.Join("uploads", "images", "task_images", userID, taskID, filename))
+    rel := filepath.ToSlash(filepath.Join("uploads", "images", userID, "task_images", filename))
     common.Ok(c, gin.H{"path": rel})
 }

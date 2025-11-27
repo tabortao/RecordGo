@@ -77,20 +77,20 @@ func buildKey(req presignReq) (string, error) {
     if prefix != "" { prefix = prefix + "/" }
     switch req.ResourceType {
     case "avatar":
-        return filepath.ToSlash(prefix+"images/avatars/"+strconv.Itoa(int(req.UserID))+"/avatar_"+strconv.Itoa(int(req.UserID))+"_"+strconv.FormatInt(ts,10)+"_"+strconv.FormatInt(ns,10)+"."+ext), nil
+        return filepath.ToSlash(prefix+"images/"+strconv.Itoa(int(req.UserID))+"/avatars/"+"avatar_"+strconv.Itoa(int(req.UserID))+"_"+strconv.FormatInt(ts,10)+"_"+strconv.FormatInt(ns,10)+"."+ext), nil
     case "task_image":
         if req.TaskID == nil || *req.TaskID == 0 { return "", nil }
-        return filepath.ToSlash(prefix+"images/task_images/"+strconv.Itoa(int(req.UserID))+"/task_"+strconv.Itoa(int(*req.TaskID))+"_"+strconv.FormatInt(ts,10)+"_"+strconv.FormatInt(ns,10)+"."+ext), nil
+        return filepath.ToSlash(prefix+"images/"+strconv.Itoa(int(req.UserID))+"/task_images/"+"task_"+strconv.Itoa(int(*req.TaskID))+"_"+strconv.FormatInt(ts,10)+"_"+strconv.FormatInt(ns,10)+"."+ext), nil
     case "task_attachment_img":
         if req.TaskID == nil || *req.TaskID == 0 { return "", nil }
-        return filepath.ToSlash(prefix+"task_attachments/"+strconv.Itoa(int(req.UserID))+"/"+strconv.Itoa(int(*req.TaskID))+"/img_"+strconv.Itoa(int(req.UserID))+"_"+strconv.Itoa(int(*req.TaskID))+"_"+strconv.FormatInt(ts,10)+"_"+strconv.FormatInt(ns,10)+"."+ext), nil
+        return filepath.ToSlash(prefix+"images/"+strconv.Itoa(int(req.UserID))+"/task_images/"+"img_"+strconv.Itoa(int(req.UserID))+"_"+strconv.Itoa(int(*req.TaskID))+"_"+strconv.FormatInt(ts,10)+"_"+strconv.FormatInt(ns,10)+"."+ext), nil
     case "task_attachment_audio":
         if req.TaskID == nil || *req.TaskID == 0 { return "", nil }
         aext := ext
         if aext == "" { aext = "mp3" }
-        return filepath.ToSlash(prefix+"task_attachments/"+strconv.Itoa(int(req.UserID))+"/"+strconv.Itoa(int(*req.TaskID))+"/audio_"+strconv.Itoa(int(req.UserID))+"_"+strconv.Itoa(int(*req.TaskID))+"_"+strconv.FormatInt(ts,10)+"_"+strconv.FormatInt(ns,10)+"."+aext), nil
+        return filepath.ToSlash(prefix+"images/"+strconv.Itoa(int(req.UserID))+"/task_images/"+"audio_"+strconv.Itoa(int(req.UserID))+"_"+strconv.Itoa(int(*req.TaskID))+"_"+strconv.FormatInt(ts,10)+"_"+strconv.FormatInt(ns,10)+"."+aext), nil
     case "wish_image":
-        return filepath.ToSlash(prefix+"images/wish/"+strconv.Itoa(int(req.UserID))+"/wish_"+strconv.Itoa(int(req.UserID))+"_"+strconv.FormatInt(ts,10)+"_"+strconv.FormatInt(ns,10)+"."+ext), nil
+        return filepath.ToSlash(prefix+"images/"+strconv.Itoa(int(req.UserID))+"/wish/"+"wish_"+strconv.Itoa(int(req.UserID))+"_"+strconv.FormatInt(ts,10)+"_"+strconv.FormatInt(ns,10)+"."+ext), nil
     default:
         return "", nil
     }
