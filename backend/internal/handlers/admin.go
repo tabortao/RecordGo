@@ -81,9 +81,9 @@ func AdminUpdateVIP(c *gin.Context) {
 		return
 	}
 	var payload struct {
-		IsVIP         *bool      `json:"is_vip"`
-		VIPExpireTime *time.Time `json:"vip_expire_time"`
-		IsLifetimeVIP *bool      `json:"is_lifetime_vip"`
+		IsVIP         *bool   `json:"is_vip"`
+		VIPExpireTime *string `json:"vip_expire_time"`
+		IsLifetimeVIP *bool   `json:"is_lifetime_vip"`
 	}
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		common.Error(c, 40000, "参数错误")
@@ -98,7 +98,17 @@ func AdminUpdateVIP(c *gin.Context) {
 		updates["is_lifetime_vip"] = *payload.IsLifetimeVIP
 	}
 	if payload.VIPExpireTime != nil {
-		updates["vip_expire_time"] = *payload.VIPExpireTime
+		s := strings.TrimSpace(*payload.VIPExpireTime)
+		if s == "" {
+			updates["vip_expire_time"] = nil
+		} else {
+			t, err := time.Parse(time.RFC3339, s)
+			if err != nil {
+				common.Error(c, 40002, "VIP到期时间格式错误")
+				return
+			}
+			updates["vip_expire_time"] = t
+		}
 	}
 	if len(updates) == 0 {
 		common.Error(c, 40001, "无更新字段")

@@ -114,6 +114,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
 import { listTasks, listTaskOccurrences, type TaskItem } from '@/services/tasks'
 import { isAbortError } from '@/services/http'

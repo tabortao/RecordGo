@@ -7,18 +7,18 @@
 
     <el-card shadow="never">
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div class="p-3 rounded bg-sky-50">
-          <div class="text-xs text-sky-600">注册用户总数</div>
-          <div class="font-bold text-sky-700">{{ overview.total_users }}</div>
+        <div class="p-3 rounded bg-sky-50 dark:bg-gray-800">
+          <div class="text-xs text-sky-600 dark:text-sky-400">注册用户总数</div>
+          <div class="font-bold text-sky-700 dark:text-sky-300">{{ overview.total_users }}</div>
         </div>
-        <div class="p-3 rounded bg-emerald-50">
-          <div class="text-xs text-emerald-600">今日登录数</div>
-          <div class="font-bold text-emerald-700">{{ overview.today_logins }}</div>
+        <div class="p-3 rounded bg-emerald-50 dark:bg-gray-800">
+          <div class="text-xs text-emerald-600 dark:text-emerald-400">今日登录数</div>
+          <div class="font-bold text-emerald-700 dark:text-emerald-300">{{ overview.today_logins }}</div>
         </div>
       </div>
     </el-card>
 
-    <el-card shadow="never">
+    <el-card shadow="never" class="dark:bg-gray-800">
       <div class="flex items-center justify-between mb-2">
         <div class="font-semibold">用户列表</div>
         <el-input v-model="query" placeholder="搜索用户名/昵称/邮箱" class="w-60" />
@@ -117,7 +117,7 @@ async function saveVIP() {
     await http.post(`/admin/users/${vipDialog.user.id}/vip`, {
       is_vip: vipDialog.is_vip,
       is_lifetime_vip: vipDialog.is_lifetime_vip,
-      vip_expire_time: vipDialog.vip_expire_time ? new Date(vipDialog.vip_expire_time) : null
+      vip_expire_time: vipDialog.vip_expire_time ? new Date(vipDialog.vip_expire_time).toISOString() : null
     })
     ElMessage.success('VIP设置已保存')
     vipDialog.visible = false
