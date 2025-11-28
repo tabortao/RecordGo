@@ -46,6 +46,7 @@ declare module 'vue' {
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
     ElUpload: typeof import('element-plus/es')['ElUpload']
     FloatingTomato: typeof import('./components/FloatingTomato.vue')['default']
+    PageLoader: typeof import('./components/PageLoader.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SpeakerIcon: typeof import('./components/SpeakerIcon.vue')['default']

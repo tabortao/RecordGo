@@ -45,6 +45,9 @@ export interface AppState {
   taskAutoSortEnabled: boolean
   // 中文注释：主题外观模式（system/dark/light），用于控制深浅色
   themeMode: 'system' | 'dark' | 'light'
+  // 页面加载指示与进度
+  pageLoading: boolean
+  pageProgress: number
 }
 
 const DEFAULT_STATE: AppState = {
@@ -78,6 +81,9 @@ const DEFAULT_STATE: AppState = {
   taskAutoSortEnabled: true,
   // 中文注释：主题外观默认跟随系统
   themeMode: 'system'
+  ,
+  pageLoading: false,
+  pageProgress: 0
 }
 
 export const useAppState = defineStore('appState', {
@@ -160,6 +166,10 @@ export const useAppState = defineStore('appState', {
       } catch {}
       this.persist()
     },
+    // 页面加载动画控制
+    startPageLoading() { this.pageLoading = true; this.pageProgress = Math.max(10, this.pageProgress) },
+    stopPageLoading() { this.pageLoading = false; this.pageProgress = 0 },
+    setPageProgress(p: number) { this.pageProgress = Math.max(0, Math.min(100, Math.round(p))) },
     reset() {
       Object.assign(this, DEFAULT_STATE)
       this.persist()

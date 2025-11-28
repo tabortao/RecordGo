@@ -58,7 +58,7 @@
       <div class="space-y-3">
         <el-switch v-model="vipDialog.is_vip" active-text="VIP" inactive-text="普通" />
         <el-switch v-model="vipDialog.is_lifetime_vip" active-text="终身VIP" />
-        <el-date-picker v-model="vipDialog.vip_expire_time" type="datetime" placeholder="VIP到期时间" />
+        <el-date-picker v-model="vipDialog.vip_expire_time" type="datetime" placeholder="VIP到期时间" :disabled="vipDialog.is_lifetime_vip" />
       </div>
       <template #footer>
         <div class="flex justify-end gap-2">
@@ -114,6 +114,14 @@ function openVIP(u: any) {
 async function saveVIP() {
   if (!vipDialog.user) return
   try {
+    // 前端表单校验：终身VIP时不允许设置到期时间；非VIP且设置了到期时间提示错误
+    if (vipDialog.is_lifetime_vip) {
+      vipDialog.vip_expire_time = null
+    }
+    if (!vipDialog.is_vip && !vipDialog.is_lifetime_vip && vipDialog.vip_expire_time) {
+      ElMessage.error('非VIP不应设置到期时间')
+      return
+    }
     await http.post(`/admin/users/${vipDialog.user.id}/vip`, {
       is_vip: vipDialog.is_vip,
       is_lifetime_vip: vipDialog.is_lifetime_vip,

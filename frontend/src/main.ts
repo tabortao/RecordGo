@@ -68,6 +68,11 @@ try {
 }
 
 router.afterEach(() => { setTimeout(updateThemeBar, 0) })
+// 路由加载进度：进入前开始，完成后结束
+import { useAppState } from './stores/appState'
+const store = useAppState()
+router.beforeEach(() => { try { store.startPageLoading(); store.setPageProgress(15) } catch {} return true })
+router.afterEach(() => { try { store.setPageProgress(100); setTimeout(() => store.stopPageLoading(), 200) } catch {} })
 
 let ticking = false
 function scheduleUpdate() {

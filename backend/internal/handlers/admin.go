@@ -86,6 +86,7 @@ func AdminUpdateVIP(c *gin.Context) {
 		IsLifetimeVIP *bool   `json:"is_lifetime_vip"`
 	}
 	if err := c.ShouldBindJSON(&payload); err != nil {
+		zap.L().Error("AdminUpdateVIP bind error", zap.Error(err))
 		common.Error(c, 40000, "参数错误")
 		return
 	}
@@ -115,6 +116,7 @@ func AdminUpdateVIP(c *gin.Context) {
 		return
 	}
 	if err := db.DB().Model(&models.User{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+		zap.L().Error("AdminUpdateVIP update error", zap.String("user_id", id), zap.Any("payload", payload), zap.Error(err))
 		common.Error(c, 50020, "更新失败")
 		return
 	}

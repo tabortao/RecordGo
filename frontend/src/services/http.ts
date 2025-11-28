@@ -11,6 +11,7 @@ const instance = axios.create({
   baseURL: base,
   timeout: 10000
 })
+let __pending = 0
 
 // 请求拦截器：可附加 JWT 等
 let __envLogged = false
@@ -25,6 +26,14 @@ instance.interceptors.request.use((config) => {
     __envLogged = true
     try { console.info('[API] baseURL=', instance.defaults.baseURL, 'host=', location.host) } catch {}
   }
+  try {
+    __pending++
+    // 动态导入 Store，避免循环依赖
+    import('@/stores/appState').then(({ useAppState }) => {
+      const s = useAppState()
+      s.startPageLoading(); s.setPageProgress(Math.min(90, s.pageProgress + 10))
+    }).catch(() => {})
+  } catch {}
   return config
 })
 
@@ -167,3 +176,26 @@ export function isAbortError(e: any): boolean {
   const msg = String(e?.message || '').toLowerCase()
   return code === 'ERR_CANCELED' || /aborted|cancel/i.test(msg)
 }
+
+// 中文注释：响应与错误后减少挂起计数，并在全部完成时结束加载动画
+instance.interceptors.response.use((r) => {
+  try {
+    __pending = Math.max(0, __pending - 1)
+    import('@/stores/appState').then(({ useAppState }) => {
+      const s = useAppState()
+      s.setPageProgress(__pending === 0 ? 100 : Math.min(95, s.pageProgress + 5))
+      if (__pending === 0) setTimeout(() => s.stopPageLoading(), 200)
+    }).catch(() => {})
+  } catch {}
+  return r
+}, (err) => {
+  try {
+    __pending = Math.max(0, __pending - 1)
+    import('@/stores/appState').then(({ useAppState }) => {
+      const s = useAppState()
+      s.setPageProgress(__pending === 0 ? 100 : Math.min(95, s.pageProgress + 5))
+      if (__pending === 0) setTimeout(() => s.stopPageLoading(), 200)
+    }).catch(() => {})
+  } catch {}
+  return Promise.reject(err)
+})

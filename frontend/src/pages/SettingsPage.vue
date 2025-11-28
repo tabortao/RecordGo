@@ -12,8 +12,16 @@
           <el-icon :size="18" :style="{ color: item.fg }"><component :is="item.icon" /></el-icon>
           <span class="font-medium">{{ item.label }}</span>
         </button>
-      </div>
     </div>
+  </div>
+
+  <!-- 管理员按钮：仅用户ID为1显示 -->
+  <div class="mt-4">
+    <el-button v-if="isAdmin" type="primary" @click="toAdmin">
+      <el-icon class="mr-1"><Setting /></el-icon>
+      用户管理
+    </el-button>
+  </div>
 
     <!-- 番茄钟设置对话框 -->
     <el-dialog v-model="showTomato" title="番茄钟设置" width="520px">
@@ -70,6 +78,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
 import { setCoins } from '@/services/coins'
+import { useAuth } from '@/stores/auth'
 
 // 中文注释：类型约束，修复模板中“string 不能分配到联合类型”的报错
  type SettingsKey = 'tomato' | 'tasks' | 'reading' | 'subjects' | 'coins' | 'appearance' | 'about'
@@ -123,6 +132,10 @@ function openDialog(k: SettingsKey) {
   else if (k === 'appearance') { router.push('/settings/appearance') }
   else if (k === 'about') { router.push('/settings/about') }
 }
+
+const auth = useAuth()
+const isAdmin = computed(() => Number(auth.user?.id || 0) === 1)
+function toAdmin() { router.push('/admin') }
 
 async function saveCoins() {
   const v = Number(newCoins.value ?? coins.value)
