@@ -1,6 +1,7 @@
 <template>
   <div class="p-4 space-y-4">
     <div class="flex items-center gap-2">
+      <el-icon :size="20" class="cursor-pointer hover:text-blue-500" @click="router.back()"><ArrowLeft /></el-icon>
       <el-icon :size="18" class="text-indigo-600"><DataAnalysis /></el-icon>
       <div class="font-semibold">用户管理后台</div>
     </div>
@@ -73,7 +74,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { DataAnalysis } from '@element-plus/icons-vue'
+import { DataAnalysis, ArrowLeft } from '@element-plus/icons-vue'
 import http from '@/services/http'
 import router from '@/router'
 import { useAuth } from '@/stores/auth'

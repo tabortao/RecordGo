@@ -45,9 +45,6 @@
       </div>
     </el-card>
   </div>
-  <div class="mt-2">
-    <el-button v-if="isAdmin" type="primary" @click="router.push('/admin')">用户管理</el-button>
-  </div>
   
 </template>
 
@@ -56,8 +53,6 @@
 import { InfoFilled, ArrowLeft, Link, Message, ArrowRight } from '@element-plus/icons-vue'
 import router from '@/router'
 import appInfo from '@/config/app-info.json'
-import { useAuth } from '@/stores/auth'
-import { computed } from 'vue'
 
 // 中文注释：软件图标路径（Vite 处理静态资源导入）
 import icon192 from '@/assets/favicon/android-chrome-192x192.png'
@@ -92,9 +87,6 @@ function openMail() {
     window.open(mailto)
   }
 }
-
-const auth = useAuth()
-const isAdmin = computed(() => Number(auth.user?.id || 0) === 1)
 </script>
 
 <style scoped>

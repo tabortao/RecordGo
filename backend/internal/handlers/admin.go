@@ -80,19 +80,11 @@ func AdminUpdateVIP(c *gin.Context) {
 	if !requireAdmin(c) {
 		return
 	}
-	_ = db.DB().AutoMigrate(&models.User{})
-	if m := db.DB().Migrator(); m != nil {
-		// 兼容旧库：同时检查字段名与列名，缺失则补加
-		type pair struct{ field, column string }
-		req := []pair{
-			{"IsVIP", "is_vip"}, {"VIPExpireTime", "vip_expire_time"}, {"IsLifetimeVIP", "is_lifetime_vip"}, {"IsDisabled", "is_disabled"},
-		}
-		for _, p := range req {
-			if !m.HasColumn(&models.User{}, p.field) && !m.HasColumn(&models.User{}, p.column) {
-				_ = m.AddColumn(&models.User{}, p.field)
-			}
-		}
+	// 尝试自动迁移以确保字段存在
+	if err := db.DB().AutoMigrate(&models.User{}); err != nil {
+		zap.L().Error("AdminUpdateVIP AutoMigrate failed", zap.Error(err))
 	}
+	
 	var payload struct {
 		IsVIP         *bool   `json:"is_vip"`
 		VIPExpireTime *string `json:"vip_expire_time"`
@@ -128,35 +120,28 @@ func AdminUpdateVIP(c *gin.Context) {
 		common.Error(c, 40001, "无更新字段")
 		return
 	}
-	// 首次尝试更新
+	
+	// 执行更新
 	if err := db.DB().Model(&models.User{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		zap.L().Error("AdminUpdateVIP update error", zap.String("user_id", id), zap.Any("payload", payload), zap.Error(err))
-		msg := "更新失败"
+		
+		// 如果是列缺失错误，尝试显式修复
 		if strings.Contains(strings.ToLower(err.Error()), "no such column") {
-			// 遇到列缺失，自动迁移并重试一次
+			// 再次尝试迁移
 			_ = db.DB().AutoMigrate(&models.User{})
-			if m := db.DB().Migrator(); m != nil {
-				type pair struct{ field, column string }
-				req := []pair{
-					{"IsVIP", "is_vip"}, {"VIPExpireTime", "vip_expire_time"}, {"IsLifetimeVIP", "is_lifetime_vip"}, {"IsDisabled", "is_disabled"},
-				}
-				for _, p := range req {
-					if !m.HasColumn(&models.User{}, p.field) && !m.HasColumn(&models.User{}, p.column) {
-						_ = m.AddColumn(&models.User{}, p.field)
-					}
-				}
-			}
-			// 二次尝试
+			
+			// 重试更新
 			if e2 := db.DB().Model(&models.User{}).Where("id = ?", id).Updates(updates).Error; e2 != nil {
-				msg = "更新失败：数据库缺少字段，请重启后端或升级版本"
-				common.Error(c, 50020, msg)
+				zap.L().Error("AdminUpdateVIP retry failed", zap.Error(e2))
+				common.Error(c, 50020, "更新失败：数据库字段同步失败，请联系管理员或重启服务")
 				return
 			}
 			zap.L().Info("管理员更新VIP(重试成功)", zap.String("user_id", id), zap.Any("updates", updates))
 			common.Ok(c, gin.H{"updated": true})
 			return
 		}
-		common.Error(c, 50020, msg)
+		
+		common.Error(c, 50020, "更新失败")
 		return
 	}
 	zap.L().Info("管理员更新VIP", zap.String("user_id", id), zap.Any("updates", updates))
