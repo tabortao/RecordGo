@@ -65,6 +65,9 @@ const router = createRouter({
     { path: '/settings/about', name: 'SettingsAbout', component: () => import('@/pages/SettingsAboutPage.vue'), meta: { noNav: true } },
     { path: '/settings', name: 'Settings', component: () => import('@/pages/SettingsPage.vue'), meta: { noNav: true } },
     { path: '/settings/appearance', name: 'SettingsAppearance', component: () => import('@/pages/SettingsAppearancePage.vue'), meta: { noNav: true } }
+    ,
+    // 管理后台页面，仅允许用户ID=1访问
+    { path: '/admin', name: 'Admin', component: () => import('@/pages/AdminPage.vue'), meta: { noNav: true } }
   ]
 })
 
@@ -105,6 +108,14 @@ router.beforeEach(async (to) => {
   if (isNotesPage && !isVIP) {
     try { ElMessage.warning('该功能需要开通VIP会员才能使用，添加微信：tabor2024，备注“任务家”') } catch {}
     return { path: '/tasks' }
+  }
+  // 管理后台访问控制：仅允许用户ID=1
+  if (to.path === '/admin') {
+    const id = Number((auth.user as any)?.id || 0)
+    if (id !== 1) {
+      try { ElMessage.warning('仅管理员可访问该页面') } catch {}
+      return { path: '/tasks' }
+    }
   }
   // 中文注释：未登录访问私有页面时跳转至登录，并记录重定向
   if (!isPublic && !auth.token) {

@@ -25,6 +25,7 @@ type User struct {
     IsVIP          bool
     VIPExpireTime  *time.Time
     IsLifetimeVIP  bool
+    IsDisabled     bool
     CreatedAt   time.Time
     UpdatedAt   time.Time
 }

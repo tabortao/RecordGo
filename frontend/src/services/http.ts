@@ -70,6 +70,11 @@ instance.interceptors.response.use(
     return resp.data
   },
   async (error) => {
+    // 中文注释：请求被取消（如路由切换）不重试，直接透传
+    if (isAbortError(error)) {
+      try { console.info('[API] 请求已取消', error?.config?.url) } catch {}
+      return Promise.reject(error)
+    }
     // 中文注释：网络错误重试（最多 3 次，指数退避）
     const config: any = error.config
     config.__retryCount = config.__retryCount || 0
@@ -78,6 +83,14 @@ instance.interceptors.response.use(
       config.__retryCount++
       await new Promise((r) => setTimeout(r, delay))
       return instance(config)
+    }
+    // 中文注释：如无响应（网络中断/代理未连接），输出更友好的提示
+    if (!error?.response) {
+      try {
+        const baseURL = instance.defaults.baseURL
+        console.error('[API] 网络错误，可能后端未启动或代理未连接', { url: error?.config?.url, baseURL })
+      } catch {}
+      return Promise.reject(new Error('后端服务不可达或代理未配置，请检查 API 服务'))
     }
     // 中文注释：如果后端返回未登录（如 401 或业务码），可跳转登录
     try {
@@ -97,7 +110,9 @@ instance.interceptors.response.use(
         return Promise.reject(new Error(`API响应异常：收到HTML内容。可能是静态托管未配置后端代理，请设置VITE_API_BASE`))
       }
     } catch {}
-    return Promise.reject(error)
+    // 中文注释：统一错误消息
+    const msg = error?.response?.data?.message || error?.message || '请求失败'
+    return Promise.reject(new Error(msg))
   }
 )
 
@@ -146,3 +161,9 @@ export async function del<T = any>(url: string, config?: AxiosRequestConfig): Pr
 const http = { get, post, put, patch, delete: del, putExternal }
 
 export default http
+// 中文注释：识别请求被取消/中止（如路由切换、组件卸载或浏览器中止）
+export function isAbortError(e: any): boolean {
+  const code = String(e?.code || '').toUpperCase()
+  const msg = String(e?.message || '').toLowerCase()
+  return code === 'ERR_CANCELED' || /aborted|cancel/i.test(msg)
+}

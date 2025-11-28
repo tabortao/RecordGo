@@ -103,3 +103,17 @@ func canAccessUser(c *gin.Context, uid uint) bool {
     }
     return false
 }
+
+// requireAdmin 仅允许用户ID为1的管理员访问（简化版本）
+func requireAdmin(c *gin.Context) bool {
+    cl := extractClaims(c)
+    if cl == nil {
+        deny(c, "未登录或令牌无效")
+        return false
+    }
+    if cl.UserID != 1 {
+        deny(c, "仅管理员可访问")
+        return false
+    }
+    return true
+}

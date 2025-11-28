@@ -23,13 +23,13 @@
         <el-card shadow="never" class="rounded-xl bg-sky-50 dark:bg-gray-800">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 text-sky-600 dark:text-sky-400"><el-icon :size="18"><List /></el-icon><span class="text-xs">总任务数</span></div>
-            <div class="font-bold text-sky-700 dark:text-sky-400">{{ metrics.totalTasks }}</div>
+            <div class="font-bold text-sky-700 dark:text-sky-400">{{ anim.totalTasks }}</div>
           </div>
         </el-card>
-        <el-card shadow="never" class="rounded-xl bg-amber-50 dark:bg-gray-800">
+        <el-card shadow="never" class="rounded-xl bg-emerald-50 dark:bg-gray-800">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400"><el-icon :size="18"><Clock /></el-icon><span class="text-xs">总时长（分）</span></div>
-            <div class="font-bold text-amber-700 dark:text-amber-400">{{ metrics.totalMinutes }}</div>
+            <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400"><el-icon :size="18"><Clock /></el-icon><span class="text-xs">总时长（分）</span></div>
+            <div class="font-bold text-emerald-700 dark:text-emerald-400">{{ anim.totalMinutes }}</div>
           </div>
         </el-card>
         <el-card shadow="never" class="rounded-xl bg-emerald-50 dark:bg-gray-800">
@@ -50,10 +50,10 @@
             <div class="font-bold text-violet-700 dark:text-violet-400">{{ metrics.rate }}%</div>
           </div>
         </el-card>
-        <el-card shadow="never" class="rounded-xl bg-pink-50 dark:bg-gray-800">
+        <el-card shadow="never" class="rounded-xl bg-amber-50 dark:bg-gray-800">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 text-pink-600 dark:text-pink-400"><el-icon :size="18"><Coin /></el-icon><span class="text-xs">总金币数</span></div>
-            <div class="font-bold text-pink-700 dark:text-pink-400">{{ metrics.totalCoins }}</div>
+            <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400"><el-icon :size="18"><Coin /></el-icon><span class="text-xs">总金币数</span></div>
+            <div class="font-bold text-amber-700 dark:text-amber-400">{{ anim.totalCoins }}</div>
           </div>
         </el-card>
       </div>
@@ -98,11 +98,13 @@
         <div class="flex flex-col items-center gap-4">
           <div class="w-40 h-40 rounded-full shadow-md" :style="{ background: donutGradient }"></div>
           <div class="flex flex-wrap justify-center gap-3">
-            <div class="flex items-center gap-2" v-for="c in categoryShare" :key="c.name">
-              <span class="inline-block w-3 h-3 rounded" :style="{ backgroundColor: c.color }"></span>
-              <span class="text-sm">{{ c.name }}</span>
-              <span class="text-xs text-gray-500">{{ c.percent }}%</span>
-            </div>
+            <el-tooltip v-for="c in categoryShare" :key="c.name" :content="c.name + '：' + c.minutes + '分钟（' + c.percent + '%）'" placement="top" :hide-after="0">
+              <div class="flex items-center gap-2">
+                <span class="inline-block w-3 h-3 rounded" :style="{ backgroundColor: c.color }"></span>
+                <span class="text-sm">{{ c.name }}</span>
+                <span class="text-xs text-gray-500">{{ c.minutes }}分</span>
+              </div>
+            </el-tooltip>
           </div>
         </div>
       </el-card>
@@ -114,6 +116,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import dayjs from 'dayjs'
 import { listTasks, listTaskOccurrences, type TaskItem } from '@/services/tasks'
+import { isAbortError } from '@/services/http'
 import router from '@/router'
 import { ArrowLeft, DataAnalysis, Histogram, PieChart, List, Clock, CircleCheck, Coin } from '@element-plus/icons-vue'
 import { useTaskCategories } from '@/stores/categories'
@@ -125,18 +128,16 @@ const activeTab = ref<'week'|'month'|'year'|'all'>('week')
 const allTasks = ref<TaskItem[]>([])
 
 async function fetchAll() {
-  const items: TaskItem[] = []
-  let page = 1
-  while (true) {
-    const res = await listTasks({ page, page_size: 100 }) as any
+  try {
+    const res = await listTasks({ page_size: 1000 }) as any
     const arr: TaskItem[] = Array.isArray(res.items) ? res.items : []
-    items.push(...arr)
-    const total = Number(res.total || items.length)
-    const size = Number(res.page_size || 100)
-    if (page * size >= total || arr.length === 0) break
-    page++
+    allTasks.value = arr
+  } catch (e: any) {
+    if (isAbortError(e)) return
+    const msg = e?.response?.data?.message || e?.message || e
+    console.error('统计页加载任务失败', { message: e?.message, status: e?.response?.status, payload: e?.response?.data })
+    try { ElMessage.error(`统计数据加载失败：${msg}`) } catch {}
   }
-  allTasks.value = items
 }
 
 function periodRange(tab: 'week'|'month'|'year'|'all') {
@@ -163,15 +164,22 @@ const periodDays = computed(() => {
 
 const occMap = ref<Record<string, Record<number, { status: number; minutes: number }>>>({})
 async function fetchOccurrences() {
-  const { start, end } = periodRange(activeTab.value)
-  const resp = await listTaskOccurrences({ start: start.format('YYYY-MM-DD'), end: end.format('YYYY-MM-DD') })
-  const map: Record<string, Record<number, { status: number; minutes: number }>> = {}
-  for (const it of (resp.items || [])) {
-    const day = dayjs(it.date).format('YYYY-MM-DD')
-    if (!map[day]) map[day] = {}
-    map[day][Number(it.task_id)] = { status: Number(it.status || 0), minutes: Number(it.minutes || 0) }
+  try {
+    const { start, end } = periodRange(activeTab.value)
+    const resp = await listTaskOccurrences({ start: start.format('YYYY-MM-DD'), end: end.format('YYYY-MM-DD') })
+    const map: Record<string, Record<number, { status: number; minutes: number }>> = {}
+    for (const it of (resp.items || [])) {
+      const day = dayjs(it.date).format('YYYY-MM-DD')
+      if (!map[day]) map[day] = {}
+      map[day][Number(it.task_id)] = { status: Number(it.status || 0), minutes: Number(it.minutes || 0) }
+    }
+    occMap.value = map
+  } catch (e: any) {
+    if (isAbortError(e)) return
+    const msg = e?.response?.data?.message || e?.message || e
+    console.error('统计页加载任务发生失败', { message: e?.message, status: e?.response?.status, payload: e?.response?.data })
+    try { ElMessage.error(`统计数据加载失败：${msg}`) } catch {}
   }
-  occMap.value = map
 }
 
 const filtered = computed(() => {
@@ -215,6 +223,26 @@ const metrics = computed(() => {
   const rate = totalTasks === 0 ? 0 : Math.round((completed / totalTasks) * 100)
   return { totalTasks, completed, rate, totalMinutes, avgDailyMinutes, totalCoins }
 })
+
+// 数字动画（平滑过渡）
+const anim = ref({ totalTasks: 0, totalMinutes: 0, totalCoins: 0 })
+function animateNumber(key: 'totalTasks'|'totalMinutes'|'totalCoins', to: number) {
+  const from = Number((anim.value as any)[key] || 0)
+  const duration = 400
+  const start = performance.now()
+  const step = (now: number) => {
+    const t = Math.min(1, (now - start) / duration)
+    const val = Math.round(from + (to - from) * t)
+    ;(anim.value as any)[key] = val
+    if (t < 1) requestAnimationFrame(step)
+  }
+  requestAnimationFrame(step)
+}
+watch(metrics, (m) => {
+  animateNumber('totalTasks', Number(m.totalTasks || 0))
+  animateNumber('totalMinutes', Number(m.totalMinutes || 0))
+  animateNumber('totalCoins', Number(m.totalCoins || 0))
+}, { immediate: true })
 
 // 时间序列（根据周期动态：周/月=按日，年=按月，全部=按年）
 const timeSeries = computed(() => {

@@ -121,6 +121,13 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         api.POST("/tasks/:id/occurrences/delete", handlers.DeleteTaskOccurrence)
 
         api.POST("/data/clear", handlers.ClearData)
+
+        // 管理员后台接口（仅用户ID=1允许）
+        api.GET("/admin/overview", handlers.AdminUsersOverview)
+        api.GET("/admin/users", handlers.AdminListUsers)
+        api.POST("/admin/users/:id/vip", handlers.AdminUpdateVIP)
+        api.POST("/admin/users/:id/disabled", handlers.AdminSetDisabled)
+        api.DELETE("/admin/users/:id", handlers.AdminDeleteUser)
     }
 
     r.PUT("/api/storage/put", handlers.StoragePut)

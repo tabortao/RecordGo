@@ -547,6 +547,7 @@ import { useTaskCategories } from '@/stores/categories'
 import { getStaticBase } from '@/services/http'
 import { presignView } from '@/services/storage'
 import http from '@/services/http'
+import { isAbortError } from '@/services/http'
 const isMobile = ref(false)
 // 中文注释：接入认证状态获取真实用户ID（未登录回退为 0）
 const auth = useAuth()
@@ -1062,6 +1063,7 @@ async function fetchTasks() {
     // 中文注释：移除本地计算后的金币覆盖，统一由拦截器在后端返回时同步，避免状态不一致
   } catch (e: any) {
     // 中文注释：增强错误提示，优先展示后端返回的业务错误信息
+    if (isAbortError(e)) { return }
     const msg = e?.response?.data?.message || e?.message || e
     console.error('任务列表加载失败诊断', {
       message: e?.message,
