@@ -32,19 +32,25 @@
       </div>
     </el-card>
   </div>
+  <div class="mt-2">
+    <el-button v-if="isAdmin" type="primary" @click="router.push('/admin')">用户管理</el-button>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import router from '@/router'
 import { useAppState } from '@/stores/appState'
 import { Setting, ArrowLeft } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { useAuth } from '@/stores/auth'
 
 function goBack() { router.back() }
 
 const store = useAppState()
 const appearance = ref<'system'|'dark'|'light'>(store.themeMode || 'system')
+const auth = useAuth()
+const isAdmin = computed(() => Number(auth.user?.id || 0) === 1)
 
 function cancel() { router.back() }
 

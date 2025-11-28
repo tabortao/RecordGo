@@ -130,7 +130,7 @@ async function saveVIP() {
     ElMessage.success('VIP设置已保存')
     vipDialog.visible = false
     await loadUsers()
-  } catch (e: any) { ElMessage.error(e?.message || '保存失败') }
+  } catch (e: any) { console.error('VIP保存失败', e?.response?.data || e); ElMessage.error(e?.message || '保存失败') }
 }
 async function toggleDisabled(u: any) {
   try {

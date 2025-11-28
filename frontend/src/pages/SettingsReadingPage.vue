@@ -45,6 +45,9 @@
     </el-card>
     <!-- 中文注释：统一使用左上角返回图标，返回时自动保存设置 -->
   </div>
+  <div class="mt-2">
+    <el-button v-if="isAdmin" type="primary" @click="router.push('/admin')">用户管理</el-button>
+  </div>
   </template>
 
 <script setup lang="ts">
@@ -53,6 +56,8 @@ import router from '@/router'
 import { useAppState } from '@/stores/appState'
 import { listVoices, speak } from '@/utils/speech'
 import { ElMessage } from 'element-plus'
+import { useAuth } from '@/stores/auth'
+import { computed } from 'vue'
 
 // 中文注释：读取与编辑全局朗读设置
 const store = useAppState()
@@ -60,6 +65,8 @@ const enabled = ref<boolean>(store.speech.enabled)
 const voiceURI = ref<string | null>(store.speech.voiceURI || null)
 const rate = ref<number>(store.speech.rate)
 const pitch = ref<number>(store.speech.pitch)
+const auth = useAuth()
+const isAdmin = computed(() => Number(auth.user?.id || 0) === 1)
 
 // 中文注释：语音列表；监听 voiceschanged 以异步刷新
 const voices = ref<SpeechSynthesisVoice[]>([])

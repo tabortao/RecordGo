@@ -28,10 +28,12 @@ instance.interceptors.request.use((config) => {
   }
   try {
     __pending++
-    // 动态导入 Store，避免循环依赖
     import('@/stores/appState').then(({ useAppState }) => {
       const s = useAppState()
-      s.startPageLoading(); s.setPageProgress(Math.min(90, s.pageProgress + 10))
+      if (!s.hasLoadedOnce) {
+        s.startPageLoading()
+        s.setPageProgress(Math.min(90, s.pageProgress + 10))
+      }
     }).catch(() => {})
   } catch {}
   return config
@@ -47,9 +49,9 @@ instance.interceptors.response.use(
     if (payload && typeof payload.code !== 'undefined') {
       if (payload.code === 0) {
         // 中文注释：统一在成功响应中同步最新金币，避免页面各处手动维护导致不一致
-        try {
-          const data = payload.data
-          let latestCoins: any = undefined
+      try {
+        const data = payload.data
+        let latestCoins: any = undefined
           if (data && typeof data === 'object') {
             if (Object.prototype.hasOwnProperty.call(data, 'user_coins')) {
               latestCoins = (data as any).user_coins
@@ -71,6 +73,11 @@ instance.interceptors.response.use(
             auth.updateUser({ coins: n })
           }
         } catch (_) {}
+        try {
+          const { useAppState } = await import('@/stores/appState')
+          const s = useAppState()
+          if (!s.hasLoadedOnce) s.markLoadedOnce()
+        } catch {}
         return payload.data
       }
       // 中文注释：业务错误统一抛出，交由上层捕获
@@ -184,7 +191,7 @@ instance.interceptors.response.use((r) => {
     import('@/stores/appState').then(({ useAppState }) => {
       const s = useAppState()
       s.setPageProgress(__pending === 0 ? 100 : Math.min(95, s.pageProgress + 5))
-      if (__pending === 0) setTimeout(() => s.stopPageLoading(), 200)
+      if (__pending === 0) { s.markLoadedOnce(); setTimeout(() => s.stopPageLoading(), 200) }
     }).catch(() => {})
   } catch {}
   return r
@@ -194,7 +201,7 @@ instance.interceptors.response.use((r) => {
     import('@/stores/appState').then(({ useAppState }) => {
       const s = useAppState()
       s.setPageProgress(__pending === 0 ? 100 : Math.min(95, s.pageProgress + 5))
-      if (__pending === 0) setTimeout(() => s.stopPageLoading(), 200)
+      if (__pending === 0) { s.markLoadedOnce(); setTimeout(() => s.stopPageLoading(), 200) }
     }).catch(() => {})
   } catch {}
   return Promise.reject(err)

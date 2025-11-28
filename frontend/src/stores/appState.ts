@@ -48,6 +48,7 @@ export interface AppState {
   // 页面加载指示与进度
   pageLoading: boolean
   pageProgress: number
+  hasLoadedOnce: boolean
 }
 
 const DEFAULT_STATE: AppState = {
@@ -83,7 +84,8 @@ const DEFAULT_STATE: AppState = {
   themeMode: 'system'
   ,
   pageLoading: false,
-  pageProgress: 0
+  pageProgress: 0,
+  hasLoadedOnce: false
 }
 
 export const useAppState = defineStore('appState', {
@@ -170,6 +172,7 @@ export const useAppState = defineStore('appState', {
     startPageLoading() { this.pageLoading = true; this.pageProgress = Math.max(10, this.pageProgress) },
     stopPageLoading() { this.pageLoading = false; this.pageProgress = 0 },
     setPageProgress(p: number) { this.pageProgress = Math.max(0, Math.min(100, Math.round(p))) },
+    markLoadedOnce() { this.hasLoadedOnce = true; this.persist() },
     reset() {
       Object.assign(this, DEFAULT_STATE)
       this.persist()

@@ -46,6 +46,9 @@
 
     <!-- 取消底部返回按钮；统一使用标题左侧返回图标 -->
   </div>
+  <div class="mt-2">
+    <el-button v-if="isAdmin" type="primary" @click="router.push('/admin')">用户管理</el-button>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -54,10 +57,13 @@ import { Notebook, ArrowLeft, Plus, Edit, Delete, Sort } from '@element-plus/ico
 // 中文注释：显式引入 Color Picker 样式，避免在部分环境下样式资源加载中断
 import 'element-plus/es/components/color-picker/style/css'
 import router from '@/router'
+import { useAuth } from '@/stores/auth'
 import { computed, reactive, ref, watchEffect } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useTaskCategories } from '@/stores/categories'
 function goBack() { router.back() }
+const auth = useAuth()
+const isAdmin = computed(() => Number(auth.user?.id || 0) === 1)
 
 const cats = useTaskCategories()
 const categories = computed(() => cats.list())

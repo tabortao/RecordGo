@@ -54,6 +54,14 @@
       <el-button @click="onCancel">取消</el-button>
       <el-button type="primary" @click="onSave">保存</el-button>
     </div>
+
+    <!-- 管理员按钮：仅用户ID为1显示，位于设置页面底部 -->
+    <div class="mt-4">
+      <el-button v-if="isAdmin" type="primary" @click="toAdmin">
+        <el-icon class="mr-1"><Edit /></el-icon>
+        用户管理
+      </el-button>
+    </div>
   </div>
 </template>
 
@@ -63,12 +71,15 @@ import { updateProfile, changePassword, uploadAvatar } from '@/services/user'
 import { ElMessage } from 'element-plus'
 import { Edit, ArrowLeft } from '@element-plus/icons-vue'
 import router from '@/router'
+import { computed } from 'vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import { getStaticBase } from '@/services/http'
 import { presignView } from '@/services/storage'
 import { prepareUpload } from '@/utils/image'
 
 const auth = useAuth()
+const isAdmin = computed(() => Number(auth.user?.id || 0) === 1)
+function toAdmin() { router.push('/admin') }
 
 const avatarSrc = ref<string>(defaultAvatar)
 async function updateAvatarSrc() {

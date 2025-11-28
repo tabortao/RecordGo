@@ -58,6 +58,9 @@
         <el-button type="primary" @click="confirm">确定</el-button>
       </div>
     </el-card>
+    <div class="mt-2">
+      <el-button v-if="isAdmin" type="primary" @click="router.push('/admin')">用户管理</el-button>
+    </div>
   </div>
 </template>
 
@@ -65,6 +68,8 @@
 import { useAppState } from '@/stores/appState'
 import { Timer, ArrowLeft } from '@element-plus/icons-vue'
 import router from '@/router'
+import { useAuth } from '@/stores/auth'
+import { computed } from 'vue'
 
 // 读取并绑定番茄钟设置到本页面控件
 const store = useAppState()
@@ -72,6 +77,8 @@ const mode = ref(store.tomato.mode)
 const duration = ref(store.tomato.durationMinutes)
 const fixed = ref(store.tomato.fixedTomatoPage)
 const keepAwake = ref(store.tomato.keepAwakeEnabled)
+const auth = useAuth()
+const isAdmin = computed(() => Number(auth.user?.id || 0) === 1)
 
 function goBack() {
   // 中文注释：返回不再自动保存，直接关闭页面
