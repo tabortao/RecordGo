@@ -19,6 +19,12 @@ type User struct {
     Email       string    `gorm:"size:128"`
     ParentID    *uint
     LoginTokenExpireAt *time.Time
+    // 新增：最后登录时间
+    LastLoginTime *time.Time
+    // 新增：VIP 状态与过期时间、终身 VIP 标记
+    IsVIP          bool
+    VIPExpireTime  *time.Time
+    IsLifetimeVIP  bool
     CreatedAt   time.Time
     UpdatedAt   time.Time
 }

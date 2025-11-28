@@ -140,6 +140,19 @@ export async function uploadTaskImage(
   return { path: sign.object_key }
 }
 
+// 上传任务备注图片（与任务图片区分，受 VIP 限制）
+export async function uploadNoteImage(
+  userId: number,
+  file: File,
+  taskId: number,
+  onProgress?: (percentage: number) => void
+): Promise<{ path: string }> {
+  const webp = await prepareUpload(file, 0.75)
+  const sign = await presignUpload({ resource_type: 'task_attachment_img', user_id: userId, task_id: taskId, content_type: 'image/webp', ext: 'webp' })
+  await putToURL(sign.upload_url, webp, sign.headers, onProgress)
+  return { path: sign.object_key }
+}
+
 // 删除单个任务图片（物理文件 + 数据库 image_json 更新）
 // 中文注释：后端期望传递 path 相对路径（uploads/images/task_images/...）
 export async function deleteTaskImage(taskId: number, path: string): Promise<{ images: string[] }> {

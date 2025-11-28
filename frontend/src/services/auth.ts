@@ -15,6 +15,11 @@ export interface LoginResp {
     avatar_path: string
     phone?: string
     email?: string
+    // VIP 字段
+    last_login_time?: string | null
+    is_vip?: boolean
+    vip_expire_time?: string | null
+    is_lifetime_vip?: boolean
   }
 }
 
@@ -32,4 +37,3 @@ export async function apiRegister(username: string, password: string, nickname?:
 export async function apiTokenLogin(token: string) {
   return await http.post<LoginResp>('/auth/token-login', { token })
 }
-

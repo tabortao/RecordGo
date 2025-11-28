@@ -83,7 +83,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useNotesStore, type TaskNote, type NoteAttachment } from '@/stores/notes'
 import { useAuth } from '@/stores/auth'
-import { uploadTaskImage, uploadTaskAudio } from '@/services/tasks'
+import { ElMessageBox } from 'element-plus'
+import { uploadNoteImage, uploadTaskAudio } from '@/services/tasks'
 import { normalizeUploadPath } from '@/services/wishes'
 import { prepareUpload } from '@/utils/image'
 import { ArrowLeft, Microphone } from '@element-plus/icons-vue'
@@ -112,7 +113,29 @@ function goBack() { router.back() }
 // 历史备注
 const existingNotes = computed<TaskNote[]>(() => store.list(taskId))
 onMounted(async () => { await resolveServerPaths(existingNotes.value) })
-watch(() => JSON.stringify(existingNotes.value.map(n => (n.attachments||[]).map(a => a.serverPath || '').join(','))), async () => {
+// 非VIP用户拦截访问并提示
+const isVIP = computed(() => {
+  const u = auth.user
+  if (!u) return false
+  const lifetime = !!(u as any).is_lifetime_vip
+  const vip = !!(u as any).is_vip
+  const expire = (u as any).vip_expire_time ? new Date((u as any).vip_expire_time as string) : null
+  const valid = lifetime || (vip && !!expire && expire.getTime() > Date.now())
+  return valid
+})
+watch(() => auth.user, async () => {
+  if (!isVIP.value) {
+    try {
+      await ElMessageBox.alert('该功能需要开通VIP会员才能使用\n添加微信：tabor2024，备注“任务家”，获取VIP资格', '提示', { confirmButtonText: '我知道了' })
+    } catch {}
+    router.replace('/tasks')
+  }
+})
+if (!isVIP.value) {
+  try { await ElMessageBox.alert('该功能需要开通VIP会员才能使用\n添加微信：tabor2024，备注“任务家”，获取VIP资格', '提示', { confirmButtonText: '我知道了' }) } catch {}
+  router.replace('/tasks')
+}
+watch(() => JSON.stringify(existingNotes.value.map((n: TaskNote) => ((n.attachments||[]) as NoteAttachment[]).map((a: NoteAttachment) => a.serverPath || '').join(','))), async () => {
   await resolveServerPaths(existingNotes.value)
 })
 const resolvedMap = ref<Record<string,string>>({})
@@ -285,7 +308,7 @@ async function saveNote() {
     if (att.type === 'image') {
       try {
         if (att.file) {
-          const { path } = await uploadTaskImage(auth.user.id, att.file, taskId)
+        const { path } = await uploadNoteImage(auth.user.id, att.file, taskId)
           finalAtts.push({ type: 'image', name: att.name, url: att.url, serverPath: path })
         } else {
           finalAtts.push({ type: 'image', name: att.name, url: att.url })

@@ -105,6 +105,9 @@ func Login(c *gin.Context) {
         return
     }
 
+    // 记录最后登录时间
+    now := time.Now()
+    _ = db.DB().Model(&u).Updates(map[string]any{"last_login_time": now}).Error
     // 生成 JWT
     cfg, _ := config.Load()
     // 中文注释：若为子账号，将当前 LoginToken 注入 JWT 用于后续校验；父账号为空字符串
@@ -153,6 +156,11 @@ func Login(c *gin.Context) {
             "avatar_path": u.AvatarPath,
             "phone": u.Phone,
             "email": u.Email,
+            // VIP 字段
+            "last_login_time": now.Format(time.RFC3339),
+            "is_vip": u.IsVIP,
+            "vip_expire_time": func() any { if u.VIPExpireTime!=nil { return u.VIPExpireTime.Format(time.RFC3339) }; return nil }(),
+            "is_lifetime_vip": u.IsLifetimeVIP,
         },
     })
 }
@@ -162,4 +170,3 @@ func ifEmpty(s string, def string) string {
     if s == "" { return def }
     return s
 }
-

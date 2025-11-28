@@ -184,7 +184,7 @@
                 <div class="flex items-center gap-2">
                   <!-- 备注图标：点击进入备注页，作用与菜单中的“备注”一致 -->
               <!-- 中文注释：备注入口图标（受开关控制）；关闭后不显示 -->
-              <el-icon v-if="store.taskNotesEnabled" :size="16" class="cursor-pointer" title="备注" style="color:#f97316" @click="router.push(`/tasks/${t.id}/notes`)"><ChatDotRound /></el-icon>
+              <el-icon v-if="isVIP && store.taskNotesEnabled" :size="16" class="cursor-pointer" title="备注" style="color:#f97316" @click="router.push(`/tasks/${t.id}/notes`)"><ChatDotRound /></el-icon>
                   <!-- 小喇叭：朗读任务（关闭朗读时隐藏），替换为📢表情 -->
                   <el-icon v-if="store.speech.enabled" :size="14" class="cursor-pointer select-none" title="朗读任务" @click="speakTask(t)"><Headset /></el-icon>
                   <!-- 番茄钟图标仅未完成时显示 -->
@@ -207,9 +207,9 @@
                       </el-dropdown-item>
                       <!-- 新增：备注入口 -->
             <!-- 中文注释：备注菜单项（受开关控制）；关闭后不显示 -->
-            <el-dropdown-item v-if="store.taskNotesEnabled" command="notes">
+            <el-dropdown-item v-if="isVIP && store.taskNotesEnabled" command="notes">
               <el-icon class="mr-1" style="color:#f97316"><ChatDotRound /></el-icon>备注
-                      </el-dropdown-item>
+              </el-dropdown-item>
                       <el-dropdown-item command="delete" style="color:#f56c6c">
                         <el-icon class="mr-1"><Delete /></el-icon>删除
                       </el-dropdown-item>
@@ -546,9 +546,19 @@ import { speak } from '@/utils/speech'
 import { useTaskCategories } from '@/stores/categories'
 import { getStaticBase } from '@/services/http'
 import { presignView } from '@/services/storage'
+import http from '@/services/http'
 const isMobile = ref(false)
 // 中文注释：接入认证状态获取真实用户ID（未登录回退为 0）
 const auth = useAuth()
+const isVIP = computed(() => {
+  const u = auth.user
+  if (!u) return false
+  const lifetime = !!(u as any).is_lifetime_vip
+  const vip = !!(u as any).is_vip
+  const expire = (u as any).vip_expire_time ? new Date((u as any).vip_expire_time as string) : null
+  const valid = lifetime || (vip && !!expire && expire.getTime() > Date.now())
+  return valid
+})
 const userId = computed(() => auth.user?.id ?? 0)
 // 中文注释：解析权限，父账号默认放行；子账号按动作校验
 const { isParent, canTaskCreate, canTaskEdit, canTaskDelete, canTaskStatus } = usePermissions()
@@ -651,6 +661,8 @@ async function onTouchEnd() {
       try { await cats.syncFromServer() } catch {}
       await fetchTasks()
       await fetchOccurrences()
+      // 同步刷新总金币（父子金币共享时返回父账号金币）
+      try { await http.get('/coins') } catch {}
     } finally {
       refreshing.value = false
       try { ElMessage.success('已刷新') } catch {}
@@ -732,15 +744,16 @@ const headerLabel = computed(() => {
 })
 const taskCountMap = computed<Record<string, number>>(() => {
   const map: Record<string, number> = {}
-  const base = dayjs(selectedDate.value)
+  const base: any = dayjs(selectedDate.value)
   const weekday = base.day()
   const monday = base.subtract((weekday === 0 ? 6 : weekday - 1), 'day').startOf('day')
-  const days: dayjs.Dayjs[] = []
+  const days: any[] = []
   for (let i = 0; i < 7; i++) { days.push(monday.add(i, 'day')) }
   for (const t of tasks.value) {
     const sDate = t.start_date ? dayjs(t.start_date) : null
     const eDate = t.end_date ? dayjs(t.end_date) : undefined
     if (!sDate) continue
+    const s: any = sDate
     const rep = String((t as any).repeat || 'none').toLowerCase()
     const type: 'none'|'daily'|'weekdays'|'weekly'|'monthly' =
       /none|无|^$/i.test(rep) ? 'none' :
@@ -748,17 +761,17 @@ const taskCountMap = computed<Record<string, number>>(() => {
       /weekdays|工作日/i.test(rep) ? 'weekdays' :
       /weekly|每周/i.test(rep) ? 'weekly' :
       /monthly|每月/i.test(rep) ? 'monthly' : 'none'
-    const startKey = sDate.format('YYYY-MM-DD')
+    const startKey = s.format('YYYY-MM-DD')
     if (type === 'none') { map[startKey] = (map[startKey] || 0) + 1; continue }
-    const dowStart = sDate.day() === 0 ? 7 : sDate.day()
+    const dowStart = s.day() === 0 ? 7 : s.day()
     const weeklyDays: number[] = Array.isArray((t as any).weekly_days) ? ((t as any).weekly_days as number[]) : [dowStart]
     if (eDate) {
-      const dates = generateRepeatDates(sDate.toDate(), eDate.toDate(), type, weeklyDays)
+      const dates = generateRepeatDates(s.toDate(), (eDate as any).toDate(), type, weeklyDays)
       for (const d of dates) { const key = dayjs(d).format('YYYY-MM-DD'); map[key] = (map[key] || 0) + 1 }
       continue
     }
     for (const d of days) {
-      if (d.isBefore(sDate.startOf('day'))) continue
+      if (d.isBefore(s.startOf('day'))) continue
       const w = d.day() === 0 ? 7 : d.day()
       if (type === 'daily') { const key = d.format('YYYY-MM-DD'); map[key] = (map[key] || 0) + 1; continue }
       if (type === 'weekdays') { if (w >= 1 && w <= 5) { const key = d.format('YYYY-MM-DD'); map[key] = (map[key] || 0) + 1 } continue }
@@ -768,7 +781,7 @@ const taskCountMap = computed<Record<string, number>>(() => {
         if (ok) { const key = d.format('YYYY-MM-DD'); map[key] = (map[key] || 0) + 1 }
         continue
       }
-      if (type === 'monthly') { if (d.date() === sDate.date()) { const key = d.format('YYYY-MM-DD'); map[key] = (map[key] || 0) + 1 } continue }
+      if (type === 'monthly') { if (d.date() === s.date()) { const key = d.format('YYYY-MM-DD'); map[key] = (map[key] || 0) + 1 } continue }
     }
   }
   return map

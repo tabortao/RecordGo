@@ -13,6 +13,11 @@ export interface AuthUser {
   avatar_path: string
   phone?: string
   email?: string
+  // VIP 字段（由后端返回）
+  last_login_time?: string | null
+  is_vip?: boolean
+  vip_expire_time?: string | null
+  is_lifetime_vip?: boolean
 }
 
 export const useAuth = defineStore('auth', {
@@ -101,4 +106,3 @@ export const useAuth = defineStore('auth', {
     }
   }
 })
-

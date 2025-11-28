@@ -22,10 +22,11 @@
 
 <script setup lang="ts">
 // 中文注释：属性定义——编辑模式下立即上传到后端；创建模式下仅本地暂存；支持是否使用/恢复草稿的开关
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted, computed } from 'vue'
 import { Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { prepareUpload } from '@/utils/image'
+import { useAuth } from '@/stores/auth'
 import { uploadTaskImage, deleteTaskImage } from '@/services/tasks'
 import { normalizeUploadPath } from '@/services/wishes'
 import { getStaticBase } from '@/services/http'
@@ -57,8 +58,23 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const items = reactive<Item[]>([])
 const DRAFT_KEY = 'task_draft_images'
 // 中文注释：预览列表（用于点击缩略图打开大图查看与翻看）
+// VIP 计算：终身VIP或在有效期内的VIP
+const auth = useAuth()
+const isVIP = computed(() => {
+  const u = auth.user
+  if (!u) return false
+  const lifetime = !!(u as any).is_lifetime_vip
+  const vip = !!(u as any).is_vip
+  const expire = (u as any).vip_expire_time ? new Date((u as any).vip_expire_time as string) : null
+  const valid = lifetime || (vip && !!expire && expire.getTime() > Date.now())
+  return valid
+})
 
 function triggerPick() {
+  if (!isVIP.value) {
+    try { ElMessage.warning('该功能需要开通VIP会员才能使用，添加微信：tabor2024，备注“任务家”') } catch {}
+    return
+  }
   fileInput.value?.click()
 }
 
@@ -101,7 +117,9 @@ async function onPicked(e: Event) {
           ElMessage.success('图片上传成功')
         } catch (err: any) {
           item.uploading = false
-          ElMessage.error(err?.message || '图片上传失败')
+          const msg = String(err?.message || '')
+          if (/VIP/i.test(msg)) ElMessage.error('需要VIP会员才能上传任务图片，添加微信：tabor2024，备注“任务家”')
+          else ElMessage.error(msg || '图片上传失败')
         }
   } else {
     // 创建模式：仅本地暂存，记录到 v-model 与草稿
@@ -143,25 +161,25 @@ async function onPicked(e: Event) {
     if (item.serverPath && props.taskId) {
       deleteTaskImage(props.taskId, item.serverPath)
         .then((resp) => {
-          emit('update:serverPaths', resp.images || props.serverPaths.filter((x) => x !== item.serverPath))
+          emit('update:serverPaths', resp.images || props.serverPaths.filter((x: string) => x !== item.serverPath))
           ElMessage.success('已删除服务器图片')
         })
         .catch((err: any) => {
           // 后端删除失败时，至少移除前端列表，避免卡死；并提示错误
-          emit('update:serverPaths', props.serverPaths.filter((x) => x !== item.serverPath))
+          emit('update:serverPaths', props.serverPaths.filter((x: string) => x !== item.serverPath))
           ElMessage.error(err?.message || '删除服务器图片失败')
         })
     } else if (item.serverPath) {
       // 缺少任务ID时的兜底处理：仅移除前端列表
-      emit('update:serverPaths', props.serverPaths.filter((x) => x !== item.serverPath))
+      emit('update:serverPaths', props.serverPaths.filter((x: string) => x !== item.serverPath))
     }
   } else {
     // 创建模式：移除本地文件与草稿
     if (item.localFile) {
-      emit('update:localFiles', props.localFiles.filter((x) => (x as any).name !== item.localFile!.name))
+      emit('update:localFiles', props.localFiles.filter((x: File) => (x as any).name !== item.localFile!.name))
     } else {
       // 通过名称匹配移除
-      emit('update:localFiles', props.localFiles.filter((x) => (x as any).name !== item.name))
+      emit('update:localFiles', props.localFiles.filter((x: File) => (x as any).name !== item.name))
     }
     // 中文注释：仅在启用草稿存储时同步清理本地草稿
     if (props.useDraftStorage) {
@@ -169,7 +187,7 @@ async function onPicked(e: Event) {
         const raw = localStorage.getItem(DRAFT_KEY)
         if (raw) {
           const arr: { name: string; type: string; dataURL: string }[] = JSON.parse(raw)
-          const next = arr.filter((x) => x.name !== item.name)
+          const next = arr.filter((x: { name: string; type: string; dataURL: string }) => x.name !== item.name)
           localStorage.setItem(DRAFT_KEY, JSON.stringify(next))
         }
       } catch {}

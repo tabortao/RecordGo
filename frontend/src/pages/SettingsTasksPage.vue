@@ -6,13 +6,20 @@
       <h2 class="font-semibold">任务设置</h2>
     </div>
     <!-- 中文注释：任务备注入口开关（默认开启）；关闭后任务卡片不显示备注图标，菜单不显示备注按钮 -->
-    <el-card shadow="never">
+    <el-card shadow="never" v-if="isVIP">
       <div class="flex items-center justify-between">
         <div>
           <div class="font-medium">显示任务备注入口</div>
           <div class="text-xs text-gray-500 mt-1">关闭后：任务清单卡片不显示备注图标，操作菜单不显示“备注”按钮</div>
         </div>
         <el-switch v-model="taskNotesEnabled" />
+      </div>
+    </el-card>
+    <el-card shadow="never" v-else>
+      <div>
+        <div class="font-medium">任务备注功能</div>
+        <div class="text-sm text-gray-600 mt-1">该功能需要开通VIP会员才能使用</div>
+        <div class="text-xs text-gray-500 mt-2">添加微信：tabor2024，备注“任务家”，获取VIP资格</div>
       </div>
     </el-card>
     <!-- 中文注释：任务自动排序开关（默认开启）；开启后分类内已完成排下方，全部完成的分类排到未完分类之后 -->
@@ -74,13 +81,25 @@ import { List, ArrowLeft, Plus, Edit, Delete, Sort } from '@element-plus/icons-v
 import 'element-plus/es/components/color-picker/style/css'
 import router from '@/router'
 import { useAppState } from '@/stores/appState'
+import { useAuth } from '@/stores/auth'
 import { computed, reactive, ref, watchEffect, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useTaskCategories } from '@/stores/categories'
+import type { TaskCategory } from '@/stores/categories'
 function goBack() { router.back() }
 
 // 中文注释：联动全局状态中的任务备注开关，使用计算属性实现双向绑定
 const store = useAppState()
+const auth = useAuth()
+const isVIP = computed(() => {
+  const u = auth.user
+  if (!u) return false
+  const lifetime = !!(u as any).is_lifetime_vip
+  const vip = !!(u as any).is_vip
+  const expire = (u as any).vip_expire_time ? new Date((u as any).vip_expire_time as string) : null
+  const valid = lifetime || (vip && !!expire && expire.getTime() > Date.now())
+  return valid
+})
 const taskNotesEnabled = computed({
   get: () => store.taskNotesEnabled,
   set: (v: boolean) => store.setTaskNotesEnabled(v)
@@ -92,12 +111,12 @@ const taskAutoSortEnabled = computed({
 
 // ===== 分类管理逻辑（与原“任务分类设置”保持一致） =====
 const cats = useTaskCategories()
-const categories = computed(() => cats.list())
+const categories = computed<TaskCategory[]>(() => cats.list())
 onMounted(async () => { try { await cats.syncFromServer() } catch {} })
 // 可排序显示数组
 const sortable = ref<{ name: string; color: string }[]>([])
 watchEffect(() => {
-  sortable.value = categories.value.map(c => ({ name: c.name, color: c.color }))
+  sortable.value = categories.value.map((c: TaskCategory) => ({ name: c.name, color: c.color }))
 })
 // 新增分类输入与提交
 const newName = ref('')
@@ -113,7 +132,7 @@ function addCategory() {
 const editable = reactive<Record<string, { name: string; color: string }>>({})
 watchEffect(() => {
   const next: Record<string, { name: string; color: string }> = {}
-  for (const c of categories.value) next[c.name] = { name: c.name, color: c.color }
+  for (const c of categories.value as TaskCategory[]) next[c.name] = { name: c.name, color: c.color }
   Object.assign(editable, next)
 })
 function saveCategory(oldName: string) {

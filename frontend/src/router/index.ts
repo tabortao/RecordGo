@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
 import http from '@/services/http'
+import { ElMessage } from 'element-plus'
 
 // 中文注释：简单的三页面路由结构，默认进入任务页；恢复无登录守卫的版本
 const router = createRouter({
@@ -92,6 +93,17 @@ router.beforeEach(async (to) => {
   } catch {}
   // 中文注释：已登录访问登录/注册页面时自动跳转任务页
   if (auth.token && (to.path === '/login' || to.path === '/register')) {
+    return { path: '/tasks' }
+  }
+  // 备注页面需 VIP 权限：非VIP访问时提示并跳转任务页
+  const isNotesPage = /^\/tasks\/[0-9]+\/notes$/.test(to.path)
+  const u = auth.user as any
+  const lifetime = !!(u?.is_lifetime_vip)
+  const vip = !!(u?.is_vip)
+  const expire = u?.vip_expire_time ? new Date(u.vip_expire_time as string) : null
+  const isVIP = !!u && (lifetime || (vip && !!expire && expire.getTime() > Date.now()))
+  if (isNotesPage && !isVIP) {
+    try { ElMessage.warning('该功能需要开通VIP会员才能使用，添加微信：tabor2024，备注“任务家”') } catch {}
     return { path: '/tasks' }
   }
   // 中文注释：未登录访问私有页面时跳转至登录，并记录重定向
