@@ -80,71 +80,82 @@ func AdminUpdateVIP(c *gin.Context) {
 	if !requireAdmin(c) {
 		return
 	}
-	// 尝试自动迁移以确保字段存在
-	if err := db.DB().AutoMigrate(&models.User{}); err != nil {
-		zap.L().Error("AdminUpdateVIP AutoMigrate failed", zap.Error(err))
-	}
-	
+
 	var payload struct {
 		IsVIP         *bool   `json:"is_vip"`
 		VIPExpireTime *string `json:"vip_expire_time"`
 		IsLifetimeVIP *bool   `json:"is_lifetime_vip"`
 	}
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		zap.L().Error("AdminUpdateVIP bind error", zap.Error(err))
-		common.Error(c, 40000, "参数错误")
+		zap.L().Error("AdminUpdateVIP: bind error", zap.Error(err))
+		common.Error(c, 40000, "参数错误: "+err.Error())
 		return
 	}
 	id := strings.TrimSpace(c.Param("id"))
-	updates := map[string]any{}
+	if id == "" {
+		common.Error(c, 40001, "用户ID不能为空")
+		return
+	}
+
+	// 中文注释：显式检查并同步 VIP 相关字段，防止 schema 不一致导致保存失败
+	m := db.DB().Migrator()
+	if m != nil {
+		// 检查并添加 IsVIP
+		if !m.HasColumn(&models.User{}, "IsVIP") {
+			zap.L().Warn("AdminUpdateVIP: adding missing column IsVIP")
+			if err := m.AddColumn(&models.User{}, "IsVIP"); err != nil {
+				zap.L().Error("AdminUpdateVIP: failed to add IsVIP", zap.Error(err))
+			}
+		}
+		// 检查并添加 VIPExpireTime
+		if !m.HasColumn(&models.User{}, "VIPExpireTime") {
+			zap.L().Warn("AdminUpdateVIP: adding missing column VIPExpireTime")
+			if err := m.AddColumn(&models.User{}, "VIPExpireTime"); err != nil {
+				zap.L().Error("AdminUpdateVIP: failed to add VIPExpireTime", zap.Error(err))
+			}
+		}
+		// 检查并添加 IsLifetimeVIP
+		if !m.HasColumn(&models.User{}, "IsLifetimeVIP") {
+			zap.L().Warn("AdminUpdateVIP: adding missing column IsLifetimeVIP")
+			if err := m.AddColumn(&models.User{}, "IsLifetimeVIP"); err != nil {
+				zap.L().Error("AdminUpdateVIP: failed to add IsLifetimeVIP", zap.Error(err))
+			}
+		}
+	}
+
+	// 执行更新 (改用 First + Save 模式以规避 Updates 在某些 GORM/SQLite 版本下的兼容性问题)
+	var user models.User
+	if err := db.DB().First(&user, id).Error; err != nil {
+		common.Error(c, 40400, "用户不存在")
+		return
+	}
+
 	if payload.IsVIP != nil {
-		updates["is_vip"] = *payload.IsVIP
+		user.IsVIP = *payload.IsVIP
 	}
 	if payload.IsLifetimeVIP != nil {
-		updates["is_lifetime_vip"] = *payload.IsLifetimeVIP
+		user.IsLifetimeVIP = *payload.IsLifetimeVIP
 	}
 	if payload.VIPExpireTime != nil {
 		s := strings.TrimSpace(*payload.VIPExpireTime)
 		if s == "" {
-			updates["vip_expire_time"] = nil
+			user.VIPExpireTime = nil
 		} else {
 			t, err := time.Parse(time.RFC3339, s)
 			if err != nil {
 				common.Error(c, 40002, "VIP到期时间格式错误")
 				return
 			}
-			updates["vip_expire_time"] = t
+			user.VIPExpireTime = &t
 		}
 	}
-	if len(updates) == 0 {
-		common.Error(c, 40001, "无更新字段")
+
+	if err := db.DB().Save(&user).Error; err != nil {
+		zap.L().Error("AdminUpdateVIP save error", zap.String("user_id", id), zap.Error(err))
+		common.Error(c, 50020, "更新失败："+err.Error())
 		return
 	}
-	
-	// 执行更新
-	if err := db.DB().Model(&models.User{}).Where("id = ?", id).Updates(updates).Error; err != nil {
-		zap.L().Error("AdminUpdateVIP update error", zap.String("user_id", id), zap.Any("payload", payload), zap.Error(err))
-		
-		// 如果是列缺失错误，尝试显式修复
-		if strings.Contains(strings.ToLower(err.Error()), "no such column") {
-			// 再次尝试迁移
-			_ = db.DB().AutoMigrate(&models.User{})
-			
-			// 重试更新
-			if e2 := db.DB().Model(&models.User{}).Where("id = ?", id).Updates(updates).Error; e2 != nil {
-				zap.L().Error("AdminUpdateVIP retry failed", zap.Error(e2))
-				common.Error(c, 50020, "更新失败：数据库字段同步失败，请联系管理员或重启服务")
-				return
-			}
-			zap.L().Info("管理员更新VIP(重试成功)", zap.String("user_id", id), zap.Any("updates", updates))
-			common.Ok(c, gin.H{"updated": true})
-			return
-		}
-		
-		common.Error(c, 50020, "更新失败")
-		return
-	}
-	zap.L().Info("管理员更新VIP", zap.String("user_id", id), zap.Any("updates", updates))
+	zap.L().Info("管理员更新VIP", zap.String("user_id", id), zap.Bool("is_vip", user.IsVIP))
 	common.Ok(c, gin.H{"updated": true})
 }
 

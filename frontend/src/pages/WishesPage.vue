@@ -156,7 +156,7 @@ function resolveIcon(icon: string | undefined) {
   const base = getStaticBase()
   const p = String(icon).replace(/^\/+/, '')
   if (p.startsWith('uploads/')) return `${base}/api/${p}`
-  return iconResolvedMap.value[p] || new URL('../assets/wishs/领取记录.png', import.meta.url).href
+  return iconResolvedMap.value[p] || new URL('../assets/wishs/零花钱.png', import.meta.url).href
 }
 async function resolveIconsForList(list: Wish[]) {
   const targets = list
@@ -169,13 +169,13 @@ async function resolveIconsForList(list: Wish[]) {
 // 记录图标可复用 wish 名称对应文件
 function resolveRecordIcon(name: string) {
   const f = `${name}.png`
-  try { return new URL(`../assets/wishs/${f}`, import.meta.url).href } catch { return new URL(`../assets/wishs/领取记录.png`, import.meta.url).href }
+  try { return new URL(`../assets/wishs/${f}`, import.meta.url).href } catch { return new URL(`../assets/wishs/零花钱.png`, import.meta.url).href }
 }
 
 // 中文注释：图标加载失败时回退到默认占位图，避免破图影响体验
 function onIconError(e: Event) {
   const img = e.target as HTMLImageElement
-  try { img.src = new URL(`../assets/wishs/领取记录.png`, import.meta.url).href } catch {}
+  try { img.src = new URL(`../assets/wishs/零花钱.png`, import.meta.url).href } catch {}
 }
 
 function formatTime(ts: string) {

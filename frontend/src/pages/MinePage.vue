@@ -114,7 +114,7 @@ import { usePermissions } from '@/composables/permissions'
 import { getStaticBase } from '@/services/http'
 import { presignView } from '@/services/storage'
 import { ElMessage } from 'element-plus'
-import { User, Edit, SwitchButton, Setting, Timer, List, Microphone, Coin, InfoFilled, DataAnalysis } from '@element-plus/icons-vue'
+import { User, Edit, SwitchButton, Setting, Timer, List, Microphone, Coin, InfoFilled } from '@element-plus/icons-vue'
 import http from '@/services/http'
 
 // 中文注释：应用状态（用于退出登录时重置）
@@ -122,7 +122,6 @@ const store = useAppState()
 
 // 中文注释：退出登录，清除认证信息并跳转到登录页
 const auth = useAuth()
-const isAdmin = computed(() => Number(auth.user?.id || 0) === 1)
 
 // 中文注释：展示名称逻辑——优先真实昵称，缺省则回退到用户名
 const displayName = computed(() => {
@@ -193,11 +192,13 @@ const settingItems = computed(() => {
     { key: 'appearance', label: '主题外观', icon: Setting, fg: '#2563eb' },
     { key: 'about', label: '关于', icon: InfoFilled, fg: '#0ea5e9' }
   ]
-  if (isAdmin.value) {
-    items.push({ key: 'admin', label: '用户管理', icon: DataAnalysis, fg: '#db2777' })
-  }
+  // 管理员权限控制
+  // if (isAdmin.value) {
+  //   items.push({ key: 'admin', label: '用户管理', icon: DataAnalysis, fg: '#db2777' })
+  // }
   return items
 })
+
 
 function goSettingsTab(k: SettingsKey) {
   if (k === 'admin') {
