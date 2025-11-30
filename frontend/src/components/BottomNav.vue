@@ -15,12 +15,13 @@
 </template>
 
 <script setup lang="ts">
-import { List, Star, User } from '@element-plus/icons-vue'
+import { List, Star, User, Reading } from '@element-plus/icons-vue'
 
-// 中文注释：底部导航三页：任务/心愿/我的
+// 中文注释：底部导航四页：任务/心愿/作业家/我的
 const items = [
   { to: '/tasks', label: '任务', icon: List },
   { to: '/wishes', label: '心愿', icon: Star },
+  { to: '/homework', label: '作业家', icon: Reading },
   { to: '/mine', label: '我的', icon: User }
 ]
 </script>

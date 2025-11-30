@@ -47,6 +47,17 @@ const router = createRouter({
     { path: '/wishes/records', name: 'WishRecords', component: () => import('@/pages/WishRecordsPage.vue'), meta: { noNav: true } },
     // 中文注释：心愿编辑独立页面
     { path: '/wishes/:id/edit', name: 'WishEdit', component: () => import('@/pages/WishEditPage.vue'), meta: { noNav: true } },
+    
+    // --- 作业家模块 ---
+    {
+      path: '/homework',
+      name: 'Homework',
+      component: () => import('@/pages/HomeworkPage.vue')
+    },
+    { path: '/homework/chinese', name: 'HomeworkChinese', component: () => import('@/pages/HomeworkChinesePage.vue'), meta: { noNav: true } },
+    { path: '/homework/chinese/pinyin', name: 'PinyinMenu', component: () => import('@/pages/PinyinMenuPage.vue'), meta: { noNav: true } },
+    { path: '/homework/chinese/pinyin/wheel', name: 'PinyinWheel', component: () => import('@/pages/PinyinWheelPage.vue'), meta: { noNav: true } },
+    
     {
       path: '/mine',
       name: 'Mine',
