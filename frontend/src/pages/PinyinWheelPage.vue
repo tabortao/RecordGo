@@ -5,105 +5,132 @@
       <div class="w-10 h-10 bg-white dark:bg-gray-800 rounded-full shadow flex items-center justify-center cursor-pointer hover:scale-105 transition" @click="router.back()">
         <el-icon :size="20" class="text-green-600"><ArrowLeft /></el-icon>
       </div>
-      <h1 class="text-2xl font-bold text-green-700 dark:text-green-400 tracking-wider">拼音大转盘</h1>
+      <!-- 移除了之前的固定居中标题，改为在 Flex 布局中处理 -->
       <div class="w-10"></div>
     </div>
 
     <!-- 游戏区域 -->
-    <div class="flex-1 flex flex-col items-center justify-center relative -mt-10">
+    <div class="flex-1 w-full max-w-6xl mx-auto p-4 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16">
       
-      <!-- 转盘容器 -->
-      <div class="relative w-[320px] h-[320px] sm:w-[400px] sm:h-[400px] flex items-center justify-center">
-        <!-- 指针 (固定在上方) -->
-        <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-40">
-          <div class="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[24px] border-t-red-500 drop-shadow-md"></div>
-        </div>
-
-        <!-- 外圈：声母 -->
-        <div 
-          class="absolute inset-0 rounded-full border-4 border-green-200 bg-green-100 shadow-xl transition-transform duration-[3000ms] ease-out"
-          :style="{ transform: `rotate(${rotations.initial}deg)` }"
-        >
-          <div v-for="(item, idx) in initials" :key="item"
-            class="absolute top-0 left-1/2 -ml-[15px] w-[30px] h-1/2 origin-bottom pt-2 text-center font-bold text-green-800"
-            :style="{ transform: `rotate(${idx * (360 / initials.length)}deg)` }"
-          >
-            <span class="block transform -rotate-90 mt-2">{{ item }}</span>
+      <!-- 左侧：转盘区 -->
+      <div class="relative flex-shrink-0">
+        <div class="relative w-[90vw] h-[90vw] max-w-[500px] max-h-[500px] flex items-center justify-center aspect-square">
+          <!-- 指针 (固定在上方) - 独立于转盘容器，绝对定位 -->
+          <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 z-40 pointer-events-none">
+            <div class="w-0 h-0 border-l-[16px] border-l-transparent border-r-[16px] border-r-transparent border-t-[32px] border-t-red-500 drop-shadow-md filter drop-shadow-lg"></div>
           </div>
-        </div>
 
-        <!-- 中圈：韵母 -->
-        <div 
-          class="absolute top-[15%] left-[15%] right-[15%] bottom-[15%] rounded-full border-4 border-yellow-200 bg-yellow-50 shadow-lg transition-transform duration-[3000ms] ease-out"
-          :style="{ transform: `rotate(${rotations.final}deg)` }"
-        >
-          <div v-for="(item, idx) in finals" :key="item"
-            class="absolute top-0 left-1/2 -ml-[15px] w-[30px] h-1/2 origin-bottom pt-2 text-center font-bold text-orange-700"
-            :style="{ transform: `rotate(${idx * (360 / finals.length)}deg)` }"
+          <!-- 外圈：声母 (放大尺寸) -->
+          <div 
+            class="absolute inset-0 rounded-full border-8 border-green-300 bg-green-100 shadow-xl transition-transform duration-[3000ms] ease-out"
+            :style="{ transform: `rotate(${rotations.initial}deg)` }"
           >
-            <span class="block transform -rotate-90 mt-1 text-sm">{{ item }}</span>
+            <div v-for="(item, idx) in initials" :key="item"
+              class="absolute top-0 left-1/2 -ml-[30px] w-[60px] h-1/2 origin-bottom text-center"
+              :style="{ transform: `rotate(${idx * (360 / initials.length)}deg)` }"
+            >
+              <div class="absolute top-[6%] left-1/2 -translate-x-1/2 flex flex-row items-center justify-center gap-0.5 sm:gap-1 min-w-max">
+                <span class="text-lg sm:text-2xl font-bold text-green-800">{{ item }}</span>
+                <span class="text-sm sm:text-lg">{{ initialsData[item]?.icon }}</span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <!-- 内圈：声调 -->
-        <div 
-          class="absolute top-[35%] left-[35%] right-[35%] bottom-[35%] rounded-full border-4 border-pink-200 bg-pink-50 shadow-md transition-transform duration-[3000ms] ease-out flex items-center justify-center"
-          :style="{ transform: `rotate(${rotations.tone}deg)` }"
-        >
-          <div v-for="(item, idx) in tones" :key="item"
-            class="absolute top-0 left-1/2 -ml-[10px] w-[20px] h-1/2 origin-bottom pt-1 text-center font-bold text-pink-600"
-            :style="{ transform: `rotate(${idx * 90}deg)` }"
+          <!-- 中圈：韵母 -->
+          <div 
+            class="absolute top-[18%] left-[18%] right-[18%] bottom-[18%] rounded-full border-8 border-yellow-200 bg-yellow-50 shadow-lg transition-transform duration-[3000ms] ease-out"
+            :style="{ transform: `rotate(${rotations.final}deg)` }"
           >
-            <span class="block mt-1">{{ item }}声</span>
+            <div v-for="(item, idx) in finals" :key="item"
+              class="absolute top-0 left-1/2 -ml-[15px] w-[30px] h-1/2 origin-bottom pt-2 text-center font-bold text-orange-700"
+              :style="{ transform: `rotate(${idx * (360 / finals.length)}deg)` }"
+            >
+              <span class="block transform -rotate-90 mt-1 text-sm sm:text-base">{{ item }}</span>
+            </div>
           </div>
-          <!-- 中心装饰 -->
-          <div class="w-12 h-12 rounded-full bg-white shadow-inner flex items-center justify-center z-10">
-            <span class="text-2xl">🐼</span>
+
+          <!-- 内圈：声调 -->
+          <div 
+            class="absolute top-[38%] left-[38%] right-[38%] bottom-[38%] rounded-full border-8 border-pink-200 bg-pink-50 shadow-md transition-transform duration-[3000ms] ease-out flex items-center justify-center"
+            :style="{ transform: `rotate(${rotations.tone}deg)` }"
+          >
+            <div v-for="(item, idx) in tones" :key="item"
+              class="absolute top-0 left-1/2 -ml-[10px] w-[20px] h-1/2 origin-bottom pt-1 text-center font-bold text-pink-600"
+              :style="{ transform: `rotate(${idx * 90}deg)` }"
+            >
+              <span class="block mt-1 text-sm sm:text-base">{{ item }}声</span>
+            </div>
+            <!-- 中心装饰 -->
+            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white shadow-inner flex items-center justify-center z-10 border-4 border-pink-100">
+              <span class="text-3xl sm:text-4xl">🐼</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 结果展示区 -->
-      <div class="mt-8 bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border-b-4 border-green-500 w-[90%] max-w-md text-center min-h-[160px] flex flex-col items-center justify-center transition-all" :class="{'scale-105': showResult}">
-        <div v-if="isSpinning" class="text-green-600 animate-pulse font-bold text-xl">
-          拼读中...
-        </div>
-        <div v-else-if="currentResult" class="space-y-3">
-          <div class="flex items-center justify-center gap-2 text-2xl font-mono text-gray-500">
-            <span>{{ currentResult.initial }}</span>
-            <span>+</span>
-            <span>{{ currentResult.final }}</span>
-            <span>+</span>
-            <span>{{ currentResult.tone }}声</span>
-            <span>=</span>
-            <span class="text-green-600 font-bold text-4xl">{{ currentResult.pinyinWithTone }}</span>
-          </div>
-          <div class="text-5xl font-bold text-gray-800 dark:text-white mt-2">{{ currentResult.word }}</div>
-          <div class="text-gray-400 text-sm">{{ currentResult.example }}</div>
-        </div>
-        <div v-else class="text-gray-400">
-          点击“转动”开始学习吧！
-        </div>
-      </div>
-
-      <!-- 控制按钮 -->
-      <div class="mt-8 flex gap-6">
-        <button 
-          class="bg-gradient-to-b from-green-400 to-green-600 text-white px-8 py-3 rounded-full shadow-lg border-b-4 border-green-700 active:border-b-0 active:translate-y-1 transition font-bold text-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="spin"
-          :disabled="isSpinning"
-        >
-          <el-icon><Refresh /></el-icon> 转动
-        </button>
+      <!-- 右侧：结果与控制区 -->
+      <div class="flex flex-col items-center lg:items-start gap-8 z-10 max-w-md w-full">
         
-        <button 
-          class="bg-gradient-to-b from-yellow-400 to-yellow-600 text-white px-8 py-3 rounded-full shadow-lg border-b-4 border-yellow-700 active:border-b-0 active:translate-y-1 transition font-bold text-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="speak"
-          :disabled="isSpinning || !currentResult"
-        >
-          <el-icon><Microphone /></el-icon> 朗读
-        </button>
+        <h1 class="text-3xl lg:text-4xl font-bold text-green-700 dark:text-green-400 tracking-wider drop-shadow-sm text-center lg:text-left">
+          拼音大转盘
+        </h1>
+
+        <!-- 结果展示区 -->
+        <div class="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border-b-8 border-green-500 w-full text-center min-h-[220px] flex flex-col items-center justify-center transition-all transform hover:scale-[1.02] duration-300">
+          <div v-if="isSpinning" class="flex flex-col items-center gap-3">
+            <div class="w-12 h-12 border-4 border-green-200 border-t-green-500 rounded-full animate-spin"></div>
+            <div class="text-green-600 font-bold text-xl">拼读中...</div>
+          </div>
+          <div v-else-if="currentResult" class="space-y-4 animate-fade-in">
+            <!-- 拼音公式 -->
+            <div class="flex items-center justify-center gap-2 text-2xl sm:text-3xl font-mono text-gray-500 bg-gray-50 dark:bg-gray-700/50 px-4 py-2 rounded-full">
+              <span class="text-green-700 font-bold">{{ currentResult.initial }}</span>
+              <span>+</span>
+              <span class="text-orange-600 font-bold">{{ currentResult.final }}</span>
+              <span>+</span>
+              <span class="text-pink-600 font-bold">{{ currentResult.tone }}声</span>
+              <span>=</span>
+              <span class="text-indigo-600 font-bold">{{ currentResult.pinyinWithTone }}</span>
+            </div>
+            
+            <!-- 汉字展示 -->
+            <div class="flex flex-col items-center">
+              <div class="text-7xl sm:text-8xl font-black text-gray-800 dark:text-white drop-shadow-md my-2">
+                {{ currentResult.word }}
+              </div>
+              <!-- 词组/例句 -->
+              <div class="text-lg text-gray-500 bg-green-50 dark:bg-green-900/30 px-4 py-1 rounded-lg border border-green-100 dark:border-green-800">
+                {{ currentResult.example }}
+              </div>
+            </div>
+          </div>
+          <div v-else class="text-gray-400 flex flex-col items-center gap-2">
+            <span class="text-5xl mb-2">🎡</span>
+            <span>点击“转动”开始学习吧！</span>
+          </div>
+        </div>
+
+        <!-- 控制按钮 -->
+        <div class="flex flex-wrap justify-center lg:justify-start gap-6 w-full">
+          <button 
+            class="flex-1 min-w-[140px] bg-gradient-to-b from-green-400 to-green-600 text-white px-6 py-4 rounded-2xl shadow-lg border-b-4 border-green-700 active:border-b-0 active:translate-y-1 transition font-bold text-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
+            @click="spin"
+            :disabled="isSpinning"
+          >
+            <el-icon :class="{'animate-spin': isSpinning}"><Refresh /></el-icon> 
+            {{ isSpinning ? '转动中...' : '转动' }}
+          </button>
+          
+          <button 
+            class="flex-1 min-w-[140px] bg-gradient-to-b from-yellow-400 to-yellow-600 text-white px-6 py-4 rounded-2xl shadow-lg border-b-4 border-yellow-700 active:border-b-0 active:translate-y-1 transition font-bold text-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
+            @click="speak"
+            :disabled="isSpinning || !currentResult"
+          >
+            <el-icon class="group-hover:scale-110 transition"><Microphone /></el-icon> 朗读发音
+          </button>
+        </div>
       </div>
+
     </div>
   </div>
 </template>
@@ -112,46 +139,12 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Refresh, Microphone } from '@element-plus/icons-vue'
+import { initials, finals, tones, pinyinDict, initialsData } from '@/utils/pinyinData'
 
 const router = useRouter()
 
-// --- 数据定义 ---
-const initials = ['b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h', 'j', 'q', 'x', 'zh', 'ch', 'sh', 'r', 'z', 'c', 's', 'y', 'w']
-const finals = ['a', 'o', 'e', 'i', 'u', 'ü', 'ai', 'ei', 'ui', 'ao', 'ou', 'iu', 'ie', 'üe', 'er', 'an', 'en', 'in', 'un', 'ün', 'ang', 'eng', 'ing', 'ong']
-const tones = [1, 2, 3, 4]
-
-// 简单的拼音数据字典 (Valid combinations)
-// 格式: key = "initial+final", value = { 1: "word", ... }
-const pinyinDict: Record<string, Record<number, { word: string, pinyin: string }>> = {
-  'ba': { 1: { word: '八', pinyin: 'bā' }, 2: { word: '拔', pinyin: 'bá' }, 3: { word: '把', pinyin: 'bǎ' }, 4: { word: '爸', pinyin: 'bà' } },
-  'po': { 1: { word: '坡', pinyin: 'pō' }, 2: { word: '婆', pinyin: 'pó' }, 3: { word: '叵', pinyin: 'pǒ' }, 4: { word: '破', pinyin: 'pò' } },
-  'mi': { 1: { word: '咪', pinyin: 'mī' }, 2: { word: '迷', pinyin: 'mí' }, 3: { word: '米', pinyin: 'mǐ' }, 4: { word: '密', pinyin: 'mì' } },
-  'fu': { 1: { word: '夫', pinyin: 'fū' }, 2: { word: '福', pinyin: 'fú' }, 3: { word: '府', pinyin: 'fǔ' }, 4: { word: '富', pinyin: 'fù' } },
-  'da': { 1: { word: '搭', pinyin: 'dā' }, 2: { word: '达', pinyin: 'dá' }, 3: { word: '打', pinyin: 'dǎ' }, 4: { word: '大', pinyin: 'dà' } },
-  'tu': { 1: { word: '秃', pinyin: 'tū' }, 2: { word: '图', pinyin: 'tú' }, 3: { word: '土', pinyin: 'tǔ' }, 4: { word: '兔', pinyin: 'tù' } },
-  'nü': { 3: { word: '女', pinyin: 'nǚ' } }, 
-  'lü': { 4: { word: '绿', pinyin: 'lǜ' }, 3: { word: '旅', pinyin: 'lǚ' } },
-  'ge': { 1: { word: '歌', pinyin: 'gē' }, 2: { word: '格', pinyin: 'gé' }, 3: { word: '葛', pinyin: 'gě' }, 4: { word: '个', pinyin: 'gè' } },
-  'ka': { 1: { word: '咖', pinyin: 'kā' }, 3: { word: '卡', pinyin: 'kǎ' } },
-  'he': { 1: { word: '喝', pinyin: 'hē' }, 2: { word: '河', pinyin: 'hé' }, 4: { word: '贺', pinyin: 'hè' } },
-  'ji': { 1: { word: '鸡', pinyin: 'jī' }, 2: { word: '急', pinyin: 'jí' }, 3: { word: '几', pinyin: 'jǐ' }, 4: { word: '寄', pinyin: 'jì' } },
-  'qi': { 1: { word: '七', pinyin: 'qī' }, 2: { word: '齐', pinyin: 'qí' }, 3: { word: '起', pinyin: 'qǐ' }, 4: { word: '气', pinyin: 'qì' } },
-  'xi': { 1: { word: '西', pinyin: 'xī' }, 2: { word: '习', pinyin: 'xí' }, 3: { word: '洗', pinyin: 'xǐ' }, 4: { word: '戏', pinyin: 'xì' } },
-  'zhu': { 1: { word: '猪', pinyin: 'zhū' }, 2: { word: '竹', pinyin: 'zhú' }, 3: { word: '主', pinyin: 'zhǔ' }, 4: { word: '住', pinyin: 'zhù' } },
-  'chi': { 1: { word: '吃', pinyin: 'chī' }, 2: { word: '迟', pinyin: 'chí' }, 3: { word: '尺', pinyin: 'chǐ' }, 4: { word: '翅', pinyin: 'chì' } },
-  'shu': { 1: { word: '书', pinyin: 'shū' }, 2: { word: '熟', pinyin: 'shú' }, 3: { word: '鼠', pinyin: 'shǔ' }, 4: { word: '树', pinyin: 'shù' } },
-  'ri': { 4: { word: '日', pinyin: 'rì' } },
-  'za': { 1: { word: '扎', pinyin: 'zā' }, 2: { word: '杂', pinyin: 'zá' } },
-  'ci': { 1: { word: '刺', pinyin: 'cī' }, 2: { word: '词', pinyin: 'cí' }, 3: { word: '此', pinyin: 'cǐ' }, 4: { word: '次', pinyin: 'cì' } },
-  'si': { 1: { word: '丝', pinyin: 'sī' }, 3: { word: '死', pinyin: 'sǐ' }, 4: { word: '四', pinyin: 'sì' } },
-  'ya': { 1: { word: '鸭', pinyin: 'yā' }, 2: { word: '牙', pinyin: 'yá' }, 3: { word: '雅', pinyin: 'yǎ' }, 4: { word: '亚', pinyin: 'yà' } },
-  'wo': { 1: { word: '窝', pinyin: 'wō' }, 3: { word: '我', pinyin: 'wǒ' }, 4: { word: '握', pinyin: 'wò' } },
-  'ma': { 1: { word: '妈', pinyin: 'mā' }, 2: { word: '麻', pinyin: 'má' }, 3: { word: '马', pinyin: 'mǎ' }, 4: { word: '骂', pinyin: 'mà' } },
-}
-
 // 状态
 const isSpinning = ref(false)
-const showResult = ref(false)
 const rotations = reactive({ initial: 0, final: 0, tone: 0 })
 const currentResult = ref<{
   initial: string
@@ -164,17 +157,29 @@ const currentResult = ref<{
 
 // 查找下一个有效组合
 function findValidCombination(): { initialIdx: number, finalIdx: number, toneIdx: number, data: any } {
-  // 随机尝试 100 次，找不到就返回默认
-  for (let i = 0; i < 100; i++) {
+  // 随机尝试 200 次，找不到就返回默认
+  for (let i = 0; i < 200; i++) {
     const iIdx = Math.floor(Math.random() * initials.length)
     const fIdx = Math.floor(Math.random() * finals.length)
-    const tIdx = Math.floor(Math.random() * tones.length) // 0-3 representing tones 1-4
+    const tIdx = Math.floor(Math.random() * tones.length)
 
     const initial = initials[iIdx]
     const final = finals[fIdx]
     const tone = tones[tIdx]
 
-    const key = initial + final
+    let key = initial + final
+
+    // 特殊拼写规则处理
+    // j, q, x, y 遇到 ü 时，写成 u (ju, qu, xu, yu)
+    if (['j', 'q', 'x', 'y'].includes(initial)) {
+      if (final === 'ü') {
+        key = initial + 'u'
+      } else if (final === 'u') {
+        // j, q, x, y 不能与 u (乌) 相拼，直接视为无效
+        continue
+      }
+    }
+
     if (pinyinDict[key] && pinyinDict[key][tone]) {
       return { initialIdx: iIdx, finalIdx: fIdx, toneIdx: tIdx, data: pinyinDict[key][tone] }
     }
@@ -186,104 +191,86 @@ function findValidCombination(): { initialIdx: number, finalIdx: number, toneIdx
 function spin() {
   if (isSpinning.value) return
   isSpinning.value = true
-  showResult.value = false
   currentResult.value = null
 
   // 1. 确定目标组合
   const target = findValidCombination()
   
   // 2. 计算旋转角度
-  // 每个扇区角度
   const degPerInitial = 360 / initials.length
   const degPerFinal = 360 / finals.length
   const degPerTone = 90
 
-  // 目标角度 = (圈数 * 360) - (索引 * 单个角度) 
-  // 指针在 12 点方向 (0度)，所以我们需要让目标扇区转到 0 度。
-  // 初始状态 0 度对应索引 0。
-  // 要让索引 N 转到 0 度，需要旋转 -N * deg。为了正向旋转效果，加多圈。
+  // 目标角度计算：
+  // 指针在上方 0 度。
+  // CSS 旋转是顺时针正向。
+  // 如果索引 i 在 0 位置（顶部），旋转容器 0 度。
+  // 如果索引 i 在 1 位置（偏右），旋转容器 -1 * step 使其回到顶部。
+  // 为了实现顺时针旋转效果，我们需要增加正向的角度。
+  // 目标角度 = (圈数 * 360) + (360 - (idx * step)) 
+  // 解释：idx * step 是该项相对于容器 0 度的偏移。要让它指向上方，容器应该旋转 -idx * step。
+  // 也就是 360 - idx * step。
   
-  const extraSpins = 5 * 360 // 至少转 5 圈
-  
-  // 随机偏移一点点让它看起来自然 (可选，这里为了精准对齐先不加随机偏移)
-  rotations.initial += extraSpins + (360 - target.initialIdx * degPerInitial) % 360
-  // 累加旋转，保证一直往一个方向转
-  // 修正：直接设为累加值
-  // 让我们计算增量：
-  // current % 360 是当前位置。
-  // 目标是 targetPos. 
-  // newRotation = current + extra + (targetPos - currentPos)
-  
-  // 简单做法：
-  // 每次都在当前基础上增加至少 5 圈 + 目标偏移
-  // 目标角度： 让 index 处在顶部。
-  // CSS transform rotate(X deg). 0 deg is top. 
-  // items are placed at rotate(idx * step). Item 0 is at 0 deg.
-  // To bring Item N (at N*step) to top (0 deg), we must rotate container by -N*step.
-  
-  // Initial
-  const targetRotInitial = -(target.initialIdx * degPerInitial)
-  
-  // 简化逻辑：随便转几圈，最后停在目标
-  // 实际上不需要精确计算当前，只需要算最终目标角度 = k * 360 - index * step
-  // 为了保证动画顺滑，k 必须比当前 k 大
   const k = Math.ceil(rotations.initial / 360) + 5
-  rotations.initial = k * 360 - (target.initialIdx * degPerInitial)
+  rotations.initial = k * 360 + (360 - (target.initialIdx * degPerInitial))
 
-  const k2 = Math.ceil(rotations.final / 360) + 6 // 中圈多转一圈
-  rotations.final = k2 * 360 - (target.finalIdx * degPerFinal)
+  const k2 = Math.ceil(rotations.final / 360) + 6
+  rotations.final = k2 * 360 + (360 - (target.finalIdx * degPerFinal))
 
-  const k3 = Math.ceil(rotations.tone / 360) + 7 // 内圈再多转
-  rotations.tone = k3 * 360 - (target.toneIdx * degPerTone)
-
-  // 3. 播放音效 (模拟)
-  // playSpinSound() 
+  const k3 = Math.ceil(rotations.tone / 360) + 8
+  rotations.tone = k3 * 360 + (360 - (target.toneIdx * degPerTone))
 
   // 4. 动画结束后显示结果
   setTimeout(() => {
     isSpinning.value = false
-    showResult.value = true
     currentResult.value = {
       initial: initials[target.initialIdx],
       final: finals[target.finalIdx],
       tone: tones[target.toneIdx],
       pinyinWithTone: target.data.pinyin,
       word: target.data.word,
-      example: target.data.word
+      example: target.data.example || target.data.word
     }
-    // 播放提示音
     playDing()
   }, 3000)
 }
 
 function playDing() {
   try {
-    // 简单的 Web Audio API 提示音
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
     osc.connect(gain)
     gain.connect(ctx.destination)
     osc.type = 'sine'
-    osc.frequency.setValueAtTime(523.25, ctx.currentTime) // C5
-    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1)
+    // 叮~ (高频衰减)
+    osc.frequency.setValueAtTime(1200, ctx.currentTime) 
     gain.gain.setValueAtTime(0.1, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8)
     osc.start()
-    osc.stop(ctx.currentTime + 0.5)
+    osc.stop(ctx.currentTime + 0.8)
   } catch (e) {}
 }
 
 function speak() {
   if (!currentResult.value) return
-  const u = new SpeechSynthesisUtterance(currentResult.value.word)
+  // 朗读：词组 + 逐字
+  const text = `${currentResult.value.word}。${currentResult.value.example}`
+  const u = new SpeechSynthesisUtterance(text)
   u.lang = 'zh-CN'
-  u.rate = 0.8
+  u.rate = 0.9
   window.speechSynthesis.speak(u)
 }
 </script>
 
 <style scoped>
-/* 隐藏滚动条 */
 ::-webkit-scrollbar { display: none; }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
 </style>
