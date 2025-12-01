@@ -20,6 +20,11 @@ export interface DictationSettings {
   repeat_count: number
   interval_seconds: number
   voice_type: string
+  zh_voice_type?: string
+  en_voice_type?: string
+  default_education_stage?: string
+  default_version?: string
+  default_grade?: string
   speed: number
 }
 

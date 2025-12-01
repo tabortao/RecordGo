@@ -9,15 +9,24 @@
       <el-button type="primary" size="small" @click="router.push('/dictation/banks/create')">新建</el-button>
     </div>
 
-    <!-- Filter / Search (Simplified) -->
-    <div class="p-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 flex gap-2 overflow-x-auto">
-       <el-tag 
-         v-for="sub in ['全部', '语文', '英语']" 
-         :key="sub" 
-         :effect="filterSubject === sub ? 'dark' : 'plain'"
-         class="cursor-pointer"
-         @click="filterSubject = sub"
-       >{{ sub }}</el-tag>
+    <!-- Filter / Search (Advanced) -->
+    <div class="p-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 flex flex-col gap-2">
+       <div class="flex gap-2 overflow-x-auto pb-1">
+          <el-select v-model="filterStage" placeholder="学段" style="width: 100px" clearable @change="handleStageChange">
+             <el-option label="全部" value="" />
+             <el-option label="小学" value="小学" />
+             <el-option label="初中" value="初中" />
+             <el-option label="高中" value="高中" />
+          </el-select>
+          <el-select v-model="filterVersion" placeholder="版本" style="width: 120px" clearable filterable allow-create>
+             <el-option label="全部" value="" />
+             <el-option v-for="v in versionOptions" :key="v" :label="v" :value="v" />
+          </el-select>
+          <el-select v-model="filterGrade" placeholder="年级" style="width: 120px" clearable>
+             <el-option label="全部" value="" />
+             <el-option v-for="g in gradeOptions" :key="g" :label="g" :value="g" />
+          </el-select>
+       </div>
     </div>
 
     <!-- List -->
@@ -91,15 +100,37 @@ const emit = defineEmits(['select'])
 
 const router = useRouter()
 const list = ref<WordBank[]>([])
-const filterSubject = ref('全部')
 const selectedIds = ref<Set<number>>(new Set())
+
+// Filter states
+const filterStage = ref('')
+const filterVersion = ref('')
+const filterGrade = ref('')
+
+const versionOptions = ['人教版', '部编版', '北师大版', '苏教版', '沪教版', '鲁教版', '浙教版', '外研版', '译林版']
+
+const gradeOptions = computed(() => {
+  const s = filterStage.value
+  if (s === '小学') {
+    return ['一年级上', '一年级下', '二年级上', '二年级下', '三年级上', '三年级下', '四年级上', '四年级下', '五年级上', '五年级下', '六年级上', '六年级下']
+  } else if (s === '初中') {
+    return ['初一上', '初一下', '初二上', '初二下', '初三上', '初三下']
+  } else if (s === '高中') {
+    return ['高一上', '高一下', '高二上', '高二下', '高三上', '高三下']
+  }
+  return []
+})
+
+function handleStageChange() {
+  filterGrade.value = ''
+}
 
 const filteredList = computed(() => {
   let all = [...list.value]
-  // Append system presets with a special ID logic or marker
+  // Append system presets
   const presets = systemPresets.map((p, idx) => ({
     ...p,
-    id: -1000 - idx, // negative ID for presets
+    id: -1000 - idx,
     user_id: 0,
     created_at: new Date().toISOString(),
     is_preset: true
@@ -107,16 +138,32 @@ const filteredList = computed(() => {
   
   all = [...presets, ...all]
   
-  if (filterSubject.value === '全部') return all
-  return all.filter(i => i.subject === filterSubject.value)
+  return all.filter(i => {
+      if (filterStage.value && i.education_stage !== filterStage.value) return false
+      if (filterVersion.value && i.version !== filterVersion.value) return false
+      if (filterGrade.value && i.grade !== filterGrade.value) return false
+      return true
+  })
 })
 
 onMounted(loadData)
 
 async function loadData() {
   try {
+    // Load Wordbanks
     const res = await dictationApi.listWordBanks()
     list.value = (res as any) || []
+
+    // Load Settings for default filters
+    try {
+        const sRes = await dictationApi.getSettings()
+        const settings = (sRes as any).data || (sRes as any)
+        if (settings) {
+            if (settings.default_education_stage) filterStage.value = settings.default_education_stage
+            if (settings.default_version) filterVersion.value = settings.default_version
+            if (settings.default_grade) filterGrade.value = settings.default_grade
+        }
+    } catch {}
   } catch (e) {
     ElMessage.error('加载失败')
   }
@@ -124,7 +171,6 @@ async function loadData() {
 
 function extractPreview(content: string) {
   try {
-    // Try parsing as JSON array if it looks like one
     if (content.startsWith('[')) {
       const arr = JSON.parse(content)
       if (Array.isArray(arr)) return arr.slice(0, 5).join(' ')
@@ -150,14 +196,15 @@ async function deleteBank(id: number) {
   try {
     await dictationApi.deleteWordBank(id)
     ElMessage.success('已删除')
-    loadData()
+    // Reload but keep filters
+    const res = await dictationApi.listWordBanks()
+    list.value = (res as any) || []
   } catch (e) {
     ElMessage.error('删除失败')
   }
 }
 
 function confirmSelection() {
-  // Aggregate content
   const selectedContent = filteredList.value
     .filter(wb => selectedIds.value.has(wb.id))
     .map(wb => {

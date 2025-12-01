@@ -14,6 +14,28 @@ use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, Title
 
 const router = useRouter()
 const historyList = ref<any[]>([])
+const dateRange = ref<[Date, Date] | null>(null)
+
+const filteredList = computed(() => {
+  if (!dateRange.value) return historyList.value
+  const [start, end] = dateRange.value
+  // Set end date to end of day
+  const endDate = dayjs(end).endOf('day')
+  return historyList.value.filter(item => {
+    const d = dayjs(item.created_at)
+    return d.isAfter(start) && d.isBefore(endDate)
+  })
+})
+
+const totalStats = computed(() => {
+  const list = filteredList.value
+  const count = list.length
+  const duration = list.reduce((acc, cur) => acc + (cur.duration_seconds || 0), 0)
+  return {
+    count,
+    durationMinutes: Math.floor(duration / 60)
+  }
+})
 
 onMounted(async () => {
   try {
@@ -26,7 +48,7 @@ onMounted(async () => {
 
 const chartOption = computed(() => {
   // Show last 10 records for better visibility
-  const data = [...historyList.value].reverse().slice(-10) 
+  const data = [...filteredList.value].reverse().slice(-10) 
   return {
     tooltip: { trigger: 'axis' },
     legend: { data: ['时长(秒)', '错题数'] },
@@ -69,18 +91,42 @@ function formatDuration(sec: number) {
 
 <template>
   <div class="min-h-screen bg-gray-50 p-4">
-    <div class="flex items-center gap-3 mb-6">
+    <div class="flex items-center gap-3 mb-4">
       <el-button circle :icon="ArrowLeft" @click="router.back()" />
       <h1 class="text-xl font-bold">听写记录</h1>
     </div>
 
-    <div v-if="historyList.length > 0" class="bg-white rounded-xl p-4 shadow-sm mb-4 h-72">
+    <!-- Stats Summary -->
+    <div class="grid grid-cols-2 gap-3 mb-4">
+       <div class="bg-white rounded-xl p-3 shadow-sm flex flex-col items-center justify-center">
+          <div class="text-2xl font-bold text-indigo-600">{{ totalStats.count }}</div>
+          <div class="text-xs text-gray-500">总练习次数</div>
+       </div>
+       <div class="bg-white rounded-xl p-3 shadow-sm flex flex-col items-center justify-center">
+          <div class="text-2xl font-bold text-purple-600">{{ totalStats.durationMinutes }}</div>
+          <div class="text-xs text-gray-500">总时长(分)</div>
+       </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="mb-4">
+       <el-date-picker
+        v-model="dateRange"
+        type="daterange"
+        range-separator="至"
+        start-placeholder="开始日期"
+        end-placeholder="结束日期"
+        style="width: 100%"
+      />
+    </div>
+
+    <div v-if="filteredList.length > 0" class="bg-white rounded-xl p-4 shadow-sm mb-4 h-72">
       <v-chart class="w-full h-full" :option="chartOption" autoresize />
     </div>
     <el-empty v-else description="暂无听写记录" />
 
     <div class="space-y-3">
-      <div v-for="item in historyList" :key="item.id" class="bg-white rounded-xl p-4 shadow-sm border-l-4" :class="item.mistake_count > 0 ? 'border-red-400' : 'border-green-400'">
+      <div v-for="item in filteredList" :key="item.id" class="bg-white rounded-xl p-4 shadow-sm border-l-4" :class="item.mistake_count > 0 ? 'border-red-400' : 'border-green-400'">
         <div class="flex justify-between items-start mb-2">
           <div class="text-sm text-gray-500">{{ dayjs(item.created_at).format('YYYY-MM-DD HH:mm:ss') }}</div>
           <div class="font-bold text-blue-600">{{ formatDuration(item.duration_seconds) }}</div>

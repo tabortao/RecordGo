@@ -31,6 +31,28 @@
         </el-form>
       </el-card>
 
+        <template #header><div class="font-medium">默认内容设置</div></template>
+        <el-form label-position="left" label-width="100px">
+          <el-form-item label="学段">
+             <el-select v-model="form.default_education_stage" placeholder="请选择学段" style="width: 100%" @change="handleStageChange">
+                <el-option label="小学" value="小学" />
+                <el-option label="初中" value="初中" />
+                <el-option label="高中" value="高中" />
+             </el-select>
+          </el-form-item>
+          <el-form-item label="教材版本">
+             <el-select v-model="form.default_version" placeholder="请选择版本" style="width: 100%" allow-create filterable default-first-option>
+                <el-option v-for="v in versionOptions" :key="v" :label="v" :value="v" />
+             </el-select>
+          </el-form-item>
+          <el-form-item label="年级">
+             <el-select v-model="form.default_grade" placeholder="请选择年级" style="width: 100%">
+                <el-option v-for="g in gradeOptions" :key="g" :label="g" :value="g" />
+             </el-select>
+          </el-form-item>
+        </el-form>
+      </el-card>
+
       <el-card shadow="never" class="rounded-xl">
         <template #header><div class="font-medium">参数调节</div></template>
         <el-form label-position="left" label-width="100px">
@@ -46,11 +68,22 @@
             <el-slider v-model="form.speed" :min="0.5" :max="2.0" :step="0.1" show-stops />
             <div class="text-right text-gray-500">{{ form.speed }}x</div>
           </el-form-item>
-          <el-form-item label="朗读音色">
-             <el-select v-model="form.voice_type" placeholder="选择音色" style="width: 100%">
+          <el-form-item label="中文音色">
+             <el-select v-model="form.zh_voice_type" placeholder="中文默认" style="width: 100%">
                 <el-option label="默认（自动匹配）" value="" />
                 <el-option 
-                  v-for="v in availableVoices" 
+                  v-for="v in zhVoices" 
+                  :key="v.voiceURI" 
+                  :label="`${v.name} (${v.lang})`" 
+                  :value="v.voiceURI" 
+                />
+             </el-select>
+          </el-form-item>
+          <el-form-item label="英文音色">
+             <el-select v-model="form.en_voice_type" placeholder="英文默认" style="width: 100%">
+                <el-option label="默认（自动匹配）" value="" />
+                <el-option 
+                  v-for="v in enVoices" 
                   :key="v.voiceURI" 
                   :label="`${v.name} (${v.lang})`" 
                   :value="v.voiceURI" 
@@ -68,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { dictationApi, type DictationSettings } from '@/services/dictation'
@@ -76,6 +109,9 @@ import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const availableVoices = ref<SpeechSynthesisVoice[]>([])
+const zhVoices = ref<SpeechSynthesisVoice[]>([])
+const enVoices = ref<SpeechSynthesisVoice[]>([])
+
 const form = ref<DictationSettings>({
   user_id: 0,
   split_rule: 'newline',
@@ -84,12 +120,38 @@ const form = ref<DictationSettings>({
   repeat_count: 2,
   interval_seconds: 5,
   voice_type: '',
+  zh_voice_type: '',
+  en_voice_type: '',
+  default_education_stage: '',
+  default_version: '',
+  default_grade: '',
   speed: 1.0
 })
 
+const versionOptions = ['人教版', '部编版', '北师大版', '苏教版', '沪教版', '鲁教版', '浙教版', '外研版', '译林版']
+
+const gradeOptions = computed(() => {
+  const s = form.value.default_education_stage
+  if (s === '小学') {
+    return ['一年级上', '一年级下', '二年级上', '二年级下', '三年级上', '三年级下', '四年级上', '四年级下', '五年级上', '五年级下', '六年级上', '六年级下']
+  } else if (s === '初中') {
+    return ['初一上', '初一下', '初二上', '初二下', '初三上', '初三下']
+  } else if (s === '高中') {
+    return ['高一上', '高一下', '高二上', '高二下', '高三上', '高三下']
+  }
+  return []
+})
+
+function handleStageChange() {
+  form.value.default_grade = ''
+}
+
+
 function loadVoices() {
-  availableVoices.value = window.speechSynthesis.getVoices()
-    .filter(v => v.lang.includes('zh') || v.lang.includes('en')) // Filter common langs
+  const voices = window.speechSynthesis.getVoices()
+  availableVoices.value = voices
+  zhVoices.value = voices.filter(v => v.lang.includes('zh') || v.lang.includes('CN'))
+  enVoices.value = voices.filter(v => v.lang.includes('en'))
 }
 
 onMounted(async () => {

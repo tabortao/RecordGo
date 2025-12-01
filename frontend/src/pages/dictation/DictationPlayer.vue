@@ -93,6 +93,8 @@ const settings = ref<DictationSettings>({
   repeat_count: 1,
   interval_seconds: 3,
   voice_type: '',
+  zh_voice_type: '',
+  en_voice_type: '',
   speed: 1.0
 })
 
@@ -234,17 +236,47 @@ function playLoop() {
   })
 }
 
+const audioRef = ref<HTMLAudioElement | null>(null)
+
 function speak(text: string, onEnd: () => void) {
   window.speechSynthesis.cancel()
+  
+  // Check if text is a URL
+  if (text.startsWith('http://') || text.startsWith('https://')) {
+    if (!audioRef.value) {
+      audioRef.value = new Audio(text)
+    } else {
+      audioRef.value.src = text
+    }
+    audioRef.value.playbackRate = settings.value.speed
+    audioRef.value.onended = onEnd
+    audioRef.value.onerror = () => {
+      ElMessage.error('音频播放失败')
+      onEnd()
+    }
+    audioRef.value.play().catch(() => {
+      ElMessage.error('音频播放被阻止')
+      onEnd()
+    })
+    return
+  }
+
   const u = new SpeechSynthesisUtterance(text)
   u.rate = settings.value.speed
-  if (settings.value.voice_type) {
-    const v = window.speechSynthesis.getVoices().find(x => x.voiceURI === settings.value.voice_type)
+  
+  // Auto select voice based on language
+  const isChinese = /[\u4e00-\u9fa5]/.test(text)
+  let targetVoiceURI = isChinese ? settings.value.zh_voice_type : settings.value.en_voice_type
+  if (!targetVoiceURI) targetVoiceURI = settings.value.voice_type // Fallback
+
+  if (targetVoiceURI) {
+    const v = window.speechSynthesis.getVoices().find(x => x.voiceURI === targetVoiceURI)
     if (v) u.voice = v
   }
+
   if (!u.voice) {
       // Try to match language if no specific voice
-    if (/[\u4e00-\u9fa5]/.test(text)) {
+    if (isChinese) {
         u.lang = 'zh-CN'
     } else {
         u.lang = 'en-US'
