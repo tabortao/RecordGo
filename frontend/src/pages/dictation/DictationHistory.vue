@@ -129,13 +129,17 @@ function formatDuration(sec: number) {
     </div>
 
     <!-- Date Filter -->
-    <div class="mb-4">
+    <div class="mb-4 flex gap-2">
        <el-date-picker
-        v-model="dateRange"
-        type="daterange"
-        range-separator="至"
-        start-placeholder="开始日期"
-        end-placeholder="结束日期"
+        v-model="dateRange[0]"
+        type="date"
+        placeholder="开始日期"
+        style="width: 100%"
+      />
+      <el-date-picker
+        v-model="dateRange[1]"
+        type="date"
+        placeholder="结束日期"
         style="width: 100%"
       />
     </div>

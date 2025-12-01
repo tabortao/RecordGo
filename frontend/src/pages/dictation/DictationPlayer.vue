@@ -17,8 +17,12 @@
         {{ currentIndex + 1 }} / {{ playlist.length }}
       </div>
 
+      <div class="text-sm opacity-50 mt-2">
+        已进行: {{ formatTime(elapsedTime) }}
+      </div>
+
       <!-- Progress -->
-      <div class="w-full max-w-md h-2 bg-gray-700 rounded-full overflow-hidden">
+      <div class="w-full max-w-md h-2 bg-gray-700 rounded-full overflow-hidden mt-8">
         <div class="h-full bg-blue-500 transition-all duration-300" :style="{ width: progressPercent + '%' }"></div>
       </div>
     </div>
@@ -84,6 +88,8 @@ const originalPlaylist = ref<string[]>([])
 const currentIndex = ref(0)
 const isPlaying = ref(false)
 const startTime = ref(Date.now())
+const elapsedTime = ref(0)
+const elapsedTimer = ref<any>(null)
 const localMistakeCount = ref(0)
 const settings = ref<DictationSettings>({
   user_id: 0,
@@ -211,6 +217,7 @@ function stop() {
   isPlaying.value = false
   window.speechSynthesis.cancel()
   clearTimeout(timer.value)
+  clearInterval(elapsedTimer.value)
 }
 
 function togglePlay() {
@@ -218,8 +225,18 @@ function togglePlay() {
     stop()
   } else {
     isPlaying.value = true
+    startTime.value = Date.now() - elapsedTime.value * 1000
+    elapsedTimer.value = setInterval(() => {
+      elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000)
+    }, 1000)
     playLoop()
   }
+}
+
+function formatTime(sec: number) {
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return `${m}分${s}秒`
 }
 
 function playLoop() {
