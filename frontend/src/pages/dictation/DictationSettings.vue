@@ -46,6 +46,17 @@
             <el-slider v-model="form.speed" :min="0.5" :max="2.0" :step="0.1" show-stops />
             <div class="text-right text-gray-500">{{ form.speed }}x</div>
           </el-form-item>
+          <el-form-item label="朗读音色">
+             <el-select v-model="form.voice_type" placeholder="选择音色" style="width: 100%">
+                <el-option label="默认（自动匹配）" value="" />
+                <el-option 
+                  v-for="v in availableVoices" 
+                  :key="v.voiceURI" 
+                  :label="`${v.name} (${v.lang})`" 
+                  :value="v.voiceURI" 
+                />
+             </el-select>
+          </el-form-item>
         </el-form>
       </el-card>
 
@@ -64,6 +75,7 @@ import { dictationApi, type DictationSettings } from '@/services/dictation'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
+const availableVoices = ref<SpeechSynthesisVoice[]>([])
 const form = ref<DictationSettings>({
   user_id: 0,
   split_rule: 'newline',
@@ -71,15 +83,28 @@ const form = ref<DictationSettings>({
   order_mode: 'sequential',
   repeat_count: 2,
   interval_seconds: 5,
-  voice_type: 'zh-CN',
+  voice_type: '',
   speed: 1.0
 })
 
+function loadVoices() {
+  availableVoices.value = window.speechSynthesis.getVoices()
+    .filter(v => v.lang.includes('zh') || v.lang.includes('en')) // Filter common langs
+}
+
 onMounted(async () => {
+  loadVoices()
+  if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = loadVoices
+  }
+
   try {
     const res = await dictationApi.getSettings()
-    if (res.data) {
-      form.value = { ...form.value, ...res.data }
+    // Fix: handle response data correctly (it might be unwrapped)
+    const data = (res as any).data || (res as any)
+    if (data && typeof data === 'object') {
+      // Only update fields that exist in response
+      form.value = { ...form.value, ...data }
     }
   } catch (e) {
     // If error (e.g. first time), use defaults

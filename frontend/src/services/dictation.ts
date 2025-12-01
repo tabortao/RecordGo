@@ -47,5 +47,6 @@ export const dictationApi = {
   deleteMistake: (id: number) => http.delete(`/dictation/mistakes/${id}`),
   
   // History
-  addHistory: (data: any) => http.post('/dictation/history', data)
+  addHistory: (data: any) => http.post('/dictation/history', data),
+  getStats: () => http.get('/dictation/stats')
 }

@@ -34,6 +34,22 @@
         />
       </el-card>
 
+      <!-- Stats Card -->
+      <el-card shadow="never" class="rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-none" v-if="stats">
+        <div class="flex justify-between items-center p-2">
+           <div class="text-center">
+              <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{{ stats.total_dictations }}</div>
+              <div class="text-xs text-gray-500">总练习次数</div>
+           </div>
+           <div class="h-8 w-px bg-gray-200 dark:bg-gray-700"></div>
+           <div class="text-center">
+              <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ Math.floor(stats.total_duration / 60) }}</div>
+              <div class="text-xs text-gray-500">总时长(分)</div>
+           </div>
+           <!-- Simple recent history peek -->
+        </div>
+      </el-card>
+
       <!-- Quick Actions -->
       <div class="grid grid-cols-2 gap-3">
         <el-card shadow="hover" class="cursor-pointer rounded-xl border-none bg-blue-50 dark:bg-blue-900/20" :body-style="{ padding: '16px' }" @click="router.push('/dictation/banks')">
@@ -70,14 +86,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Setting, Collection, Notebook } from '@element-plus/icons-vue'
 import WordBankList from './WordBankList.vue'
+import { dictationApi } from '@/services/dictation'
 
 const router = useRouter()
 const content = ref('')
 const showSelector = ref(false)
+const stats = ref<any>(null)
+
+onMounted(async () => {
+  try {
+    const res = await dictationApi.getStats()
+    stats.value = (res as any).data || (res as any)
+  } catch {}
+})
 
 function onSelectContent(text: string) {
   if (content.value.trim()) {

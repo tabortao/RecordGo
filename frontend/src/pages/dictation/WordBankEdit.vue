@@ -34,10 +34,14 @@
 
         <div class="grid grid-cols-2 gap-3">
           <el-form-item label="版本">
-            <el-input v-model="form.version" placeholder="例如：人教版" />
+             <el-select v-model="form.version" allow-create filterable default-first-option placeholder="选择或输入版本">
+                <el-option v-for="v in ['人教版', '苏教版', '北师大版', '外研版']" :key="v" :label="v" :value="v" />
+             </el-select>
           </el-form-item>
           <el-form-item label="年级">
-            <el-input v-model="form.grade" placeholder="例如：三年级上" />
+            <el-select v-model="form.grade" placeholder="选择年级">
+               <el-option v-for="g in availableGrades" :key="g" :label="g" :value="g" />
+            </el-select>
           </el-form-item>
         </div>
 
@@ -77,6 +81,14 @@ const form = ref<Partial<WordBank>>({
   content: ''
 })
 
+const availableGrades = computed(() => {
+  const stage = form.value.education_stage
+  if (stage === '小学') return ['一年级上', '一年级下', '二年级上', '二年级下', '三年级上', '三年级下', '四年级上', '四年级下', '五年级上', '五年级下', '六年级上', '六年级下']
+  if (stage === '初中') return ['初一上', '初一下', '初二上', '初二下', '初三上', '初三下']
+  if (stage === '高中') return ['高一上', '高一下', '高二上', '高二下', '高三上', '高三下']
+  return []
+})
+
 onMounted(async () => {
   if (isEdit && id) {
     try {
@@ -88,9 +100,10 @@ onMounted(async () => {
       // Actually, I didn't implement `GetWordBank` in handlers!
       // I implemented `ListWordBanks`, `Create`, `Update`, `Delete`.
       // So I should fetch list and find it, OR implement Get.
-      // Implementing Get is better. But for speed, I will just fetch list and find.
+      // Implementing Get is better. But for speed, I will just fetch list and find.try {
       const res = await dictationApi.listWordBanks()
-      const found = res.data.find((i: any) => i.id === id)
+      const list = (res as any) || []
+      const found = list.find((i: any) => i.id === id)
       if (found) {
         form.value = { ...found }
         // If content is JSON array, convert to string?

@@ -37,7 +37,10 @@
 
         <div class="flex-1 min-w-0">
           <div class="flex items-center justify-between mb-1">
-            <span class="font-medium text-gray-900 dark:text-gray-100 truncate">{{ wb.title }}</span>
+            <div class="flex items-center gap-2 truncate">
+              <span class="font-medium text-gray-900 dark:text-gray-100">{{ wb.title }}</span>
+              <el-tag v-if="(wb as any).is_preset" size="small" type="warning" effect="plain">系统</el-tag>
+            </div>
             <el-tag size="small" type="info">{{ wb.subject }}</el-tag>
           </div>
           <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -47,13 +50,17 @@
         </div>
 
         <!-- Actions for management mode -->
-        <div v-if="!selectorMode" class="flex-shrink-0 flex items-center gap-2">
+        <div v-if="!selectorMode && !(wb as any).is_preset" class="flex-shrink-0 flex items-center gap-2">
           <el-button circle size="small" :icon="Edit" @click.stop="router.push(`/dictation/banks/${wb.id}`)" />
           <el-popconfirm title="确认删除?" @confirm="deleteBank(wb.id)">
             <template #reference>
               <el-button circle size="small" type="danger" :icon="Delete" @click.stop />
             </template>
           </el-popconfirm>
+        </div>
+        <!-- View only for presets in management mode -->
+        <div v-if="!selectorMode && (wb as any).is_preset" class="flex-shrink-0">
+           <el-button circle size="small" :icon="Edit" disabled title="系统预设不可编辑" />
         </div>
       </div>
     </div>
@@ -74,6 +81,8 @@ import { ArrowLeft, Edit, Delete } from '@element-plus/icons-vue'
 import { dictationApi, type WordBank } from '@/services/dictation'
 import { ElMessage } from 'element-plus'
 
+import systemPresets from '@/assets/presets/wordbanks.json'
+
 const props = defineProps<{
   selectorMode?: boolean
 }>()
@@ -86,8 +95,20 @@ const filterSubject = ref('全部')
 const selectedIds = ref<Set<number>>(new Set())
 
 const filteredList = computed(() => {
-  if (filterSubject.value === '全部') return list.value
-  return list.value.filter(i => i.subject === filterSubject.value)
+  let all = [...list.value]
+  // Append system presets with a special ID logic or marker
+  const presets = systemPresets.map((p, idx) => ({
+    ...p,
+    id: -1000 - idx, // negative ID for presets
+    user_id: 0,
+    created_at: new Date().toISOString(),
+    is_preset: true
+  } as unknown as WordBank))
+  
+  all = [...presets, ...all]
+  
+  if (filterSubject.value === '全部') return all
+  return all.filter(i => i.subject === filterSubject.value)
 })
 
 onMounted(loadData)
@@ -95,7 +116,7 @@ onMounted(loadData)
 async function loadData() {
   try {
     const res = await dictationApi.listWordBanks()
-    list.value = res.data || []
+    list.value = (res as any) || []
   } catch (e) {
     ElMessage.error('加载失败')
   }

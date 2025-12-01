@@ -42,7 +42,7 @@ onMounted(loadData)
 async function loadData() {
   try {
     const res = await dictationApi.listMistakes()
-    list.value = res.data || []
+    list.value = (res as any) || []
   } catch (e) {
     ElMessage.error('加载失败')
   }

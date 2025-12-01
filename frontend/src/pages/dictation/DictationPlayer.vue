@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, ArrowLeftBold, ArrowRightBold, VideoPlay, VideoPause } from '@element-plus/icons-vue'
 import { dictationApi, type DictationSettings } from '@/services/dictation'
@@ -113,8 +113,9 @@ onMounted(async () => {
 
   // Load settings
   try {
-    const res = await dictationApi.getSettings()
-    if (res.data) settings.value = { ...settings.value, ...res.data }
+      const res = await dictationApi.getSettings()
+    const data = (res as any).data || (res as any)
+    if (data) settings.value = { ...settings.value, ...data }
   } catch {}
 
   // Prepare playlist
@@ -179,7 +180,9 @@ function playLoop() {
     currentRepeat.value++
     if (currentRepeat.value < settings.value.repeat_count) {
        // Repeat same word immediately? Usually there is a small gap.
-       timer.value = setTimeout(playLoop, 500)
+       timer.value = setTimeout(() => {
+         playLoop() // Recursively call playLoop but without incrementing index
+       }, 500)
     } else {
       // Move to next word after interval
       currentRepeat.value = 0
@@ -198,12 +201,19 @@ function speak(text: string, onEnd: () => void) {
   window.speechSynthesis.cancel()
   const u = new SpeechSynthesisUtterance(text)
   u.rate = settings.value.speed
-  // Try to match language
-  if (/[\u4e00-\u9fa5]/.test(text)) {
-    u.lang = 'zh-CN'
-  } else {
-    u.lang = 'en-US'
+  if (settings.value.voice_type) {
+    const v = window.speechSynthesis.getVoices().find(x => x.voiceURI === settings.value.voice_type)
+    if (v) u.voice = v
   }
+  if (!u.voice) {
+      // Try to match language if no specific voice
+    if (/[\u4e00-\u9fa5]/.test(text)) {
+        u.lang = 'zh-CN'
+    } else {
+        u.lang = 'en-US'
+    }
+  }
+  
   u.onend = onEnd
   u.onerror = onEnd // handle error as end
   window.speechSynthesis.speak(u)
