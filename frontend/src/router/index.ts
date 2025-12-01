@@ -54,6 +54,7 @@ const router = createRouter({
       name: 'Homework',
       component: () => import('@/pages/HomeworkPage.vue')
     },
+    { path: '/homework/placeholder', name: 'HomeworkPlaceholder', component: () => import('@/pages/homework/HomeworkPlaceholder.vue'), meta: { noNav: true } },
     { path: '/homework/chinese', name: 'HomeworkChinese', component: () => import('@/pages/HomeworkChinesePage.vue'), meta: { noNav: true } },
     { path: '/homework/chinese/pinyin', name: 'PinyinMenu', component: () => import('@/pages/PinyinMenuPage.vue'), meta: { noNav: true } },
     { path: '/homework/chinese/pinyin/wheel', name: 'PinyinWheel', component: () => import('@/pages/PinyinWheelPage.vue'), meta: { noNav: true } },

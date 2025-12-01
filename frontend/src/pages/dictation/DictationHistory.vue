@@ -14,33 +14,53 @@ use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, Title
 
 const router = useRouter()
 const historyList = ref<any[]>([])
-const dateRange = ref<[Date, Date] | null>(null)
+// Default to today
+const today = new Date()
+const dateRange = ref<[Date, Date]>([today, today])
+
+const allHistoryList = ref<any[]>([])
 
 const filteredList = computed(() => {
-  if (!dateRange.value) return historyList.value
+  if (!dateRange.value) return allHistoryList.value
   const [start, end] = dateRange.value
-  // Set end date to end of day
+  // Start of day for start date, End of day for end date
+  const startDate = dayjs(start).startOf('day')
   const endDate = dayjs(end).endOf('day')
-  return historyList.value.filter(item => {
+  
+  return allHistoryList.value.filter(item => {
     const d = dayjs(item.created_at)
-    return d.isAfter(start) && d.isBefore(endDate)
+    return d.isAfter(startDate) && d.isBefore(endDate)
   })
 })
 
 const totalStats = computed(() => {
-  const list = filteredList.value
+  // Calculate stats based on ALL history, not filtered
+  const list = allHistoryList.value
   const count = list.length
   const duration = list.reduce((acc, cur) => acc + (cur.duration_seconds || 0), 0)
+  
+  // Format duration: show hours and minutes if > 60 min, or just minutes
+  let durationText = ''
+  if (duration > 3600) {
+      const h = Math.floor(duration / 3600)
+      const m = Math.floor((duration % 3600) / 60)
+      durationText = `${h}小时${m}分`
+  } else {
+      durationText = `${Math.ceil(duration / 60)}分`
+  }
+
   return {
     count,
-    durationMinutes: Math.floor(duration / 60)
+    durationText
   }
 })
 
 onMounted(async () => {
   try {
     const res = await http.get('/dictation/history')
-    historyList.value = (res as any).data || (res as any) || []
+    allHistoryList.value = (res as any).data || (res as any) || []
+    // Sort by date descending
+    allHistoryList.value.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   } catch (e) {
     console.error(e)
   }
@@ -103,8 +123,8 @@ function formatDuration(sec: number) {
           <div class="text-xs text-gray-500">总练习次数</div>
        </div>
        <div class="bg-white rounded-xl p-3 shadow-sm flex flex-col items-center justify-center">
-          <div class="text-2xl font-bold text-purple-600">{{ totalStats.durationMinutes }}</div>
-          <div class="text-xs text-gray-500">总时长(分)</div>
+          <div class="text-2xl font-bold text-purple-600">{{ totalStats.durationText }}</div>
+          <div class="text-xs text-gray-500">总时长</div>
        </div>
     </div>
 

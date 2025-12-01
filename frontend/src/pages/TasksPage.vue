@@ -522,7 +522,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { Plus, Clock, List, Coin, Money, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound, Sort, Headset, CirclePlusFilled, Microphone } from '@element-plus/icons-vue'
+import { Plus, Clock, List, Coin, Money, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound, Sort, Headset, CirclePlusFilled } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
