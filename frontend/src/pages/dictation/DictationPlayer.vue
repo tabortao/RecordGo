@@ -9,8 +9,8 @@
 
     <!-- Main Display -->
     <div class="flex-1 flex flex-col items-center justify-center w-full px-6 space-y-8">
-      <div class="text-6xl font-bold text-center transition-all duration-500" :class="{'opacity-0 blur-sm': !showWord && isPlaying}">
-        {{ currentWord || '准备开始' }}
+      <div class="font-bold text-center transition-all duration-500 px-2 break-words max-w-full" :class="[{'opacity-0 blur-sm': !showWord && isPlaying}, wordClass]">
+        {{ displayWord || '准备开始' }}
       </div>
       
       <div class="text-xl opacity-60" v-if="playlist.length > 0">
@@ -104,6 +104,30 @@ const timer = ref<any>(null)
 const isWaiting = ref(false)
 
 const currentWord = computed(() => playlist.value[currentIndex.value] || '')
+
+const displayWord = computed(() => {
+  const w = currentWord.value
+  if (!w) return ''
+  if (w.startsWith('http://') || w.startsWith('https://')) {
+    try {
+      const decoded = decodeURIComponent(w)
+      const parts = decoded.split('/')
+      return parts[parts.length - 1]
+    } catch {
+      return w
+    }
+  }
+  return w
+})
+
+const wordClass = computed(() => {
+  const len = displayWord.value.length
+  if (len > 30) return 'text-lg'
+  if (len > 20) return 'text-xl'
+  if (len > 10) return 'text-3xl'
+  return 'text-6xl'
+})
+
 const progressPercent = computed(() => {
   if (playlist.value.length === 0) return 0
   return ((currentIndex.value) / playlist.value.length) * 100

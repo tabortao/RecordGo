@@ -31,6 +31,7 @@
         </el-form>
       </el-card>
 
+      <el-card shadow="never" class="rounded-xl mb-4">
         <template #header><div class="font-medium">默认内容设置</div></template>
         <el-form label-position="left" label-width="100px">
           <el-form-item label="学段">
