@@ -42,6 +42,15 @@
     <div class="p-4 space-y-4" :style="{ transform: pullY ? ('translateY(' + pullY + 'px)') : 'none', transition: pulling ? 'none' : 'transform 0.2s ease' }">
     
 
+    <!-- 功能快捷入口 -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-3 shadow-lg cursor-pointer flex flex-col items-center justify-center hover:scale-105 transition active:scale-95" @click="router.push('/dictation')">
+        <el-icon :size="28" class="mb-1"><Microphone /></el-icon>
+        <div class="font-bold">听写大师</div>
+        <div class="text-xs opacity-80">字词听写神器</div>
+      </div>
+    </div>
+
     <!-- 顶部统计：四项一行，不同颜色图标；下方单独大“统计”卡片居中显示 -->
     <div class="grid grid-cols-4 gap-1">
       <el-card shadow="never" class="stat-card">
@@ -525,7 +534,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { Plus, Clock, List, Coin, Money, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound, Sort, Headset, CirclePlusFilled } from '@element-plus/icons-vue'
+import { Plus, Clock, List, Coin, Money, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound, Sort, Headset, CirclePlusFilled, Microphone } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'

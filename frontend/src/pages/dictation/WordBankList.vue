@@ -158,7 +158,7 @@ async function deleteBank(id: number) {
 
 function confirmSelection() {
   // Aggregate content
-  const selectedContent = list.value
+  const selectedContent = filteredList.value
     .filter(wb => selectedIds.value.has(wb.id))
     .map(wb => {
       try {

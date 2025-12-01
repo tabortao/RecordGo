@@ -146,6 +146,7 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 			dictation.DELETE("/mistakes/:id", handlers.DeleteMistake)
 
 			dictation.POST("/history", handlers.AddDictationHistory)
+			dictation.GET("/history", handlers.ListDictationHistory)
 			dictation.GET("/stats", handlers.GetDictationStats)
 		}
 	}

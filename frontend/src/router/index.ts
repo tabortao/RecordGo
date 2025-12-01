@@ -71,6 +71,7 @@ const router = createRouter({
     { path: '/dictation/player', name: 'DictationPlayer', component: () => import('@/pages/dictation/DictationPlayer.vue'), meta: { noNav: true } },
     { path: '/dictation/settings', name: 'DictationSettings', component: () => import('@/pages/dictation/DictationSettings.vue'), meta: { noNav: true } },
     { path: '/dictation/mistakes', name: 'MistakeBook', component: () => import('@/pages/dictation/MistakeBook.vue'), meta: { noNav: true } },
+    { path: '/dictation/history', name: 'DictationHistory', component: () => import('@/pages/dictation/DictationHistory.vue'), meta: { noNav: true } },
 
     {
       path: '/mine',

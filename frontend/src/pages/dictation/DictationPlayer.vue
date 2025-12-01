@@ -26,13 +26,24 @@
     <!-- Controls -->
     <div class="pb-12 w-full max-w-md px-6 flex flex-col gap-6">
       
-      <!-- Mark Mistake Button (only visible when playing/paused on a word) -->
-      <div class="flex justify-center">
+      <!-- Tools Row -->
+      <div class="flex justify-center gap-4">
+        <el-button 
+          :type="settings.order_mode === 'random' ? 'warning' : 'info'" 
+          plain 
+          round 
+          size="default" 
+          @click="toggleOrder"
+        >
+          <el-icon class="mr-1"><Sort /></el-icon>
+          {{ settings.order_mode === 'random' ? '乱序播放' : '顺序播放' }}
+        </el-button>
+
         <el-button 
           type="danger" 
           plain 
           round 
-          size="large" 
+          size="default" 
           v-if="currentWord"
           @click="markMistake"
         >
@@ -60,7 +71,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, ArrowLeftBold, ArrowRightBold, VideoPlay, VideoPause } from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowLeftBold, ArrowRightBold, VideoPlay, VideoPause, Sort } from '@element-plus/icons-vue'
 import { dictationApi, type DictationSettings } from '@/services/dictation'
 import { ElMessage } from 'element-plus'
 
@@ -69,8 +80,11 @@ const router = useRouter()
 // State
 const content = ref('')
 const playlist = ref<string[]>([])
+const originalPlaylist = ref<string[]>([])
 const currentIndex = ref(0)
 const isPlaying = ref(false)
+const startTime = ref(Date.now())
+const localMistakeCount = ref(0)
 const settings = ref<DictationSettings>({
   user_id: 0,
   split_rule: 'newline',
@@ -125,13 +139,11 @@ onMounted(async () => {
   } else {
     items = content.value.split('\n').filter(t => t.trim())
   }
+  originalPlaylist.value = [...items]
 
   if (settings.value.order_mode === 'random') {
     // Shuffle
-    for (let i = items.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [items[i], items[j]] = [items[j], items[i]];
-    }
+    shuffle(items)
   }
   playlist.value = items
 })
@@ -139,6 +151,30 @@ onMounted(async () => {
 onUnmounted(() => {
   stop()
 })
+
+function shuffle(array: string[]) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+function toggleOrder() {
+  stop()
+  if (settings.value.order_mode === 'sequential') {
+    settings.value.order_mode = 'random'
+    const temp = [...originalPlaylist.value]
+    shuffle(temp)
+    playlist.value = temp
+    ElMessage.info('已切换为乱序播放')
+  } else {
+    settings.value.order_mode = 'sequential'
+    playlist.value = [...originalPlaylist.value]
+    ElMessage.info('已切换为顺序播放')
+  }
+  currentIndex.value = 0
+  currentRepeat.value = 0
+}
 
 function goBack() {
   stop()
@@ -166,10 +202,11 @@ function playLoop() {
     isPlaying.value = false
     ElMessage.success('听写完成')
     // Save history
+    const duration = Math.floor((Date.now() - startTime.value) / 1000)
     dictationApi.addHistory({
       content_snapshot: content.value.slice(0, 200),
-      duration_seconds: 0, // TODO: track time
-      mistake_count: 0 // TODO: track mistakes count
+      duration_seconds: duration,
+      mistake_count: localMistakeCount.value
     })
     return
   }
@@ -237,6 +274,7 @@ function next() {
 
 async function markMistake() {
   if (!currentWord.value) return
+  localMistakeCount.value++
   try {
     await dictationApi.addMistake({ word: currentWord.value, context: '听写练习' })
     ElMessage.success(`已将“${currentWord.value}”加入错题本`)

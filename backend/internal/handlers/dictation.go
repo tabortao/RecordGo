@@ -49,6 +49,22 @@ func CreateWordBank(c *gin.Context) {
 	common.Ok(c, form)
 }
 
+func ListDictationHistory(c *gin.Context) {
+	cl := extractClaims(c)
+	if cl == nil {
+		common.Error(c, 401, "未授权")
+		return
+	}
+	userID := cl.UserID
+
+	var list []models.DictationHistory
+	if err := db.DB().Where("user_id = ?", userID).Order("created_at desc").Find(&list).Error; err != nil {
+		common.Error(c, 500, "查询失败")
+		return
+	}
+	common.Ok(c, list)
+}
+
 func UpdateWordBank(c *gin.Context) {
 	cl := extractClaims(c)
 	if cl == nil {

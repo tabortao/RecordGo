@@ -52,19 +52,40 @@
 
       <!-- Quick Actions -->
       <div class="grid grid-cols-2 gap-3">
-        <el-card shadow="hover" class="cursor-pointer rounded-xl border-none bg-blue-50 dark:bg-blue-900/20" :body-style="{ padding: '16px' }" @click="router.push('/dictation/banks')">
+        <el-card shadow="hover" class="cursor-pointer rounded-xl border-none bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 transform transition hover:scale-105 active:scale-95" :body-style="{ padding: '16px' }" @click="router.push('/dictation/banks')">
           <div class="flex flex-col items-center gap-2 text-blue-600 dark:text-blue-400">
-            <el-icon :size="24"><Collection /></el-icon>
-            <span class="font-medium">词库管理</span>
+            <div class="p-3 bg-white dark:bg-blue-800 rounded-full shadow-sm">
+                <el-icon :size="24"><Collection /></el-icon>
+            </div>
+            <span class="font-bold">词库管理</span>
+            <span class="text-xs opacity-70">海量词库随心选</span>
           </div>
         </el-card>
-        <el-card shadow="hover" class="cursor-pointer rounded-xl border-none bg-red-50 dark:bg-red-900/20" :body-style="{ padding: '16px' }" @click="router.push('/dictation/mistakes')">
+        <el-card shadow="hover" class="cursor-pointer rounded-xl border-none bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 transform transition hover:scale-105 active:scale-95" :body-style="{ padding: '16px' }" @click="router.push('/dictation/mistakes')">
           <div class="flex flex-col items-center gap-2 text-red-600 dark:text-red-400">
-            <el-icon :size="24"><Notebook /></el-icon>
-            <span class="font-medium">错题本</span>
+            <div class="p-3 bg-white dark:bg-red-800 rounded-full shadow-sm">
+                <el-icon :size="24"><Notebook /></el-icon>
+            </div>
+            <span class="font-bold">错题本</span>
+            <span class="text-xs opacity-70">攻克难点不放松</span>
           </div>
         </el-card>
       </div>
+
+      <el-card shadow="hover" class="cursor-pointer rounded-xl border-none bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 mt-3 transform transition hover:scale-102 active:scale-98" :body-style="{ padding: '16px' }" @click="router.push('/dictation/history')">
+          <div class="flex items-center justify-between text-green-700 dark:text-green-400 px-1">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-white dark:bg-green-800 rounded-full shadow-sm">
+                    <el-icon :size="20"><DataLine /></el-icon>
+                </div>
+                <div class="flex flex-col text-left">
+                    <span class="font-bold text-base">听写记录</span>
+                    <span class="text-xs opacity-70">查看进步轨迹，见证点滴成长</span>
+                </div>
+            </div>
+            <el-icon><ArrowRight /></el-icon>
+          </div>
+      </el-card>
 
       <!-- Start Button -->
       <div class="pt-4">
@@ -88,7 +109,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Setting, Collection, Notebook } from '@element-plus/icons-vue'
+import { ArrowLeft, Setting, Collection, Notebook, DataLine, ArrowRight } from '@element-plus/icons-vue'
 import WordBankList from './WordBankList.vue'
 import { dictationApi } from '@/services/dictation'
 
