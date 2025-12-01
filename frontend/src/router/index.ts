@@ -58,6 +58,20 @@ const router = createRouter({
     { path: '/homework/chinese/pinyin', name: 'PinyinMenu', component: () => import('@/pages/PinyinMenuPage.vue'), meta: { noNav: true } },
     { path: '/homework/chinese/pinyin/wheel', name: 'PinyinWheel', component: () => import('@/pages/PinyinWheelPage.vue'), meta: { noNav: true } },
     
+    // --- 听写大师模块 ---
+    {
+      path: '/dictation',
+      name: 'DictationHome',
+      component: () => import('@/pages/dictation/DictationHome.vue'),
+      meta: { noNav: true }
+    },
+    { path: '/dictation/banks', name: 'WordBankList', component: () => import('@/pages/dictation/WordBankList.vue'), meta: { noNav: true } },
+    { path: '/dictation/banks/create', name: 'WordBankCreate', component: () => import('@/pages/dictation/WordBankEdit.vue'), meta: { noNav: true } },
+    { path: '/dictation/banks/:id', name: 'WordBankEdit', component: () => import('@/pages/dictation/WordBankEdit.vue'), meta: { noNav: true } },
+    { path: '/dictation/player', name: 'DictationPlayer', component: () => import('@/pages/dictation/DictationPlayer.vue'), meta: { noNav: true } },
+    { path: '/dictation/settings', name: 'DictationSettings', component: () => import('@/pages/dictation/DictationSettings.vue'), meta: { noNav: true } },
+    { path: '/dictation/mistakes', name: 'MistakeBook', component: () => import('@/pages/dictation/MistakeBook.vue'), meta: { noNav: true } },
+
     {
       path: '/mine',
       name: 'Mine',

@@ -128,6 +128,24 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
         api.POST("/admin/users/:id/vip", handlers.AdminUpdateVIP)
         api.POST("/admin/users/:id/disabled", handlers.AdminSetDisabled)
         api.DELETE("/admin/users/:id", handlers.AdminDeleteUser)
+
+        // 听写大师模块
+        dictation := api.Group("/dictation")
+        {
+            dictation.GET("/wordbanks", handlers.ListWordBanks)
+            dictation.POST("/wordbanks", handlers.CreateWordBank)
+            dictation.PUT("/wordbanks/:id", handlers.UpdateWordBank)
+            dictation.DELETE("/wordbanks/:id", handlers.DeleteWordBank)
+            
+            dictation.GET("/settings", handlers.GetDictationSettings)
+            dictation.PUT("/settings", handlers.UpdateDictationSettings)
+            
+            dictation.GET("/mistakes", handlers.ListMistakes)
+            dictation.POST("/mistakes", handlers.AddMistake)
+            dictation.DELETE("/mistakes/:id", handlers.DeleteMistake)
+            
+            dictation.POST("/history", handlers.AddDictationHistory)
+        }
     }
 
     r.PUT("/api/storage/put", handlers.StoragePut)
