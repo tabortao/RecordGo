@@ -259,12 +259,11 @@ function playLoop() {
     // After speak
     currentRepeat.value++
     if (currentRepeat.value < settings.value.repeat_count) {
-       // Repeat same word immediately? Usually there is a small gap.
-       timer.value = setTimeout(() => {
-         playLoop() // Recursively call playLoop but without incrementing index
-       }, 500)
+      const gap = settings.value.play_mode === 'dictate' ? settings.value.interval_seconds * 1000 : 500
+      timer.value = setTimeout(() => {
+        playLoop()
+      }, gap)
     } else {
-      // Move to next word after interval
       currentRepeat.value = 0
       const gap = settings.value.play_mode === 'dictate' ? settings.value.interval_seconds * 1000 : 500
       isWaiting.value = true
