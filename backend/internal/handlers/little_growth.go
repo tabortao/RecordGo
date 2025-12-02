@@ -219,6 +219,7 @@ func CreateGrowthTag(c *gin.Context) {
 	}
 	var req struct {
 		Name     string `json:"name"`
+		Color    string `json:"color"`
 		ParentID *uint  `json:"parent_id"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -238,9 +239,24 @@ func CreateGrowthTag(c *gin.Context) {
 		return
 	}
 
+	// Generate random color if not provided
+	color := req.Color
+	if color == "" {
+		// Palette of nice colors
+		colors := []string{
+			"#FFB6C1", "#FF69B4", "#FFD700", "#FFA07A", "#90EE90",
+			"#20B2AA", "#87CEFA", "#9370DB", "#FF6347", "#40E0D0",
+			"#EE82EE", "#F0E68C", "#E6E6FA", "#DDA0DD", "#B0C4DE",
+		}
+		// Simple random based on time
+		idx := time.Now().UnixNano() % int64(len(colors))
+		color = colors[idx]
+	}
+
 	t := models.GrowthTag{
 		UserID:   cl.UserID,
 		Name:     req.Name,
+		Color:    color,
 		ParentID: req.ParentID,
 	}
 	if err := db.DB().Create(&t).Error; err != nil {
@@ -270,6 +286,7 @@ func UpdateGrowthTag(c *gin.Context) {
 
 	var req struct {
 		Name     string `json:"name"`
+		Color    string `json:"color"`
 		ParentID *uint  `json:"parent_id"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -278,6 +295,9 @@ func UpdateGrowthTag(c *gin.Context) {
 	}
 
 	t.Name = req.Name
+	if req.Color != "" {
+		t.Color = req.Color
+	}
 	t.ParentID = req.ParentID
 	if err := db.DB().Save(&t).Error; err != nil {
 		common.Error(c, 50002, "更新失败")

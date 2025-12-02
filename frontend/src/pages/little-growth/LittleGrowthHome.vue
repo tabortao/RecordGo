@@ -1,26 +1,26 @@
 <template>
   <div class="min-h-screen bg-[#F5F7FA] flex flex-col relative overflow-hidden">
     <!-- Header -->
-    <div class="bg-white/80 backdrop-blur-md sticky top-0 z-20 px-4 py-3 shadow-sm flex items-center justify-between">
-      <div class="flex items-center gap-3">
+    <div class="bg-white/80 backdrop-blur-md sticky top-0 z-20 px-4 py-3 shadow-sm flex items-center justify-between dark:bg-gray-900/80 dark:border-b dark:border-gray-800">
+      <div class="flex items-center gap-3 flex-shrink-0">
         <div 
-          class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors text-gray-600"
+          class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors text-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
           @click="router.push('/homework')"
         >
           <el-icon><ArrowLeft /></el-icon>
         </div>
         <div 
-          class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors text-gray-600"
+          class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors text-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
           @click="showSidebar = true"
         >
           <el-icon><Menu /></el-icon>
         </div>
-        <h1 class="font-bold text-lg text-gray-800 tracking-tight">小成长</h1>
+        <h1 class="font-bold text-lg text-gray-800 tracking-tight dark:text-white whitespace-nowrap">小成长</h1>
       </div>
 
-      <div class="flex items-center gap-2">
-        <div v-if="store.activeFilterTagId" class="flex items-center gap-2 bg-purple-100 px-3 py-1 rounded-full mr-2">
-          <span class="text-xs text-purple-600 font-medium">正在筛选: {{ activeTagName }}</span>
+      <div class="flex items-center gap-2 flex-nowrap overflow-x-auto hide-scrollbar">
+        <div v-if="store.activeFilterTagId" class="flex items-center gap-2 bg-purple-100 px-3 py-1 rounded-full mr-2 whitespace-nowrap dark:bg-purple-900/30">
+          <span class="text-xs text-purple-600 font-medium dark:text-purple-300">正在筛选: {{ activeTagName }}</span>
           <el-icon class="text-purple-400 cursor-pointer hover:text-purple-600" @click="store.activeFilterTagId = null"><Close /></el-icon>
         </div>
 
@@ -28,7 +28,7 @@
         <el-input 
           v-model="searchQuery" 
           placeholder="搜索..." 
-          class="!w-32 sm:!w-40 transition-all focus:!w-48" 
+          class="!w-32 sm:!w-40 transition-all focus:!w-48 dark:bg-gray-800" 
           size="small"
           clearable
           :prefix-icon="Search"
@@ -53,7 +53,7 @@
           
           <div 
             class="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-colors"
-            :class="selectedDate ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-600 hover:bg-purple-50 hover:text-purple-600'"
+            :class="selectedDate ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300' : 'bg-gray-100 text-gray-600 hover:bg-purple-50 hover:text-purple-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'"
             @click="openCalendar"
           >
              <el-icon v-if="selectedDate" @click.stop="selectedDate = null"><Close /></el-icon>
@@ -64,24 +64,40 @@
     </div>
 
     <!-- Main Content (Timeline) -->
-    <div class="flex-1 overflow-y-auto p-4 pb-24" ref="scrollContainer">
+    <div class="flex-1 overflow-y-auto p-4 pb-24 relative dark:bg-gray-900" ref="scrollContainer" @scroll="handleScroll">
       <div class="max-w-2xl mx-auto w-full">
         <template v-if="filteredList.length > 0">
-          <TimelineCard 
-            v-for="record in filteredList" 
-            :key="record.id" 
-            :record="record" 
-            :allTags="store.flattenedTags"
-            :searchQuery="searchQuery"
-            @edit="handleEdit"
-            @delete="handleDelete"
-            @filter-tag="handleTagSelect"
-          />
+          <div v-for="(group, year) in groupedRecords" :key="year" :id="'year-' + year">
+             <div v-for="(months, month) in group" :key="month" :id="'month-' + year + '-' + month">
+                <TimelineCard 
+                  v-for="record in months"
+                  :key="record.id" 
+                  :record="record" 
+                  :allTags="store.flattenedTags"
+                  :searchQuery="searchQuery"
+                  @edit="handleEdit"
+                  @delete="handleDelete"
+                  @filter-tag="handleTagSelect"
+                />
+             </div>
+          </div>
         </template>
         <div v-else class="flex flex-col items-center justify-center py-20 text-gray-400">
           <el-icon :size="48" class="mb-4 opacity-50"><Files /></el-icon>
           <p>暂无记录，快去添加第一条美好回忆吧~</p>
         </div>
+      </div>
+      
+      <!-- Timeline Sidebar -->
+      <div class="fixed right-2 top-1/2 transform -translate-y-1/2 z-10 flex flex-col gap-1 text-xs font-medium text-gray-400 bg-white/50 dark:bg-gray-800/50 backdrop-blur rounded-full py-2 px-1 shadow-sm">
+         <div 
+           v-for="year in sortedYears" 
+           :key="year" 
+           class="cursor-pointer hover:text-purple-600 transition-colors text-center"
+           @click="scrollToYear(year)"
+         >
+           {{ year }}
+         </div>
       </div>
     </div>
 
@@ -173,6 +189,32 @@ const filteredList = computed(() => {
   return list
 })
 
+const groupedRecords = computed(() => {
+  const groups: Record<string, Record<string, any[]>> = {}
+  filteredList.value.forEach(r => {
+    const d = dayjs(r.date)
+    const y = d.format('YYYY')
+    const m = d.format('MM')
+    if (!groups[y]) groups[y] = {}
+    if (!groups[y][m]) groups[y][m] = []
+    groups[y][m].push(r)
+  })
+  return groups
+})
+
+const sortedYears = computed(() => {
+  return Object.keys(groupedRecords.value).sort((a, b) => Number(b) - Number(a))
+})
+
+const scrollToYear = (year: string) => {
+  const el = document.getElementById('year-' + year)
+  if (el) el.scrollIntoView({ behavior: 'smooth' })
+}
+
+const handleScroll = () => {
+    // Optional: Highlight current year in sidebar
+}
+
 const openCalendar = () => {
     if (selectedDate.value) {
         selectedDate.value = null
@@ -207,6 +249,7 @@ const handleDelete = async (id: string) => {
         center: true,
         draggable: true,
         lockScroll: false,
+        customClass: 'center-message-box' // Add custom class if needed
       }
     )
     await store.deleteRecord(id)
@@ -221,5 +264,14 @@ const handleDelete = async (id: string) => {
 <style>
 .little-growth-drawer .el-drawer__body {
   padding: 0;
+}
+
+/* CSS for hiding scrollbar in header */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 </style>

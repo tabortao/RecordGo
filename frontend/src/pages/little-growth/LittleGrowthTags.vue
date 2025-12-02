@@ -1,138 +1,110 @@
 <template>
-  <div class="min-h-screen bg-white flex flex-col">
+  <div class="min-h-screen bg-gray-50 p-4">
     <!-- Header -->
-    <div class="px-4 py-3 border-b border-gray-100 flex items-center gap-3 sticky top-0 bg-white z-20">
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-2">
+        <el-button circle :icon="ArrowLeft" @click="router.back()" />
+        <h1 class="text-xl font-bold text-gray-800">标签管理</h1>
+      </div>
+      <el-button type="primary" @click="openDialog()">新建标签</el-button>
+    </div>
+
+    <!-- Tag List -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
       <div 
-        class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors text-gray-600"
-        @click="router.back()"
+        v-for="tag in store.tags" 
+        :key="tag.id"
+        class="bg-white p-4 rounded-xl shadow-sm flex items-center justify-between group"
       >
-        <el-icon><ArrowLeft /></el-icon>
-      </div>
-      <h1 class="font-bold text-lg text-gray-800">管理标签</h1>
-    </div>
-
-    <!-- Content -->
-    <div class="flex-1 overflow-y-auto p-4">
-      <div class="max-w-2xl mx-auto">
-        <div v-if="store.tags.length === 0" class="text-center py-20 text-gray-400">
-          <el-icon :size="48" class="mb-4 opacity-50"><CollectionTag /></el-icon>
-          <p>还没有标签，点击下方按钮创建</p>
+        <div class="flex items-center gap-3">
+          <div class="w-4 h-4 rounded-full" :style="{ backgroundColor: tag.color || '#A78BFA' }"></div>
+          <span class="font-medium text-gray-700">{{ tag.name }}</span>
         </div>
-
-        <div class="space-y-2">
-          <div 
-            v-for="tag in store.tags" 
-            :key="tag.id"
-            class="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 group hover:border-purple-200 transition-colors"
-          >
-            <div class="flex items-center gap-3">
-              <span class="font-medium text-gray-700 text-lg"># {{ tag.name }}</span>
-              <span class="text-xs bg-white px-2 py-0.5 rounded-full text-gray-400 border border-gray-100">{{ tag.count || 0 }} 记录</span>
-            </div>
-            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button 
-                class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                @click="openEdit(tag)"
-              >
-                <el-icon><Edit /></el-icon>
-              </button>
-              <button 
-                class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                @click="handleDelete(tag)"
-              >
-                <el-icon><Delete /></el-icon>
-              </button>
-            </div>
-          </div>
+        <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <el-button link type="primary" :icon="Edit" @click="openDialog(tag)"></el-button>
+          <el-button link type="danger" :icon="Delete" @click="handleDelete(tag)"></el-button>
         </div>
       </div>
-    </div>
-
-    <!-- FAB Add -->
-    <div 
-      class="fixed right-6 bottom-8 z-20 w-14 h-14 bg-purple-600 rounded-full shadow-lg shadow-purple-200 flex items-center justify-center text-white cursor-pointer hover:bg-purple-700 transition-colors active:scale-95"
-      @click="openCreate"
-    >
-      <el-icon :size="24"><Plus /></el-icon>
     </div>
 
     <!-- Dialog -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '修改标签' : '新建标签'"
+      :title="isEdit ? '编辑标签' : '新建标签'"
       width="90%"
-      max-width="400px"
-      class="rounded-2xl"
+      class="max-w-md rounded-2xl"
       center
     >
-      <div class="py-4">
-        <el-input 
-          v-model="form.name" 
-          placeholder="输入标签名称" 
-          size="large"
-          @keyup.enter="submit"
-        />
+      <div class="flex flex-col gap-4">
+        <el-input v-model="form.name" placeholder="请输入标签名称" />
+        
+        <div class="flex flex-col gap-2">
+          <span class="text-sm text-gray-500">选择颜色</span>
+          <div class="flex flex-wrap gap-2">
+             <div 
+               v-for="c in colors" 
+               :key="c"
+               class="w-8 h-8 rounded-full cursor-pointer border-2 transition-all"
+               :class="form.color === c ? 'border-gray-800 scale-110' : 'border-transparent hover:scale-105'"
+               :style="{ backgroundColor: c }"
+               @click="form.color = c"
+             ></div>
+          </div>
+        </div>
       </div>
       <template #footer>
-        <div class="flex justify-end gap-2">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submit" :loading="submitting">确定</el-button>
-        </div>
+        <span class="dialog-footer flex justify-center gap-4">
+          <el-button @click="dialogVisible = false" class="!rounded-full px-6">取消</el-button>
+          <el-button type="primary" @click="handleSubmit" class="!rounded-full px-6">确定</el-button>
+        </span>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Plus, Edit, Delete, CollectionTag } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowLeft, Edit, Delete } from '@element-plus/icons-vue'
 import { useLittleGrowthStore, type Tag } from '@/stores/littleGrowth'
+import { ElMessageBox, ElMessage } from 'element-plus'
 
 const router = useRouter()
 const store = useLittleGrowthStore()
 
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const submitting = ref(false)
-const currentId = ref<string>('')
-const form = ref({ name: '' })
+const form = ref({ id: '', name: '', color: '' })
 
-onMounted(() => {
-  store.fetchTags()
-})
+const colors = [
+  "#FFB6C1", "#FF69B4", "#FFD700", "#FFA07A", "#90EE90", 
+  "#20B2AA", "#87CEFA", "#9370DB", "#FF6347", "#40E0D0",
+  "#EE82EE", "#F0E68C", "#E6E6FA", "#DDA0DD", "#B0C4DE"
+]
 
-const openCreate = () => {
-  isEdit.value = false
-  form.value.name = ''
+const openDialog = (tag?: Tag) => {
+  if (tag) {
+    isEdit.value = true
+    form.value = { id: tag.id, name: tag.name, color: tag.color || colors[Math.floor(Math.random() * colors.length)] }
+  } else {
+    isEdit.value = false
+    form.value = { id: '', name: '', color: colors[Math.floor(Math.random() * colors.length)] }
+  }
   dialogVisible.value = true
 }
 
-const openEdit = (tag: Tag) => {
-  isEdit.value = true
-  currentId.value = tag.id
-  form.value.name = tag.name
-  dialogVisible.value = true
-}
-
-const submit = async () => {
-  if (!form.value.name.trim()) return
-  
-  submitting.value = true
+const handleSubmit = async () => {
+  if (!form.value.name) return
   try {
     if (isEdit.value) {
-      await store.updateTag(currentId.value, form.value.name)
-      ElMessage.success('修改成功')
+      await store.updateTag(form.value.id, form.value.name, form.value.color)
     } else {
-      await store.createTag(form.value.name)
-      ElMessage.success('创建成功')
+      await store.createTag(form.value.name, form.value.color)
     }
     dialogVisible.value = false
+    ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
   } catch (e) {
-    ElMessage.error('操作失败')
-  } finally {
-    submitting.value = false
+    // error handled by interceptor
   }
 }
 

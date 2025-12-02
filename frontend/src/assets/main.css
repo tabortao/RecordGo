@@ -1,0 +1,11 @@
+
+/* Global styles for Element Plus customization */
+.center-message-box {
+  display: inline-block;
+  vertical-align: middle;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0 !important;
+}

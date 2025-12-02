@@ -25,6 +25,7 @@ type GrowthTag struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	UserID    uint      `gorm:"index" json:"user_id"`
 	Name      string    `gorm:"size:64;index" json:"name"`
+	Color     string    `gorm:"size:16" json:"color"`
 	ParentID  *uint     `json:"parent_id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

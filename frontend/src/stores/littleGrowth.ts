@@ -5,6 +5,7 @@ import http from '@/services/http'
 export interface Tag {
   id: string
   name: string
+  color?: string
   parentId?: string
   children?: Tag[]
   count?: number
@@ -75,15 +76,15 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
     tags.value = (res || []).map((t: any) => ({ ...t, id: String(t.id) }))
   }
 
-  async function createTag(name: string) {
-    const res = await http.post('/little-growth/tags', { name })
+  async function createTag(name: string, color?: string) {
+    const res = await http.post('/little-growth/tags', { name, color })
     const newTag = { ...res, id: String(res.id) }
     tags.value.push(newTag)
     return newTag
   }
 
-  async function updateTag(id: string, name: string) {
-    const res = await http.put(`/little-growth/tags/${id}`, { name })
+  async function updateTag(id: string, name: string, color?: string) {
+    const res = await http.put(`/little-growth/tags/${id}`, { name, color })
     const idx = tags.value.findIndex(t => String(t.id) === String(id))
     if (idx !== -1) {
       tags.value[idx] = { ...res, id: String(res.id) }
