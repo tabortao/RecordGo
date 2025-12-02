@@ -33,5 +33,6 @@ const subjects = [
   { id: 'english', name: '英语', icon: '🔤', path: '/homework/placeholder?title=英语', bgClass: 'bg-yellow-100 text-yellow-600' },
   { id: 'science', name: '科学', icon: '🔬', path: '/homework/placeholder?title=科学', bgClass: 'bg-green-100 text-green-600' },
   { id: 'dictation', name: '听写大师', icon: '🎧', path: '/dictation', bgClass: 'bg-purple-100 text-purple-600' },
+  { id: 'growth', name: '小成长', icon: '🌱', path: '/little-growth', bgClass: 'bg-green-100 text-green-600' },
 ]
 </script>

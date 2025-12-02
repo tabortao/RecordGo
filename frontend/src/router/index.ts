@@ -74,6 +74,26 @@ const router = createRouter({
     { path: '/dictation/mistakes', name: 'MistakeBook', component: () => import('@/pages/dictation/MistakeBook.vue'), meta: { noNav: true } },
     { path: '/dictation/history', name: 'DictationHistory', component: () => import('@/pages/dictation/DictationHistory.vue'), meta: { noNav: true } },
 
+    // --- 小成长模块 ---
+    {
+      path: '/little-growth',
+      name: 'LittleGrowthHome',
+      component: () => import('@/pages/little-growth/LittleGrowthHome.vue'),
+      meta: { noNav: true }
+    },
+    {
+      path: '/little-growth/create',
+      name: 'LittleGrowthCreate',
+      component: () => import('@/pages/little-growth/LittleGrowthEdit.vue'),
+      meta: { noNav: true }
+    },
+    {
+      path: '/little-growth/edit/:id',
+      name: 'LittleGrowthEdit',
+      component: () => import('@/pages/little-growth/LittleGrowthEdit.vue'),
+      meta: { noNav: true }
+    },
+
     {
       path: '/mine',
       name: 'Mine',
