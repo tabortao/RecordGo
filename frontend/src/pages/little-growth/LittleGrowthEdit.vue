@@ -298,7 +298,7 @@ const handleFileChange = async (e: Event) => {
     if (previewImages.value.length >= 9) break
     
     try {
-      const compressedBlob = await imageConversion.compressAccurately(file, 50)
+      const compressedBlob = await imageConversion.compressAccurately(file, { size: 50 })
       const formData = new FormData()
       formData.append("file", compressedBlob, file.name)
       

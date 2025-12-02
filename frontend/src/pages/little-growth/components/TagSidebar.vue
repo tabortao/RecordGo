@@ -72,12 +72,10 @@
 
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
-import { useRouter } from 'vue-router'
 import { ArrowDown, Plus } from '@element-plus/icons-vue'
 import type { Tag } from '@/stores/littleGrowth'
 import { useAuth } from '@/stores/auth'
 import { presignView } from '@/services/storage'
-import defaultAvatar from '@/assets/avatar.png'
 
 defineProps<{
   tags: Tag[]

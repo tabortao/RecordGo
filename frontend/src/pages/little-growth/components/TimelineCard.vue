@@ -23,7 +23,8 @@
 
     <!-- Content -->
     <div class="mb-4">
-      <p class="text-gray-700 whitespace-pre-wrap leading-relaxed text-base">{{ record.content }}</p>
+      <p v-if="!searchQuery" class="text-gray-700 whitespace-pre-wrap leading-relaxed text-base">{{ record.content }}</p>
+      <p v-else class="text-gray-700 whitespace-pre-wrap leading-relaxed text-base" v-html="highlightedContent"></p>
     </div>
 
     <!-- Gallery -->
@@ -32,17 +33,18 @@
         <div 
           v-for="(img, index) in record.images" 
           :key="index"
-          class="relative overflow-hidden rounded-xl bg-gray-100 group"
+          class="relative overflow-hidden rounded-xl bg-gray-100 group border border-gray-100"
           :class="imgClass()"
         >
           <el-image 
             :src="img" 
             :preview-src-list="record.images"
             :initial-index="index"
-            fit="cover" 
-            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            fit="contain" 
+            class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
             hide-on-click-modal
+            preview-teleported
           />
         </div>
       </div>
@@ -54,8 +56,9 @@
         v-for="tag in displayTags" 
         :key="tag.id"
         class="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-medium hover:bg-blue-100 transition-colors cursor-pointer"
+        @click.stop="$emit('filter-tag', tag.id)"
       >
-        #{{ tag.name }}
+        {{ tag.name }}
       </span>
     </div>
   </div>
@@ -70,14 +73,22 @@ import { type GrowthRecord, type Tag } from '@/stores/littleGrowth'
 const props = defineProps<{
   record: GrowthRecord
   allTags: Tag[]
+  searchQuery?: string
 }>()
 
-const emit = defineEmits(['edit', 'delete'])
+const emit = defineEmits(['edit', 'delete', 'filter-tag'])
 
 // Helpers
 const formatDateBadge = (dateStr: string) => {
-  return dayjs(dateStr).format('YYYY MMM DD').toUpperCase()
+  return dayjs(dateStr).format('YYYY年MM月DD日')
 }
+
+const highlightedContent = computed(() => {
+  if (!props.searchQuery) return props.record.content
+  const safeContent = props.record.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const reg = new RegExp(`(${props.searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+  return safeContent.replace(reg, '<mark class="bg-yellow-200 text-gray-900 rounded-sm px-0.5">$1</mark>')
+})
 
 const displayTags = computed(() => {
   return props.record.tags.map(tid => props.allTags.find(t => t.id === tid)).filter(Boolean) as Tag[]
