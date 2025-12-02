@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#F5F7FA] flex flex-col relative overflow-hidden">
+  <div class="h-screen bg-[#F5F7FA] dark:bg-gray-900 flex flex-col relative overflow-hidden">
     <!-- Header -->
     <div class="bg-white/80 backdrop-blur-md sticky top-0 z-20 px-4 py-3 shadow-sm flex items-center justify-between dark:bg-gray-900/80 dark:border-b dark:border-gray-800">
       <div class="flex items-center gap-3 flex-shrink-0">
@@ -35,7 +35,7 @@
         />
 
         <!-- Calendar -->
-        <div class="relative">
+        <div class="relative flex items-center">
           <el-date-picker
             ref="datePickerRef"
             v-model="selectedDate"
@@ -64,7 +64,7 @@
     </div>
 
     <!-- Main Content (Timeline) -->
-    <div class="flex-1 overflow-y-auto p-4 pb-24 relative dark:bg-gray-900" ref="scrollContainer" @scroll="handleScroll">
+    <div class="flex-1 overflow-y-auto p-4 pb-24 relative dark:bg-gray-900 bg-[#F5F7FA]" ref="scrollContainer" @scroll="handleScroll">
       <div class="max-w-2xl mx-auto w-full">
         <template v-if="filteredList.length > 0">
           <div v-for="(group, year) in groupedRecords" :key="year" :id="'year-' + year">
@@ -191,7 +191,13 @@ const filteredList = computed(() => {
 
 const groupedRecords = computed(() => {
   const groups: Record<string, Record<string, any[]>> = {}
-  filteredList.value.forEach(r => {
+  
+  // Sort list first by date desc
+  const list = [...filteredList.value].sort((a, b) => {
+    return new Date(b.date).getTime() - new Date(a.date).getTime()
+  })
+
+  list.forEach(r => {
     const d = dayjs(r.date)
     const y = d.format('YYYY')
     const m = d.format('MM')

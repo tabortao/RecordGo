@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-gray-50 p-4">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div class="flex items-center gap-2">
-        <el-button circle :icon="ArrowLeft" @click="router.back()" />
-        <h1 class="text-xl font-bold text-gray-800">标签管理</h1>
+        <el-button circle :icon="ArrowLeft" @click="router.back()" class="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300" />
+        <h1 class="text-xl font-bold text-gray-800 dark:text-white">标签管理</h1>
       </div>
       <el-button type="primary" @click="openDialog()">新建标签</el-button>
     </div>
@@ -14,11 +14,11 @@
       <div 
         v-for="tag in store.tags" 
         :key="tag.id"
-        class="bg-white p-4 rounded-xl shadow-sm flex items-center justify-between group"
+        class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm flex items-center justify-between group border border-transparent dark:border-gray-700"
       >
         <div class="flex items-center gap-3">
-          <div class="w-4 h-4 rounded-full" :style="{ backgroundColor: tag.color || '#A78BFA' }"></div>
-          <span class="font-medium text-gray-700">{{ tag.name }}</span>
+          <div class="w-4 h-4 rounded-full border border-black/10 dark:border-white/10" :style="{ backgroundColor: tag.color || '#A78BFA' }"></div>
+          <span class="font-medium text-gray-700 dark:text-gray-200">{{ tag.name }}</span>
         </div>
         <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <el-button link type="primary" :icon="Edit" @click="openDialog(tag)"></el-button>
@@ -32,23 +32,30 @@
       v-model="dialogVisible"
       :title="isEdit ? '编辑标签' : '新建标签'"
       width="90%"
-      class="max-w-md rounded-2xl"
+      class="max-w-md rounded-2xl dark:bg-gray-800"
       center
     >
       <div class="flex flex-col gap-4">
         <el-input v-model="form.name" placeholder="请输入标签名称" />
         
         <div class="flex flex-col gap-2">
-          <span class="text-sm text-gray-500">选择颜色</span>
+          <span class="text-sm text-gray-500 dark:text-gray-400">选择颜色</span>
           <div class="flex flex-wrap gap-2">
              <div 
                v-for="c in colors" 
                :key="c"
-               class="w-8 h-8 rounded-full cursor-pointer border-2 transition-all"
-               :class="form.color === c ? 'border-gray-800 scale-110' : 'border-transparent hover:scale-105'"
+               class="w-8 h-8 rounded-full cursor-pointer border-2 transition-all box-content"
+               :class="form.color === c ? 'border-gray-800 dark:border-white scale-110' : 'border-transparent hover:scale-105'"
                :style="{ backgroundColor: c }"
                @click="form.color = c"
              ></div>
+             <!-- Custom Color Picker Wrapper -->
+             <div class="relative w-8 h-8 rounded-full overflow-hidden cursor-pointer border-2 border-transparent hover:scale-105 transition-all">
+                <input type="color" v-model="form.color" class="absolute inset-0 w-[150%] h-[150%] -top-1/4 -left-1/4 cursor-pointer p-0 border-0" />
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none bg-white/20">
+                    <span class="text-xs font-bold text-gray-600">+</span>
+                </div>
+             </div>
           </div>
         </div>
       </div>
@@ -76,10 +83,11 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const form = ref({ id: '', name: '', color: '' })
 
+// Lighter Pastel Colors
 const colors = [
-  "#FFB6C1", "#FF69B4", "#FFD700", "#FFA07A", "#90EE90", 
-  "#20B2AA", "#87CEFA", "#9370DB", "#FF6347", "#40E0D0",
-  "#EE82EE", "#F0E68C", "#E6E6FA", "#DDA0DD", "#B0C4DE"
+  "#FECACA", "#FDE68A", "#A7F3D0", "#BFDBFE", "#DDD6FE", 
+  "#FBCFE8", "#E5E7EB", "#FEE2E2", "#FEF3C7", "#D1FAE5",
+  "#DBEAFE", "#EDE9FE", "#FCE7F3", "#F3F4F6", "#FFEDD5"
 ]
 
 const openDialog = (tag?: Tag) => {

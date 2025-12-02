@@ -1,12 +1,12 @@
 <template>
-  <div class="min-h-screen bg-white flex flex-col">
+  <div class="min-h-screen bg-white dark:bg-gray-900 flex flex-col">
     <!-- Header -->
-    <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-20">
+    <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 z-20">
       <div class="flex items-center gap-2 cursor-pointer" @click="router.back()">
-        <el-icon class="text-gray-600 text-lg"><ArrowLeft /></el-icon>
-        <span class="text-gray-600">取消</span>
+        <el-icon class="text-gray-600 dark:text-gray-300 text-lg"><ArrowLeft /></el-icon>
+        <span class="text-gray-600 dark:text-gray-300">取消</span>
       </div>
-      <h1 class="font-bold text-lg">{{ isEdit ? '编辑记录' : '新记录' }}</h1>
+      <h1 class="font-bold text-lg dark:text-white">{{ isEdit ? '编辑记录' : '新记录' }}</h1>
       <button 
         class="bg-purple-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
         :disabled="(!form.content && previewImages.length === 0 && !audioUrl) || loading || uploading"
@@ -38,20 +38,20 @@
             type="textarea"
             :rows="6"
             placeholder="记录这一刻的美好... 输入 # 可快速添加标签"
-            class="text-lg"
+            class="text-lg dark:bg-gray-800"
             resize="none"
             @input="handleInput"
           />
           
           <!-- Smart Tag Suggestions -->
-          <div v-if="showTagSuggestions" class="absolute top-full left-0 z-10 bg-white shadow-lg border border-gray-100 rounded-lg mt-1 w-64 max-h-48 overflow-y-auto">
+          <div v-if="showTagSuggestions" class="absolute top-full left-0 z-10 bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 rounded-lg mt-1 w-64 max-h-48 overflow-y-auto">
             <div 
               v-for="tag in suggestedTags" 
               :key="tag.id"
-              class="px-3 py-2 hover:bg-purple-50 cursor-pointer text-sm text-gray-700"
+              class="px-3 py-2 hover:bg-purple-50 dark:hover:bg-purple-900 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
               @click="selectSuggestedTag(tag)"
             >
-              # {{ tag.name }}
+              {{ tag.name }}
             </div>
             <div v-if="suggestedTags.length === 0" class="px-3 py-2 text-gray-400 text-xs">
               输入空格以创建新标签
@@ -65,7 +65,7 @@
             <div 
               v-for="(img, index) in previewImages" 
               :key="index"
-              class="relative aspect-square rounded-xl overflow-hidden group bg-gray-100 border border-gray-200"
+              class="relative aspect-square rounded-xl overflow-hidden group bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
             >
               <!-- Changed to object-contain for 100% display -->
               <img :src="img" class="w-full h-full object-contain" />
@@ -76,7 +76,7 @@
             
             <div 
               v-if="previewImages.length < 9"
-              class="aspect-square rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 hover:border-purple-400 hover:text-purple-500 transition-colors cursor-pointer bg-gray-50"
+              class="aspect-square rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 flex flex-col items-center justify-center text-gray-400 hover:border-purple-400 hover:text-purple-500 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800"
               @click="triggerUpload"
             >
               <el-icon :size="20" v-if="!uploading"><Camera /></el-icon>
@@ -95,11 +95,11 @@
         </div>
 
         <!-- Audio -->
-        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
             <div 
-                class="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-colors"
-                :class="isRecording ? 'bg-red-100 text-red-500 animate-pulse' : 'bg-white text-purple-600 shadow-sm hover:bg-purple-50'"
-                @click="toggleRecording"
+              class="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-colors"
+              :class="isRecording ? 'bg-red-100 text-red-500 animate-pulse' : 'bg-white dark:bg-gray-700 text-purple-600 shadow-sm hover:bg-purple-50 dark:hover:bg-gray-600'"
+              @click="toggleRecording"
             >
                 <el-icon :size="20"><Microphone /></el-icon>
             </div>
@@ -129,23 +129,23 @@
           <div 
             v-for="tagId in form.tags" 
             :key="tagId"
-            class="px-3 py-1 bg-purple-50 text-purple-600 rounded-full text-sm flex items-center gap-1"
+            class="px-3 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 rounded-full text-sm flex items-center gap-1"
           >
-            <span>#{{ getTagName(tagId) }}</span>
-            <el-icon class="cursor-pointer hover:text-purple-800" @click="removeTag(tagId)"><Close /></el-icon>
+            <span>{{ getTagName(tagId) }}</span>
+            <el-icon class="cursor-pointer hover:text-purple-800 dark:hover:text-purple-200" @click="removeTag(tagId)"><Close /></el-icon>
           </div>
           
           <el-popover placement="bottom" :width="200" trigger="click">
             <template #reference>
-              <button class="px-3 py-1 border border-gray-200 text-gray-500 rounded-full text-sm hover:bg-gray-50 flex items-center gap-1">
+              <button class="px-3 py-1 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 rounded-full text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-1">
                 <el-icon><Plus /></el-icon> 标签
               </button>
             </template>
-            <div class="max-h-60 overflow-y-auto">
+            <div class="max-h-60 overflow-y-auto dark:bg-gray-800 dark:text-gray-200">
               <div 
                 v-for="tag in store.tags" 
                 :key="tag.id"
-                class="px-2 py-1.5 hover:bg-gray-50 cursor-pointer text-sm rounded"
+                class="px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer text-sm rounded"
                 @click="addTagById(tag.id)"
               >
                 {{ tag.name }}
