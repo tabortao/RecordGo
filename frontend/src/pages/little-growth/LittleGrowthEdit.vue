@@ -12,7 +12,7 @@
         :disabled="(!form.content && previewImages.length === 0 && !audioUrl) || loading || uploading"
         @click="save"
       >
-        {{ loading ? '发布中...' : (uploading ? '上传中...' : '发布') }}
+        {{ loading ? (isEdit ? '保存中...' : '发布中...') : (uploading ? '上传中...' : (isEdit ? '保存' : '发布')) }}
       </button>
     </div>
 

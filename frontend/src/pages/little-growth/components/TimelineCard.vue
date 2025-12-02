@@ -1,6 +1,6 @@
 <template>
   <div 
-    class="bg-white rounded-2xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] transition-shadow duration-300 mb-6 dark:bg-gray-800"
+    class="bg-white rounded-2xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] transition-shadow duration-300 mb-3 dark:bg-gray-800"
   >
     <!-- Header -->
     <div class="flex justify-between items-start mb-4">
@@ -18,7 +18,7 @@
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="pin" :icon="Top">{{ record.is_pinned ? '取消置顶' : '置顶' }}</el-dropdown-item>
-            <el-dropdown-item command="copy" :icon="CopyDocument">复制内容</el-dropdown-item>
+            <el-dropdown-item command="copy" :icon="CopyDocument">复制</el-dropdown-item>
             <el-dropdown-item command="edit" :icon="Edit">编辑</el-dropdown-item>
             <el-dropdown-item command="delete" :icon="Delete" class="text-red-500">删除</el-dropdown-item>
           </el-dropdown-menu>
@@ -38,7 +38,7 @@
         <div 
           v-for="(img, index) in record.images" 
           :key="index"
-          class="relative overflow-hidden rounded-xl group bg-gray-100 dark:bg-gray-700"
+          class="relative overflow-hidden rounded-xl group"
           :class="imgClass()"
         >
           <el-image 

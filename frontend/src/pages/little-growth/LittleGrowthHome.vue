@@ -64,7 +64,7 @@
     </div>
 
     <!-- Main Content (Timeline) -->
-    <div class="flex-1 overflow-y-auto p-4 pb-24 relative dark:bg-gray-900 bg-[#F5F7FA]" ref="scrollContainer" @scroll="handleScroll">
+    <div class="flex-1 overflow-y-auto p-4 pb-24 relative dark:bg-gray-900 bg-[#F5F7FA] px-0 sm:px-4" ref="scrollContainer" @scroll="handleScroll">
       <div class="max-w-2xl mx-auto w-full">
         <template v-if="filteredList.length > 0">
           <div v-for="(group, year) in groupedRecords" :key="year" :id="'year-' + year">
@@ -89,31 +89,38 @@
         </div>
       </div>
       
-      <!-- Timeline Sidebar -->
-       <transition name="fade">
-         <div v-show="isScrolling" class="fixed right-2 top-1/2 transform -translate-y-1/2 z-10 flex flex-col gap-1 text-xs font-medium text-gray-400 bg-white/50 dark:bg-gray-800/50 backdrop-blur rounded-full py-2 px-1 shadow-sm">
-            <div 
-              v-for="year in sortedYears" 
-              :key="year" 
-              class="cursor-pointer hover:text-purple-600 transition-colors text-center"
-              @click="scrollToYear(year)"
-            >
-              {{ year }}
-            </div>
-         </div>
-       </transition>
+      <!-- Timeline Slider (Draggable) -->
+      <transition name="fade">
+        <div 
+          v-show="isScrolling" 
+          class="fixed right-1 top-20 bottom-24 z-10 w-6 flex flex-col items-center justify-center"
+          @touchstart="handleSliderTouchStart"
+          @touchmove="handleSliderTouchMove"
+          @touchend="handleSliderTouchEnd"
+        >
+           <div class="w-1 h-full bg-gray-200 dark:bg-gray-700 rounded-full relative">
+              <!-- Handle -->
+              <div 
+                class="absolute w-6 h-6 bg-purple-600 rounded-full shadow-md -left-2.5 flex items-center justify-center text-[10px] text-white font-bold"
+                :style="{ top: sliderTop + '%' }"
+              >
+                 {{ currentSliderYear }}
+              </div>
+           </div>
+        </div>
+      </transition>
+    </div>
 
-       <!-- Back to Top -->
-       <div 
-         v-if="showBackToTop"
-         ref="backToTopRef"
-         class="fixed z-50 w-10 h-10 bg-purple-600 text-white rounded-full shadow-lg flex items-center justify-center cursor-pointer hover:bg-purple-700 active:scale-95 transition-all"
-         :style="backToTopStyle"
-         @click="scrollToTop"
-       >
-         <el-icon><Top /></el-icon>
-       </div>
-     </div>
+    <!-- Back to Top -->
+    <div 
+      v-if="showBackToTop"
+        ref="backToTopRef"
+        class="fixed z-50 w-10 h-10 bg-purple-600 text-white rounded-full shadow-lg flex items-center justify-center cursor-pointer hover:bg-purple-700 active:scale-95 transition-all"
+        :style="backToTopStyle"
+        @click="scrollToTop"
+      >
+        <el-icon><Top /></el-icon>
+      </div>
 
     <!-- FAB (Add Button) -->
     <div 
@@ -192,11 +199,50 @@ const handlePin = async (id: string) => {
     }
 }
 
+// Slider Logic
+const sliderTop = ref(0)
+const currentSliderYear = ref('')
+const isDraggingSlider = ref(false)
+
+const handleSliderTouchStart = (e: TouchEvent) => {
+  isDraggingSlider.value = true
+  handleSliderTouchMove(e)
+}
+
+const handleSliderTouchMove = (e: TouchEvent) => {
+  e.preventDefault()
+  const touch = e.touches[0]
+  const sliderContainer = document.querySelector('.fixed.right-1') as HTMLElement
+  if (!sliderContainer) return
+
+  const rect = sliderContainer.getBoundingClientRect()
+  const y = touch.clientY - rect.top
+  const height = rect.height
+  let percent = (y / height) * 100
+  percent = Math.max(0, Math.min(100, percent))
+  
+  sliderTop.value = percent
+  
+  // Calculate year based on percent
+  const years = sortedYears.value
+  if (years.length > 0) {
+    const index = Math.floor((percent / 100) * years.length)
+    const safeIndex = Math.min(years.length - 1, Math.max(0, index))
+    const year = years[safeIndex]
+    currentSliderYear.value = year
+    scrollToYear(year)
+  }
+}
+
+const handleSliderTouchEnd = () => {
+  isDraggingSlider.value = false
+}
+
 const handleScroll = () => {
   isScrolling.value = true
   clearTimeout(scrollTimeout)
   scrollTimeout = setTimeout(() => {
-    isScrolling.value = false
+    if (!isDraggingSlider.value) isScrolling.value = false
   }, 1500)
 
   if (scrollContainer.value) {
@@ -307,7 +353,7 @@ const handleDelete = async (id: string) => {
         center: true,
         draggable: true,
         lockScroll: false,
-        customClass: 'center-message-box' // Add custom class if needed
+        customClass: 'center-message-box custom-delete-dialog'
       }
     )
     await store.deleteRecord(id)

@@ -10,7 +10,7 @@
         v-for="subject in subjects" 
         :key="subject.id"
         class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center gap-3 cursor-pointer hover:shadow-md transition active:scale-95"
-        @click="router.push(subject.path)"
+        @click="onSubjectClick(subject)"
       >
         <div class="w-16 h-16 rounded-full flex items-center justify-center" :class="subject.bgClass">
           <span class="text-3xl">{{ subject.icon }}</span>
@@ -24,6 +24,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { Reading } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 
@@ -35,4 +36,11 @@ const subjects = [
   { id: 'dictation', name: '听写大师', icon: '🎧', path: '/dictation', bgClass: 'bg-purple-100 text-purple-600' },
   { id: 'growth', name: '小成长', icon: '🌱', path: '/little-growth', bgClass: 'bg-green-100 text-green-600' },
 ]
+
+function onSubjectClick(subject: { id: string; path: string }) {
+  if (subject.id === 'growth') {
+    try { ElMessage.info('4 条日志') } catch {}
+  }
+  router.push(subject.path)
+}
 </script>
