@@ -57,7 +57,7 @@
       v-model="showSidebar"
       direction="ltr"
       :with-header="false"
-      size="80%"
+      :size="drawerSize"
       class="little-growth-drawer"
     >
       <TagSidebar 
@@ -71,17 +71,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Menu, Plus, Close, Files } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useLittleGrowthStore } from '@/stores/littleGrowth'
+import { useWindowSize } from '@vueuse/core'
 import TimelineCard from './components/TimelineCard.vue'
 import TagSidebar from './components/TagSidebar.vue'
 
 const router = useRouter()
 const store = useLittleGrowthStore()
 const showSidebar = ref(false)
+
+const { width } = useWindowSize()
+const drawerSize = computed(() => width.value < 768 ? '50%' : '25%')
+
+onMounted(() => {
+  store.fetchRecords()
+})
 
 const activeTagName = computed(() => {
   const tag = store.flattenedTags.find(t => t.id === store.activeFilterTagId)
@@ -99,12 +107,19 @@ const handleEdit = (id: string) => {
 
 const handleDelete = async (id: string) => {
   try {
-    await ElMessageBox.confirm('确定要删除这条记录吗？', '提示', {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    store.deleteRecord(id)
+    await ElMessageBox.confirm(
+      '确定要删除这条记录吗？删除后无法恢复。',
+      '删除确认',
+      {
+        confirmButtonText: '删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        center: true,
+        roundButton: true,
+        customClass: 'little-growth-delete-dialog'
+      }
+    )
+    await store.deleteRecord(id)
     ElMessage.success('删除成功')
   } catch {
     // cancelled

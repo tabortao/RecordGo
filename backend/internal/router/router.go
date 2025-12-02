@@ -149,6 +149,14 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 			dictation.GET("/history", handlers.ListDictationHistory)
 			dictation.GET("/stats", handlers.GetDictationStats)
 		}
+
+		// 小成长模块
+		littleGrowth := api.Group("/little-growth")
+		{
+			littleGrowth.GET("/records", handlers.ListGrowthRecords)
+			littleGrowth.POST("/records", handlers.CreateGrowthRecord)
+			littleGrowth.DELETE("/records/:id", handlers.DeleteGrowthRecord)
+		}
 	}
 
 	r.PUT("/api/storage/put", handlers.StoragePut)

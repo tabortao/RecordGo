@@ -36,6 +36,12 @@ func (l *LocalStorage) Put(ctx context.Context, key string, r io.Reader, content
     return nil
 }
 
+func (l *LocalStorage) Delete(ctx context.Context, key string) error {
+    dir := filepath.Join(l.Root, "uploads")
+    full := filepath.Join(dir, filepath.FromSlash(key))
+    return os.Remove(full)
+}
+
 func (l *LocalStorage) PublicURL(key string) (string, bool) {
     return "/api/uploads/" + key, true
 }

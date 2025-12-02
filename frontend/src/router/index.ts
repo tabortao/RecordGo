@@ -93,6 +93,12 @@ const router = createRouter({
       component: () => import('@/pages/little-growth/LittleGrowthEdit.vue'),
       meta: { noNav: true }
     },
+    {
+      path: '/little-growth/tags',
+      name: 'LittleGrowthTags',
+      component: () => import('@/pages/little-growth/LittleGrowthTags.vue'),
+      meta: { noNav: true }
+    },
 
     {
       path: '/mine',

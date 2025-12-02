@@ -33,7 +33,7 @@
           v-for="(img, index) in record.images" 
           :key="index"
           class="relative overflow-hidden rounded-xl bg-gray-100 group"
-          :class="imgClass(index)"
+          :class="imgClass()"
         >
           <el-image 
             :src="img" 
@@ -94,7 +94,7 @@ const gridClass = computed(() => {
   return 'grid-cols-3'
 })
 
-const imgClass = (index: number) => {
+const imgClass = () => {
   const n = count.value
   if (n === 1) return 'aspect-video' // 16/9
   return 'aspect-square' // 1:1 for grid

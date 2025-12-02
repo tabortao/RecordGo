@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import dayjs from 'dayjs'
+import http from '@/services/http'
 
 export interface Tag {
   id: string
@@ -11,175 +11,129 @@ export interface Tag {
 }
 
 export interface GrowthRecord {
-  id: string
+  id: string // number in backend, string here for safety
   date: string // YYYY-MM-DD
   content: string
-  images: string[]
-  tags: string[] // Tag IDs
+  images: string[] // URLs
+  tags: string[] // Tag Names or IDs
   audio?: string
-  createdAt: number
+  created_at?: string
 }
 
 export const useLittleGrowthStore = defineStore('littleGrowth', () => {
   // --- State ---
   const records = ref<GrowthRecord[]>([])
-  const tags = ref<Tag[]>([
-    {
-      id: 't1',
-      name: '生活',
-      children: [
-        { id: 't1-1', name: '生日', parentId: 't1', count: 0 },
-        { id: 't1-2', name: '日常', parentId: 't1', count: 0 }
-      ],
-      count: 0
-    },
-    {
-      id: 't2',
-      name: '学习',
-      children: [
-        { id: 't2-1', name: '英语', parentId: 't2', count: 0 },
-        { id: 't2-2', name: '钢琴', parentId: 't2', count: 0 }
-      ],
-      count: 0
-    },
-    {
-      id: 't3',
-      name: '旅行',
-      children: [
-        { id: 't3-1', name: '海边', parentId: 't3', count: 0 }
-      ],
-      count: 0
-    }
-  ])
-  
   const activeFilterTagId = ref<string | null>(null)
+  const loading = ref(false)
 
   // --- Getters ---
+  // Dynamic tags based on records content
   const flattenedTags = computed(() => {
-    const list: Tag[] = []
-    const traverse = (items: Tag[]) => {
-      items.forEach(t => {
-        list.push(t)
-        if (t.children) traverse(t.children)
+    // Extract all unique tags from records
+    const tagCounts = new Map<string, number>()
+    records.value.forEach(r => {
+      // Parse tags if they are JSON string, or assuming they are array
+      // Backend returns JSON string for tags? No, we should parse it in frontend service or here.
+      // Let's assume the API returns parsed object or we parse it.
+      // Actually, backend `GrowthRecord` struct has `Tags string`.
+      // So we need to parse it.
+      let rTags: string[] = []
+      if (typeof r.tags === 'string') {
+        try { rTags = JSON.parse(r.tags) } catch {}
+      } else if (Array.isArray(r.tags)) {
+        rTags = r.tags
+      }
+
+      rTags.forEach(t => {
+        tagCounts.set(t, (tagCounts.get(t) || 0) + 1)
       })
-    }
-    traverse(tags.value)
+    })
+
+    // Convert to Tag objects
+    const list: Tag[] = []
+    tagCounts.forEach((count, name) => {
+      list.push({ id: name, name, count }) // ID is name for simplicity
+    })
     return list
   })
 
+  // Hierarchical tags (mock hierarchy for now as backend doesn't store hierarchy yet, or flat)
+  // User said: "Sidebar tags related to input tags".
+  // We can just show a flat list or try to group them if we had logic.
+  // For now, flat list of used tags.
+  const tags = computed(() => flattenedTags.value)
+
   const filteredRecords = computed(() => {
     if (!activeFilterTagId.value) {
-      return records.value.sort((a, b) => b.createdAt - a.createdAt)
+      return records.value
     }
-    
-    // Check if selected tag is parent or child
-    const selectedTag = flattenedTags.value.find(t => t.id === activeFilterTagId.value)
-    if (!selectedTag) return []
-
-    const targetIds = new Set<string>()
-    targetIds.add(selectedTag.id)
-    if (selectedTag.children) {
-      selectedTag.children.forEach(c => targetIds.add(c.id))
-    }
-
     return records.value.filter(r => {
-      return r.tags.some(tid => targetIds.has(tid))
-    }).sort((a, b) => b.createdAt - a.createdAt)
+      let rTags: string[] = []
+      if (typeof r.tags === 'string') {
+        try { rTags = JSON.parse(r.tags) } catch {}
+      } else {
+        rTags = r.tags
+      }
+      return rTags.includes(activeFilterTagId.value!)
+    })
   })
 
   // --- Actions ---
-  function addRecord(record: Omit<GrowthRecord, 'id' | 'createdAt'>) {
-    const newRecord: GrowthRecord = {
-      ...record,
-      id: `r${Date.now()}`,
-      createdAt: Date.now()
+  async function fetchRecords() {
+    loading.value = true
+    try {
+      const res = await http.get('/little-growth/records')
+      // Parse JSON fields
+      const items = (res.items || []).map((r: any) => {
+        let images: string[] = []
+        try { 
+          if (typeof r.images === 'string') {
+            images = JSON.parse(r.images)
+            if (!Array.isArray(images)) images = []
+          } else if (Array.isArray(r.images)) {
+            images = r.images
+          }
+        } catch {}
+        
+        // Backend returns relative path "uploads/...", we need full URL
+        images = images.map(i => i.startsWith('http') ? i : `${import.meta.env.VITE_API_BASE}/api/${i}`)
+        
+        let audio = r.audio
+        if (audio && !audio.startsWith('http')) {
+            audio = `${import.meta.env.VITE_API_BASE}/api/${audio}`
+        }
+
+        let tags: string[] = []
+        try { tags = JSON.parse(r.tags) } catch {}
+
+        return {
+          ...r,
+          date: r.date.split('T')[0],
+          images,
+          audio,
+          tags
+        }
+      })
+      records.value = items
+    } finally {
+      loading.value = false
     }
-    records.value.unshift(newRecord)
-    updateTagCounts()
   }
 
-  function updateRecord(id: string, updates: Partial<GrowthRecord>) {
-    const index = records.value.findIndex(r => r.id === id)
-    if (index !== -1) {
-      records.value[index] = { ...records.value[index], ...updates }
-      updateTagCounts()
-    }
+  async function createRecord(formData: FormData) {
+    await http.post('/little-growth/records', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    await fetchRecords()
   }
 
-  function deleteRecord(id: string) {
-    records.value = records.value.filter(r => r.id !== id)
-    updateTagCounts()
+  async function deleteRecord(id: string) {
+    await http.delete(`/little-growth/records/${id}`)
+    records.value = records.value.filter(r => String(r.id) !== String(id))
   }
 
   function getRecordById(id: string) {
-    return records.value.find(r => r.id === id)
-  }
-
-  function addTag(name: string, parentId?: string) {
-    const newTag: Tag = {
-      id: `t${Date.now()}`,
-      name,
-      parentId,
-      count: 0,
-      children: []
-    }
-
-    if (parentId) {
-      const parent = tags.value.find(t => t.id === parentId)
-      if (parent) {
-        if (!parent.children) parent.children = []
-        parent.children.push(newTag)
-      } else {
-        // Fallback to root if parent not found
-        tags.value.push(newTag)
-      }
-    } else {
-      tags.value.push(newTag)
-    }
-  }
-
-  function updateTagCounts() {
-    // Reset counts
-    const counts = new Map<string, number>()
-    
-    records.value.forEach(r => {
-      r.tags.forEach(tid => {
-        counts.set(tid, (counts.get(tid) || 0) + 1)
-        // Find parent and increment
-        const tag = flattenedTags.value.find(t => t.id === tid)
-        if (tag && tag.parentId) {
-          counts.set(tag.parentId, (counts.get(tag.parentId) || 0) + 1)
-        }
-      })
-    })
-
-    const traverseAndUpdate = (items: Tag[]) => {
-      items.forEach(t => {
-        t.count = counts.get(t.id) || 0
-        if (t.children) traverseAndUpdate(t.children)
-      })
-    }
-    traverseAndUpdate(tags.value)
-  }
-
-  // Initial mock data
-  if (records.value.length === 0) {
-    addRecord({
-      date: dayjs().format('YYYY-MM-DD'),
-      content: '今天天气真好，带宝宝去公园玩了滑梯，他非常开心！#生活 #日常',
-      images: [
-        'https://picsum.photos/400/300?random=1',
-        'https://picsum.photos/400/300?random=2',
-        'https://picsum.photos/400/300?random=3'
-      ],
-      tags: ['t1', 't1-2']
-    })
-    addRecord({
-      date: dayjs().subtract(1, 'day').format('YYYY-MM-DD'),
-      content: '第一次上钢琴课，老师夸奖很有天赋。#学习 #钢琴',
-      images: ['https://picsum.photos/400/300?random=4'],
-      tags: ['t2', 't2-2']
-    })
+    return records.value.find(r => String(r.id) === String(id))
   }
 
   return {
@@ -188,12 +142,10 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
     activeFilterTagId,
     filteredRecords,
     flattenedTags,
-    addRecord,
-    updateRecord,
+    loading,
+    fetchRecords,
+    createRecord,
     deleteRecord,
-    getRecordById,
-    addTag
+    getRecordById
   }
-}, {
-  persist: true
 })

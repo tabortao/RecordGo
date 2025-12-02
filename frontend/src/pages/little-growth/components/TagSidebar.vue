@@ -3,11 +3,12 @@
     <!-- Header: User Info -->
     <div class="p-6 border-b border-gray-50">
       <div class="flex items-center gap-4">
-        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-200 to-blue-200 flex items-center justify-center text-white font-bold text-lg">
-          {{ userInitial }}
+        <div class="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-gray-500 font-bold text-lg shadow-sm border border-white">
+          <img v-if="avatarUrl" :src="avatarUrl" class="w-full h-full object-cover" />
+          <span v-else>{{ userInitial }}</span>
         </div>
         <div>
-          <h3 class="font-bold text-gray-800 text-lg">我的记录</h3>
+          <h3 class="font-bold text-gray-800 text-lg">{{ nickname }}</h3>
           <p class="text-xs text-gray-400">{{ totalRecords }} 条美好回忆</p>
         </div>
       </div>
@@ -58,7 +59,10 @@
 
     <!-- Footer: Manage -->
     <div class="p-4 border-t border-gray-50">
-      <button class="w-full py-2 px-4 rounded-xl border border-dashed border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-purple-600 transition-colors text-sm flex items-center justify-center gap-2">
+      <button 
+        class="w-full py-2 px-4 rounded-xl border border-dashed border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-purple-600 transition-colors text-sm flex items-center justify-center gap-2"
+        @click="$router.push('/little-growth/tags')"
+      >
         <el-icon><Plus /></el-icon>
         <span>管理标签</span>
       </button>
@@ -68,10 +72,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ArrowDown, Plus } from '@element-plus/icons-vue'
 import type { Tag } from '@/stores/littleGrowth'
+import { useAuth } from '@/stores/auth'
 
-const props = defineProps<{
+defineProps<{
   tags: Tag[]
   activeTagId: string | null
   totalRecords: number
@@ -79,5 +85,16 @@ const props = defineProps<{
 
 defineEmits(['select'])
 
-const userInitial = computed(() => 'M') // Mock
+const auth = useAuth()
+const user = computed(() => auth.user as any)
+const nickname = computed(() => user.value?.nickname || '未登录')
+const userInitial = computed(() => nickname.value?.[0]?.toUpperCase() || 'M')
+const avatarUrl = computed(() => {
+    if (user.value?.avatar_path) {
+        return user.value.avatar_path.startsWith('http') 
+            ? user.value.avatar_path 
+            : `${import.meta.env.VITE_API_BASE}/api/${user.value.avatar_path}`
+    }
+    return ''
+})
 </script>
