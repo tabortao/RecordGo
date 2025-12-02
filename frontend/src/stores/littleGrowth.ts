@@ -19,6 +19,7 @@ export interface GrowthRecord {
   tags: string[] // Tag IDs
   audio?: string
   created_at?: string
+  is_pinned?: boolean
 }
 
 export const useLittleGrowthStore = defineStore('littleGrowth', () => {
@@ -159,6 +160,16 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
     records.value = records.value.filter(r => String(r.id) !== String(id))
   }
 
+  async function togglePin(id: string) {
+    const res = await http.patch(`/little-growth/records/${id}/pin`)
+    const idx = records.value.findIndex(r => String(r.id) === String(id))
+    if (idx !== -1) {
+        records.value[idx].is_pinned = res.is_pinned
+    }
+    // Re-fetch to sort correctly or sort locally? Backend sort is better.
+    await fetchRecords()
+  }
+
   function getRecordById(id: string) {
     return records.value.find(r => String(r.id) === String(id))
   }
@@ -177,6 +188,7 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
     deleteTag,
     createRecord,
     deleteRecord,
+    togglePin,
     getRecordById
   }
 })

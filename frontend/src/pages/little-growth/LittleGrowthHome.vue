@@ -70,15 +70,16 @@
           <div v-for="(group, year) in groupedRecords" :key="year" :id="'year-' + year">
              <div v-for="(months, month) in group" :key="month" :id="'month-' + year + '-' + month">
                 <TimelineCard 
-                  v-for="record in months"
-                  :key="record.id" 
-                  :record="record" 
-                  :allTags="store.flattenedTags"
-                  :searchQuery="searchQuery"
-                  @edit="handleEdit"
-                  @delete="handleDelete"
-                  @filter-tag="handleTagSelect"
-                />
+                   v-for="record in months"
+                   :key="record.id" 
+                   :record="record" 
+                   :allTags="store.flattenedTags"
+                   :searchQuery="searchQuery"
+                   @edit="handleEdit"
+                   @delete="handleDelete"
+                   @pin="handlePin"
+                   @filter-tag="handleTagSelect"
+                 />
              </div>
           </div>
         </template>
@@ -89,17 +90,30 @@
       </div>
       
       <!-- Timeline Sidebar -->
-      <div class="fixed right-2 top-1/2 transform -translate-y-1/2 z-10 flex flex-col gap-1 text-xs font-medium text-gray-400 bg-white/50 dark:bg-gray-800/50 backdrop-blur rounded-full py-2 px-1 shadow-sm">
-         <div 
-           v-for="year in sortedYears" 
-           :key="year" 
-           class="cursor-pointer hover:text-purple-600 transition-colors text-center"
-           @click="scrollToYear(year)"
-         >
-           {{ year }}
+       <transition name="fade">
+         <div v-show="isScrolling" class="fixed right-2 top-1/2 transform -translate-y-1/2 z-10 flex flex-col gap-1 text-xs font-medium text-gray-400 bg-white/50 dark:bg-gray-800/50 backdrop-blur rounded-full py-2 px-1 shadow-sm">
+            <div 
+              v-for="year in sortedYears" 
+              :key="year" 
+              class="cursor-pointer hover:text-purple-600 transition-colors text-center"
+              @click="scrollToYear(year)"
+            >
+              {{ year }}
+            </div>
          </div>
-      </div>
-    </div>
+       </transition>
+
+       <!-- Back to Top -->
+       <div 
+         v-if="showBackToTop"
+         ref="backToTopRef"
+         class="fixed z-50 w-10 h-10 bg-purple-600 text-white rounded-full shadow-lg flex items-center justify-center cursor-pointer hover:bg-purple-700 active:scale-95 transition-all"
+         :style="backToTopStyle"
+         @click="scrollToTop"
+       >
+         <el-icon><Top /></el-icon>
+       </div>
+     </div>
 
     <!-- FAB (Add Button) -->
     <div 
@@ -130,10 +144,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Menu, Plus, Close, Files, Search, Calendar } from '@element-plus/icons-vue'
+import { ArrowLeft, Menu, Plus, Close, Files, Search, Calendar, Top } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useLittleGrowthStore } from '@/stores/littleGrowth'
-import { useWindowSize } from '@vueuse/core'
+import { useWindowSize, useDraggable, useStorage } from '@vueuse/core'
 import TimelineCard from './components/TimelineCard.vue'
 import TagSidebar from './components/TagSidebar.vue'
 import dayjs from 'dayjs'
@@ -146,12 +160,54 @@ const searchQuery = ref('')
 const selectedDate = ref<Date | null>(null)
 const datePickerRef = ref()
 
-const { width } = useWindowSize()
+const { width, height } = useWindowSize()
 const drawerSize = computed(() => width.value < 768 ? '50%' : '25%')
+
+// Scroll & Back to Top
+const scrollContainer = ref<HTMLElement | null>(null)
+const isScrolling = ref(false)
+let scrollTimeout: any = null
+const showBackToTop = ref(false)
+
+// Draggable Back to Top
+const backToTopRef = ref<HTMLElement | null>(null)
+const initialPos = useStorage('back-to-top-pos', { x: width.value - 60, y: height.value - 100 })
+const { style: backToTopStyle } = useDraggable(backToTopRef, {
+  initialValue: initialPos,
+  onEnd: (position) => {
+    initialPos.value = position
+  }
+})
 
 onMounted(() => {
   store.fetchRecords()
 })
+
+const handlePin = async (id: string) => {
+    try {
+        await store.togglePin(id)
+        ElMessage.success('操作成功')
+    } catch (e) {
+        // error
+    }
+}
+
+const handleScroll = () => {
+  isScrolling.value = true
+  clearTimeout(scrollTimeout)
+  scrollTimeout = setTimeout(() => {
+    isScrolling.value = false
+  }, 1500)
+
+  if (scrollContainer.value) {
+    showBackToTop.value = scrollContainer.value.scrollTop > 300
+  }
+}
+
+const scrollToTop = () => {
+  scrollContainer.value?.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 
 const activeTagName = computed(() => {
   const tag = store.flattenedTags.find(t => t.id === store.activeFilterTagId)
@@ -217,10 +273,6 @@ const scrollToYear = (year: string) => {
   if (el) el.scrollIntoView({ behavior: 'smooth' })
 }
 
-const handleScroll = () => {
-    // Optional: Highlight current year in sidebar
-}
-
 const openCalendar = () => {
     if (selectedDate.value) {
         selectedDate.value = null
@@ -279,5 +331,15 @@ const handleDelete = async (id: string) => {
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

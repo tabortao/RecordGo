@@ -44,11 +44,38 @@ func ListGrowthRecords(c *gin.Context) {
 
 	q := db.DB().Model(&models.GrowthRecord{}).Where("user_id = ?", uid)
 	q.Count(&total)
-	if err := q.Order("date DESC, created_at DESC").Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
+	// Sort by is_pinned desc, date desc, created_at desc
+	if err := q.Order("is_pinned DESC, date DESC, created_at DESC").Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
 		common.Error(c, 50001, "查询失败")
 		return
 	}
 	common.Ok(c, gin.H{"items": list, "total": total, "page": page, "page_size": size})
+}
+
+// TogglePinGrowthRecord 切换置顶状态
+func TogglePinGrowthRecord(c *gin.Context) {
+	cl := extractClaims(c)
+	if cl == nil {
+		common.Error(c, 40100, "未登录")
+		return
+	}
+	id := c.Param("id")
+	var r models.GrowthRecord
+	if err := db.DB().First(&r, id).Error; err != nil {
+		common.Error(c, 40401, "记录不存在")
+		return
+	}
+	if r.UserID != cl.UserID {
+		common.Error(c, 40301, "无权操作")
+		return
+	}
+
+	r.IsPinned = !r.IsPinned
+	if err := db.DB().Save(&r).Error; err != nil {
+		common.Error(c, 50002, "操作失败")
+		return
+	}
+	common.Ok(c, gin.H{"id": r.ID, "is_pinned": r.IsPinned})
 }
 
 // UploadGrowthFile 上传文件 (图片或音频)

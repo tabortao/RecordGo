@@ -5,8 +5,9 @@
     <!-- Header -->
     <div class="flex justify-between items-start mb-4">
       <div class="flex flex-col">
-        <div class="text-sm font-bold inline-block" :class="textColorClass">
-          {{ formatDateBadge(record.date) }} {{ formatTime(record.created_at) }}
+        <div class="text-sm font-bold inline-block flex items-center gap-2" :class="textColorClass">
+          <span>{{ formatDateBadge(record.date) }} {{ formatTime(record.created_at) }}</span>
+          <el-icon v-if="record.is_pinned" class="text-purple-500"><Top /></el-icon>
         </div>
       </div>
       
@@ -16,6 +17,8 @@
         </div>
         <template #dropdown>
           <el-dropdown-menu>
+            <el-dropdown-item command="pin" :icon="Top">{{ record.is_pinned ? '取消置顶' : '置顶' }}</el-dropdown-item>
+            <el-dropdown-item command="copy" :icon="CopyDocument">复制内容</el-dropdown-item>
             <el-dropdown-item command="edit" :icon="Edit">编辑</el-dropdown-item>
             <el-dropdown-item command="delete" :icon="Delete" class="text-red-500">删除</el-dropdown-item>
           </el-dropdown-menu>
@@ -57,8 +60,8 @@
       <span 
         v-for="tag in displayTags" 
         :key="tag.id"
-        class="px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer brightness-110 hover:brightness-125"
-        :style="{ backgroundColor: tag.color || '#E0E7FF', color: '#4F46E5' }"
+        class="px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer"
+        :style="getTagStyle(tag.color)"
         @click.stop="$emit('filter-tag', tag.id)"
       >
         {{ tag.name }}
@@ -69,10 +72,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { MoreFilled, Edit, Delete } from '@element-plus/icons-vue'
+import { MoreFilled, Edit, Delete, Top, CopyDocument } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import { type GrowthRecord, type Tag } from '@/stores/littleGrowth'
+import { useClipboard } from '@vueuse/core'
+import { ElMessage } from 'element-plus'
 
 dayjs.locale('zh-cn')
 
@@ -82,7 +87,19 @@ const props = defineProps<{
   searchQuery?: string
 }>()
 
-const emit = defineEmits(['edit', 'delete', 'filter-tag'])
+const emit = defineEmits(['edit', 'delete', 'filter-tag', 'pin'])
+
+const { copy } = useClipboard()
+
+const handleCommand = (cmd: string) => {
+    if (cmd === 'edit') emit('edit', props.record.id)
+    if (cmd === 'delete') emit('delete', props.record.id)
+    if (cmd === 'pin') emit('pin', props.record.id)
+    if (cmd === 'copy') {
+        copy(props.record.content)
+        ElMessage.success('已复制到剪贴板')
+    }
+}
 
 // Helpers
 const formatDateBadge = (dateStr: string) => {
@@ -94,18 +111,34 @@ const formatTime = (createdAt?: string) => {
   return dayjs(createdAt).format('HH:mm')
 }
 
-const primaryTag = computed(() => {
-  if (!props.record.tags || props.record.tags.length === 0) return null
-  const tid = props.record.tags[0]
-  return props.allTags.find(t => t.id === tid)
-})
-
 const textColorClass = computed(() => {
   return 'text-gray-600 dark:text-gray-300'
 })
 
 
-const highlightedContent = computed(() => {
+ function hexToRgba(hex: string, alpha: number) {
+    let c: any;
+    if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+        c= hex.substring(1).split('');
+        if(c.length== 3){
+            c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c= '0x'+c.join('');
+        return 'rgba('+[(c>>16)&255, (c>>8)&255, c&255].join(',')+','+alpha+')';
+    }
+    return hex; // fallback
+ }
+
+ const getTagStyle = (color?: string) => {
+    if (!color) return { backgroundColor: 'rgba(224, 231, 255, 0.5)', color: '#4F46E5' } // default with 50% opacity
+    const rgba = hexToRgba(color, 0.5) // 50% opacity
+    return {
+        backgroundColor: rgba,
+        color: '#1F2937' // dark gray
+    }
+ }
+ 
+ const highlightedContent = computed(() => {
   if (!props.searchQuery) return props.record.content
   const safeContent = props.record.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const reg = new RegExp(`(${props.searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
@@ -131,10 +164,5 @@ const imgClass = () => {
   const n = count.value
   if (n === 1) return 'aspect-video' // 16/9
   return 'aspect-square' // 1:1 for grid
-}
-
-const handleCommand = (cmd: string) => {
-  if (cmd === 'edit') emit('edit', props.record.id)
-  if (cmd === 'delete') emit('delete', props.record.id)
 }
 </script>

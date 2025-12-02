@@ -50,7 +50,7 @@
                @click="form.color = c"
              ></div>
              <!-- Custom Color Picker Wrapper -->
-             <div class="relative w-8 h-8 rounded-full overflow-hidden cursor-pointer border-2 border-transparent hover:scale-105 transition-all">
+             <div class="relative w-8 h-8 rounded-full overflow-hidden cursor-pointer border-2 border-transparent hover:scale-105 transition-all box-content">
                 <input type="color" v-model="form.color" class="absolute inset-0 w-[150%] h-[150%] -top-1/4 -left-1/4 cursor-pointer p-0 border-0" />
                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none bg-white/20">
                     <span class="text-xs font-bold text-gray-600">+</span>

@@ -44,14 +44,16 @@
           />
           
           <!-- Smart Tag Suggestions -->
-          <div v-if="showTagSuggestions" class="absolute top-full left-0 z-10 bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 rounded-lg mt-1 w-64 max-h-48 overflow-y-auto">
-            <div 
-              v-for="tag in suggestedTags" 
-              :key="tag.id"
-              class="px-3 py-2 hover:bg-purple-50 dark:hover:bg-purple-900 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
-              @click="selectSuggestedTag(tag)"
-            >
-              {{ tag.name }}
+          <div v-if="showTagSuggestions" class="absolute top-full left-0 z-10 bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 rounded-lg mt-1 w-full max-h-48 overflow-y-auto">
+            <div class="flex flex-wrap gap-2 p-2">
+              <div 
+                v-for="tag in suggestedTags" 
+                :key="tag.id"
+                class="px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-purple-100 dark:hover:bg-purple-900/50 hover:text-purple-600 dark:hover:text-purple-300 cursor-pointer text-sm text-gray-700 dark:text-gray-300 transition-colors"
+                @click="selectSuggestedTag(tag)"
+              >
+                {{ tag.name }}
+              </div>
             </div>
             <div v-if="suggestedTags.length === 0" class="px-3 py-2 text-gray-400 text-xs">
               输入空格以创建新标签

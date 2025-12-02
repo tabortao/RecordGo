@@ -156,6 +156,7 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 			littleGrowth.GET("/records", handlers.ListGrowthRecords)
 			littleGrowth.POST("/records", handlers.CreateGrowthRecord)
 			littleGrowth.DELETE("/records/:id", handlers.DeleteGrowthRecord)
+			littleGrowth.PATCH("/records/:id/pin", handlers.TogglePinGrowthRecord)
 
 			// Tags
 			littleGrowth.GET("/tags", handlers.ListGrowthTags)

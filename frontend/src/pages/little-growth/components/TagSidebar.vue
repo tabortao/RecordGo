@@ -30,11 +30,11 @@
           <!-- Level 1 -->
           <div 
             class="px-3 py-2 rounded-lg cursor-pointer transition-colors flex justify-between items-center group"
-            :class="activeTagId === tag.id ? 'font-medium' : 'hover:bg-gray-50 dark:hover:bg-gray-800'"
-            :style="activeTagId === tag.id ? { backgroundColor: getBgColor(tag.color), color: getTextColor(tag.color) } : {}"
+            :class="activeTagId === tag.id ? 'font-medium bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-800'"
+            :style="activeTagId === tag.id ? {} : { backgroundColor: getBgColor(tag.color) }"
             @click="$emit('select', tag.id)"
           >
-            <div class="flex items-center gap-2" :class="activeTagId !== tag.id ? 'text-gray-700 dark:text-gray-300' : ''">
+            <div class="flex items-center gap-2" :class="activeTagId === tag.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'">
               <el-icon v-if="tag.children && tag.children.length" class="text-gray-400 text-xs"><ArrowDown /></el-icon>
               <span>{{ tag.name }}</span>
             </div>
@@ -79,17 +79,20 @@ const userInitial = computed(() => nickname.value?.[0]?.toUpperCase() || 'M')
 
 const avatarSrc = ref('')
 
+// Helper to convert hex to rgba for 50% opacity
 const getBgColor = (color?: string) => {
-  // Just use the color directly as background (user asked for consistent with settings)
-  // But for text readability, maybe we need to adjust?
-  // User said "底纹与标签设置的颜色一致"
-  return color || '#F3E8FF' // default purple-50 like
-}
-
-const getTextColor = (color?: string) => {
-    // If color is dark, text should be white. If light, black/gray.
-    // Simple heuristic or just default to a dark gray for pastel colors
-    return '#374151' 
+    if (!color) return '#F3E8FF'
+    // Convert to rgba with 0.5 opacity
+    let c: any;
+    if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(color)) {
+        c = color.substring(1).split('');
+        if (c.length == 3) {
+            c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c = '0x' + c.join('');
+        return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',0.5)';
+    }
+    return color
 }
 
 watchEffect(async () => {

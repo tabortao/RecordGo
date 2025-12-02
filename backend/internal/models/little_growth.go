@@ -15,6 +15,7 @@ type GrowthRecord struct {
 	Images    string         `gorm:"type:text" json:"images"` // JSON array of paths
 	Audio     string         `gorm:"size:256" json:"audio"`   // Path to audio file
 	Tags      string         `gorm:"type:text" json:"tags"`   // JSON array of Tag Names or IDs
+	IsPinned  bool           `gorm:"default:false" json:"is_pinned"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
