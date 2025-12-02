@@ -9,10 +9,10 @@
       <h1 class="font-bold text-lg">{{ isEdit ? '编辑记录' : '新记录' }}</h1>
       <button 
         class="bg-purple-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
-        :disabled="(!form.content && previewImages.length === 0 && !audioBlob) || loading"
+        :disabled="(!form.content && previewImages.length === 0 && !audioUrl) || loading || uploading"
         @click="save"
       >
-        {{ loading ? '发布中...' : '发布' }}
+        {{ loading ? '发布中...' : (uploading ? '上传中...' : '发布') }}
       </button>
     </div>
 
@@ -61,14 +61,14 @@
 
         <!-- Images -->
         <div>
-          <!-- Changed grid to cols-4 for smaller items as requested -->
           <div class="grid grid-cols-4 gap-2 mb-2">
             <div 
               v-for="(img, index) in previewImages" 
               :key="index"
-              class="relative aspect-square rounded-xl overflow-hidden group bg-gray-100"
+              class="relative aspect-square rounded-xl overflow-hidden group bg-gray-100 border border-gray-200"
             >
-              <img :src="img" class="w-full h-full object-cover" />
+              <!-- Changed to object-contain for 100% display -->
+              <img :src="img" class="w-full h-full object-contain" />
               <div class="absolute top-1 right-1 p-1 bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" @click="removeImage(index)">
                 <el-icon><Close /></el-icon>
               </div>
@@ -79,8 +79,9 @@
               class="aspect-square rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 hover:border-purple-400 hover:text-purple-500 transition-colors cursor-pointer bg-gray-50"
               @click="triggerUpload"
             >
-              <el-icon :size="20"><Camera /></el-icon>
-              <span class="text-[10px] mt-1">添加照片</span>
+              <el-icon :size="20" v-if="!uploading"><Camera /></el-icon>
+              <el-icon :size="20" v-else class="animate-spin"><Loading /></el-icon>
+              <span class="text-[10px] mt-1">{{ uploading ? '上传中' : '添加照片' }}</span>
             </div>
           </div>
           <input 
@@ -119,19 +120,19 @@
                 :show-file-list="false"
                 :on-change="handleAudioUpload"
             >
-                <el-button size="small" round>上传</el-button>
+                <el-button size="small" round :loading="uploading">上传</el-button>
             </el-upload>
         </div>
 
         <!-- Selected Tags -->
         <div class="flex flex-wrap gap-2">
           <div 
-            v-for="tagName in form.tags" 
-            :key="tagName"
+            v-for="tagId in form.tags" 
+            :key="tagId"
             class="px-3 py-1 bg-purple-50 text-purple-600 rounded-full text-sm flex items-center gap-1"
           >
-            <span>#{{ tagName }}</span>
-            <el-icon class="cursor-pointer hover:text-purple-800" @click="removeTag(tagName)"><Close /></el-icon>
+            <span>#{{ getTagName(tagId) }}</span>
+            <el-icon class="cursor-pointer hover:text-purple-800" @click="removeTag(tagId)"><Close /></el-icon>
           </div>
           
           <el-popover placement="bottom" :width="200" trigger="click">
@@ -142,10 +143,10 @@
             </template>
             <div class="max-h-60 overflow-y-auto">
               <div 
-                v-for="tag in store.flattenedTags" 
+                v-for="tag in store.tags" 
                 :key="tag.id"
                 class="px-2 py-1.5 hover:bg-gray-50 cursor-pointer text-sm rounded"
-                @click="addTag(tag.name)"
+                @click="addTagById(tag.id)"
               >
                 {{ tag.name }}
               </div>
@@ -160,10 +161,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Close, Camera, Plus, Microphone, Delete } from '@element-plus/icons-vue'
+import { ArrowLeft, Close, Camera, Plus, Microphone, Delete, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
 import { useLittleGrowthStore, type Tag } from '@/stores/littleGrowth'
+import * as imageConversion from 'image-conversion'
+import http from '@/services/http'
 
 const route = useRoute()
 const router = useRouter()
@@ -176,15 +179,14 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const form = ref({
   date: dayjs().format('YYYY-MM-DD'),
   content: '',
-  tags: [] as string[]
+  tags: [] as string[] // IDs
 })
 
 // Files management
-const imageFiles = ref<File[]>([]) // New files to upload
-const previewImages = ref<string[]>([]) // Previews (includes existing URLs and blob URLs)
+const previewImages = ref<string[]>([]) 
+const uploading = ref(false)
 
-const audioBlob = ref<Blob | null>(null)
-const audioUrl = ref<string>('') // For preview
+const audioUrl = ref<string>('')
 
 // Recording
 const isRecording = ref(false)
@@ -194,8 +196,9 @@ let timer: number | null = null
 let chunks: Blob[] = []
 
 onMounted(async () => {
+  await store.fetchTags()
   if (isEdit.value) {
-    await store.fetchRecords() // Ensure loaded
+    await store.fetchRecords()
     const record = store.getRecordById(route.params.id as string)
     if (record) {
       form.value = {
@@ -217,40 +220,49 @@ onUnmounted(() => {
 })
 
 // --- Tags ---
-const addTag = (name: string) => {
-  if (!form.value.tags.includes(name)) {
-    form.value.tags.push(name)
+const addTagById = (id: string) => {
+  if (!form.value.tags.includes(id)) {
+    form.value.tags.push(id)
   }
 }
 
-const removeTag = (name: string) => {
-  form.value.tags = form.value.tags.filter(t => t !== name)
+const addTag = async (name: string) => {
+  const existing = store.tags.find(t => t.name === name)
+  if (existing) {
+    addTagById(existing.id)
+  } else {
+    try {
+      const newTag = await store.createTag(name)
+      addTagById(newTag.id)
+    } catch (e) {
+      console.error('Create tag failed', e)
+      ElMessage.error('创建标签失败')
+    }
+  }
+}
+
+const removeTag = (id: string) => {
+  form.value.tags = form.value.tags.filter(t => t !== id)
+}
+
+const getTagName = (id: string) => {
+  return store.tags.find(t => t.id === id)?.name || '未知标签'
 }
 
 // Input handling for #tags
 const showTagSuggestions = ref(false)
 const tagSearchQuery = ref('')
 
-const handleInput = (val: string) => {
-  // Fix linter error: lastChar was unused
-  // const lastChar = val.slice(-1) 
-  
+const handleInput = async (val: string) => {
   const match = val.match(/#(\S*)$/)
   if (match) {
     showTagSuggestions.value = true
     tagSearchQuery.value = match[1]
   } else {
-    // Check if user typed space after #tag
     const spaceMatch = val.match(/#(\S+)\s$/)
     if (spaceMatch) {
-      // Create tag
       const tagName = spaceMatch[1]
-      // Only if not already a tag
-      addTag(tagName)
-      // Remove from content
-      // But wait, user might want to keep #tag in content? 
-      // Requirement: "Input #tag cannot create tag". Usually this means convert to bubble.
-      // Let's remove the #tag from content and add to tags list.
+      await addTag(tagName)
       form.value.content = form.value.content.replace(/#\S+\s$/, '')
       showTagSuggestions.value = false
     } else {
@@ -261,12 +273,12 @@ const handleInput = (val: string) => {
 
 const suggestedTags = computed(() => {
   const query = tagSearchQuery.value.toLowerCase()
-  return store.flattenedTags.filter(t => t.name.toLowerCase().includes(query)).slice(0, 5)
+  return store.tags.filter(t => t.name.toLowerCase().includes(query)).slice(0, 5)
 })
 
 const selectSuggestedTag = (tag: Tag) => {
   form.value.content = form.value.content.replace(/#\S*$/, '')
-  addTag(tag.name)
+  addTagById(tag.id)
   showTagSuggestions.value = false
 }
 
@@ -275,50 +287,42 @@ const triggerUpload = () => {
   fileInput.value?.click()
 }
 
-const handleFileChange = (e: Event) => {
+const handleFileChange = async (e: Event) => {
   const files = (e.target as HTMLInputElement).files
   if (!files) return
   
-  Array.from(files).forEach(file => {
-    if (previewImages.value.length >= 9) return
-    
-    imageFiles.value.push(file)
-    previewImages.value.push(URL.createObjectURL(file))
-  })
+  uploading.value = true
+  const fileList = Array.from(files)
   
+  for (const file of fileList) {
+    if (previewImages.value.length >= 9) break
+    
+    try {
+      const compressedBlob = await imageConversion.compressAccurately(file, 50)
+      const formData = new FormData()
+      formData.append("file", compressedBlob, file.name)
+      
+      const res = await http.post("/upload/growth-file", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      })
+      
+      let url = res.url
+      if (!url.startsWith('http')) {
+          url = `${import.meta.env.VITE_API_BASE}/api/${url}`
+      }
+      previewImages.value.push(url)
+    } catch (err) {
+      console.error("Upload failed", err)
+      ElMessage.error(`图片 ${file.name} 上传失败`)
+    }
+  }
+  
+  uploading.value = false
   if (fileInput.value) fileInput.value.value = ''
 }
 
 const removeImage = (index: number) => {
-  // If removing an existing image (URL), we just remove it from preview.
-  // For simplicity in this MVP, we don't support partial update of existing images nicely (usually requires keeping track of kept URLs).
-  // If we edit, we might need to resend all kept images? Or backend handles delta?
-  // Backend Create currently uploads new files. It doesn't support "keep old files" if we just send new files.
-  // To support editing with existing files, we need a more complex logic (separate kept URLs list).
-  // For now, let's assume Create mode mainly. If Edit, we only support adding new files or clearing all?
-  // Okay, let's handle it: `imageFiles` only stores NEW files.
-  // If user deletes an image, we need to know if it was a new file or old URL.
-  
-  // Check if it's a blob URL (new file)
-  const url = previewImages.value[index]
-  if (url.startsWith('blob:')) {
-    // It's a new file, find in imageFiles
-    // This is tricky if we have multiple blobs.
-    // Simpler: Keep `imageFiles` and `previewImages` in sync? No, `previewImages` has strings.
-    // Let's assume we just remove from preview.
-    // But we need to remove from `imageFiles` if it was new.
-    // We can assume new files are appended.
-    // BUT, if we have mixed old and new, indices don't match.
-    
-    // Workaround for MVP: Only support uploading new images. If editing, we might clear old ones?
-    // Let's keep it simple: Delete removes from preview.
-    // If it's a blob, revoke URL.
-    URL.revokeObjectURL(url)
-  }
-  
   previewImages.value.splice(index, 1)
-  // Note: This logic doesn't perfectly sync with `imageFiles` removal if mixed.
-  // User can just add new images.
 }
 
 // --- Audio ---
@@ -334,10 +338,9 @@ const toggleRecording = async () => {
       chunks = []
       
       mediaRecorder.ondataavailable = (e) => chunks.push(e.data)
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/mp4' }) // m4a often uses mp4 container
-        audioBlob.value = blob
-        audioUrl.value = URL.createObjectURL(blob)
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/m4a' })
+        await uploadAudio(blob)
         stream.getTracks().forEach(track => track.stop())
       }
       
@@ -351,62 +354,59 @@ const toggleRecording = async () => {
   }
 }
 
-const handleAudioUpload = (file: any) => {
+const uploadAudio = async (blob: Blob) => {
+    uploading.value = true
+    try {
+        const formData = new FormData()
+        formData.append("file", blob, `record_${Date.now()}.m4a`)
+        const res = await http.post("/upload/growth-file", formData, {
+             headers: { "Content-Type": "multipart/form-data" }
+        })
+        let url = res.url
+        if (!url.startsWith('http')) {
+             url = `${import.meta.env.VITE_API_BASE}/api/${url}`
+        }
+        audioUrl.value = url
+    } catch (e) {
+        ElMessage.error('音频上传失败')
+    } finally {
+        uploading.value = false
+    }
+}
+
+const handleAudioUpload = async (file: any) => {
   if (file.raw) {
-    audioBlob.value = file.raw
-    audioUrl.value = URL.createObjectURL(file.raw)
+    await uploadAudio(file.raw)
   }
 }
 
 const removeAudio = () => {
-  audioBlob.value = null
   audioUrl.value = ''
 }
 
-// --- Save ---
 const save = async () => {
+  if (!form.value.content && previewImages.value.length === 0 && !audioUrl.value) return
+  
   loading.value = true
   try {
-    const fd = new FormData()
-    fd.append('content', form.value.content)
-    fd.append('date', form.value.date)
-    fd.append('tags', JSON.stringify(form.value.tags))
-    
-    // Append new images
-    // We need to know which of `previewImages` are new files.
-    // Actually, `imageFiles` contains all new files added.
-    // If user deleted some new files, `imageFiles` might be stale.
-    // Correct approach: `previewImages` is the source of truth.
-    // If a preview URL is blob, we need to find the file.
-    // We can use a map or just iterate `imageFiles` and check if its URL is in `previewImages`.
-    // This is getting complicated.
-    // Simplified: Just append all `imageFiles` that haven't been deleted.
-    // We will iterate `imageFiles` and check if their object URL is still in `previewImages`.
-    // But `createObjectURL` returns a unique string each time? No, only if called again.
-    // We stored the URL in `previewImages`.
-    
-    // Filter imageFiles
-    // We need to map file -> url when adding.
-    // Let's just append all `imageFiles` for now (User won't delete much in MVP).
-    imageFiles.value.forEach(f => {
-      fd.append('images', f)
-    })
-
-    if (audioBlob.value) {
-      fd.append('audio', audioBlob.value, 'recording.m4a')
+    const data = {
+      ...form.value,
+      images: previewImages.value,
+      audio: audioUrl.value,
+      tags: form.value.tags
     }
 
     if (isEdit.value) {
-      // Update not implemented in backend yet, use Create for now or implement Update later.
-      // Store.createRecord calls POST.
-      await store.createRecord(fd)
+       ElMessage.warning('暂不支持编辑，将创建新记录')
+       await store.createRecord(data)
     } else {
-      await store.createRecord(fd)
+      await store.createRecord(data)
     }
     
     ElMessage.success('发布成功')
     router.back()
   } catch (e) {
+    console.error(e)
     ElMessage.error('发布失败')
   } finally {
     loading.value = false

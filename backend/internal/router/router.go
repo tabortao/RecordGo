@@ -156,7 +156,14 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 			littleGrowth.GET("/records", handlers.ListGrowthRecords)
 			littleGrowth.POST("/records", handlers.CreateGrowthRecord)
 			littleGrowth.DELETE("/records/:id", handlers.DeleteGrowthRecord)
+
+			// Tags
+			littleGrowth.GET("/tags", handlers.ListGrowthTags)
+			littleGrowth.POST("/tags", handlers.CreateGrowthTag)
+			littleGrowth.PUT("/tags/:id", handlers.UpdateGrowthTag)
+			littleGrowth.DELETE("/tags/:id", handlers.DeleteGrowthTag)
 		}
+		api.POST("/upload/growth-file", handlers.UploadGrowthFile)
 	}
 
 	r.PUT("/api/storage/put", handlers.StoragePut)

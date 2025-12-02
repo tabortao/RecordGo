@@ -4,7 +4,7 @@
     <div class="p-6 border-b border-gray-50">
       <div class="flex items-center gap-4">
         <div class="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-gray-500 font-bold text-lg shadow-sm border border-white">
-          <img v-if="avatarUrl" :src="avatarUrl" class="w-full h-full object-cover" />
+          <img v-if="avatarSrc" :src="avatarSrc" class="w-full h-full object-cover" />
           <span v-else>{{ userInitial }}</span>
         </div>
         <div>
@@ -71,11 +71,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowDown, Plus } from '@element-plus/icons-vue'
 import type { Tag } from '@/stores/littleGrowth'
 import { useAuth } from '@/stores/auth'
+import { presignView } from '@/services/storage'
+import defaultAvatar from '@/assets/avatar.png'
 
 defineProps<{
   tags: Tag[]
@@ -89,12 +91,31 @@ const auth = useAuth()
 const user = computed(() => auth.user as any)
 const nickname = computed(() => user.value?.nickname || '未登录')
 const userInitial = computed(() => nickname.value?.[0]?.toUpperCase() || 'M')
-const avatarUrl = computed(() => {
-    if (user.value?.avatar_path) {
-        return user.value.avatar_path.startsWith('http') 
-            ? user.value.avatar_path 
-            : `${import.meta.env.VITE_API_BASE}/api/${user.value.avatar_path}`
+
+const avatarSrc = ref('')
+
+watchEffect(async () => {
+    const p = user.value?.avatar_path
+    if (!p) { 
+        avatarSrc.value = '' 
+        return 
     }
-    return ''
+    if (p.endsWith('default.png') || p.includes('/default.png')) {
+        avatarSrc.value = ''
+        return
+    }
+    if (p.startsWith('http')) {
+        avatarSrc.value = p
+        return
+    }
+    if (p.includes('uploads/')) {
+        avatarSrc.value = `${import.meta.env.VITE_API_BASE}/api/${p.replace(/^\/+/, '')}`
+        return
+    }
+    try {
+        avatarSrc.value = await presignView(p)
+    } catch {
+        avatarSrc.value = ''
+    }
 })
 </script>

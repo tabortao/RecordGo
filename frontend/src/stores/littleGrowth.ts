@@ -7,15 +7,15 @@ export interface Tag {
   name: string
   parentId?: string
   children?: Tag[]
-  count?: number // For display
+  count?: number
 }
 
 export interface GrowthRecord {
-  id: string // number in backend, string here for safety
-  date: string // YYYY-MM-DD
+  id: string
+  date: string
   content: string
-  images: string[] // URLs
-  tags: string[] // Tag Names or IDs
+  images: string[]
+  tags: string[] // Tag IDs
   audio?: string
   created_at?: string
 }
@@ -23,20 +23,16 @@ export interface GrowthRecord {
 export const useLittleGrowthStore = defineStore('littleGrowth', () => {
   // --- State ---
   const records = ref<GrowthRecord[]>([])
+  const tags = ref<Tag[]>([]) // Backend tags
   const activeFilterTagId = ref<string | null>(null)
   const loading = ref(false)
 
   // --- Getters ---
-  // Dynamic tags based on records content
   const flattenedTags = computed(() => {
-    // Extract all unique tags from records
+    // Map tags to include counts from records
+    // Note: records.tags are IDs now.
     const tagCounts = new Map<string, number>()
     records.value.forEach(r => {
-      // Parse tags if they are JSON string, or assuming they are array
-      // Backend returns JSON string for tags? No, we should parse it in frontend service or here.
-      // Let's assume the API returns parsed object or we parse it.
-      // Actually, backend `GrowthRecord` struct has `Tags string`.
-      // So we need to parse it.
       let rTags: string[] = []
       if (typeof r.tags === 'string') {
         try { rTags = JSON.parse(r.tags) } catch {}
@@ -44,24 +40,17 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
         rTags = r.tags
       }
 
-      rTags.forEach(t => {
-        tagCounts.set(t, (tagCounts.get(t) || 0) + 1)
+      rTags.forEach(tid => {
+        tagCounts.set(String(tid), (tagCounts.get(String(tid)) || 0) + 1)
       })
     })
 
-    // Convert to Tag objects
-    const list: Tag[] = []
-    tagCounts.forEach((count, name) => {
-      list.push({ id: name, name, count }) // ID is name for simplicity
-    })
-    return list
+    return tags.value.map(t => ({
+      ...t,
+      id: String(t.id), // Ensure string ID
+      count: tagCounts.get(String(t.id)) || 0
+    }))
   })
-
-  // Hierarchical tags (mock hierarchy for now as backend doesn't store hierarchy yet, or flat)
-  // User said: "Sidebar tags related to input tags".
-  // We can just show a flat list or try to group them if we had logic.
-  // For now, flat list of used tags.
-  const tags = computed(() => flattenedTags.value)
 
   const filteredRecords = computed(() => {
     if (!activeFilterTagId.value) {
@@ -74,16 +63,53 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
       } else {
         rTags = r.tags
       }
-      return rTags.includes(activeFilterTagId.value!)
+      // Ensure comparison as strings
+      return rTags.map(String).includes(String(activeFilterTagId.value))
     })
   })
 
   // --- Actions ---
+  async function fetchTags() {
+    const res = await http.get('/little-growth/tags')
+    // Ensure IDs are strings
+    tags.value = (res || []).map((t: any) => ({ ...t, id: String(t.id) }))
+  }
+
+  async function createTag(name: string) {
+    const res = await http.post('/little-growth/tags', { name })
+    const newTag = { ...res, id: String(res.id) }
+    tags.value.push(newTag)
+    return newTag
+  }
+
+  async function updateTag(id: string, name: string) {
+    const res = await http.put(`/little-growth/tags/${id}`, { name })
+    const idx = tags.value.findIndex(t => String(t.id) === String(id))
+    if (idx !== -1) {
+      tags.value[idx] = { ...res, id: String(res.id) }
+    }
+  }
+
+  async function deleteTag(id: string) {
+    await http.delete(`/little-growth/tags/${id}`)
+    tags.value = tags.value.filter(t => String(t.id) !== String(id))
+    // Also update records locally to reflect tag removal
+    records.value.forEach(r => {
+        let rTags: string[] = []
+        if (Array.isArray(r.tags)) rTags = r.tags
+        // remove id
+        const newTags = rTags.filter(tid => String(tid) !== String(id))
+        if (newTags.length !== rTags.length) {
+            r.tags = newTags
+        }
+    })
+  }
+
   async function fetchRecords() {
     loading.value = true
     try {
+      await fetchTags() // Ensure tags are loaded
       const res = await http.get('/little-growth/records')
-      // Parse JSON fields
       const items = (res.items || []).map((r: any) => {
         let images: string[] = []
         try { 
@@ -95,7 +121,6 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
           }
         } catch {}
         
-        // Backend returns relative path "uploads/...", we need full URL
         images = images.map(i => i.startsWith('http') ? i : `${import.meta.env.VITE_API_BASE}/api/${i}`)
         
         let audio = r.audio
@@ -103,15 +128,17 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
             audio = `${import.meta.env.VITE_API_BASE}/api/${audio}`
         }
 
-        let tags: string[] = []
-        try { tags = JSON.parse(r.tags) } catch {}
+        let rTags: string[] = []
+        try { rTags = JSON.parse(r.tags) } catch {}
+        // Ensure tags are array of strings
+        rTags = rTags.map(String)
 
         return {
           ...r,
           date: r.date.split('T')[0],
           images,
           audio,
-          tags
+          tags: rTags
         }
       })
       records.value = items
@@ -120,10 +147,9 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
     }
   }
 
-  async function createRecord(formData: FormData) {
-    await http.post('/little-growth/records', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+  async function createRecord(data: any) {
+    // data contains images URLs, content, date, tags (IDs)
+    await http.post('/little-growth/records', data)
     await fetchRecords()
   }
 
@@ -144,6 +170,10 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
     flattenedTags,
     loading,
     fetchRecords,
+    fetchTags,
+    createTag,
+    updateTag,
+    deleteTag,
     createRecord,
     deleteRecord,
     getRecordById

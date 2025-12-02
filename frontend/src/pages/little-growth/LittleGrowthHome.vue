@@ -115,11 +115,12 @@ const handleDelete = async (id: string) => {
         cancelButtonText: '取消',
         type: 'warning',
         center: true,
-        roundButton: true,
-        customClass: 'little-growth-delete-dialog'
+        draggable: true,
+        lockScroll: false,
       }
     )
     await store.deleteRecord(id)
+    await store.fetchRecords() // Refresh list from server
     ElMessage.success('删除成功')
   } catch {
     // cancelled
