@@ -341,24 +341,27 @@ const handleEdit = (id: string) => {
   router.push(`/little-growth/edit/${id}`)
 }
 
-const handleDelete = async (id: string) => {
-  try {
-    await ElMessageBox.confirm(
-      '确定要删除这条记录吗？删除后无法恢复。',
-      '删除确认',
-      {
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
-        type: 'warning',
-        center: true,
-        draggable: true,
-        lockScroll: false,
-        customClass: 'center-message-box custom-delete-dialog'
-      }
-    )
-    await store.deleteRecord(id)
-    await store.fetchRecords() // Refresh list from server
-    ElMessage.success('删除成功')
+  const handleDelete = async (id: string) => {
+    try {
+      await ElMessageBox.confirm(
+        '确定要删除这条记录吗？删除后无法恢复。',
+        '删除确认',
+        {
+          confirmButtonText: '删除',
+          cancelButtonText: '取消',
+          type: 'warning',
+          center: true,
+          draggable: true,
+          lockScroll: false,
+          customClass: 'center-message-box custom-delete-dialog',
+          showClose: false,
+          closeOnClickModal: false,
+          closeOnPressEscape: true
+        }
+      )
+      await store.deleteRecord(id)
+      await store.fetchRecords() // Refresh list from server
+      ElMessage.success('删除成功')
   } catch {
     // cancelled
   }

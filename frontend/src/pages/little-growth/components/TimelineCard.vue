@@ -1,6 +1,6 @@
 <template>
   <div 
-    class="bg-white rounded-2xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] transition-shadow duration-300 mb-3 dark:bg-gray-800"
+    class="bg-white rounded-2xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] transition-shadow duration-300 mb-3 dark:bg-gray-800 group"
   >
     <!-- Header -->
     <div class="flex justify-between items-start mb-4">
@@ -12,7 +12,7 @@
       </div>
       
       <el-dropdown trigger="click" @command="handleCommand">
-        <div class="p-2 hover:bg-black/5 rounded-full cursor-pointer transition-colors">
+        <div class="p-2 hover:bg-black/5 rounded-full cursor-pointer transition-colors opacity-0 group-hover:opacity-100">
           <el-icon :size="20" class="text-gray-400"><MoreFilled /></el-icon>
         </div>
         <template #dropdown>
