@@ -11,6 +11,15 @@ export interface Tag {
   count?: number
 }
 
+export interface GrowthComment {
+  id: string
+  record_id: string
+  user_id: string
+  content: string
+  created_at: string
+  user?: { nickname?: string; username?: string; avatar_path?: string }
+}
+
 export interface GrowthRecord {
   id: string
   date: string
@@ -20,6 +29,8 @@ export interface GrowthRecord {
   audio?: string
   created_at?: string
   is_pinned?: boolean
+  is_favorite?: boolean // New
+  comments?: GrowthComment[] // New
 }
 
 export const useLittleGrowthStore = defineStore('littleGrowth', () => {
@@ -27,6 +38,7 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
   const records = ref<GrowthRecord[]>([])
   const tags = ref<Tag[]>([]) // Backend tags
   const activeFilterTagId = ref<string | null>(null)
+  const onlyFavorites = ref(false) // New: Filter state
   const loading = ref(false)
 
   // --- Getters ---
@@ -55,19 +67,23 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
   })
 
   const filteredRecords = computed(() => {
-    if (!activeFilterTagId.value) {
-      return records.value
+    // Client-side filtering for tags (since we might have fetched a subset or all? 
+    // Actually fetchRecords fetches page 1 by default. This is a limitation of current impl.
+    // For now, we'll assume we display what we fetched.)
+    
+    let res = records.value
+    if (activeFilterTagId.value) {
+       res = res.filter(r => {
+        let rTags: string[] = []
+        if (typeof r.tags === 'string') {
+          try { rTags = JSON.parse(r.tags) } catch {}
+        } else {
+          rTags = r.tags
+        }
+        return rTags.map(String).includes(String(activeFilterTagId.value))
+      })
     }
-    return records.value.filter(r => {
-      let rTags: string[] = []
-      if (typeof r.tags === 'string') {
-        try { rTags = JSON.parse(r.tags) } catch {}
-      } else {
-        rTags = r.tags
-      }
-      // Ensure comparison as strings
-      return rTags.map(String).includes(String(activeFilterTagId.value))
-    })
+    return res
   })
 
   // --- Actions ---
@@ -107,11 +123,16 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
     })
   }
 
-  async function fetchRecords() {
+  async function fetchRecords(params: { is_favorite?: boolean } = {}) {
     loading.value = true
     try {
       await fetchTags() // Ensure tags are loaded
-      const res = await http.get('/little-growth/records')
+      
+      // Construct query params
+      const query: any = { page_size: 100 } // Increase limit to see more records for now
+      if (params.is_favorite) query.is_favorite = 'true'
+      
+      const res = await http.get('/little-growth/records', { params: query })
       const items = (res.items || []).map((r: any) => {
         let images: string[] = []
         try { 
@@ -137,10 +158,12 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
 
         return {
           ...r,
-          date: r.date.split('T')[0],
+          id: String(r.id),
+          date: r.date,
           images,
           audio,
-          tags: rTags
+          tags: rTags,
+          comments: r.comments || []
         }
       })
       records.value = items
@@ -152,7 +175,12 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
   async function createRecord(data: any) {
     // data contains images URLs, content, date, tags (IDs)
     await http.post('/little-growth/records', data)
-    await fetchRecords()
+    await fetchRecords({ is_favorite: onlyFavorites.value })
+  }
+
+  async function updateRecord(id: string, data: any) {
+    await http.put(`/little-growth/records/${id}`, data)
+    await fetchRecords({ is_favorite: onlyFavorites.value })
   }
 
   async function deleteRecord(id: string) {
@@ -167,7 +195,28 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
         records.value[idx].is_pinned = res.is_pinned
     }
     // Re-fetch to sort correctly or sort locally? Backend sort is better.
-    await fetchRecords()
+    await fetchRecords({ is_favorite: onlyFavorites.value })
+  }
+  
+  async function toggleFavorite(id: string) {
+    const res = await http.patch(`/little-growth/records/${id}/favorite`)
+    const idx = records.value.findIndex(r => String(r.id) === String(id))
+    if (idx !== -1) {
+        records.value[idx].is_favorite = res.is_favorite
+    }
+    // If we are viewing only favorites and we unfavorite, we should probably remove it from list or re-fetch
+    if (onlyFavorites.value && !res.is_favorite) {
+        records.value = records.value.filter(r => String(r.id) !== String(id))
+    }
+  }
+  
+  async function addComment(id: string, content: string) {
+    const res = await http.post(`/little-growth/records/${id}/comments`, { content })
+    const idx = records.value.findIndex(r => String(r.id) === String(id))
+    if (idx !== -1) {
+        if (!records.value[idx].comments) records.value[idx].comments = []
+        records.value[idx].comments!.push(res)
+    }
   }
 
   function getRecordById(id: string) {
@@ -178,6 +227,7 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
     records,
     tags,
     activeFilterTagId,
+    onlyFavorites,
     filteredRecords,
     flattenedTags,
     loading,
@@ -187,8 +237,11 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
     updateTag,
     deleteTag,
     createRecord,
+    updateRecord,
     deleteRecord,
     togglePin,
+    toggleFavorite,
+    addComment,
     getRecordById
   }
 })

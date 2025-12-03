@@ -19,11 +19,23 @@
       <div class="space-y-1">
         <div 
           class="px-3 py-2 rounded-lg cursor-pointer transition-colors flex justify-between items-center"
-          :class="!activeTagId ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'"
+          :class="!activeTagId && !showFavorites ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'"
           @click="$emit('select', null)"
         >
           <span>全部记录</span>
           <span class="text-xs opacity-60">{{ totalRecords }}</span>
+        </div>
+
+        <!-- My Favorites -->
+        <div 
+          class="px-3 py-2 rounded-lg cursor-pointer transition-colors flex justify-between items-center mt-1"
+          :class="showFavorites ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-300 font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'"
+          @click="$emit('select-favorites')"
+        >
+           <div class="flex items-center gap-2">
+             <el-icon :size="16"><StarFilled /></el-icon>
+             <span>我的收藏</span>
+           </div>
         </div>
 
         <div v-for="tag in tags" :key="tag.id" class="space-y-1 mt-2">
@@ -59,7 +71,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
-import { ArrowDown, Plus } from '@element-plus/icons-vue'
+import { ArrowDown, Plus, StarFilled } from '@element-plus/icons-vue'
 import type { Tag } from '@/stores/littleGrowth'
 import { useAuth } from '@/stores/auth'
 import { presignView } from '@/services/storage'
@@ -68,9 +80,10 @@ defineProps<{
   tags: Tag[]
   activeTagId: string | null
   totalRecords: number
+  showFavorites?: boolean
 }>()
 
-defineEmits(['select'])
+defineEmits(['select', 'select-favorites'])
 
 const auth = useAuth()
 const user = computed(() => auth.user as any)

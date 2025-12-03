@@ -22,12 +22,12 @@
         <div class="flex items-center gap-2">
           <el-date-picker
             v-model="form.date"
-            type="date"
-            placeholder="选择日期"
-            format="YYYY年MM月DD日"
-            value-format="YYYY-MM-DD"
+            type="datetime"
+            placeholder="选择日期时间"
+            format="YYYY年MM月DD日 HH:mm"
+            value-format="YYYY-MM-DD HH:mm:ss"
             :clearable="false"
-            class="!w-40"
+            class="!w-52"
           />
         </div>
 
@@ -179,7 +179,7 @@ const loading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 const form = ref({
-  date: dayjs().format('YYYY-MM-DD'),
+  date: dayjs().format('YYYY-MM-DD HH:mm:ss'),
   content: '',
   tags: [] as string[] // IDs
 })
@@ -399,8 +399,7 @@ const save = async () => {
     }
 
     if (isEdit.value) {
-       ElMessage.warning('暂不支持编辑，将创建新记录')
-       await store.createRecord(data)
+       await store.updateRecord(route.params.id as string, data)
     } else {
       await store.createRecord(data)
     }

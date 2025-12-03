@@ -3,27 +3,39 @@
     class="bg-white rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] transition-shadow duration-300 mb-4 dark:bg-gray-800 group"
   >
     <!-- Header -->
-    <div class="flex justify-between items-start mb-4">
+    <div class="flex justify-between items-start mb-2">
       <div class="flex flex-col">
         <div class="text-sm font-bold inline-block flex items-center gap-2" :class="textColorClass">
-          <span>{{ formatDateBadge(record.date) }} {{ formatTime(record.created_at) }}</span>
+          <span>{{ formatDateBadge(record.date) }} {{ formatTime(record.date) }}</span>
           <el-icon v-if="record.is_pinned" class="text-purple-500"><Top /></el-icon>
         </div>
       </div>
       
-      <el-dropdown trigger="click" @command="handleCommand">
-        <div class="p-2 hover:bg-black/5 rounded-full cursor-pointer transition-colors opacity-0 group-hover:opacity-100">
-          <el-icon :size="20" class="text-gray-400"><MoreFilled /></el-icon>
+      <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <!-- Favorite Icon -->
+        <div class="p-2 hover:bg-black/5 rounded-full cursor-pointer transition-colors" @click.stop="$emit('toggle-favorite', record.id)">
+          <el-icon :size="20" :class="record.is_favorite ? 'text-yellow-400' : 'text-gray-400'"><StarFilled v-if="record.is_favorite" /><Star v-else /></el-icon>
         </div>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item command="pin" :icon="Top">{{ record.is_pinned ? '取消置顶' : '置顶' }}</el-dropdown-item>
-            <el-dropdown-item command="copy" :icon="CopyDocument">复制</el-dropdown-item>
-            <el-dropdown-item command="edit" :icon="Edit">编辑</el-dropdown-item>
-            <el-dropdown-item command="delete" :icon="Delete" class="text-red-500">删除</el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
+
+        <!-- Comment Icon -->
+        <div class="p-2 hover:bg-black/5 rounded-full cursor-pointer transition-colors" @click.stop="toggleCommentBox">
+          <el-icon :size="20" class="text-gray-400"><ChatDotSquare /></el-icon>
+        </div>
+
+        <el-dropdown trigger="click" @command="handleCommand">
+          <div class="p-2 hover:bg-black/5 rounded-full cursor-pointer transition-colors">
+            <el-icon :size="20" class="text-gray-400"><MoreFilled /></el-icon>
+          </div>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="pin" :icon="Top">{{ record.is_pinned ? '取消置顶' : '置顶' }}</el-dropdown-item>
+              <el-dropdown-item command="copy" :icon="CopyDocument">复制</el-dropdown-item>
+              <el-dropdown-item command="edit" :icon="Edit">编辑</el-dropdown-item>
+              <el-dropdown-item command="delete" :icon="Delete" class="text-red-500">删除</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </div>
     </div>
 
     <!-- Content -->
@@ -56,7 +68,7 @@
     </div>
 
     <!-- Footer: Tags -->
-    <div v-if="displayTags.length > 0" class="flex flex-wrap gap-2">
+    <div v-if="displayTags.length > 0" class="flex flex-wrap gap-2 mb-3">
       <span 
         v-for="tag in displayTags" 
         :key="tag.id"
@@ -67,12 +79,38 @@
         {{ tag.name }}
       </span>
     </div>
+
+    <!-- Comments Section -->
+    <div v-if="(record.comments && record.comments.length > 0) || showInput" class="mt-2 bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 relative">
+        <!-- Triangle indicator (optional, omitted for simplicity) -->
+        
+        <!-- Comments List -->
+        <div v-if="record.comments && record.comments.length > 0" class="space-y-1 mb-2">
+             <div v-for="c in record.comments" :key="c.id" class="text-sm leading-6">
+                <span class="font-semibold text-blue-600 cursor-pointer">{{ c.user?.nickname || c.user?.username || '用户' }}</span>
+                <span class="mx-1 text-gray-400">:</span>
+                <span class="text-gray-700 dark:text-gray-300">{{ c.content }}</span>
+             </div>
+        </div>
+
+        <!-- Input Box -->
+        <div v-if="showInput" class="flex gap-2 animate-fade-in">
+            <el-input 
+                v-model="commentText" 
+                size="default" 
+                placeholder="评论..." 
+                @keyup.enter="submitComment" 
+                ref="inputRef"
+            />
+            <el-button type="primary" :disabled="!commentText.trim()" @click="submitComment">发送</el-button>
+        </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { MoreFilled, Edit, Delete, Top, CopyDocument } from '@element-plus/icons-vue'
+import { computed, ref, nextTick } from 'vue'
+import { MoreFilled, Edit, Delete, Top, CopyDocument, ChatDotSquare, Star, StarFilled } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import { type GrowthRecord, type Tag } from '@/stores/littleGrowth'
@@ -87,7 +125,7 @@ const props = defineProps<{
   searchQuery?: string
 }>()
 
-const emit = defineEmits(['edit', 'delete', 'filter-tag', 'pin'])
+const emit = defineEmits(['edit', 'delete', 'filter-tag', 'pin', 'toggle-favorite', 'add-comment'])
 
 const { copy } = useClipboard()
 
@@ -101,14 +139,39 @@ const handleCommand = (cmd: string) => {
     }
 }
 
+// Comment Logic
+const showInput = ref(false)
+const commentText = ref('')
+const inputRef = ref()
+
+function toggleCommentBox() {
+    showInput.value = !showInput.value
+    if (showInput.value) {
+        nextTick(() => {
+            inputRef.value?.focus()
+        })
+    }
+}
+
+function submitComment() {
+    if (!commentText.value.trim()) return
+    emit('add-comment', props.record.id, commentText.value)
+    commentText.value = ''
+    showInput.value = false
+}
+
 // Helpers
 const formatDateBadge = (dateStr: string) => {
   return dayjs(dateStr).format('YYYY/MM/DD ddd')
 }
 
-const formatTime = (createdAt?: string) => {
-  if (!createdAt) return ''
-  return dayjs(createdAt).format('HH:mm')
+const formatTime = (dateStr?: string) => {
+  if (!dateStr) return ''
+  // Check if dateStr includes time
+  if (dateStr.includes(' ') || dateStr.includes('T')) {
+      return dayjs(dateStr).format('HH:mm')
+  }
+  return ''
 }
 
 const textColorClass = computed(() => {

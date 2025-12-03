@@ -11,7 +11,7 @@
         </div>
         <div 
           class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors text-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-          @click="showSidebar = true"
+          @click="openSidebar"
         >
           <el-icon><Menu /></el-icon>
         </div>
@@ -19,9 +19,9 @@
       </div>
 
       <div class="flex items-center gap-2 flex-nowrap overflow-x-auto hide-scrollbar">
-        <div v-if="store.activeFilterTagId" class="flex items-center gap-2 bg-purple-100 px-3 py-1 rounded-full mr-2 whitespace-nowrap dark:bg-purple-900/30">
+        <div v-if="store.activeFilterTagId || store.onlyFavorites" class="flex items-center gap-2 bg-purple-100 px-3 py-1 rounded-full mr-2 whitespace-nowrap dark:bg-purple-900/30">
           <span class="text-xs text-purple-600 font-medium dark:text-purple-300">正在筛选: {{ activeTagName }}</span>
-          <el-icon class="text-purple-400 cursor-pointer hover:text-purple-600" @click="store.activeFilterTagId = null"><Close /></el-icon>
+          <el-icon class="text-purple-400 cursor-pointer hover:text-purple-600" @click="clearFilter"><Close /></el-icon>
         </div>
 
         <!-- Search -->
@@ -56,7 +56,7 @@
             :class="selectedDate ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300' : 'bg-gray-100 text-gray-600 hover:bg-purple-50 hover:text-purple-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'"
             @click="openCalendar"
           >
-             <el-icon v-if="selectedDate" @click.stop="selectedDate = null"><Close /></el-icon>
+             <el-icon v-if="selectedDate" @click.stop="clearSelectedDate"><Close /></el-icon>
              <el-icon v-else><Calendar /></el-icon>
           </div>
         </div>
@@ -66,19 +66,21 @@
     <!-- Main Content (Timeline) -->
     <div class="flex-1 overflow-y-auto p-4 pb-24 relative dark:bg-gray-900 bg-[#F5F7FA] px-0 sm:px-4" ref="scrollContainer" @scroll="handleScroll">
       <div class="max-w-2xl mx-auto w-full">
-        <template v-if="filteredList.length > 0">
-          <div v-for="(group, year) in groupedRecords" :key="year" :id="'year-' + year">
-             <div v-for="(months, month) in group" :key="month" :id="'month-' + year + '-' + month">
+        <template v-if="hasRecords">
+          <div v-for="(group, year) in groupedRecords" :key="year" :id="'year-' + String(year)">
+             <div v-for="(months, month) in group" :key="month" :id="'month-' + String(year) + '-' + String(month)">
                 <TimelineCard 
                    v-for="record in months"
                    :key="record.id" 
                    :record="record" 
                    :allTags="store.flattenedTags"
-                   :searchQuery="searchQuery"
+                   :searchQuery="searchQueryText"
                    @edit="handleEdit"
                    @delete="handleDelete"
                    @pin="handlePin"
                    @filter-tag="handleTagSelect"
+                   @toggle-favorite="handleToggleFavorite"
+                   @add-comment="handleAddComment"
                  />
              </div>
           </div>
@@ -142,7 +144,9 @@
         :tags="store.tags" 
         :active-tag-id="store.activeFilterTagId"
         :total-records="store.records.length"
+        :show-favorites="store.onlyFavorites"
         @select="handleTagSelect"
+        @select-favorites="handleFavoritesSelect"
       />
     </el-drawer>
   </div>
@@ -179,7 +183,8 @@ const showBackToTop = ref(false)
 // Draggable Back to Top
 const backToTopRef = ref<HTMLElement | null>(null)
 const initialPos = useStorage('back-to-top-pos', { x: width.value - 60, y: height.value - 100 })
-const { style: backToTopStyle } = useDraggable(backToTopRef, {
+const backToTopTarget = computed<HTMLElement | SVGElement | null>(() => backToTopRef.value)
+const { style: backToTopStyle } = useDraggable(backToTopTarget, {
   initialValue: initialPos,
   onEnd: (position) => {
     initialPos.value = position
@@ -189,6 +194,10 @@ const { style: backToTopStyle } = useDraggable(backToTopRef, {
 onMounted(() => {
   store.fetchRecords()
 })
+
+function openSidebar() { showSidebar.value = true }
+
+function clearSelectedDate() { selectedDate.value = null }
 
 const handlePin = async (id: string) => {
     try {
@@ -256,9 +265,18 @@ const scrollToTop = () => {
 
 
 const activeTagName = computed(() => {
+  if (store.onlyFavorites) return '我的收藏'
   const tag = store.flattenedTags.find(t => t.id === store.activeFilterTagId)
   return tag ? tag.name : ''
 })
+
+const clearFilter = () => {
+    store.activeFilterTagId = null
+    if (store.onlyFavorites) {
+        store.onlyFavorites = false
+        store.fetchRecords()
+    }
+}
 
 const filteredList = computed(() => {
   let list = store.records
@@ -291,12 +309,23 @@ const filteredList = computed(() => {
   return list
 })
 
+const hasRecords = computed(() => filteredList.value.length > 0)
+
+const searchQueryText = computed(() => searchQuery.value)
+
 const groupedRecords = computed(() => {
-  const groups: Record<string, Record<string, any[]>> = {}
+  const groups: Record<string, Record<string, import('@/stores/littleGrowth').GrowthRecord[]>> = {}
   
-  // Sort list first by date desc
+  // Sort list first by date desc (using full date string which now includes time)
   const list = [...filteredList.value].sort((a, b) => {
-    return new Date(b.date).getTime() - new Date(a.date).getTime()
+    // Use timestamp for accurate comparison including time
+    const tA = new Date(a.date).getTime()
+    const tB = new Date(b.date).getTime()
+    // If times are equal, use ID or created_at as fallback
+    if (tA === tB) {
+        return String(b.id).localeCompare(String(a.id))
+    }
+    return tB - tA
   })
 
   list.forEach(r => {
@@ -334,7 +363,38 @@ const hasRecord = (date: Date) => {
 
 const handleTagSelect = (tagId: string | null) => {
   store.activeFilterTagId = tagId
+  // If we were in favorite mode, exit it and fetch all (or just let filteredList handle it if we fetched all)
+  // But we fetch page 1 by default.
+  // Ideally we should re-fetch "All" if we switch context.
+  if (store.onlyFavorites) {
+      store.onlyFavorites = false
+      store.fetchRecords()
+  }
   showSidebar.value = false
+}
+
+const handleFavoritesSelect = () => {
+    store.activeFilterTagId = null
+    store.onlyFavorites = true
+    store.fetchRecords({ is_favorite: true })
+    showSidebar.value = false
+}
+
+const handleToggleFavorite = async (id: string) => {
+    try {
+        await store.toggleFavorite(id)
+    } catch (e) {
+        ElMessage.error('操作失败')
+    }
+}
+
+const handleAddComment = async (id: string, content: string) => {
+    try {
+        await store.addComment(id, content)
+        ElMessage.success('评论成功')
+    } catch (e) {
+        ElMessage.error('评论失败')
+    }
 }
 
 const handleEdit = (id: string) => {

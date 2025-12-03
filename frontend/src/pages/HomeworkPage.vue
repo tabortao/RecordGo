@@ -24,7 +24,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { Reading } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 
@@ -38,9 +37,6 @@ const subjects = [
 ]
 
 function onSubjectClick(subject: { id: string; path: string }) {
-  if (subject.id === 'growth') {
-    try { ElMessage.info('4 条日志') } catch {}
-  }
   router.push(subject.path)
 }
 </script>

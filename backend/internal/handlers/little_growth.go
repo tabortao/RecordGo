@@ -39,17 +39,106 @@ func ListGrowthRecords(c *gin.Context) {
 		size = 20
 	}
 
+	// Filter by favorite
+	isFavorite := c.Query("is_favorite") == "true"
+
 	var list []models.GrowthRecord
 	var total int64
 
 	q := db.DB().Model(&models.GrowthRecord{}).Where("user_id = ?", uid)
+	if isFavorite {
+		q = q.Where("is_favorite = ?", true)
+	}
+
 	q.Count(&total)
 	// Sort by is_pinned desc, date desc, created_at desc
-	if err := q.Order("is_pinned DESC, date DESC, created_at DESC").Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
+	// Preload Comments and Comments.User
+	if err := q.Order("is_pinned DESC, date DESC, created_at DESC").
+		Preload("Comments", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at ASC")
+		}).
+		Preload("Comments.User").
+		Offset((page - 1) * size).Limit(size).Find(&list).Error; err != nil {
 		common.Error(c, 50001, "查询失败")
 		return
 	}
 	common.Ok(c, gin.H{"items": list, "total": total, "page": page, "page_size": size})
+}
+
+// ToggleFavoriteGrowthRecord 切换收藏状态
+func ToggleFavoriteGrowthRecord(c *gin.Context) {
+	cl := extractClaims(c)
+	if cl == nil {
+		common.Error(c, 40100, "未登录")
+		return
+	}
+	id := c.Param("id")
+	var r models.GrowthRecord
+	if err := db.DB().First(&r, id).Error; err != nil {
+		common.Error(c, 40401, "记录不存在")
+		return
+	}
+	if r.UserID != cl.UserID {
+		common.Error(c, 40301, "无权操作")
+		return
+	}
+
+	r.IsFavorite = !r.IsFavorite
+	if err := db.DB().Save(&r).Error; err != nil {
+		common.Error(c, 50002, "操作失败")
+		return
+	}
+	common.Ok(c, gin.H{"id": r.ID, "is_favorite": r.IsFavorite})
+}
+
+// AddGrowthComment 添加评论
+func AddGrowthComment(c *gin.Context) {
+	cl := extractClaims(c)
+	if cl == nil {
+		common.Error(c, 40100, "未登录")
+		return
+	}
+	id, _ := strconv.Atoi(c.Param("id"))
+	if id == 0 {
+		common.Error(c, 40001, "无效ID")
+		return
+	}
+
+	var req struct {
+		Content string `json:"content"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || req.Content == "" {
+		common.Error(c, 40001, "评论内容不能为空")
+		return
+	}
+
+	// Verify record exists
+	var r models.GrowthRecord
+	if err := db.DB().First(&r, id).Error; err != nil {
+		common.Error(c, 40404, "记录不存在")
+		return
+	}
+	// Permission check (can comment on own or family?)
+	if r.UserID != cl.UserID {
+		// For now, only owner can comment
+		common.Error(c, 40301, "无权评论")
+		return
+	}
+
+	comment := models.GrowthComment{
+		RecordID: uint(id),
+		UserID:   cl.UserID,
+		Content:  req.Content,
+	}
+	if err := db.DB().Create(&comment).Error; err != nil {
+		common.Error(c, 50002, "评论失败")
+		return
+	}
+
+	// Load user info for response
+	db.DB().Preload("User").First(&comment, comment.ID)
+
+	common.Ok(c, comment)
 }
 
 // TogglePinGrowthRecord 切换置顶状态
@@ -134,8 +223,18 @@ func CreateGrowthRecord(c *gin.Context) {
 		return
 	}
 
-	// Parse Date
-	date, err := time.Parse("2006-01-02", req.Date)
+	// Parse Date (support full datetime or date only)
+	var date time.Time
+	var err error
+	if len(req.Date) > 10 {
+		date, err = time.Parse("2006-01-02 15:04", req.Date)
+		if err != nil {
+			date, err = time.Parse("2006-01-02 15:04:05", req.Date)
+		}
+	} else {
+		date, err = time.Parse("2006-01-02", req.Date)
+	}
+	
 	if err != nil {
 		date = time.Now()
 	}
@@ -154,6 +253,74 @@ func CreateGrowthRecord(c *gin.Context) {
 
 	if err := db.DB().Create(&r).Error; err != nil {
 		common.Error(c, 50002, "创建失败")
+		return
+	}
+
+	common.Ok(c, r)
+}
+
+// UpdateGrowthRecord 更新记录
+func UpdateGrowthRecord(c *gin.Context) {
+	cl := extractClaims(c)
+	if cl == nil {
+		common.Error(c, 40100, "未登录")
+		return
+	}
+	id := c.Param("id")
+	var r models.GrowthRecord
+	if err := db.DB().First(&r, id).Error; err != nil {
+		common.Error(c, 40401, "记录不存在")
+		return
+	}
+	if r.UserID != cl.UserID {
+		common.Error(c, 40301, "无权修改")
+		return
+	}
+
+	// Parse JSON body
+	var req struct {
+		Content string   `json:"content"`
+		Date    string   `json:"date"`
+		Images  []string `json:"images"`
+		Audio   string   `json:"audio"`
+		Tags    []string `json:"tags"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.Error(c, 40001, "参数错误")
+		return
+	}
+
+	// Update fields
+	r.Content = req.Content
+	
+	// Parse Date
+	if req.Date != "" {
+		var date time.Time
+		var err error
+		if len(req.Date) > 10 {
+			date, err = time.Parse("2006-01-02 15:04", req.Date)
+			if err != nil {
+				date, err = time.Parse("2006-01-02 15:04:05", req.Date)
+			}
+		} else {
+			date, err = time.Parse("2006-01-02", req.Date)
+		}
+		if err == nil {
+			r.Date = date
+		}
+	}
+
+	imagesJSON, _ := json.Marshal(req.Images)
+	tagsJSON, _ := json.Marshal(req.Tags)
+	r.Images = string(imagesJSON)
+	r.Tags = string(tagsJSON)
+	if req.Audio != "" {
+		r.Audio = req.Audio
+	}
+
+	if err := db.DB().Save(&r).Error; err != nil {
+		common.Error(c, 50002, "更新失败")
 		return
 	}
 
