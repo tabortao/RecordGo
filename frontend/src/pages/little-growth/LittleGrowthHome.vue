@@ -67,20 +67,35 @@
     <div class="flex-1 overflow-y-auto p-4 pb-24 relative dark:bg-gray-900 bg-[#F5F7FA] px-0 sm:px-4" ref="scrollContainer" @scroll="handleScroll">
       <div class="max-w-2xl mx-auto w-full">
         <template v-if="hasRecords">
+          <div v-if="pinnedRecords.length > 0" class="mb-2">
+            <TimelineCard 
+              v-for="record in pinnedRecords"
+              :key="record.id"
+              :record="record"
+              :allTags="store.flattenedTags"
+              :searchQuery="getSearchQuery()"
+              @edit="handleEdit"
+              @delete="handleDelete"
+              @pin="handlePin"
+              @filter-tag="handleTagSelect"
+              @toggle-favorite="handleToggleFavorite"
+              @add-comment="handleAddComment"
+            />
+          </div>
           <div v-for="(group, year) in groupedRecords" :key="year" :id="'year-' + String(year)">
              <div v-for="(months, month) in group" :key="month" :id="'month-' + String(year) + '-' + String(month)">
                 <TimelineCard 
-                   v-for="record in months"
-                   :key="record.id" 
-                   :record="record" 
-                   :allTags="store.flattenedTags"
-                   :searchQuery="searchQueryText"
-                   @edit="handleEdit"
-                   @delete="handleDelete"
-                   @pin="handlePin"
-                   @filter-tag="handleTagSelect"
-                   @toggle-favorite="handleToggleFavorite"
-                   @add-comment="handleAddComment"
+                  v-for="record in months"
+                  :key="record.id" 
+                  :record="record" 
+                  :allTags="store.flattenedTags"
+                  :searchQuery="getSearchQuery()"
+                  @edit="handleEdit"
+                  @delete="handleDelete"
+                  @pin="handlePin"
+                  @filter-tag="handleTagSelect"
+                  @toggle-favorite="handleToggleFavorite"
+                  @add-comment="handleAddComment"
                  />
              </div>
           </div>
@@ -183,8 +198,7 @@ const showBackToTop = ref(false)
 // Draggable Back to Top
 const backToTopRef = ref<HTMLElement | null>(null)
 const initialPos = useStorage('back-to-top-pos', { x: width.value - 60, y: height.value - 100 })
-const backToTopTarget = computed<HTMLElement | SVGElement | null>(() => backToTopRef.value)
-const { style: backToTopStyle } = useDraggable(backToTopTarget, {
+const { style: backToTopStyle } = useDraggable(backToTopRef as any, {
   initialValue: initialPos,
   onEnd: (position) => {
     initialPos.value = position
@@ -311,13 +325,22 @@ const filteredList = computed(() => {
 
 const hasRecords = computed(() => filteredList.value.length > 0)
 
-const searchQueryText = computed(() => searchQuery.value)
+function getSearchQuery() { return searchQuery.value }
 
-const groupedRecords = computed(() => {
-  const groups: Record<string, Record<string, import('@/stores/littleGrowth').GrowthRecord[]>> = {}
+type YearMonthGroups = Record<string, Record<string, import('@/stores/littleGrowth').GrowthRecord[]>>
+const pinnedRecords = computed(() => {
+  return [...filteredList.value]
+    .filter(r => !!r.is_pinned)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+})
+
+const groupedRecords = computed<YearMonthGroups>(() => {
+  const groups: YearMonthGroups = {}
   
   // Sort list first by date desc (using full date string which now includes time)
-  const list = [...filteredList.value].sort((a, b) => {
+  const list = [...filteredList.value]
+    .filter(r => !r.is_pinned)
+    .sort((a, b) => {
     // Use timestamp for accurate comparison including time
     const tA = new Date(a.date).getTime()
     const tB = new Date(b.date).getTime()

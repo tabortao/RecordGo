@@ -17,6 +17,16 @@
     <!-- Tag Tree -->
     <div class="flex-1 overflow-y-auto p-4">
       <div class="space-y-1">
+        <!-- My Favorites (placed above 'All') -->
+        <div 
+          class="px-3 py-2 rounded-lg cursor-pointer transition-colors flex justify-between items-center"
+          :class="showFavorites ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-300 font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'"
+          @click="$emit('select-favorites')"
+        >
+          <span>我的收藏</span>
+        </div>
+
+        <!-- All Records -->
         <div 
           class="px-3 py-2 rounded-lg cursor-pointer transition-colors flex justify-between items-center"
           :class="!activeTagId && !showFavorites ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'"
@@ -24,18 +34,6 @@
         >
           <span>全部记录</span>
           <span class="text-xs opacity-60">{{ totalRecords }}</span>
-        </div>
-
-        <!-- My Favorites -->
-        <div 
-          class="px-3 py-2 rounded-lg cursor-pointer transition-colors flex justify-between items-center mt-1"
-          :class="showFavorites ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-300 font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'"
-          @click="$emit('select-favorites')"
-        >
-           <div class="flex items-center gap-2">
-             <el-icon :size="16"><StarFilled /></el-icon>
-             <span>我的收藏</span>
-           </div>
         </div>
 
         <div v-for="tag in tags" :key="tag.id" class="space-y-1 mt-2">
@@ -47,7 +45,6 @@
             @click="$emit('select', tag.id)"
           >
             <div class="flex items-center gap-2" :class="activeTagId === tag.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'">
-              <el-icon v-if="tag.children && tag.children.length" class="text-gray-400 text-xs"><ArrowDown /></el-icon>
               <span>{{ tag.name }}</span>
             </div>
             <span class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 transition-colors">{{ tag.count }}</span>

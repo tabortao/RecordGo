@@ -11,7 +11,7 @@
         </div>
       </div>
       
-      <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      <div class="flex items-center gap-1">
         <!-- Favorite Icon -->
         <div class="p-2 hover:bg-black/5 rounded-full cursor-pointer transition-colors" @click.stop="$emit('toggle-favorite', record.id)">
           <el-icon :size="20" :class="record.is_favorite ? 'text-yellow-400' : 'text-gray-400'"><StarFilled v-if="record.is_favorite" /><Star v-else /></el-icon>
@@ -39,13 +39,13 @@
     </div>
 
     <!-- Content -->
-    <div class="mb-4">
+    <div class="mb-2">
       <p v-if="!searchQuery" class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-lg">{{ record.content }}</p>
       <p v-else class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-lg" v-html="highlightedContent"></p>
     </div>
 
     <!-- Gallery -->
-    <div v-if="record.images && record.images.length > 0" class="mb-4">
+    <div v-if="record.images && record.images.length > 0" class="mb-2">
       <div class="grid gap-2" :class="gridClass">
         <div 
           v-for="(img, index) in record.images" 
@@ -68,7 +68,7 @@
     </div>
 
     <!-- Footer: Tags -->
-    <div v-if="displayTags.length > 0" class="flex flex-wrap gap-2 mb-3">
+    <div v-if="displayTags.length > 0" class="flex flex-wrap gap-2 mb-2">
       <span 
         v-for="tag in displayTags" 
         :key="tag.id"
@@ -87,7 +87,7 @@
         <!-- Comments List -->
         <div v-if="record.comments && record.comments.length > 0" class="space-y-1 mb-2">
              <div v-for="c in record.comments" :key="c.id" class="text-sm leading-6">
-                <span class="font-semibold text-blue-600 cursor-pointer">{{ c.user?.nickname || c.user?.username || '用户' }}</span>
+                <span class="font-semibold text-blue-600 cursor-pointer">{{ c.user?.nickname || '用户' }}</span>
                 <span class="mx-1 text-gray-400">:</span>
                 <span class="text-gray-700 dark:text-gray-300">{{ c.content }}</span>
              </div>
