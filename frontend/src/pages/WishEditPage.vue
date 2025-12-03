@@ -41,7 +41,7 @@
 
 <script setup lang="ts">
 // 中文注释：编辑心愿页面逻辑，加载现有心愿并提交更新；图标上传仍转换为 webp 并走后端 uploads
-import { reactive, onMounted, ref, watch } from 'vue'
+import { reactive, onMounted, ref, watch, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Edit } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'

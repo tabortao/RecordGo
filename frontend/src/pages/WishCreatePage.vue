@@ -75,22 +75,22 @@ async function updateIconResolved() {
 onMounted(updateIconResolved)
 watch(() => form.icon, async () => { await updateIconResolved() })
 
-async function onPickIcon(fileEvent: any) {
-  const raw: File | undefined = fileEvent?.raw || fileEvent?.target?.files?.[0] || fileEvent?.file
-  if (!raw) return
-  const webp = await prepareUpload(raw, 0.8)
-  try { form.icon_preview = URL.createObjectURL(webp) } catch {}
-  try {
-    const { path } = await uploadWishIcon(userId.value, webp)
-    form.icon = path
-    try { form.icon_preview && URL.revokeObjectURL(form.icon_preview as any) } catch {}
-    form.icon_preview = ''
-    await updateIconResolved()
-  } catch (e) {
-    try { form.icon_preview = URL.createObjectURL(raw) } catch {}
-    form.icon = raw.name
+  async function onPickIcon(fileEvent: any) {
+    const raw: File | undefined = fileEvent?.raw || fileEvent?.target?.files?.[0] || fileEvent?.file
+    if (!raw) return
+    const webp = await prepareUpload(raw, 0.8)
+    try { form.icon_preview = URL.createObjectURL(webp) } catch {}
+    try {
+      const { path } = await uploadWishIcon(userId.value, webp)
+      form.icon = normalizeUploadPath(path)
+      try { form.icon_preview && URL.revokeObjectURL(form.icon_preview as any) } catch {}
+      form.icon_preview = ''
+      await updateIconResolved()
+    } catch (e) {
+      // 中文注释：上传失败时仅保留本地预览，不回填文件名到 icon，避免列表错误显示为内置图标
+      try { form.icon_preview = URL.createObjectURL(raw) } catch {}
+    }
   }
-}
 
 async function submitForm() {
   try {
