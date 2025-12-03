@@ -41,14 +41,18 @@
             class="px-3 py-2 rounded-lg cursor-pointer transition-colors flex justify-between items-center group"
             :class="activeTagId === p.id ? 'font-medium bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-800'"
             :style="activeTagId === p.id ? {} : { backgroundColor: getBgColor(p.color) }"
-            @click="$emit('select', p.id)"
           >
-            <div class="flex items-center gap-2" :class="activeTagId === p.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'">
+            <div class="flex items-center gap-2" :class="activeTagId === p.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'" @click="$emit('select', p.id)">
               <span>{{ p.name }}</span>
             </div>
-            <span class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 transition-colors">{{ p.count }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 transition-colors">{{ p.count }}</span>
+              <el-icon v-if="childrenMap[p.id] && childrenMap[p.id].length > 0" class="text-gray-400 hover:text-gray-600 cursor-pointer" @click.stop="toggleExpand(p.id)">
+                <CaretRight :class="isExpanded(p.id) ? 'rotate-90 transition-transform' : 'transition-transform'" />
+              </el-icon>
+            </div>
           </div>
-          <div v-if="childrenMap[p.id] && childrenMap[p.id].length > 0" class="pl-5 space-y-1">
+          <div v-if="isExpanded(p.id) && childrenMap[p.id] && childrenMap[p.id].length > 0" class="pl-5 space-y-1">
             <div 
               v-for="c in childrenMap[p.id]" :key="c.id"
               class="px-3 py-2 rounded-lg cursor-pointer transition-colors flex justify-between items-center"
@@ -81,7 +85,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, CaretRight } from '@element-plus/icons-vue'
 import type { Tag } from '@/stores/littleGrowth'
 import { useAuth } from '@/stores/auth'
 import { presignView } from '@/services/storage'
@@ -155,4 +159,8 @@ const childrenMap = computed<Record<string, Tag[]>>(() => {
   }
   return m
 })
+
+const expanded = ref<Record<string, boolean>>({})
+const isExpanded = (id: string) => !!expanded.value[String(id)]
+const toggleExpand = (id: string) => { expanded.value[String(id)] = !expanded.value[String(id)] }
 </script>

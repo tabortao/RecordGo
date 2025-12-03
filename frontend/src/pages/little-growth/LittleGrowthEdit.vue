@@ -244,15 +244,7 @@ const addTagById = (id: string) => {
   }
 }
 
-const addTag = async (name: string) => {
-  const existing = store.tags.find(t => t.name === name)
-  if (existing) { addTagById(existing.id); return }
-  if (!name) return
-  const ensurePending = (n: string) => {
-    if (!pendingTags.value.some((pt) => pt.name === n)) pendingTags.value.push({ name: n })
-  }
-  ensurePending(name)
-}
+// 移除未使用的 addTag 函数
 
 const removeTag = (id: string) => {
   form.value.tags = form.value.tags.filter(t => t !== id)

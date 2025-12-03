@@ -42,8 +42,8 @@
 
     <!-- Content -->
     <div class="mb-1">
-      <p v-if="!searchQuery" class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-lg">{{ record.content }}</p>
-      <p v-else class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-lg" v-html="highlightedContent"></p>
+      <p v-if="!searchQuery" class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-base">{{ record.content }}</p>
+      <p v-else class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-base" v-html="highlightedContent"></p>
     </div>
 
     <!-- Gallery -->

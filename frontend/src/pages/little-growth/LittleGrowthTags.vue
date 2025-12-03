@@ -125,11 +125,30 @@ const handleDelete = async (tag: Tag) => {
         confirmButtonText: '删除',
         cancelButtonText: '取消',
         type: 'warning',
-        center: true
+        center: true,
+        customClass: 'solid-delete-dialog',
+        showClose: false,
+        closeOnClickModal: false
       }
     )
     await store.deleteTag(tag.id)
     ElMessage.success('删除成功')
   } catch {}
 }
+
+</script>
+
+<style>
+.solid-delete-dialog.el-message-box {
+  background-color: #ffffff;
+  border-radius: 16px;
+}
+.dark .solid-delete-dialog.el-message-box {
+  background-color: #1f2937;
+}
+.solid-delete-dialog .el-message-box__btns {
+  display: flex;
+  justify-content: center;
+}
+</style>
 </script>
