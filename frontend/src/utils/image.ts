@@ -1,14 +1,25 @@
-// 中文注释：统一使用 image-conversion 进行高效压缩与 webp 转换
-import { compressAccurately } from 'image-conversion'
+import imageCompression from 'browser-image-compression'
 
-export async function toWebp(file: File): Promise<File> {
+export async function toWebp(file: File, quality = 0.8): Promise<File> {
   if (!file.type.startsWith('image/')) return file
   if (file.type === 'image/webp') return file
-  const originalKB = Math.max(1, Math.round(file.size / 1024))
-  const targetKB = Math.min(220, Math.max(60, Math.round(originalKB * 0.2)))
-  const blob = await compressAccurately(file, { size: targetKB, accuracy: 0.92, type: 'image/webp' }).catch(() => null)
-  if (!blob) return file
-  return new File([blob], replaceExt(file.name, 'webp'), { type: 'image/webp' })
+  const originalMB = Math.max(0.01, file.size / (1024 * 1024))
+  const targetMB = Math.min(0.22, Math.max(0.06, originalMB * 0.2))
+  const opts: any = {
+    maxSizeMB: targetMB,
+    maxWidthOrHeight: 1920,
+    useWebWorker: true,
+    fileType: 'image/webp',
+    initialQuality: Math.max(0.6, Math.min(0.9, quality))
+  }
+  try {
+    const out = await imageCompression(file, opts)
+    if (!out) return file
+    const name = replaceExt(file.name, 'webp')
+    return new File([out], name, { type: 'image/webp' })
+  } catch {
+    return file
+  }
 }
 
 // 中文注释：替换文件扩展名为指定后缀
@@ -23,7 +34,7 @@ export async function prepareUpload(file: File, quality = 0.8): Promise<File> {
     if (!file.type.startsWith('image/')) return file
     if (file.type === 'image/webp') return file
     const originalSize = file.size
-    const converted = await toWebp(file)
+    const converted = await toWebp(file, quality)
     const preferOriginalIfClose = quality >= 0.8
     if (!converted) return file
     if (preferOriginalIfClose ? converted.size >= Math.max(1, Math.floor(originalSize * 0.98)) : converted.size >= originalSize) return file

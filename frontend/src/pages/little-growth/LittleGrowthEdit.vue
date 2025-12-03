@@ -182,7 +182,7 @@ import { ArrowLeft, Close, Camera, Plus, Microphone, Delete, Loading } from '@el
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
 import { useLittleGrowthStore, type Tag } from '@/stores/littleGrowth'
-import * as imageConversion from 'image-conversion'
+import { prepareUpload } from '@/utils/image'
 import http from '@/services/http'
 
 const route = useRoute()
@@ -325,17 +325,17 @@ const handleFileChange = async (e: Event) => {
     if (previewImages.value.length >= 9) break
     
     try {
-      const compressedBlob = await imageConversion.compressAccurately(file, { size: 50 })
+      const webp = await prepareUpload(file, 0.75)
       const formData = new FormData()
-      formData.append("file", compressedBlob, file.name)
+      formData.append("file", webp, (webp as any).name || file.name)
       
       const res = await http.post("/upload/growth-file", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
+           headers: { "Content-Type": "multipart/form-data" }
       })
       
       let url = res.url
       if (!url.startsWith('http')) {
-          url = `${import.meta.env.VITE_API_BASE}/api/${url}`
+           url = `${import.meta.env.VITE_API_BASE}/api/${url}`
       }
       previewImages.value.push(url)
     } catch (err) {
