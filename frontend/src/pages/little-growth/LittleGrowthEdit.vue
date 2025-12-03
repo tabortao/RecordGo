@@ -418,20 +418,22 @@ const save = async () => {
   try {
     // 解析并创建待创建标签，得到最终 IDs
     const resolvedIds: string[] = []
+    const emojiSeeds = ['🚀','⭐','🍎','📚','🎯','🌟','💡','📝','🏃','🎵','🌈','🧠','🧩','🔬','🎨']
+    const randomEmoji = () => emojiSeeds[Math.floor(Math.random() * emojiSeeds.length)]
     for (const pt of pendingTags.value) {
       let parentId: string | undefined
       if (pt.parentName) {
         const existP = store.tags.find(t => t.name === pt.parentName)
         if (existP) parentId = existP.id
         else {
-          const createdP = await store.createTag(pt.parentName)
+          const createdP = await store.createTag(`${randomEmoji()}${pt.parentName}`)
           parentId = createdP.id
         }
       }
       const exist = store.tags.find(t => t.name === pt.name && (!parentId || t.parentId === parentId))
       if (exist) resolvedIds.push(exist.id)
       else {
-        const created = await store.createTag(pt.name, undefined, parentId)
+        const created = await store.createTag(`${randomEmoji()}${pt.name}`, undefined, parentId)
         resolvedIds.push(created.id)
       }
     }

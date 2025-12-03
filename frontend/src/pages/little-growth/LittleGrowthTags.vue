@@ -37,6 +37,20 @@
     >
       <div class="flex flex-col gap-4">
         <el-input v-model="form.name" placeholder="请输入标签名称" />
+        <div class="flex flex-col gap-2">
+          <span class="text-sm text-gray-500 dark:text-gray-400">设置 Emoji（可选）</span>
+          <div class="flex flex-wrap gap-2">
+            <button 
+              v-for="e in emojis" 
+              :key="e" 
+              type="button"
+              class="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-base"
+              :class="form.emoji===e ? 'bg-purple-50 dark:bg-purple-900/30 border-purple-300' : ''"
+              @click="form.emoji = e"
+            >{{ e }}</button>
+            <el-input v-model="form.emoji" placeholder="自定义Emoji，如 🚀" size="small" style="width: 120px" />
+          </div>
+        </div>
         
         <div class="flex flex-col gap-2">
           <span class="text-sm text-gray-500 dark:text-gray-400">选择颜色</span>
@@ -81,22 +95,27 @@ const store = useLittleGrowthStore()
 
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const form = ref({ id: '', name: '', color: '' })
+const form = ref({ id: '', name: '', color: '', emoji: '' })
 
 // Lighter Pastel Colors
-const colors = [
-  "#FECACA", "#FDE68A", "#A7F3D0", "#BFDBFE", "#DDD6FE", 
-  "#FBCFE8", "#E5E7EB", "#FEE2E2", "#FEF3C7", "#D1FAE5",
-  "#DBEAFE", "#EDE9FE", "#FCE7F3", "#F3F4F6", "#FFEDD5"
+  const colors = [
+    "#FECACA", "#FDE68A", "#A7F3D0", "#BFDBFE", "#DDD6FE", 
+    "#FBCFE8", "#E5E7EB", "#FEE2E2", "#FEF3C7", "#D1FAE5",
+    "#DBEAFE", "#EDE9FE", "#FCE7F3", "#F3F4F6", "#FFEDD5"
+  ]
+
+// 预设 Emoji 选择
+const emojis = [
+  '🚀','⭐','🍎','📚','🎯','🌟','💡','📝','🏃','🎵','🌈','🧠','🧩','🔬','🎨'
 ]
 
 const openDialog = (tag?: Tag) => {
   if (tag) {
     isEdit.value = true
-    form.value = { id: tag.id, name: tag.name, color: tag.color || colors[Math.floor(Math.random() * colors.length)] }
+    form.value = { id: tag.id, name: tag.name, color: tag.color || colors[Math.floor(Math.random() * colors.length)], emoji: '' }
   } else {
     isEdit.value = false
-    form.value = { id: '', name: '', color: colors[Math.floor(Math.random() * colors.length)] }
+    form.value = { id: '', name: '', color: colors[Math.floor(Math.random() * colors.length)], emoji: '' }
   }
   dialogVisible.value = true
 }
@@ -105,9 +124,11 @@ const handleSubmit = async () => {
   if (!form.value.name) return
   try {
     if (isEdit.value) {
-      await store.updateTag(form.value.id, form.value.name, form.value.color)
+      const finalName = `${(form.value.emoji || '')}${form.value.name}`
+      await store.updateTag(form.value.id, finalName, form.value.color)
     } else {
-      await store.createTag(form.value.name, form.value.color)
+      const finalName = `${(form.value.emoji || '')}${form.value.name}`
+      await store.createTag(finalName, form.value.color)
     }
     dialogVisible.value = false
     ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
@@ -140,6 +161,11 @@ const handleDelete = async (tag: Tag) => {
 
 <style>
 .solid-delete-dialog.el-message-box {
+  position: fixed; /* English: fix position to viewport */
+  top: 50% !important; /* English: vertical center */
+  left: 50% !important; /* English: horizontal center */
+  transform: translate(-50%, -50%) !important; /* English: center transform */
+  margin: 0 !important;
   background-color: #ffffff;
   border-radius: 16px;
   width: 30vw; /* English: limit width to 30% viewport */
