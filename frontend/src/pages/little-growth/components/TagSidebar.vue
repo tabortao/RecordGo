@@ -23,7 +23,7 @@
           :class="showFavorites ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-300 font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'"
           @click="$emit('select-favorites')"
         >
-          <span class="text-sm">我的收藏</span>
+          <span class="text-sm inline-flex items-center gap-2"><el-icon class="text-yellow-500"><StarFilled /></el-icon>我的收藏</span>
           <span class="text-xs opacity-60">{{ favoritesCount }}</span>
         </div>
 
@@ -33,7 +33,7 @@
           :class="!activeTagId && !showFavorites ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'"
           @click="$emit('select', null)"
         >
-          <span class="text-sm">全部记录</span>
+          <span class="text-sm inline-flex items-center gap-2"><el-icon class="text-purple-500"><Files /></el-icon>全部记录</span>
           <span class="text-xs opacity-60">{{ totalRecords }}</span>
         </div>
 
@@ -86,7 +86,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
-import { Plus, CaretRight } from '@element-plus/icons-vue'
+import { Plus, CaretRight, StarFilled, Files } from '@element-plus/icons-vue'
 import type { Tag } from '@/stores/littleGrowth'
 import { useAuth } from '@/stores/auth'
 import { presignView } from '@/services/storage'
