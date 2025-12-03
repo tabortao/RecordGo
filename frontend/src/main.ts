@@ -2,6 +2,8 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { ElMessage } from 'element-plus'
 import 'element-plus/theme-chalk/el-message.css'
+// English comment: Ensure MessageBox styles are loaded for first-time usage
+import 'element-plus/theme-chalk/el-message-box.css'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import 'element-plus/theme-chalk/dark/css-vars.css'
@@ -18,6 +20,18 @@ app.use(createPinia())
 app.use(router)
 dayjs.locale('zh-cn')
 app.mount('#app')
+
+// English comment: Prefetch core route components to avoid first-click delay
+try {
+  setTimeout(() => {
+    Promise.all([
+      import('./pages/TasksPage.vue'),
+      import('./pages/WishesPage.vue'),
+      import('./pages/HomeworkPage.vue'),
+      import('./pages/MinePage.vue')
+    ]).catch(() => {})
+  }, 0)
+} catch {}
 
 function setThemeColor(color: string) {
   let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null

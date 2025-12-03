@@ -15,12 +15,12 @@ export default defineConfig(({ mode }) => {
       AutoImport({
         // 中文注释：自动导入常用的 Vue API 与 Pinia
         imports: ['vue', 'vue-router', 'pinia'],
-        resolvers: [ElementPlusResolver()],
+        resolvers: [ElementPlusResolver({ importStyle: 'css' })],
         dts: 'src/auto-imports.d.ts'
       }),
       Components({
         // 中文注释：自动解析 Element Plus 组件
-        resolvers: [ElementPlusResolver()],
+        resolvers: [ElementPlusResolver({ importStyle: 'css' })],
         dts: 'src/components.d.ts'
       })
     ],
