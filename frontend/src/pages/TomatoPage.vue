@@ -29,8 +29,8 @@
     <div class="text-center text-xs" :style="{ color: '#9aa8b8' }" v-if="taskRemark">备注：{{ taskRemark }}</div>
     </div>
     <!-- 中文注释：中部容器高度按 calc(100vh - 顶部高度 - 底部高度) 计算，确保垂直居中且无滚动 -->
-    <div class="flex items-center justify-center" :style="{ height: midHeight }">
-      <TomatoTimer ref="timerRef" :work-minutes="workMinutes" :break-minutes="5" :task-name="taskName" :task-remark="taskRemark" :task-id="taskId" @complete="onTomatoComplete" />
+    <div class="flex items-center justify-center" :style="{ height: midHeight.value }">
+      <TomatoTimer ref="timerRef" :work-minutes="workMinutes.value" :break-minutes="5" :task-name="taskName.value" :task-remark="taskRemark.value" :task-id="taskId" @complete="onTomatoComplete" />
     </div>
   </div>
   <el-dialog v-model="showAdjust" title="修改番茄钟倒计时" width="360px" :teleported="false" :modal="false" class="dark-dialog">
@@ -40,7 +40,7 @@
     </div>
     <template #footer>
       <div class="flex justify-end gap-2">
-        <el-button @click="showAdjust=false" class="dark-btn">取消</el-button>
+        <el-button @click="showAdjust.value=false" class="dark-btn">取消</el-button>
         <el-button type="primary" @click="applyAdjust" class="dark-btn-primary">应用</el-button>
       </div>
     </template>

@@ -47,7 +47,7 @@
               <div class="flex items-center gap-1"><el-icon><List /></el-icon><span>任务分类</span></div>
             </template>
             <el-select v-model="form.category" placeholder="选择分类" style="width: 100%">
-              <el-option v-for="c in categories" :key="c.name" :label="c.name" :value="c.name">
+              <el-option v-for="c in getCategories()" :key="c.name" :label="c.name" :value="c.name">
                 <span class="inline-block w-2 h-2 rounded mr-2" :style="{ backgroundColor: c.color }"></span>
                 <span>{{ c.name }}</span>
               </el-option>
@@ -143,6 +143,7 @@ import { useAuth } from '@/stores/auth'
 const auth = useAuth()
 const userId = auth.user?.id ?? 0
 function goBack() { router.back() }
+function getCategories() { return categories.value }
 
 type FormModel = {
   name: string
