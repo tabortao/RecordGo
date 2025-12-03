@@ -16,8 +16,9 @@ import http from './services/http'
 
 // 中文注释：应用入口，注册 Pinia、路由
 const app = createApp(App)
-app.use(createPinia())
-app.use(router)
+const pinia = createPinia()
+app.use(pinia as any)
+app.use(router as any)
 dayjs.locale('zh-cn')
 app.mount('#app')
 
