@@ -69,19 +69,23 @@
       </div>
 
       <!-- 右侧：结果与控制区 -->
-      <div class="flex flex-col items-center lg:items-start gap-8 z-10 max-w-md w-full">
+      <div class="flex flex-col items-center gap-8 z-10 max-w-md w-full">
         
-        <h1 class="text-3xl lg:text-4xl font-bold text-green-700 dark:text-green-400 tracking-wider drop-shadow-sm text-center lg:text-left">
+        <h1 class="text-3xl lg:text-4xl font-bold text-green-700 dark:text-green-400 tracking-wider drop-shadow-sm text-center">
           拼音大转盘
         </h1>
 
         <!-- 结果展示区 -->
-        <div class="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border-b-8 border-green-500 w-full text-center min-h-[220px] flex flex-col items-center justify-center transition-all transform hover:scale-[1.02] duration-300">
+        <div class="relative bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border-b-8 border-green-500 w-full text-center min-h-[220px] flex flex-col items-center justify-center transition-all transform hover:scale-[1.02] duration-300">
           <div v-if="isSpinning" class="flex flex-col items-center gap-3">
             <div class="w-12 h-12 border-4 border-green-200 border-t-green-500 rounded-full animate-spin"></div>
             <div class="text-green-600 font-bold text-xl">拼读中...</div>
           </div>
           <div v-else-if="currentResult" class="space-y-4 animate-fade-in">
+            <!-- 朗读图标（右上角） -->
+            <div class="absolute top-1 right-1">
+              <el-icon :size="20" class="text-yellow-600 cursor-pointer hover:scale-110 transition" @click="speak"><Microphone /></el-icon>
+            </div>
             <!-- 拼音公式 -->
             <div class="flex items-center justify-center gap-2 text-2xl sm:text-3xl font-mono text-gray-500 bg-gray-50 dark:bg-gray-700/50 px-4 py-2 rounded-full">
               <span class="text-green-700 font-bold">{{ currentResult.initial }}</span>
@@ -110,24 +114,17 @@
           </div>
         </div>
 
-        <!-- 控制按钮 -->
-        <div class="flex flex-wrap justify-center lg:justify-start gap-6 w-full">
-          <button 
-            class="flex-1 min-w-[140px] bg-gradient-to-b from-green-400 to-green-600 text-white px-6 py-4 rounded-2xl shadow-lg border-b-4 border-green-700 active:border-b-0 active:translate-y-1 transition font-bold text-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
+        <!-- 控制：改为 span 触发 -->
+        <div class="flex justify-center gap-6 w-full">
+          <span 
+            class="inline-flex items-center justify-center select-none cursor-pointer bg-gradient-to-b from-green-400 to-green-600 text-white px-6 py-3 rounded-2xl shadow-lg border-b-4 border-green-700 active:border-b-0 active:translate-y-1 transition font-bold text-xl gap-2"
             @click="spin"
-            :disabled="isSpinning"
+            :aria-disabled="isSpinning"
+            :class="{ 'opacity-50 cursor-not-allowed': isSpinning }"
           >
-            <el-icon :class="{'animate-spin': isSpinning}"><Refresh /></el-icon> 
+            <el-icon :class="{ 'animate-spin': isSpinning }"><Refresh /></el-icon>
             {{ isSpinning ? '转动中...' : '转动' }}
-          </button>
-          
-          <button 
-            class="flex-1 min-w-[140px] bg-gradient-to-b from-yellow-400 to-yellow-600 text-white px-6 py-4 rounded-2xl shadow-lg border-b-4 border-yellow-700 active:border-b-0 active:translate-y-1 transition font-bold text-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
-            @click="speak"
-            :disabled="isSpinning || !currentResult"
-          >
-            <el-icon class="group-hover:scale-110 transition"><Microphone /></el-icon> 朗读发音
-          </button>
+          </span>
         </div>
       </div>
 

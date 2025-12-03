@@ -391,4 +391,13 @@ const handleEdit = (id: string) => {
 .fade-leave-to {
   opacity: 0;
 }
+
+/* 对话框按钮居中 */
+.center-message-box .el-message-box__btns {
+  display: flex;
+  justify-content: center;
+}
+.center-message-box .el-message-box__btns .el-button {
+  min-width: 88px;
+}
 </style>

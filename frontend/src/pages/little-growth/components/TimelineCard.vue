@@ -1,6 +1,6 @@
 <template>
   <div 
-    class="bg-white rounded-2xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] transition-shadow duration-300 mb-3 dark:bg-gray-800 group"
+    class="bg-white rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] transition-shadow duration-300 mb-4 dark:bg-gray-800 group"
   >
     <!-- Header -->
     <div class="flex justify-between items-start mb-4">
@@ -28,8 +28,8 @@
 
     <!-- Content -->
     <div class="mb-4">
-      <p v-if="!searchQuery" class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-base">{{ record.content }}</p>
-      <p v-else class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-base" v-html="highlightedContent"></p>
+      <p v-if="!searchQuery" class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-lg">{{ record.content }}</p>
+      <p v-else class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-lg" v-html="highlightedContent"></p>
     </div>
 
     <!-- Gallery -->
