@@ -8,25 +8,25 @@
         <div class="text-sm font-bold inline-flex items-center gap-2" :class="textColorClass">
           <span>{{ formatDateBadge(record.date) }} {{ formatTime(record.date) }}</span>
           <el-icon v-if="record.is_pinned" class="text-purple-500"><Top /></el-icon>
-          <!-- Favorite Icon inline -->
-          <span class="inline-flex items-center h-5">
-            <el-icon :size="16" :class="record.is_favorite ? 'text-yellow-400' : 'text-gray-400'" @click.stop="$emit('toggle-favorite', record.id)">
-              <StarFilled v-if="record.is_favorite" />
-              <Star v-else />
-            </el-icon>
-          </span>
         </div>
       </div>
       
       <div class="flex items-center gap-1">
+        <!-- Favorite Icon (left) -->
+        <div class="inline-flex items-center h-5 px-1 rounded cursor-pointer hover:bg-black/5 transition-colors" @click.stop="$emit('toggle-favorite', record.id)">
+          <el-icon :size="16" :class="record.is_favorite ? 'text-yellow-400' : 'text-gray-400'">
+            <StarFilled v-if="record.is_favorite" />
+            <Star v-else />
+          </el-icon>
+        </div>
         <!-- Comment Icon -->
-        <div class="inline-flex items-center h-6 px-1 rounded cursor-pointer hover:bg-black/5 transition-colors" @click.stop="toggleCommentBox">
-          <el-icon :size="18" class="text-gray-400"><ChatDotSquare /></el-icon>
+        <div class="inline-flex items-center h-5 px-1 rounded cursor-pointer hover:bg-black/5 transition-colors" @click.stop="toggleCommentBox">
+          <el-icon :size="16" class="text-gray-400"><ChatDotSquare /></el-icon>
         </div>
 
         <el-dropdown trigger="click" @command="handleCommand">
-          <div class="inline-flex items-center h-6 px-1 rounded cursor-pointer hover:bg-black/5 transition-colors">
-            <el-icon :size="18" class="text-gray-400"><MoreFilled /></el-icon>
+          <div class="inline-flex items-center h-5 px-1 rounded cursor-pointer hover:bg-black/5 transition-colors">
+            <el-icon :size="16" class="text-gray-400"><MoreFilled /></el-icon>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
@@ -89,7 +89,7 @@
         <!-- Comments List -->
         <div v-if="record.comments && record.comments.length > 0" class="space-y-1 mb-2">
              <div v-for="c in record.comments" :key="c.id" class="text-sm leading-6">
-                <span class="font-semibold text-blue-600 cursor-pointer">{{ c.user?.nickname || '用户' }}</span>
+                <span class="font-semibold text-blue-600 cursor-pointer">{{ displayCommentName(c) }}</span>
                 <span class="mx-1 text-gray-400">:</span>
                 <span class="text-gray-700 dark:text-gray-300">{{ c.content }}</span>
              </div>
@@ -118,6 +118,7 @@ import 'dayjs/locale/zh-cn'
 import { type GrowthRecord, type Tag } from '@/stores/littleGrowth'
 import { useClipboard } from '@vueuse/core'
 import { ElMessage } from 'element-plus'
+import { useAuth } from '@/stores/auth'
 
 dayjs.locale('zh-cn')
 
@@ -229,5 +230,20 @@ const imgClass = () => {
   const n = count.value
   if (n === 1) return 'aspect-video' // 16/9
   return 'aspect-square' // 1:1 for grid
+}
+const auth = useAuth()
+const myNickname = computed(() => {
+  const u = auth.user
+  return (u?.nickname || '').trim() || (u?.username || '用户')
+})
+
+function displayCommentName(c: import('@/stores/littleGrowth').GrowthComment) {
+  const n1 = (c.user?.nickname || '').trim()
+  if (n1) return n1
+  const uid = String(c.user_id || '')
+  const me = String(auth.user?.id || '')
+  if (uid && me && uid === me) return myNickname.value
+  const n2 = (c.user?.username || '').trim()
+  return n2 || '用户'
 }
 </script>

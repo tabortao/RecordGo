@@ -67,7 +67,7 @@
     <div class="flex-1 overflow-y-auto p-4 pb-24 relative dark:bg-gray-900 bg-[#F5F7FA] px-0 sm:px-4" ref="scrollContainer" @scroll="handleScroll">
       <div class="max-w-2xl mx-auto w-full">
         <template v-if="hasRecords">
-          <div v-if="pinnedRecords.length > 0" class="mb-2">
+          <div v-if="hasPinnedRecords" class="mb-2">
             <TimelineCard 
               v-for="record in pinnedRecords"
               :key="record.id"
@@ -156,7 +156,7 @@
       class="little-growth-drawer"
     >
       <TagSidebar 
-        :tags="store.tags" 
+        :tags="store.flattenedTags" 
         :active-tag-id="store.activeFilterTagId"
         :total-records="store.records.length"
         :show-favorites="store.onlyFavorites"
@@ -328,11 +328,13 @@ const hasRecords = computed(() => filteredList.value.length > 0)
 function getSearchQuery() { return searchQuery.value }
 
 type YearMonthGroups = Record<string, Record<string, import('@/stores/littleGrowth').GrowthRecord[]>>
-const pinnedRecords = computed(() => {
+const pinnedRecords = computed<import('@/stores/littleGrowth').GrowthRecord[]>(() => {
   return [...filteredList.value]
     .filter(r => !!r.is_pinned)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 })
+
+const hasPinnedRecords = computed(() => pinnedRecords.value.length > 0)
 
 const groupedRecords = computed<YearMonthGroups>(() => {
   const groups: YearMonthGroups = {}

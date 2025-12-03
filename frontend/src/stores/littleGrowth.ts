@@ -89,19 +89,26 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
   // --- Actions ---
   async function fetchTags() {
     const res = await http.get('/little-growth/tags')
-    // Ensure IDs are strings
-    tags.value = (res || []).map((t: any) => ({ ...t, id: String(t.id) }))
+    tags.value = (res || []).map((t: any) => ({
+      ...t,
+      id: String(t.id),
+      parentId: t.parent_id != null ? String(t.parent_id) : undefined
+    }))
   }
 
-  async function createTag(name: string, color?: string) {
-    const res = await http.post('/little-growth/tags', { name, color })
+  async function createTag(name: string, color?: string, parentId?: string) {
+    const payload: any = { name, color }
+    if (parentId) payload.parent_id = Number(parentId)
+    const res = await http.post('/little-growth/tags', payload)
     const newTag = { ...res, id: String(res.id) }
     tags.value.push(newTag)
     return newTag
   }
 
-  async function updateTag(id: string, name: string, color?: string) {
-    const res = await http.put(`/little-growth/tags/${id}`, { name, color })
+  async function updateTag(id: string, name: string, color?: string, parentId?: string) {
+    const payload: any = { name, color }
+    if (parentId !== undefined) payload.parent_id = parentId ? Number(parentId) : null
+    const res = await http.put(`/little-growth/tags/${id}`, payload)
     const idx = tags.value.findIndex(t => String(t.id) === String(id))
     if (idx !== -1) {
       tags.value[idx] = { ...res, id: String(res.id) }

@@ -136,14 +136,23 @@
             <span>{{ getTagName(tagId) }}</span>
             <el-icon class="cursor-pointer hover:text-purple-800 dark:hover:text-purple-200" @click="removeTag(tagId)"><Close /></el-icon>
           </div>
+          <div
+            v-for="pt in pendingTags"
+            :key="pt.parentName ? (pt.parentName + '/' + pt.name) : ('__pending__' + pt.name)"
+            class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-sm flex items-center gap-1"
+          >
+            <span>待创建：{{ pt.parentName ? (pt.parentName + '/' + pt.name) : pt.name }}</span>
+            <el-icon class="cursor-pointer hover:text-gray-800 dark:hover:text-gray-200" @click="removePending(pt)"><Close /></el-icon>
+          </div>
           
-          <el-popover placement="bottom" :width="200" trigger="click">
+          <el-popover placement="bottom" :width="240" trigger="click">
             <template #reference>
               <button class="px-3 py-1 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 rounded-full text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-1">
                 <el-icon><Plus /></el-icon> 标签
               </button>
             </template>
-            <div class="max-h-60 overflow-y-auto dark:bg-gray-800 dark:text-gray-200">
+            <div class="space-y-2 max-h-64 overflow-y-auto dark:bg-gray-800 dark:text-gray-200 p-2">
+              <div class="text-xs text-gray-500">选择已有标签</div>
               <div 
                 v-for="tag in store.tags" 
                 :key="tag.id"
@@ -151,6 +160,12 @@
                 @click="addTagById(tag.id)"
               >
                 {{ tag.name }}
+              </div>
+              <div class="pt-2 border-t border-gray-200 dark:border-gray-700"></div>
+              <div class="text-xs text-gray-500">新建标签（支持 A/B）</div>
+              <div class="flex items-center gap-2">
+                <el-input v-model="newTagInput" placeholder="如：学习/语文 或 语文" size="small" />
+                <el-button size="small" type="primary" @click="addNewTagDraft">添加</el-button>
               </div>
             </div>
           </el-popover>
@@ -222,6 +237,7 @@ onUnmounted(() => {
 })
 
 // --- Tags ---
+const pendingTags = ref<{ name: string; parentName?: string }[]>([])
 const addTagById = (id: string) => {
   if (!form.value.tags.includes(id)) {
     form.value.tags.push(id)
@@ -230,17 +246,12 @@ const addTagById = (id: string) => {
 
 const addTag = async (name: string) => {
   const existing = store.tags.find(t => t.name === name)
-  if (existing) {
-    addTagById(existing.id)
-  } else {
-    try {
-      const newTag = await store.createTag(name)
-      addTagById(newTag.id)
-    } catch (e) {
-      console.error('Create tag failed', e)
-      ElMessage.error('创建标签失败')
-    }
+  if (existing) { addTagById(existing.id); return }
+  if (!name) return
+  const ensurePending = (n: string) => {
+    if (!pendingTags.value.some((pt) => pt.name === n)) pendingTags.value.push({ name: n })
   }
+  ensurePending(name)
 }
 
 const removeTag = (id: string) => {
@@ -256,20 +267,25 @@ const showTagSuggestions = ref(false)
 const tagSearchQuery = ref('')
 
 const handleInput = async (val: string) => {
-  const match = val.match(/#(\S*)$/)
+  const match = val.match(/#([^\s]*)$/)
   if (match) {
     showTagSuggestions.value = true
     tagSearchQuery.value = match[1]
-  } else {
-    const spaceMatch = val.match(/#(\S+)\s$/)
-    if (spaceMatch) {
-      const tagName = spaceMatch[1]
-      await addTag(tagName)
-      form.value.content = form.value.content.replace(/#\S+\s$/, '')
-      showTagSuggestions.value = false
+    return
+  }
+  const spaceMatch = val.match(/#([^\s]+)\s$/)
+  if (spaceMatch) {
+    const raw = spaceMatch[1]
+    const [p, c] = raw.split('/')
+    if (c) {
+      if (!pendingTags.value.some((pt) => pt.name === c && pt.parentName === p)) pendingTags.value.push({ name: c, parentName: p })
     } else {
-      showTagSuggestions.value = false
+      if (!pendingTags.value.some((pt) => pt.name === p)) pendingTags.value.push({ name: p })
     }
+    form.value.content = form.value.content.replace(/#\S+\s$/, '')
+    showTagSuggestions.value = false
+  } else {
+    showTagSuggestions.value = false
   }
 }
 
@@ -282,6 +298,23 @@ const selectSuggestedTag = (tag: Tag) => {
   form.value.content = form.value.content.replace(/#\S*$/, '')
   addTagById(tag.id)
   showTagSuggestions.value = false
+}
+
+function removePending(pt: { name: string; parentName?: string }) {
+  pendingTags.value = pendingTags.value.filter(x => !(x.name === pt.name && x.parentName === pt.parentName))
+}
+
+const newTagInput = ref('')
+function addNewTagDraft() {
+  const raw = (newTagInput.value || '').trim()
+  if (!raw) return
+  const [p, c] = raw.split('/')
+  if (c) {
+    if (!pendingTags.value.some((x) => x.name === c && x.parentName === p)) pendingTags.value.push({ name: c, parentName: p })
+  } else {
+    if (!pendingTags.value.some((x) => x.name === p)) pendingTags.value.push({ name: p })
+  }
+  newTagInput.value = ''
 }
 
 // --- Images ---
@@ -391,11 +424,31 @@ const save = async () => {
   
   loading.value = true
   try {
+    // 解析并创建待创建标签，得到最终 IDs
+    const resolvedIds: string[] = []
+    for (const pt of pendingTags.value) {
+      let parentId: string | undefined
+      if (pt.parentName) {
+        const existP = store.tags.find(t => t.name === pt.parentName)
+        if (existP) parentId = existP.id
+        else {
+          const createdP = await store.createTag(pt.parentName)
+          parentId = createdP.id
+        }
+      }
+      const exist = store.tags.find(t => t.name === pt.name && (!parentId || t.parentId === parentId))
+      if (exist) resolvedIds.push(exist.id)
+      else {
+        const created = await store.createTag(pt.name, undefined, parentId)
+        resolvedIds.push(created.id)
+      }
+    }
+
     const data = {
       ...form.value,
       images: previewImages.value,
       audio: audioUrl.value,
-      tags: form.value.tags
+      tags: Array.from(new Set([...(form.value.tags || []), ...resolvedIds]))
     }
 
     if (isEdit.value) {
@@ -404,6 +457,7 @@ const save = async () => {
       await store.createRecord(data)
     }
     
+    pendingTags.value = []
     ElMessage.success('发布成功')
     router.back()
   } catch (e) {

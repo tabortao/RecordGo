@@ -36,18 +36,31 @@
           <span class="text-xs opacity-60">{{ totalRecords }}</span>
         </div>
 
-        <div v-for="tag in tags" :key="tag.id" class="space-y-1 mt-2">
-          <!-- Level 1 -->
+        <div v-for="p in parents" :key="p.id" class="space-y-1 mt-2">
           <div 
             class="px-3 py-2 rounded-lg cursor-pointer transition-colors flex justify-between items-center group"
-            :class="activeTagId === tag.id ? 'font-medium bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-800'"
-            :style="activeTagId === tag.id ? {} : { backgroundColor: getBgColor(tag.color) }"
-            @click="$emit('select', tag.id)"
+            :class="activeTagId === p.id ? 'font-medium bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-800'"
+            :style="activeTagId === p.id ? {} : { backgroundColor: getBgColor(p.color) }"
+            @click="$emit('select', p.id)"
           >
-            <div class="flex items-center gap-2" :class="activeTagId === tag.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'">
-              <span>{{ tag.name }}</span>
+            <div class="flex items-center gap-2" :class="activeTagId === p.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'">
+              <span>{{ p.name }}</span>
             </div>
-            <span class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 transition-colors">{{ tag.count }}</span>
+            <span class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 transition-colors">{{ p.count }}</span>
+          </div>
+          <div v-if="childrenMap[p.id] && childrenMap[p.id].length > 0" class="pl-5 space-y-1">
+            <div 
+              v-for="c in childrenMap[p.id]" :key="c.id"
+              class="px-3 py-2 rounded-lg cursor-pointer transition-colors flex justify-between items-center"
+              :class="activeTagId === c.id ? 'font-medium bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-800'"
+              :style="activeTagId === c.id ? {} : { backgroundColor: getBgColor(c.color) }"
+              @click="$emit('select', c.id)"
+            >
+              <div class="flex items-center gap-2" :class="activeTagId === c.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'">
+                <span>{{ c.name }}</span>
+              </div>
+              <span class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400">{{ c.count }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -73,7 +86,7 @@ import type { Tag } from '@/stores/littleGrowth'
 import { useAuth } from '@/stores/auth'
 import { presignView } from '@/services/storage'
 
-defineProps<{
+const props = defineProps<{
   tags: Tag[]
   activeTagId: string | null
   totalRecords: number
@@ -125,8 +138,21 @@ watchEffect(async () => {
     }
     try {
         avatarSrc.value = await presignView(p)
-    } catch {
-        avatarSrc.value = ''
+  } catch {
+      avatarSrc.value = ''
+  }
+})
+
+const parents = computed(() => props.tags.filter(t => !t.parentId))
+
+const childrenMap = computed<Record<string, Tag[]>>(() => {
+  const m: Record<string, Tag[]> = {}
+  for (const t of props.tags) {
+    if (t.parentId) {
+      const pid = String(t.parentId)
+      ;(m[pid] = m[pid] || []).push(t)
     }
+  }
+  return m
 })
 </script>
