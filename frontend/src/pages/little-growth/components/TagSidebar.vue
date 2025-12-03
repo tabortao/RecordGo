@@ -23,7 +23,8 @@
           :class="showFavorites ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-300 font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'"
           @click="$emit('select-favorites')"
         >
-          <span>我的收藏</span>
+          <span class="text-sm">我的收藏</span>
+          <span class="text-xs opacity-60">{{ favoritesCount }}</span>
         </div>
 
         <!-- All Records -->
@@ -32,7 +33,7 @@
           :class="!activeTagId && !showFavorites ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'"
           @click="$emit('select', null)"
         >
-          <span>全部记录</span>
+          <span class="text-sm">全部记录</span>
           <span class="text-xs opacity-60">{{ totalRecords }}</span>
         </div>
 
@@ -43,10 +44,10 @@
             :style="activeTagId === p.id ? {} : { backgroundColor: getBgColor(p.color) }"
           >
             <div class="flex items-center gap-2" :class="activeTagId === p.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'" @click="$emit('select', p.id)">
-              <span>{{ p.name }}</span>
+              <span class="text-sm">{{ p.name }}</span>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 transition-colors">{{ p.count }}</span>
+              <span class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 transition-colors">{{ parentTotals[p.id] || 0 }}</span>
               <el-icon v-if="childrenMap[p.id] && childrenMap[p.id].length > 0" class="text-gray-400 hover:text-gray-600 cursor-pointer" @click.stop="toggleExpand(p.id)">
                 <CaretRight :class="isExpanded(p.id) ? 'rotate-90 transition-transform' : 'transition-transform'" />
               </el-icon>
@@ -61,7 +62,7 @@
               @click="$emit('select', c.id)"
             >
               <div class="flex items-center gap-2" :class="activeTagId === c.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'">
-                <span>{{ c.name }}</span>
+                <span class="text-sm">{{ c.name }}</span>
               </div>
               <span class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400">{{ c.count }}</span>
             </div>
@@ -95,6 +96,7 @@ const props = defineProps<{
   activeTagId: string | null
   totalRecords: number
   showFavorites?: boolean
+  favoritesCount: number
 }>()
 
 defineEmits(['select', 'select-favorites'])
@@ -158,6 +160,22 @@ const childrenMap = computed<Record<string, Tag[]>>(() => {
     }
   }
   return m
+})
+
+const parentTotals = computed<Record<string, number>>(() => {
+  const res: Record<string, number> = {}
+  for (const t of props.tags) {
+    const id = String(t.id)
+    const own = Number(t.count || 0)
+    if (!t.parentId) {
+      res[id] = own
+    }
+  }
+  for (const pid of Object.keys(childrenMap.value)) {
+    const sumChildren = (childrenMap.value[pid] || []).reduce((acc, c) => acc + Number(c.count || 0), 0)
+    res[pid] = (res[pid] || 0) + sumChildren
+  }
+  return res
 })
 
 const expanded = ref<Record<string, boolean>>({})

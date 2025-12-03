@@ -1,7 +1,7 @@
 <template>
   <div class="h-screen bg-[#F5F7FA] dark:bg-gray-900 flex flex-col relative overflow-hidden">
     <!-- Header -->
-    <div class="bg-white/80 backdrop-blur-md sticky top-0 z-20 px-4 py-3 shadow-sm flex items-center justify-between dark:bg-gray-900/80 dark:border-b dark:border-gray-800">
+    <div class="bg-white/80 backdrop-blur-md fixed top-0 left-0 right-0 z-20 px-4 py-2 shadow-sm flex items-center justify-between dark:bg-gray-900/80 dark:border-b dark:border-gray-800">
       <div class="flex items-center gap-3 flex-shrink-0">
         <div 
           class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors text-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
@@ -64,12 +64,12 @@
     </div>
 
     <!-- Main Content (Timeline) -->
-    <div class="flex-1 overflow-y-auto p-4 pb-24 relative dark:bg-gray-900 bg-[#F5F7FA] px-0 sm:px-4" ref="scrollContainer" @scroll="handleScroll">
+    <div class="flex-1 overflow-y-auto p-4 pb-24 relative dark:bg-gray-900 bg-[#F5F7FA] px-0 sm:px-4 pt-16" ref="scrollContainer" @scroll="handleScroll">
       <div class="max-w-2xl mx-auto w-full">
         <template v-if="hasRecords">
           <div v-if="hasPinnedRecords" class="mb-2">
             <TimelineCard 
-              v-for="record in pinnedRecords"
+              v-for="record in (pinnedRecords as unknown as import('@/stores/littleGrowth').GrowthRecord[])"
               :key="record.id"
               :record="record"
               :allTags="store.flattenedTags"
@@ -85,7 +85,7 @@
           <div v-for="(group, year) in groupedRecords" :key="year" :id="'year-' + String(year)">
              <div v-for="(months, month) in group" :key="month" :id="'month-' + String(year) + '-' + String(month)">
                 <TimelineCard 
-                  v-for="record in months"
+                  v-for="record in (months as unknown as import('@/stores/littleGrowth').GrowthRecord[])"
                   :key="record.id" 
                   :record="record" 
                   :allTags="store.flattenedTags"
@@ -160,6 +160,7 @@
         :active-tag-id="store.activeFilterTagId"
         :total-records="store.records.length"
         :show-favorites="store.onlyFavorites"
+        :favorites-count="Number(favoritesCount)"
         @select="handleTagSelect"
         @select-favorites="handleFavoritesSelect"
       />
@@ -284,6 +285,23 @@ const activeTagName = computed(() => {
   return tag ? tag.name : ''
 })
 
+// 中文注释：收藏数量计算，实时统计当前已加载记录中的收藏条数
+const favoritesCount = computed(() => {
+  return store.records.filter(r => !!r.is_favorite).length
+})
+
+// 中文注释：父子标签映射，用于父标签筛选时包含其子标签
+const childrenMap = computed<Record<string, { id: string }[]>>(() => {
+  const m: Record<string, { id: string }[]> = {}
+  for (const t of store.flattenedTags) {
+    if ((t as any).parentId) {
+      const pid = String((t as any).parentId)
+      ;(m[pid] = m[pid] || []).push({ id: String(t.id) })
+    }
+  }
+  return m
+})
+
 const clearFilter = () => {
     store.activeFilterTagId = null
     if (store.onlyFavorites) {
@@ -295,17 +313,35 @@ const clearFilter = () => {
 const filteredList = computed(() => {
   let list = store.records
 
-  // 1. Tag Filter
+  // 1. 标签筛选：父标签包含其所有子标签
   if (store.activeFilterTagId) {
-    list = list.filter(r => {
+    const activeId = String(store.activeFilterTagId)
+    const activeTag = store.flattenedTags.find(t => String(t.id) === activeId)
+
+    if (activeTag && !(activeTag as any).parentId) {
+      const childIds = (childrenMap.value[activeId] || []).map(x => x.id)
+      const allIds = [activeId, ...childIds]
+      list = list.filter(r => {
         let rTags: string[] = []
         if (Array.isArray(r.tags)) {
-            rTags = r.tags
+          rTags = r.tags
         } else if (typeof r.tags === 'string') {
-            try { rTags = JSON.parse(r.tags) } catch {}
+          try { rTags = JSON.parse(r.tags) } catch {}
         }
-        return rTags.map(String).includes(String(store.activeFilterTagId))
-    })
+        const ids = rTags.map(String)
+        return ids.some(id => allIds.includes(id))
+      })
+    } else {
+      list = list.filter(r => {
+        let rTags: string[] = []
+        if (Array.isArray(r.tags)) {
+          rTags = r.tags
+        } else if (typeof r.tags === 'string') {
+          try { rTags = JSON.parse(r.tags) } catch {}
+        }
+        return rTags.map(String).includes(activeId)
+      })
+    }
   }
 
   // 2. Search Filter

@@ -70,11 +70,11 @@
     </div>
 
     <!-- Footer: Tags -->
-    <div v-if="displayTags.length > 0" class="flex flex-wrap gap-2 mb-1">
+    <div v-if="displayTags.length > 0" class="flex flex-wrap gap-2 mt-3 mb-2">
       <span 
         v-for="tag in displayTags" 
         :key="tag.id"
-        class="px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer"
+        class="px-2.5 py-1 rounded-full text-xs leading-none font-medium transition-colors cursor-pointer"
         :style="getTagStyle(tag.color)"
         @click.stop="$emit('filter-tag', tag.id)"
       >

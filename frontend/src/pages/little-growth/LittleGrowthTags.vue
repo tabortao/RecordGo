@@ -142,6 +142,11 @@ const handleDelete = async (tag: Tag) => {
 .solid-delete-dialog.el-message-box {
   background-color: #ffffff;
   border-radius: 16px;
+  width: 30vw; /* English: limit width to 30% viewport */
+  max-height: 40vh; /* English: limit height to 40% viewport */
+  overflow-y: auto;
+  font-size: 12px; /* English: reduce text size to 12px */
+  line-height: 1.5; /* English: set line height to 1.5 */
 }
 .dark .solid-delete-dialog.el-message-box {
   background-color: #1f2937;
