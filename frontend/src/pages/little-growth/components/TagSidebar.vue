@@ -68,7 +68,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
-import { ArrowDown, Plus, StarFilled } from '@element-plus/icons-vue'
+import { Plus } from '@element-plus/icons-vue'
 import type { Tag } from '@/stores/littleGrowth'
 import { useAuth } from '@/stores/auth'
 import { presignView } from '@/services/storage'

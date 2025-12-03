@@ -5,26 +5,28 @@
     <!-- Header -->
     <div class="flex justify-between items-start mb-2">
       <div class="flex flex-col">
-        <div class="text-sm font-bold inline-block flex items-center gap-2" :class="textColorClass">
+        <div class="text-sm font-bold inline-flex items-center gap-2" :class="textColorClass">
           <span>{{ formatDateBadge(record.date) }} {{ formatTime(record.date) }}</span>
           <el-icon v-if="record.is_pinned" class="text-purple-500"><Top /></el-icon>
+          <!-- Favorite Icon inline -->
+          <span class="inline-flex items-center h-5">
+            <el-icon :size="16" :class="record.is_favorite ? 'text-yellow-400' : 'text-gray-400'" @click.stop="$emit('toggle-favorite', record.id)">
+              <StarFilled v-if="record.is_favorite" />
+              <Star v-else />
+            </el-icon>
+          </span>
         </div>
       </div>
       
       <div class="flex items-center gap-1">
-        <!-- Favorite Icon -->
-        <div class="p-2 hover:bg-black/5 rounded-full cursor-pointer transition-colors" @click.stop="$emit('toggle-favorite', record.id)">
-          <el-icon :size="20" :class="record.is_favorite ? 'text-yellow-400' : 'text-gray-400'"><StarFilled v-if="record.is_favorite" /><Star v-else /></el-icon>
-        </div>
-
         <!-- Comment Icon -->
-        <div class="p-2 hover:bg-black/5 rounded-full cursor-pointer transition-colors" @click.stop="toggleCommentBox">
-          <el-icon :size="20" class="text-gray-400"><ChatDotSquare /></el-icon>
+        <div class="inline-flex items-center h-6 px-1 rounded cursor-pointer hover:bg-black/5 transition-colors" @click.stop="toggleCommentBox">
+          <el-icon :size="18" class="text-gray-400"><ChatDotSquare /></el-icon>
         </div>
 
         <el-dropdown trigger="click" @command="handleCommand">
-          <div class="p-2 hover:bg-black/5 rounded-full cursor-pointer transition-colors">
-            <el-icon :size="20" class="text-gray-400"><MoreFilled /></el-icon>
+          <div class="inline-flex items-center h-6 px-1 rounded cursor-pointer hover:bg-black/5 transition-colors">
+            <el-icon :size="18" class="text-gray-400"><MoreFilled /></el-icon>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
@@ -39,13 +41,13 @@
     </div>
 
     <!-- Content -->
-    <div class="mb-2">
+    <div class="mb-1">
       <p v-if="!searchQuery" class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-lg">{{ record.content }}</p>
       <p v-else class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-lg" v-html="highlightedContent"></p>
     </div>
 
     <!-- Gallery -->
-    <div v-if="record.images && record.images.length > 0" class="mb-2">
+    <div v-if="record.images && record.images.length > 0" class="mb-1">
       <div class="grid gap-2" :class="gridClass">
         <div 
           v-for="(img, index) in record.images" 
@@ -68,7 +70,7 @@
     </div>
 
     <!-- Footer: Tags -->
-    <div v-if="displayTags.length > 0" class="flex flex-wrap gap-2 mb-2">
+    <div v-if="displayTags.length > 0" class="flex flex-wrap gap-2 mb-1">
       <span 
         v-for="tag in displayTags" 
         :key="tag.id"
