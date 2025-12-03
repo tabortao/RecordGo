@@ -151,4 +151,3 @@ const handleDelete = async (tag: Tag) => {
   justify-content: center;
 }
 </style>
-</script>

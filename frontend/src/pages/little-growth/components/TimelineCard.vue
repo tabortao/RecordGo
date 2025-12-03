@@ -11,7 +11,7 @@
         </div>
       </div>
       
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 transition-opacity" :class="record.is_favorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'">
         <!-- Favorite Icon (left) -->
         <div class="inline-flex items-center h-5 px-1 rounded cursor-pointer hover:bg-black/5 transition-colors" @click.stop="$emit('toggle-favorite', record.id)">
           <el-icon :size="16" :class="record.is_favorite ? 'text-yellow-400' : 'text-gray-400'">
