@@ -72,9 +72,6 @@
       <div class="text-gray-600">其他配置项待完善：任务默认提醒、重复规则等。</div>
     </el-card>
     <!-- 取消底部返回按钮；统一使用标题左侧返回图标 -->
-    <div class="mt-2">
-      <el-button v-if="isAdmin" type="primary" @click="router.push('/admin')">用户管理</el-button>
-    </div>
   </div>
 </template>
 
@@ -94,7 +91,6 @@ function goBack() { router.back() }
 // 中文注释：联动全局状态中的任务备注开关，使用计算属性实现双向绑定
 const store = useAppState()
 const auth = useAuth()
-const isAdmin = computed(() => Number(auth.user?.id || 0) === 1)
 const isVIP = computed(() => {
   const u = auth.user
   if (!u) return false

@@ -50,9 +50,7 @@
     </div>
 
     <div class="text-xs text-gray-500">提示：金币总数更新后，任务页与心愿页会读取同一全局状态并即时刷新。</div>
-    <div class="mt-4">
-      <el-button v-if="isAdmin" type="primary" @click="router.push('/admin')">用户管理</el-button>
-    </div>
+    
   </div>
 </template>
 
@@ -63,8 +61,7 @@ import { Coin, ArrowLeft } from '@element-plus/icons-vue'
 import router from '@/router'
 import { useMediaQuery } from '@vueuse/core'
 import { setCoins } from '@/services/coins'
-import { useAuth } from '@/stores/auth'
-import { computed } from 'vue'
+ 
 
 const store = useAppState()
 // 中文注释：根据屏幕宽度判断移动端，用于控制控件大小与布局细节
@@ -72,8 +69,7 @@ const isMobile = useMediaQuery('(max-width: 768px)')
 // 中文注释：初始化为当前总金币，避免桌面端显示空值
 const newTotal = ref<number | null>(Number(store.coins))
 const reason = ref<string>('')
-const auth = useAuth()
-const isAdmin = computed(() => Number(auth.user?.id || 0) === 1)
+ 
 
 // 中文注释：取消（仅关闭页面，不保存）
 function onCancel() { router.back() }
