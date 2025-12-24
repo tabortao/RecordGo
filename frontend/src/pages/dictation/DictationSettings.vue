@@ -20,7 +20,7 @@
               <el-radio label="dictate">听写模式</el-radio>
               <el-radio label="read">朗读模式</el-radio>
             </el-radio-group>
-            <div class="text-xs text-gray-500">听写模式会有间隔；朗读模式连续播放。</div>
+            <div class="text-xs text-gray-500">听写模式隐藏文本；朗读模式显示文本。间隔时间均生效。</div>
           </el-form-item>
           <el-form-item label="播放顺序">
             <el-radio-group v-model="form.order_mode">
@@ -62,7 +62,7 @@
             <span class="ml-2 text-gray-500">次</span>
           </el-form-item>
           <el-form-item label="间隔时间">
-            <el-input-number v-model="form.interval_seconds" :min="1" :max="60" />
+            <el-input-number v-model="form.interval_seconds" :min="0" :max="60" />
             <span class="ml-2 text-gray-500">秒</span>
           </el-form-item>
           <el-form-item label="语速">

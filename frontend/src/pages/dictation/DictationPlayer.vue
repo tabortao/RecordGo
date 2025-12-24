@@ -14,7 +14,7 @@
       </div>
       
       <div class="text-xl opacity-60" v-if="playlist.length > 0">
-        {{ currentIndex + 1 }} / {{ playlist.length }}
+        {{ Math.min(currentIndex + 1, playlist.length) }} / {{ playlist.length }}
       </div>
 
       <div class="text-sm opacity-50 mt-2">
@@ -259,13 +259,13 @@ function playLoop() {
     // After speak
     currentRepeat.value++
     if (currentRepeat.value < settings.value.repeat_count) {
-      const gap = settings.value.play_mode === 'dictate' ? settings.value.interval_seconds * 1000 : 500
+      const gap = (Number(settings.value.interval_seconds) || 0) * 1000
       timer.value = setTimeout(() => {
         playLoop()
       }, gap)
     } else {
       currentRepeat.value = 0
-      const gap = settings.value.play_mode === 'dictate' ? settings.value.interval_seconds * 1000 : 500
+      const gap = (Number(settings.value.interval_seconds) || 0) * 1000
       isWaiting.value = true
       timer.value = setTimeout(() => {
         isWaiting.value = false
@@ -349,7 +349,7 @@ async function markMistake() {
   localMistakeCount.value++
   try {
     await dictationApi.addMistake({ word: currentWord.value, context: '听写练习' })
-    ElMessage.success(`已将“${currentWord.value}”加入错题本`)
+    ElMessage.success(`已将“${currentWord.value}”加入难点收藏`)
   } catch {}
 }
 </script>

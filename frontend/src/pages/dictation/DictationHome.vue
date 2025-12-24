@@ -49,7 +49,7 @@
             <div class="p-2 bg-white dark:bg-red-800 rounded-full shadow-sm">
                 <el-icon :size="20"><Notebook /></el-icon>
             </div>
-            <span class="font-bold text-sm">错题本</span>
+            <span class="font-bold text-sm">难点收藏</span>
           </div>
         </el-card>
         <el-card shadow="hover" class="cursor-pointer rounded-xl border-none bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 transform transition hover:scale-105 active:scale-95" :body-style="{ padding: '12px' }" @click="router.push('/dictation/history')">
