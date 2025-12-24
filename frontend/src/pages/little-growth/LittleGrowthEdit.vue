@@ -25,7 +25,6 @@
             type="datetime"
             placeholder="选择日期时间"
             format="YYYY年MM月DD日 HH:mm"
-            value-format="YYYY-MM-DD HH:mm:ss"
             :clearable="false"
             class="!w-52"
           />
@@ -194,7 +193,7 @@ const loading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 const form = ref({
-  date: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+  date: dayjs().toDate(),
   content: '',
   tags: [] as string[] // IDs
 })
@@ -219,7 +218,7 @@ onMounted(async () => {
     const record = store.getRecordById(route.params.id as string)
     if (record) {
       form.value = {
-        date: record.date,
+        date: new Date(record.date),
         content: record.content,
         tags: [...record.tags]
       }

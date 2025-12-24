@@ -2,14 +2,9 @@
   <!-- 全屏覆盖容器，固定定位确保不被父容器裁剪，z-index 设为 100 覆盖底部导航 -->
   <!-- 添加 !pb-0 覆盖 App.vue 中 router-view 传递下来的 pb-20 -->
   <div class="fixed inset-0 bg-gray-50 dark:bg-gray-900 !pb-0" style="z-index: 100;">
-    <!-- 悬浮返回按钮 -->
-    <div class="absolute top-4 left-4 z-50">
-      <div 
-        class="bg-black/20 text-white backdrop-blur rounded-full p-2 cursor-pointer hover:bg-black/40 transition-all flex items-center justify-center"
-        @click="router.back()"
-      >
-        <el-icon :size="20"><ArrowLeft /></el-icon>
-      </div>
+    <!-- 悬浮返回按钮，样式与语文学习页面一致 -->
+    <div class="absolute top-4 left-4 z-50 cursor-pointer" @click="router.back()">
+      <el-icon :size="20" class="text-gray-600 dark:text-gray-300 font-bold drop-shadow-sm"><ArrowLeft /></el-icon>
     </div>
 
     <!-- 加载状态 -->
