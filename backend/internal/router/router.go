@@ -154,6 +154,7 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 		littleGrowth := api.Group("/little-growth")
 		{
 			littleGrowth.GET("/records", handlers.ListGrowthRecords)
+			littleGrowth.GET("/records/:id", handlers.GetGrowthRecord) // New
 			littleGrowth.POST("/records", handlers.CreateGrowthRecord)
 			littleGrowth.PUT("/records/:id", handlers.UpdateGrowthRecord)
 			littleGrowth.DELETE("/records/:id", handlers.DeleteGrowthRecord)

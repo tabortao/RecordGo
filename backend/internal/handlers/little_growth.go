@@ -39,13 +39,50 @@ func ListGrowthRecords(c *gin.Context) {
 		size = 20
 	}
 
+	// Determine family scope
+	var familyIDs []uint
+	familyIDs = append(familyIDs, uid)
+
+	// Logic:
+	// If I am parent (ParentID == nil): Include all my children (ParentID = MyID)
+	// If I am child (ParentID != nil): Include my parent (ParentID) and siblings (ParentID = MyParentID)
+	// Simplified: Find "Root" ID.
+	var rootID uint
+	if cl.ParentID != nil && *cl.ParentID > 0 {
+		rootID = *cl.ParentID
+	} else {
+		rootID = uid
+	}
+
+	// Add root if not self
+	if rootID != uid {
+		familyIDs = append(familyIDs, rootID)
+	}
+
+	// Find all children of root
+	var children []models.User
+	if err := db.DB().Select("id").Where("parent_id = ?", rootID).Find(&children).Error; err == nil {
+		for _, child := range children {
+			if child.ID != uid { // avoid duplicate
+				familyIDs = append(familyIDs, child.ID)
+			}
+		}
+	}
+
 	// Filter by favorite
 	isFavorite := c.Query("is_favorite") == "true"
 
 	var list []models.GrowthRecord
 	var total int64
 
-	q := db.DB().Model(&models.GrowthRecord{}).Where("user_id = ?", uid)
+	q := db.DB().Model(&models.GrowthRecord{}).Where("user_id IN ?", familyIDs)
+
+	// Visibility check:
+	// If I am the author, I can see everything (Private + Family).
+	// If I am not the author, I can only see Family (0).
+	// So: (user_id = uid) OR (visibility = 0)
+	q = q.Where("user_id = ? OR visibility = 0", uid)
+
 	if isFavorite {
 		q = q.Where("is_favorite = ?", true)
 	}
@@ -53,7 +90,9 @@ func ListGrowthRecords(c *gin.Context) {
 	q.Count(&total)
 	// Sort by is_pinned desc, date desc, created_at desc
 	// Preload Comments and Comments.User
+	// Also preload Author (User)
 	if err := q.Order("is_pinned DESC, date DESC, created_at DESC").
+		Preload("User").
 		Preload("Comments", func(db *gorm.DB) *gorm.DB {
 			return db.Order("created_at ASC")
 		}).
@@ -78,7 +117,33 @@ func ToggleFavoriteGrowthRecord(c *gin.Context) {
 		common.Error(c, 40401, "记录不存在")
 		return
 	}
-	if r.UserID != cl.UserID {
+	// Permission check (can favorite own or family?)
+	allowed := false
+	if r.UserID == cl.UserID {
+		allowed = true
+	} else {
+		// Check family relationship
+		var rootID uint
+		if cl.ParentID != nil && *cl.ParentID > 0 {
+			rootID = *cl.ParentID
+		} else {
+			rootID = cl.UserID
+		}
+
+		// If author is root (and I am child of root) -> OK
+		if r.UserID == rootID {
+			allowed = true
+		} else {
+			// Check if author is child of root
+			var count int64
+			db.DB().Model(&models.User{}).Where("id = ? AND parent_id = ?", r.UserID, rootID).Count(&count)
+			if count > 0 {
+				allowed = true
+			}
+		}
+	}
+
+	if !allowed {
 		common.Error(c, 40301, "无权操作")
 		return
 	}
@@ -118,9 +183,34 @@ func AddGrowthComment(c *gin.Context) {
 		common.Error(c, 40404, "记录不存在")
 		return
 	}
+
 	// Permission check (can comment on own or family?)
-	if r.UserID != cl.UserID {
-		// For now, only owner can comment
+	allowed := false
+	if r.UserID == cl.UserID {
+		allowed = true
+	} else {
+		// Check family relationship
+		var rootID uint
+		if cl.ParentID != nil && *cl.ParentID > 0 {
+			rootID = *cl.ParentID
+		} else {
+			rootID = cl.UserID
+		}
+
+		// If author is root (and I am child of root) -> OK
+		if r.UserID == rootID {
+			allowed = true
+		} else {
+			// Check if author is child of root
+			var count int64
+			db.DB().Model(&models.User{}).Where("id = ? AND parent_id = ?", r.UserID, rootID).Count(&count)
+			if count > 0 {
+				allowed = true
+			}
+		}
+	}
+
+	if !allowed {
 		common.Error(c, 40301, "无权评论")
 		return
 	}
@@ -200,6 +290,54 @@ func UploadGrowthFile(c *gin.Context) {
 	common.Ok(c, gin.H{"url": path, "type": ftype})
 }
 
+// GetGrowthRecord 获取单个记录
+func GetGrowthRecord(c *gin.Context) {
+	cl := extractClaims(c)
+	if cl == nil {
+		common.Error(c, 40100, "未登录")
+		return
+	}
+	id := c.Param("id")
+	uid := cl.UserID
+
+	// Determine family scope (similar to ListGrowthRecords)
+	var rootID uint
+	if cl.ParentID != nil && *cl.ParentID > 0 {
+		rootID = *cl.ParentID
+	} else {
+		rootID = uid
+	}
+
+	var familyIDs []uint
+	familyIDs = append(familyIDs, rootID)
+	var children []models.User
+	if err := db.DB().Select("id").Where("parent_id = ?", rootID).Find(&children).Error; err == nil {
+		for _, child := range children {
+			familyIDs = append(familyIDs, child.ID)
+		}
+	}
+
+	var r models.GrowthRecord
+	// Preload author and comments
+	q := db.DB().Model(&models.GrowthRecord{}).
+		Preload("User").
+		Preload("Comments").
+		Preload("Comments.User").
+		Where("id = ?", id).
+		Where("user_id IN ?", familyIDs)
+
+	// Visibility Check
+	// (user_id = uid) OR (visibility = 0)
+	q = q.Where("user_id = ? OR visibility = 0", uid)
+
+	if err := q.First(&r).Error; err != nil {
+		common.Error(c, 40401, "记录不存在或无权查看")
+		return
+	}
+
+	common.Ok(c, r)
+}
+
 // CreateGrowthRecord 创建记录
 func CreateGrowthRecord(c *gin.Context) {
 	cl := extractClaims(c)
@@ -211,11 +349,12 @@ func CreateGrowthRecord(c *gin.Context) {
 
 	// Parse JSON body
 	var req struct {
-		Content string   `json:"content"`
-		Date    string   `json:"date"`
-		Images  []string `json:"images"`
-		Audio   string   `json:"audio"`
-		Tags    []string `json:"tags"` // IDs as strings or numbers
+		Content    string   `json:"content"`
+		Date       string   `json:"date"`
+		Images     []string `json:"images"`
+		Audio      string   `json:"audio"`
+		Tags       []string `json:"tags"` // IDs as strings or numbers
+		Visibility int      `json:"visibility"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -234,7 +373,7 @@ func CreateGrowthRecord(c *gin.Context) {
 	} else {
 		date, err = time.Parse("2006-01-02", req.Date)
 	}
-	
+
 	if err != nil {
 		date = time.Now()
 	}
@@ -243,12 +382,13 @@ func CreateGrowthRecord(c *gin.Context) {
 	tagsJSON, _ := json.Marshal(req.Tags)
 
 	r := models.GrowthRecord{
-		UserID:  uid,
-		Date:    date,
-		Content: req.Content,
-		Images:  string(imagesJSON),
-		Audio:   req.Audio,
-		Tags:    string(tagsJSON),
+		UserID:     uid,
+		Date:       date,
+		Content:    req.Content,
+		Images:     string(imagesJSON),
+		Audio:      req.Audio,
+		Tags:       string(tagsJSON),
+		Visibility: req.Visibility,
 	}
 
 	if err := db.DB().Create(&r).Error; err != nil {
@@ -279,11 +419,12 @@ func UpdateGrowthRecord(c *gin.Context) {
 
 	// Parse JSON body
 	var req struct {
-		Content string   `json:"content"`
-		Date    string   `json:"date"`
-		Images  []string `json:"images"`
-		Audio   string   `json:"audio"`
-		Tags    []string `json:"tags"`
+		Content    string   `json:"content"`
+		Date       string   `json:"date"`
+		Images     []string `json:"images"`
+		Audio      string   `json:"audio"`
+		Tags       []string `json:"tags"`
+		Visibility int      `json:"visibility"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -293,7 +434,8 @@ func UpdateGrowthRecord(c *gin.Context) {
 
 	// Update fields
 	r.Content = req.Content
-	
+	r.Visibility = req.Visibility
+
 	// Parse Date
 	if req.Date != "" {
 		var date time.Time

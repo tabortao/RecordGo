@@ -169,18 +169,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Menu, Plus, Close, Files, Search, Calendar, Top } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useLittleGrowthStore } from '@/stores/littleGrowth'
-import { useWindowSize, useDraggable, useStorage } from '@vueuse/core'
+import { useWindowSize, useDraggable, useStorage, useIntervalFn } from '@vueuse/core'
 import TimelineCard from './components/TimelineCard.vue'
 import TagSidebar from './components/TagSidebar.vue'
 import dayjs from 'dayjs'
 
 const router = useRouter()
 const store = useLittleGrowthStore()
+
+const { pause } = useIntervalFn(() => {
+  store.fetchRecords({ is_favorite: store.onlyFavorites, silent: true })
+}, 30000) // Poll every 30s
+
+onUnmounted(() => {
+  pause()
+})
+
 const showSidebar = ref(false)
 
 const searchQuery = ref('')

@@ -18,8 +18,8 @@
 
     <div class="flex-1 overflow-y-auto p-4">
       <div class="max-w-2xl mx-auto space-y-6">
-        <!-- Date -->
-        <div class="flex items-center gap-2">
+        <!-- Date & Visibility -->
+        <div class="flex items-center gap-2 justify-between">
           <el-date-picker
             v-model="form.date"
             type="datetime"
@@ -28,6 +28,10 @@
             :clearable="false"
             class="!w-52"
           />
+          <el-radio-group v-model="form.visibility" size="small">
+            <el-radio-button :label="0">家庭可见</el-radio-button>
+            <el-radio-button :label="1">仅自己</el-radio-button>
+          </el-radio-group>
         </div>
 
         <!-- Content -->
@@ -195,7 +199,8 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const form = ref({
   date: dayjs().toDate(),
   content: '',
-  tags: [] as string[] // IDs
+  tags: [] as string[], // IDs
+  visibility: 0
 })
 
 // Files management
@@ -214,16 +219,20 @@ let chunks: Blob[] = []
 onMounted(async () => {
   await store.fetchTags()
   if (isEdit.value) {
-    await store.fetchRecords()
-    const record = store.getRecordById(route.params.id as string)
-    if (record) {
-      form.value = {
-        date: new Date(record.date),
-        content: record.content,
-        tags: [...record.tags]
+    try {
+      const record = await store.fetchRecord(route.params.id as string)
+      if (record) {
+        form.value = {
+          date: dayjs(record.date).toDate(),
+          content: record.content,
+          tags: [...record.tags],
+          visibility: (record as any).visibility || 0
+        }
+        previewImages.value = [...(record.images || [])]
+        if (record.audio) audioUrl.value = record.audio
       }
-      previewImages.value = [...record.images]
-      if (record.audio) audioUrl.value = record.audio
+    } catch (e) {
+      console.error(e)
     }
   }
 })

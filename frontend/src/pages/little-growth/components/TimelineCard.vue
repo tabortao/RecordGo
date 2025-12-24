@@ -4,11 +4,15 @@
   >
     <!-- Header -->
     <div class="flex justify-between items-start mb-2">
-      <div class="flex flex-col">
-        <div class="text-sm font-bold inline-flex items-center gap-2" :class="textColorClass">
-          <span>{{ formatDateBadge(record.date) }} {{ formatTime(record.date) }}</span>
-          <el-icon v-if="record.is_pinned" class="text-purple-500"><Top /></el-icon>
-        </div>
+      <div class="flex items-center gap-3">
+         <el-avatar :size="40" :src="avatarUrl" class="flex-shrink-0 border border-gray-100 dark:border-gray-700" />
+         <div class="flex flex-col">
+            <span class="text-sm font-bold text-gray-800 dark:text-gray-100 leading-tight">{{ nickname }}</span>
+            <div class="text-xs text-gray-400 dark:text-gray-500 inline-flex items-center gap-1 mt-0.5">
+               <span>{{ formatDateBadge(record.date) }} {{ formatTime(record.date) }}</span>
+               <el-icon v-if="record.is_pinned" class="text-purple-500"><Top /></el-icon>
+            </div>
+         </div>
       </div>
       
       <div class="flex items-center gap-1 transition-opacity" :class="record.is_favorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'">
@@ -96,14 +100,36 @@
         </div>
 
         <!-- Input Box -->
-        <div v-if="showInput" class="flex gap-2 animate-fade-in">
-            <el-input 
-                v-model="commentText" 
-                size="default" 
-                placeholder="评论..." 
-                @keyup.enter="submitComment" 
-                ref="inputRef"
-            />
+        <div v-if="showInput" class="flex gap-2 animate-fade-in items-end">
+            <div class="flex-1 relative">
+                <el-input 
+                    v-model="commentText" 
+                    type="textarea"
+                    :rows="1"
+                    autosize
+                    placeholder="评论..." 
+                    @keyup.enter.ctrl="submitComment" 
+                    ref="inputRef"
+                    class="w-full"
+                />
+                <el-popover placement="top" :width="250" trigger="click">
+                    <template #reference>
+                        <div class="absolute right-2 bottom-2 cursor-pointer text-gray-400 hover:text-yellow-500 transition-colors z-10">
+                            <el-icon :size="20"><img src="https://api.iconify.design/twemoji:grinning-face.svg" class="w-5 h-5 opacity-60 hover:opacity-100" /></el-icon>
+                        </div>
+                    </template>
+                    <div class="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                        <span 
+                            v-for="emoji in commonEmojis" 
+                            :key="emoji" 
+                            class="cursor-pointer text-xl hover:bg-gray-100 p-1 rounded transition-colors select-none"
+                            @click="appendEmoji(emoji)"
+                        >
+                            {{ emoji }}
+                        </span>
+                    </div>
+                </el-popover>
+            </div>
             <el-button type="primary" :disabled="!commentText.trim()" @click="submitComment">发送</el-button>
         </div>
     </div>
@@ -111,7 +137,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, nextTick } from 'vue'
+import { computed, ref, nextTick, watchEffect } from 'vue'
 import { MoreFilled, Edit, Delete, Top, CopyDocument, ChatDotSquare, Star, StarFilled } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
@@ -119,14 +145,56 @@ import { type GrowthRecord, type Tag } from '@/stores/littleGrowth'
 import { useClipboard } from '@vueuse/core'
 import { ElMessage } from 'element-plus'
 import { useAuth } from '@/stores/auth'
+import defaultAvatar from '@/assets/avatars/default.png'
+import { getStaticBase } from '@/services/http'
+import { presignView } from '@/services/storage'
 
 dayjs.locale('zh-cn')
+
+const commonEmojis = [
+    '😀', '😂', '🤣', '😍', '🥰', '😘', '🤪', '🤩', '🥳', '😎',
+    '😭', '😤', '😡', '🤯', '😱', '👍', '👎', '👏', '🤝', '🙏',
+    '❤️', '💔', '🎉', '🌹', '✨', '🔥', '💯', '💪', '👀', '🐶'
+]
 
 const props = defineProps<{
   record: GrowthRecord
   allTags: Tag[]
   searchQuery?: string
 }>()
+
+const nickname = computed(() => {
+    return props.record.user?.nickname || props.record.user?.username || '未知用户'
+})
+
+const avatarUrl = ref(defaultAvatar)
+
+watchEffect(async () => {
+    const p = props.record.user?.avatar_path
+    if (!p) {
+        avatarUrl.value = defaultAvatar
+        return
+    }
+    const s = String(p)
+    if (/storage\/images\/avatars\/default\.png$/i.test(s) || /(^|\/)default\.png$/i.test(s)) {
+         avatarUrl.value = defaultAvatar
+         return
+    }
+    if (/^https?:\/\//i.test(s)) {
+        avatarUrl.value = s
+        return
+    }
+    const base = getStaticBase()
+    if (/uploads\//i.test(s)) {
+        avatarUrl.value = `${base}/api/${s.replace(/^\/+/, '')}`
+        return
+    }
+    try {
+        avatarUrl.value = await presignView(s)
+    } catch {
+        avatarUrl.value = defaultAvatar
+    }
+})
 
 const emit = defineEmits(['edit', 'delete', 'filter-tag', 'pin', 'toggle-favorite', 'add-comment'])
 
@@ -141,6 +209,8 @@ const handleCommand = (cmd: string) => {
         ElMessage.success('已复制到剪贴板')
     }
 }
+
+
 
 // Comment Logic
 const showInput = ref(false)
@@ -161,6 +231,10 @@ function submitComment() {
     emit('add-comment', props.record.id, commentText.value)
     commentText.value = ''
     showInput.value = false
+}
+
+function appendEmoji(emoji: string) {
+    commentText.value += emoji
 }
 
 // Helpers

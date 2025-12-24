@@ -30,7 +30,9 @@ export interface GrowthRecord {
   created_at?: string
   is_pinned?: boolean
   is_favorite?: boolean // New
+  visibility?: number // New: 0=Family, 1=Private
   comments?: GrowthComment[] // New
+  user?: { nickname?: string; username?: string; avatar_path?: string } // New: Author info
 }
 
 export const useLittleGrowthStore = defineStore('littleGrowth', () => {
@@ -130,10 +132,10 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
     })
   }
 
-  async function fetchRecords(params: { is_favorite?: boolean } = {}) {
-    loading.value = true
+  async function fetchRecords(params: { is_favorite?: boolean, silent?: boolean } = {}) {
+    if (!params.silent) loading.value = true
     try {
-      await fetchTags() // Ensure tags are loaded
+      if (!params.silent) await fetchTags() // Ensure tags are loaded
       
       // Construct query params
       const query: any = { page_size: 100 } // Increase limit to see more records for now
@@ -175,8 +177,43 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
       })
       records.value = items
     } finally {
-      loading.value = false
+      if (!params.silent) loading.value = false
     }
+  }
+
+  async function fetchRecord(id: string) {
+    const r = await http.get(`/little-growth/records/${id}`)
+    // Process record similar to fetchRecords
+    let images: string[] = []
+    try { 
+        if (typeof r.images === 'string') {
+        images = JSON.parse(r.images)
+        if (!Array.isArray(images)) images = []
+        } else if (Array.isArray(r.images)) {
+        images = r.images
+        }
+    } catch {}
+    
+    images = images.map(i => i.startsWith('http') ? i : `${import.meta.env.VITE_API_BASE}/api/${i}`)
+    
+    let audio = r.audio
+    if (audio && !audio.startsWith('http')) {
+        audio = `${import.meta.env.VITE_API_BASE}/api/${audio}`
+    }
+
+    let rTags: string[] = []
+    try { rTags = JSON.parse(r.tags) } catch {}
+    rTags = rTags.map(String)
+
+    return {
+        ...r,
+        id: String(r.id),
+        date: r.date,
+        images,
+        audio,
+        tags: rTags,
+        comments: r.comments || []
+    } as GrowthRecord
   }
 
   async function createRecord(data: any) {
@@ -249,6 +286,7 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
     togglePin,
     toggleFavorite,
     addComment,
-    getRecordById
+    getRecordById,
+    fetchRecord
   }
 })
