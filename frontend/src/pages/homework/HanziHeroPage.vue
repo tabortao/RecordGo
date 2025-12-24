@@ -1,6 +1,6 @@
 <template>
-  <!-- 页面容器，填满父容器（RouterView），保留底部导航 -->
-  <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+  <!-- 全屏覆盖容器，固定定位确保不被父容器裁剪，z-index 设为 100 覆盖底部导航 -->
+  <div class="fixed inset-0 bg-gray-50 dark:bg-gray-900 flex flex-col" style="z-index: 100;">
     <!-- 顶部导航栏 -->
     <div class="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center gap-2 shrink-0">
       <el-icon :size="20" class="text-gray-600 dark:text-gray-300 cursor-pointer" @click="router.back()"><ArrowLeft /></el-icon>
