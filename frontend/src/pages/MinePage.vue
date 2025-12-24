@@ -11,8 +11,10 @@
         <div>
           <!-- 中文注释：昵称优先显示真实昵称，未设置则显示用户名 -->
           <div class="font-semibold">{{ displayName }}</div>
-          <!-- 中文注释：用户ID格式化为6位数，不足左侧补0 -->
-          <div class="text-gray-500 text-sm">用户 ID：{{ displayId }}</div>
+          <!-- 中文注释：VIP标识（替换原用户ID显示） -->
+          <div class="mt-1">
+            <VipBadge :user="auth.user" />
+          </div>
         </div>
       </div>
     </el-card>
@@ -107,6 +109,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAppState } from '@/stores/appState'
+import VipBadge from '@/components/VipBadge.vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import router from '@/router'
 import { useAuth } from '@/stores/auth'
@@ -131,13 +134,6 @@ const displayName = computed(() => {
   return n ? n : u.username
 })
 
-// 中文注释：展示ID为6位数字字符串（不足位数左侧补0）
-const displayId = computed(() => {
-  const u = auth.user
-  if (!u) return '------'
-  return String(u.id).padStart(6, '0')
-})
-
 // 中文注释：头像展示地址，支持 uploads 相对路径与 S3 对象键
 const avatarSrc = ref<string>(defaultAvatar)
 async function updateAvatar() {
@@ -150,7 +146,10 @@ async function updateAvatar() {
   if (/uploads\//i.test(s)) { avatarSrc.value = `${base}/api/${s.replace(/^\/+/, '')}`; return }
   try { avatarSrc.value = await presignView(s) } catch { avatarSrc.value = defaultAvatar }
 }
-onMounted(updateAvatar)
+onMounted(() => {
+  updateAvatar()
+  auth.refreshUser()
+})
 watch(() => auth.user?.avatar_path, () => { updateAvatar() })
 
 // 中文注释：编辑个人信息改为独立页面，移除弹窗相关状态与函数

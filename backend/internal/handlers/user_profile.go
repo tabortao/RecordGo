@@ -40,6 +40,21 @@ func extractUserIDFromToken(c *gin.Context) uint {
     return 0
 }
 
+// GetProfile 获取当前登录用户完整信息
+func GetProfile(c *gin.Context) {
+	uid := extractUserIDFromToken(c)
+	if uid == 0 {
+		common.Error(c, 40100, "未登录")
+		return
+	}
+	var u models.User
+	if err := db.DB().First(&u, uid).Error; err != nil {
+		common.Error(c, 40401, "用户不存在")
+		return
+	}
+	common.Ok(c, u)
+}
+
 // UpdateProfile 更新用户资料（昵称/电话/邮箱），字段可选
 type UpdateProfileReq struct {
     Nickname *string `json:"nickname"`

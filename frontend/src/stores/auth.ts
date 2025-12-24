@@ -1,5 +1,6 @@
 // 中文注释：认证状态管理（Pinia），统一维护 token 与用户信息
 import { defineStore } from 'pinia'
+import { getProfile } from '@/services/user'
 
 export interface AuthUser {
   id: number
@@ -103,6 +104,18 @@ export const useAuth = defineStore('auth', {
         localStorage.setItem('auth_user', JSON.stringify(this.user))
         sessionStorage.setItem('auth_user', JSON.stringify(this.user))
       } catch {}
+    },
+    // 中文注释：刷新当前用户信息
+    async refreshUser() {
+      if (!this.token) return
+      try {
+        const u = await getProfile()
+        if (u && u.id) {
+          this.updateUser(u)
+        }
+      } catch (e) {
+        // console.error('refresh user failed', e)
+      }
     }
   }
 })

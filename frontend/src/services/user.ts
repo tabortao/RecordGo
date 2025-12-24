@@ -3,6 +3,11 @@ import http from './http'
 import { presignUpload, putToURL } from './storage'
 import { prepareUpload } from '@/utils/image'
 
+// 中文注释：获取当前用户最新资料
+export async function getProfile() {
+  return await http.get('/user/profile') as any
+}
+
 // 中文注释：更新昵称（与后端字段保持一致）
 export async function updateNickname(nickname: string) {
   // 中文注释：保留旧函数，实际委托到 updateProfile

@@ -54,6 +54,7 @@ declare module 'vue' {
     SpeakerIcon: typeof import('./components/SpeakerIcon.vue')['default']
     TaskImageUploader: typeof import('./components/TaskImageUploader.vue')['default']
     TomatoTimer: typeof import('./components/TomatoTimer.vue')['default']
+    VipBadge: typeof import('./components/VipBadge.vue')['default']
     WeekCalendar: typeof import('./components/WeekCalendar.vue')['default']
   }
   export interface ComponentCustomProperties {

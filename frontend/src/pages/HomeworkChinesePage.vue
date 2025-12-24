@@ -2,7 +2,7 @@
   <div class="p-4 space-y-4 pb-24">
     <div class="flex items-center gap-2 mb-6">
       <el-icon :size="20" class="cursor-pointer text-gray-600" @click="router.back()"><ArrowLeft /></el-icon>
-      <h1 class="text-xl font-bold text-gray-800 dark:text-white">语文学习</h1>
+      <h1 class="text-xl font-bold text-gray-800 dark:text-white">语文</h1>
     </div>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">

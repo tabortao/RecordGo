@@ -60,6 +60,7 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 		api.POST("/auth/token-login", handlers.TokenLogin)
 		// 中文注释：账号安全与资料
 		api.POST("/auth/change-password", handlers.ChangePassword)
+		api.GET("/user/profile", handlers.GetProfile)
 		api.PUT("/user/profile", handlers.UpdateProfile)
 
 		api.GET("/health", handlers.Health)
