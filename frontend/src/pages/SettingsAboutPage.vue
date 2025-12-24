@@ -42,6 +42,26 @@
           </div>
           <el-icon :size="18" class="text-gray-500 dark:text-gray-400"><ArrowRight /></el-icon>
         </button>
+
+        <!-- 使用帮助 -->
+        <button class="w-full flex items-center justify-between px-3 py-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                @click="router.push('/settings/help')">
+          <div class="flex items-center gap-3">
+            <el-icon :size="18" style="color:#0ea5e9"><QuestionFilled /></el-icon>
+            <span class="text-gray-800 dark:text-gray-200">使用帮助</span>
+          </div>
+          <el-icon :size="18" class="text-gray-500 dark:text-gray-400"><ArrowRight /></el-icon>
+        </button>
+
+        <!-- 打赏支持 -->
+        <button class="w-full flex items-center justify-between px-3 py-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                @click="router.push('/settings/support')">
+          <div class="flex items-center gap-3">
+            <el-icon :size="18" style="color:#f59e0b"><Present /></el-icon>
+            <span class="text-gray-800 dark:text-gray-200">打赏支持</span>
+          </div>
+          <el-icon :size="18" class="text-gray-500 dark:text-gray-400"><ArrowRight /></el-icon>
+        </button>
       </div>
     </el-card>
   </div>
@@ -50,7 +70,7 @@
 
 <script setup lang="ts">
 // 中文注释：导入路由与图标；导入应用信息 JSON（名称、版本、外链）
-import { InfoFilled, ArrowLeft, Link, Message, ArrowRight } from '@element-plus/icons-vue'
+import { InfoFilled, ArrowLeft, Link, Message, ArrowRight, QuestionFilled, Present } from '@element-plus/icons-vue'
 import router from '@/router'
 import appInfo from '@/config/app-info.json'
 
