@@ -85,8 +85,11 @@ func CreateTask(c *gin.Context) {
         common.Error(c, 40100, "未登录或令牌无效")
         return
     }
-    if req.UserID == 0 {
-        if cl.ParentID != nil { req.UserID = *cl.ParentID } else { req.UserID = cl.UserID }
+    // 中文注释：若为子账号，强制归属到父账号（实现数据共享）
+    if cl.ParentID != nil {
+        req.UserID = *cl.ParentID
+    } else if req.UserID == 0 {
+        req.UserID = cl.UserID
     }
     if !canAccessUser(c, req.UserID) {
         deny(c, "无权限为该用户创建任务")

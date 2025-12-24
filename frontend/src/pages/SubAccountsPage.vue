@@ -272,9 +272,9 @@ function applyTemplate(tpl: string) {
 // 中文注释：JSON <-> 模型转换，保证与后端一致
 function parsePermsJSON(s: string | undefined) {
   try {
-    if (!s) { permModel.value = { ...defaultPerms }; return }
+    if (!s) { permModel.value = JSON.parse(JSON.stringify(defaultPerms)); return }
     const obj = JSON.parse(s)
-    const m = { ...defaultPerms }
+    const m = JSON.parse(JSON.stringify(defaultPerms))
     m.view_only = !!obj.view_only
     if (obj.account && typeof obj.account.manage_children === 'boolean') m.account.manage_children = obj.account.manage_children
     if (obj.tasks) {

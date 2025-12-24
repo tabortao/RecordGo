@@ -13,8 +13,9 @@ export interface NormalizedPerms {
 }
 
 // 中文注释：解析 JSON 字符串为权限对象，失败时返回默认空对象
-function parsePerms(raw: string | undefined | null): NormalizedPerms {
+function parsePerms(raw: string | object | undefined | null): NormalizedPerms {
   if (!raw) return {}
+  if (typeof raw === 'object') return raw as NormalizedPerms
   try {
     const obj = JSON.parse(String(raw))
     if (obj && typeof obj === 'object') return obj as NormalizedPerms
