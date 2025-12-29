@@ -162,6 +162,7 @@ func UpdateTimetableConfig(c *gin.Context) {
 		config.CurrentGrade = req.CurrentGrade
 		config.CurrentSemester = req.CurrentSemester
 		config.PeriodSettingsJSON = req.PeriodSettingsJSON
+		config.CourseColorsJSON = req.CourseColorsJSON
 		config.BackgroundEmojis = req.BackgroundEmojis
 		if err := db.DB().Save(&config).Error; err != nil {
 			common.Error(c, 500, "更新配置失败")

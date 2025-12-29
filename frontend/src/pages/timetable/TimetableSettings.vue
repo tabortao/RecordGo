@@ -41,10 +41,26 @@
                     <el-button type="primary" link @click="openAddCourseDialog">添加课程</el-button>
                 </div>
             </template>
+            
+            <!-- 配色方案 -->
+            <div class="mb-4">
+                <div class="text-sm text-gray-500 mb-2">一键配色</div>
+                <div class="flex flex-wrap gap-2">
+                    <div v-for="palette in palettes" :key="palette.name" 
+                         class="cursor-pointer border border-gray-200 dark:border-gray-700 rounded-lg p-1 hover:border-primary transition-colors flex flex-col gap-1 items-center"
+                         @click="applyPalette(palette)">
+                        <div class="flex gap-0.5">
+                            <div v-for="c in palette.colors" :key="c" class="w-3 h-3 rounded-full" :style="{ backgroundColor: c }"></div>
+                        </div>
+                        <span class="text-[10px] text-gray-500">{{ palette.name }}</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="flex flex-wrap gap-2">
                 <div v-for="course in courses" :key="course.id" 
-                     class="group relative px-3 py-1 rounded-full text-sm font-medium text-white shadow-sm flex items-center gap-1 cursor-default"
-                     :style="{ backgroundColor: course.color }">
+                     class="group relative px-3 py-1 rounded-full text-sm font-medium shadow-sm flex items-center gap-1 cursor-default text-gray-800"
+                     :style="{ backgroundColor: getCourseColor(course), color: isLightColor(getCourseColor(course)) ? '#000' : '#fff' }">
                      {{ course.name }}
                      
                      <!-- 自定义课程操作按钮 -->
@@ -61,7 +77,7 @@
             <template #header>
                 <div class="flex justify-between items-center">
                     <div class="font-bold">课表编排 ({{ form.current_grade }} {{ form.current_semester }})</div>
-                    <el-button type="primary" size="small" @click="saveTimetable" :loading="saving">保存编排</el-button>
+                    <div class="text-xs text-gray-400">修改自动保存</div>
                 </div>
             </template>
             
@@ -98,8 +114,8 @@
     <el-dialog v-model="selectorVisible" title="选择课程" width="90%" class="rounded-xl" append-to-body>
         <div class="grid grid-cols-4 gap-3">
             <div v-for="course in courses" :key="course.id"
-                 class="h-10 rounded-lg flex items-center justify-center text-white text-sm font-medium shadow-sm cursor-pointer active:scale-95 transition-transform"
-                 :style="{ backgroundColor: course.color }"
+                 class="h-10 rounded-lg flex items-center justify-center text-sm font-medium shadow-sm cursor-pointer active:scale-95 transition-transform"
+                 :style="{ backgroundColor: getCourseColor(course), color: isLightColor(getCourseColor(course)) ? '#000' : '#fff' }"
                  @click="selectCourse(course)"
             >
                 {{ course.name }}
@@ -177,8 +193,54 @@ const form = ref({
     show_saturday: false,
     show_sunday: false,
     period_settings_json: '',
+    course_colors_json: '',
     background_emojis: ''
 })
+
+const palettes = [
+    { name: '晨曦微光', colors: ['#FAD6A5', '#E8C3A2', '#9EC9D0', '#7BA7BC', '#4A707A'] },
+    { name: '森林学者', colors: ['#E9E5D6', '#A3B18A', '#588157', '#3A5A40', '#344E41'] },
+    { name: '中性都市', colors: ['#F5F5F5', '#CFCFCF', '#9E9E9E', '#616161', '#3D3D3D'] },
+    { name: '克莱因幻想', colors: ['#FFFFFF', '#F0F0F0', '#0D4C92', '#00B4D8', '#0077B6'] },
+    { name: '莫兰迪课堂', colors: ['#F7F1E5', '#E7D8C9', '#B8A897', '#A3B4C4', '#7C8B9C'] },
+    { name: '大地探险家', colors: ['#EDE6D6', '#D4A574', '#B05B3B', '#6A994E', '#386641'] },
+    { name: '星际穿梭', colors: ['#0F0F1C', '#2D3047', '#419D78', '#E0E0E0', '#FF9F1C'] },
+    { name: '新中式雅韵', colors: ['#F8F4E9', '#DED0B6', '#BBAB8C', '#7A918D', '#556B5E'] },
+    { name: '纯净冰山', colors: ['#FFFFFF', '#E3F2FD', '#90CAF9', '#42A5F5', '#1E88E5'] },
+    { name: '低饱和对比', colors: ['#FFF8F0', '#FFD6C2', '#C4E4FF', '#A2D2A1', '#D9B8C4'] }
+]
+
+const courseColors = ref<Record<string, string>>({})
+
+function getCourseColor(course: Course) {
+    return courseColors.value[course.name] || course.color
+}
+
+// 简单的判断颜色深浅
+function isLightColor(color: string) {
+    if (!color) return true
+    const hex = color.replace('#', '')
+    const r = parseInt(hex.substring(0, 2), 16)
+    const g = parseInt(hex.substring(2, 4), 16)
+    const b = parseInt(hex.substring(4, 6), 16)
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000
+    return brightness > 155 // 阈值可调
+}
+
+function applyPalette(palette: { name: string, colors: string[] }) {
+    const colors = palette.colors
+    const newColors: Record<string, string> = {}
+    
+    // 给当前所有课程分配颜色
+    courses.value.forEach((course, index) => {
+        newColors[course.name] = colors[index % colors.length]
+    })
+    
+    courseColors.value = newColors
+    form.value.course_colors_json = JSON.stringify(newColors)
+    onConfigChange()
+    ElMessage.success(`已应用“${palette.name}”配色`)
+}
 
 const grades = ['一年级', '二年级', '三年级', '四年级', '五年级', '六年级', '初一', '初二', '初三', '高一', '高二', '高三']
 const periods = Array.from({ length: 10 }, (_, i) => i + 1)
@@ -227,14 +289,18 @@ onMounted(async () => {
         form.value = { 
             ...config.value, 
             period_settings_json: config.value.period_settings_json || '',
+            course_colors_json: config.value.course_colors_json || '',
             background_emojis: config.value.background_emojis || ''
         }
         try {
             if (form.value.period_settings_json) {
                 periodSettings.value = JSON.parse(form.value.period_settings_json)
             }
+            if (form.value.course_colors_json) {
+                courseColors.value = JSON.parse(form.value.course_colors_json)
+            }
         } catch (e) {
-            console.error("Failed to parse period settings", e)
+            console.error("Failed to parse settings", e)
         }
     }
     await loadTimetableForEdit()
@@ -289,27 +355,15 @@ function getCellStyle(day: number, period: number) {
     if (item && item.course_id) {
         const course = courses.value.find(c => c.id === item.course_id)
         if (course) {
+            const color = getCourseColor(course)
             return {
-                backgroundColor: hexToRgba(course.color, 0.5),
-                color: '#000',
+                backgroundColor: color, // 移除透明度，保持颜色一致
+                color: isLightColor(color) ? '#000' : '#fff',
                 border: 'none'
             }
         }
     }
     return {}
-}
-
-function hexToRgba(hex: string, alpha: number) {
-    let c: any;
-    if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
-        c= hex.substring(1).split('');
-        if(c.length== 3){
-            c= [c[0], c[0], c[1], c[1], c[2], c[2]];
-        }
-        c= '0x'+c.join('');
-        return 'rgba('+[(c>>16)&255, (c>>8)&255, c&255].join(',')+','+alpha+')';
-    }
-    return hex; // Fallback
 }
 
 function openCourseSelector(day: number, period: number) {
@@ -335,6 +389,7 @@ function selectCourse(course: Course) {
     })
     
     selectorVisible.value = false
+    saveTimetable(true)
 }
 
 function clearCell() {
@@ -345,9 +400,10 @@ function clearCell() {
         editTimetable.value.splice(idx, 1)
     }
     selectorVisible.value = false
+    saveTimetable(true)
 }
 
-async function saveTimetable() {
+async function saveTimetable(silent = false) {
     saving.value = true
     try {
         await timetableApi.saveTimetable({
@@ -355,11 +411,11 @@ async function saveTimetable() {
             semester: form.value.current_semester,
             items: editTimetable.value
         })
-        ElMessage.success('保存成功')
+        if (!silent) ElMessage.success('保存成功')
         // 刷新 Store
         await store.fetchTimetable(form.value.current_grade, form.value.current_semester)
     } catch {
-        ElMessage.error('保存失败')
+        if (!silent) ElMessage.error('保存失败')
     } finally {
         saving.value = false
     }

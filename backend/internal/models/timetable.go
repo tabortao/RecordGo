@@ -35,6 +35,7 @@ type TimetableConfig struct {
 	CurrentGrade       string    `gorm:"size:32" json:"current_grade"`          // 当前默认展示的年级
 	CurrentSemester    string    `gorm:"size:32" json:"current_semester"`       // 当前默认展示的学期
 	PeriodSettingsJSON string    `gorm:"type:text" json:"period_settings_json"` // 课程时间设置 JSON: [{"period":1,"start":"08:00","end":"08:40"}]
+	CourseColorsJSON   string    `gorm:"type:text" json:"course_colors_json"`   // 课程颜色覆盖 JSON: {"语文":"#FAD6A5"}
 	BackgroundEmojis   string    `gorm:"size:255" json:"background_emojis"`     // 课表背景 Emoji，逗号分隔
 	CreatedAt          time.Time `json:"created_at"`
 	UpdatedAt          time.Time `json:"updated_at"`

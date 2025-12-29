@@ -15,6 +15,7 @@ export interface TimetableConfig {
   current_grade: string
   current_semester: string
   period_settings_json?: string
+  course_colors_json?: string
   background_emojis?: string
 }
 

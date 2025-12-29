@@ -3,8 +3,8 @@
     <!-- Header -->
     <div class="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center justify-between sticky top-0 z-20 relative print:shadow-none print:px-0 print:static">
       <div class="flex items-center gap-3 z-10 print:hidden">
-        <el-icon :size="20" class="cursor-pointer" @click="router.back()"><ArrowLeft /></el-icon>
-        <span class="font-bold text-base text-[#333333]">{{ config?.current_grade }} {{ config?.current_semester }}</span>
+        <el-icon :size="20" class="cursor-pointer dark:text-gray-200" @click="router.back()"><ArrowLeft /></el-icon>
+        <span class="font-bold text-base text-gray-900 dark:text-gray-100">{{ config?.current_grade }} {{ config?.current_semester }}</span>
       </div>
       
       <!-- Print Title (Only visible in print) -->
@@ -14,7 +14,7 @@
         </h1>
       </div>
 
-      <h1 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-base text-[#333333] print:hidden">
+      <h1 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-base text-gray-900 dark:text-gray-100 print:hidden">
         {{ authStore.user?.nickname || authStore.user?.username }}的课表
       </h1>
 
@@ -76,6 +76,7 @@ const { config, timetable } = storeToRefs(store)
 
 const periods = Array.from({ length: 10 }, (_, i) => i + 1) // 假设每天10节课
 const periodSettings = ref<PeriodSetting[]>([])
+const courseColors = ref<Record<string, string>>({})
 
 const days = computed(() => {
   const allDays = [
@@ -115,13 +116,26 @@ function getCellStyle(day: number, period: number): CSSProperties {
   const item = getCourse(day, period)
   if (!item || !item.course) return {}
   
+  const color = courseColors.value[item.course.name] || item.course.color
+
   return {
-    backgroundColor: item.course.color,
-    color: '#000',
+    backgroundColor: color,
+    color: isLightColor(color) ? '#000' : '#fff',
     // In print mode, we want exact colors
     printColorAdjust: 'exact',
     WebkitPrintColorAdjust: 'exact'
   } as any
+}
+
+// 简单的判断颜色深浅
+function isLightColor(color: string) {
+    if (!color) return true
+    const hex = color.replace('#', '')
+    const r = parseInt(hex.substring(0, 2), 16)
+    const g = parseInt(hex.substring(2, 4), 16)
+    const b = parseInt(hex.substring(4, 6), 16)
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000
+    return brightness > 155 // 阈值可调
 }
 
 function handlePrint() {
@@ -135,6 +149,14 @@ onMounted(async () => {
     if (config.value.period_settings_json) {
         try {
             periodSettings.value = JSON.parse(config.value.period_settings_json)
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    if (config.value.course_colors_json) {
+        try {
+            courseColors.value = JSON.parse(config.value.course_colors_json)
         } catch (e) {
             console.error(e)
         }
