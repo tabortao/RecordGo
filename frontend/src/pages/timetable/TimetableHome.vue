@@ -15,7 +15,10 @@
     <div class="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center justify-between sticky top-0 z-20 relative">
       <div class="flex items-center gap-3">
         <el-icon :size="20" class="cursor-pointer" @click="router.back()"><ArrowLeft /></el-icon>
-        <h1 class="font-bold text-lg">{{ config?.current_grade }} {{ config?.current_semester }}</h1>
+        <span class="font-bold text-base text-[#333333] mr-2">一年级 上学期</span>
+        <h1 class="font-normal text-lg" :style="{ color: 'var(--el-color-primary)' }">
+          {{ authStore.user?.nickname || authStore.user?.username }}的课表
+        </h1>
       </div>
       <el-icon :size="20" class="cursor-pointer text-gray-600 dark:text-gray-300" @click="router.push('/timetable/settings')"><Setting /></el-icon>
     </div>
@@ -45,7 +48,7 @@
           <div 
             v-for="day in days" 
             :key="`${day.value}-${period}`"
-            class="h-16 rounded p-1 flex items-center justify-center text-center text-xs font-bold shadow-sm transition-colors relative overflow-hidden bg-white dark:bg-gray-800 bg-opacity-80 dark:bg-opacity-80 backdrop-blur-sm"
+            class="h-16 rounded p-1 flex items-center justify-center text-center text-xs font-bold shadow-sm transition-colors relative overflow-hidden bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm"
             :style="getCellStyle(day.value, period)"
           >
             <span class="z-10 break-words w-full">{{ getCourseName(day.value, period) }}</span>
@@ -61,11 +64,13 @@ import { computed, onMounted, ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Setting } from '@element-plus/icons-vue'
 import { useTimetableStore } from '@/stores/timetable'
+import { useAuth } from '@/stores/auth'
 import { storeToRefs } from 'pinia'
 import type { PeriodSetting } from '@/api/timetable'
 
 const router = useRouter()
 const store = useTimetableStore()
+const authStore = useAuth()
 const { config, timetable } = storeToRefs(store)
 
 const periods = Array.from({ length: 10 }, (_, i) => i + 1) // 假设每天10节课
@@ -109,7 +114,7 @@ function getCourseName(day: number, period: number) {
 
 function getCellStyle(day: number, period: number) {
   const item = getCourse(day, period)
-  if (!item || !item.course) return { backgroundColor: 'var(--el-fill-color-light)' } // Default empty
+  if (!item || !item.course) return {} // Empty cell, use class bg-white/50
   
   return {
     backgroundColor: hexToRgba(item.course.color, 0.5),

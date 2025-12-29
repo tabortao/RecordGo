@@ -11,23 +11,23 @@ import (
 	"gorm.io/gorm"
 )
 
-// 默认课程列表
+// 默认课程列表 (马卡龙配色)
 var defaultCourses = []models.CourseDict{
-	{Name: "语文", Color: "#FECACA"},   // red-200
-	{Name: "数学", Color: "#BFDBFE"},   // blue-200
-	{Name: "英语", Color: "#FDE68A"},   // amber-200
-	{Name: "物理", Color: "#C7D2FE"},   // indigo-200
-	{Name: "化学", Color: "#DDD6FE"},   // violet-200
-	{Name: "生物", Color: "#A7F3D0"},   // emerald-200
-	{Name: "政治", Color: "#FBCFE8"},   // pink-200
-	{Name: "历史", Color: "#FECDD3"},   // rose-200
-	{Name: "地理", Color: "#6EE7B7"},   // emerald-300 (slightly darker for distinction)
-	{Name: "体育", Color: "#99F6E4"},   // teal-200
-	{Name: "音乐", Color: "#F9A8D4"},   // pink-300
-	{Name: "美术", Color: "#C4B5FD"},   // violet-300
-	{Name: "信息技术", Color: "#CBD5E1"}, // slate-300
-	{Name: "科学", Color: "#D9F99D"},   // lime-200
-	{Name: "自习", Color: "#E5E7EB"},   // gray-200
+	{Name: "语文", Color: "#FF9AA2"},   // 柔和红
+	{Name: "数学", Color: "#C7CEEA"},   // 浅紫蓝
+	{Name: "英语", Color: "#FFF5BA"},   // 奶油黄
+	{Name: "物理", Color: "#B5EAD7"},   // 薄荷绿
+	{Name: "化学", Color: "#E0BBE4"},   // 薰衣草紫
+	{Name: "生物", Color: "#A2E4B8"},   // 清新绿
+	{Name: "政治", Color: "#FFDAC1"},   // 蜜桃色
+	{Name: "历史", Color: "#FFB7B2"},   // 浅鲑鱼红
+	{Name: "地理", Color: "#95F9E3"},   // 浅青色
+	{Name: "体育", Color: "#D4F0F0"},   // 淡蓝
+	{Name: "音乐", Color: "#FFC8A2"},   // 浅橙
+	{Name: "美术", Color: "#D7B3E4"},   // 浅锦葵紫
+	{Name: "信息技术", Color: "#D4D8E7"}, // 凉爽灰
+	{Name: "科学", Color: "#E6F9AF"},   // 嫩黄绿
+	{Name: "自习", Color: "#F2F2F2"},   // 浅灰
 }
 
 // ensureDefaultCourses 确保默认课程存在，并更新颜色
@@ -50,6 +50,18 @@ func ensureDefaultCourses() {
 				Update("color", course.Color)
 		}
 	}
+}
+
+// getEffectiveTimetableUserID 获取实际的课表归属用户ID（子账号继承父账号）
+func getEffectiveTimetableUserID(userID uint) uint {
+	var u models.User
+	if err := db.DB().Select("id, parent_id").First(&u, userID).Error; err != nil {
+		return userID
+	}
+	if u.ParentID != nil {
+		return *u.ParentID
+	}
+	return userID
 }
 
 // GetTimetableConfig 获取课表配置
@@ -77,13 +89,16 @@ func GetTimetableConfig(c *gin.Context) {
 		return
 	}
 
+	// 获取实际归属用户ID（子账号 -> 父账号）
+	effectiveUserID := getEffectiveTimetableUserID(userID)
+
 	var config models.TimetableConfig
-	err := db.DB().Where("user_id = ?", userID).First(&config).Error
+	err := db.DB().Where("user_id = ?", effectiveUserID).First(&config).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			// 如果不存在，创建默认配置
 			config = models.TimetableConfig{
-				UserID:          userID,
+				UserID:          effectiveUserID,
 				ShowSaturday:    false,
 				ShowSunday:      false,
 				CurrentGrade:    "一年级",
@@ -115,8 +130,6 @@ func UpdateTimetableConfig(c *gin.Context) {
 	}
 
 	// 如果请求中没有 UserID，使用当前登录用户
-	// 但通常前端会传 UserID 或者后端从 token 取
-	// 这里假设前端传的 UserID 必须与 Token 匹配或有权限
 	targetUserID := req.UserID
 	if targetUserID == 0 {
 		targetUserID = cl.UserID
@@ -128,9 +141,13 @@ func UpdateTimetableConfig(c *gin.Context) {
 		return
 	}
 
+	// 获取实际归属用户ID
+	effectiveUserID := getEffectiveTimetableUserID(targetUserID)
+	req.UserID = effectiveUserID // 确保保存到正确的 ID
+
 	// 更新或创建
 	var config models.TimetableConfig
-	err := db.DB().Where("user_id = ?", targetUserID).First(&config).Error
+	err := db.DB().Where("user_id = ?", effectiveUserID).First(&config).Error
 	switch err {
 	case gorm.ErrRecordNotFound:
 		config = req
@@ -185,9 +202,12 @@ func GetCourses(c *gin.Context) {
 		return
 	}
 
+	// 获取实际归属用户ID
+	effectiveUserID := getEffectiveTimetableUserID(userID)
+
 	var courses []models.CourseDict
-	// 查询 UserID 为 NULL (系统) 或 UserID = targetUserID (自定义)
-	if err := db.DB().Where("user_id IS NULL OR user_id = ?", userID).Find(&courses).Error; err != nil {
+	// 查询 UserID 为 NULL (系统) 或 UserID = effectiveUserID (自定义)
+	if err := db.DB().Where("user_id IS NULL OR user_id = ?", effectiveUserID).Find(&courses).Error; err != nil {
 		common.Error(c, 500, "获取课程失败")
 		return
 	}
@@ -219,10 +239,14 @@ func AddCourse(c *gin.Context) {
 		return
 	}
 
+	// 获取实际归属用户ID
+	effectiveUserID := getEffectiveTimetableUserID(*req.UserID)
+	req.UserID = &effectiveUserID
+
 	// 检查是否已存在同名课程
 	var existCount int64
 	db.DB().Model(&models.CourseDict{}).
-		Where("(user_id = ? OR user_id IS NULL) AND name = ?", *req.UserID, req.Name).
+		Where("(user_id = ? OR user_id IS NULL) AND name = ?", effectiveUserID, req.Name).
 		Count(&existCount)
 
 	if existCount > 0 {
@@ -271,10 +295,22 @@ func UpdateCourse(c *gin.Context) {
 		return
 	}
 
-	// 权限检查
-	if !canAccessUser(c, *course.UserID) {
-		deny(c, "无权限修改该课程")
-		return
+	// 权限检查：注意这里的 course.UserID 已经是数据库中的实际拥有者（父账号ID）
+	// 我们需要检查当前操作者是否有权限操作这个“实际拥有者”的数据
+	// 但 canAccessUser 检查的是当前用户能否操作 targetID。
+	// 这里比较复杂：子账号想修改父账号的课程（如果它是父账号创建的）。
+	// 简单处理：如果 course.UserID == cl.UserID (本人)，或者 cl.UserID 是 course.UserID 的子账号 (子改父)，或者 cl.UserID 是 course.UserID 的父账号 (父改子，虽然子不存课程)。
+	// 更好的逻辑：检查当前用户是否关联到 course.UserID。
+	// getEffectiveTimetableUserID(cl.UserID) == *course.UserID
+
+	effectiveOpUserID := getEffectiveTimetableUserID(cl.UserID)
+	if effectiveOpUserID != *course.UserID {
+		// 也许是父账号在操作子账号？不，所有数据都在父账号下。
+		// 也许是管理员？
+		if !canAccessUser(c, *course.UserID) { // 回退到标准检查
+			deny(c, "无权限修改该课程")
+			return
+		}
 	}
 
 	// 更新字段
@@ -315,10 +351,13 @@ func DeleteCourse(c *gin.Context) {
 		return
 	}
 
-	// 权限检查
-	if !canAccessUser(c, *course.UserID) {
-		deny(c, "无权限删除该课程")
-		return
+	// 权限检查 (同 UpdateCourse)
+	effectiveOpUserID := getEffectiveTimetableUserID(cl.UserID)
+	if effectiveOpUserID != *course.UserID {
+		if !canAccessUser(c, *course.UserID) {
+			deny(c, "无权限删除该课程")
+			return
+		}
 	}
 
 	// 检查是否被课表引用
@@ -370,8 +409,11 @@ func GetTimetable(c *gin.Context) {
 		return
 	}
 
+	// 获取实际归属用户ID
+	effectiveUserID := getEffectiveTimetableUserID(userID)
+
 	var timetable []models.Timetable
-	if err := db.DB().Preload("Course").Where("user_id = ? AND grade = ? AND semester = ?", userID, grade, semester).Find(&timetable).Error; err != nil {
+	if err := db.DB().Preload("Course").Where("user_id = ? AND grade = ? AND semester = ?", effectiveUserID, grade, semester).Find(&timetable).Error; err != nil {
 		common.Error(c, 500, "获取课表失败")
 		return
 	}
@@ -408,6 +450,10 @@ func SaveTimetable(c *gin.Context) {
 		deny(c, "无权限修改该用户课表")
 		return
 	}
+
+	// 获取实际归属用户ID
+	effectiveUserID := getEffectiveTimetableUserID(req.UserID)
+	req.UserID = effectiveUserID // 修正为实际ID
 
 	tx := db.DB().Begin()
 
