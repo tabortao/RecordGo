@@ -112,16 +112,22 @@ function getCellStyle(day: number, period: number) {
   if (!item || !item.course) return { backgroundColor: 'var(--el-fill-color-light)' } // Default empty
   
   return {
-    backgroundColor: item.course.color,
-    color: isLightColor(item.course.color) ? '#000' : '#fff'
+    backgroundColor: hexToRgba(item.course.color, 0.5),
+    color: '#000' // Ensure text is dark for readability on light backgrounds
   }
 }
 
-// 简单判断颜色亮度，决定文字颜色
-function isLightColor(_color: string) {
-  // 这里简化处理，假设 bright colors use black text
-  // 实际可以使用 tinycolor2 等库
-  return false // 默认白色文字，大部分预设颜色较深
+function hexToRgba(hex: string, alpha: number) {
+    let c: any;
+    if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+        c= hex.substring(1).split('');
+        if(c.length== 3){
+            c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c= '0x'+c.join('');
+        return 'rgba('+[(c>>16)&255, (c>>8)&255, c&255].join(',')+','+alpha+')';
+    }
+    return hex; // Fallback
 }
 
 function generateEmojiPositions() {

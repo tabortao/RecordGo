@@ -13,24 +13,24 @@ import (
 
 // 默认课程列表
 var defaultCourses = []models.CourseDict{
-	{Name: "语文", Color: "#EF4444"},   // red-500
-	{Name: "数学", Color: "#3B82F6"},   // blue-500
-	{Name: "英语", Color: "#F59E0B"},   // amber-500
-	{Name: "物理", Color: "#6366F1"},   // indigo-500
-	{Name: "化学", Color: "#8B5CF6"},   // violet-500
-	{Name: "生物", Color: "#10B981"},   // emerald-500
-	{Name: "政治", Color: "#EC4899"},   // pink-500
-	{Name: "历史", Color: "#9F1239"},   // rose-800
-	{Name: "地理", Color: "#059669"},   // emerald-700
-	{Name: "体育", Color: "#14B8A6"},   // teal-500
-	{Name: "音乐", Color: "#F472B6"},   // pink-400
-	{Name: "美术", Color: "#A78BFA"},   // violet-400
-	{Name: "信息技术", Color: "#64748B"}, // slate-500
-	{Name: "科学", Color: "#84CC16"},   // lime-500
-	{Name: "自习", Color: "#9CA3AF"},   // gray-400
+	{Name: "语文", Color: "#FECACA"},   // red-200
+	{Name: "数学", Color: "#BFDBFE"},   // blue-200
+	{Name: "英语", Color: "#FDE68A"},   // amber-200
+	{Name: "物理", Color: "#C7D2FE"},   // indigo-200
+	{Name: "化学", Color: "#DDD6FE"},   // violet-200
+	{Name: "生物", Color: "#A7F3D0"},   // emerald-200
+	{Name: "政治", Color: "#FBCFE8"},   // pink-200
+	{Name: "历史", Color: "#FECDD3"},   // rose-200
+	{Name: "地理", Color: "#6EE7B7"},   // emerald-300 (slightly darker for distinction)
+	{Name: "体育", Color: "#99F6E4"},   // teal-200
+	{Name: "音乐", Color: "#F9A8D4"},   // pink-300
+	{Name: "美术", Color: "#C4B5FD"},   // violet-300
+	{Name: "信息技术", Color: "#CBD5E1"}, // slate-300
+	{Name: "科学", Color: "#D9F99D"},   // lime-200
+	{Name: "自习", Color: "#E5E7EB"},   // gray-200
 }
 
-// ensureDefaultCourses 确保默认课程存在
+// ensureDefaultCourses 确保默认课程存在，并更新颜色
 func ensureDefaultCourses() {
 	var count int64
 	db.DB().Model(&models.CourseDict{}).Where("user_id IS NULL").Count(&count)
@@ -42,6 +42,13 @@ func ensureDefaultCourses() {
 		// 简单的检查：如果名字不对，可能是旧数据，这里暂不自动修正，以免覆盖用户可能的修改（虽然user_id=null不应修改）
 		// 但为了满足需求“信息技术”，我们可以尝试更新一下
 		db.DB().Model(&models.CourseDict{}).Where("user_id IS NULL AND name = ?", "信息").Update("name", "信息技术")
+
+		// 强制更新系统课程颜色为最新的浅色系
+		for _, course := range defaultCourses {
+			db.DB().Model(&models.CourseDict{}).
+				Where("user_id IS NULL AND name = ?", course.Name).
+				Update("color", course.Color)
+		}
 	}
 }
 
