@@ -677,8 +677,8 @@ const occurMap = ref<Record<number, { status: number; minutes?: number }>>({})
 function isRepeatTask(t: TaskItem) {
   const rep = String((t as any).repeat || (t as any).repeat_type || 'none').trim().toLowerCase()
   const type = /^(daily|weekdays|weekly|monthly)$/.test(rep) ? rep : 'none'
-  const e = (t as any).end_date
-  return type !== 'none' && (!!e || (t as any).series_id != null)
+  // 中文注释：只要设置了重复类型，即视为重复任务（无论是否设置截止日期），确保点击完成时调用 completeOccurrence 而非修改主状态
+  return type !== 'none'
 }
 function isCompletedOnSelected(t: TaskItem) {
   if (isRepeatTask(t)) return (occurMap.value[t.id]?.status || 0) === 2
