@@ -30,9 +30,6 @@
                 <el-form-item label="周日">
                     <el-switch v-model="form.show_sunday" @change="onConfigChange" />
                 </el-form-item>
-                <el-form-item label="背景Emoji">
-                    <el-input v-model="form.background_emojis" placeholder="输入Emoji，用逗号分隔，例如: 🌟,🎈,🐱" @change="onConfigChange" />
-                </el-form-item>
             </el-form>
         </el-card>
 
@@ -245,22 +242,27 @@ onMounted(async () => {
 
 // 监听配置变化，自动保存配置并重新加载课表
 async function onConfigChange() {
-    // 保存配置
-    await timetableApi.updateConfig({
+    const newConfig = {
         ...form.value,
         period_settings_json: JSON.stringify(periodSettings.value)
-    })
-    // 刷新 store config
+    }
+    // 保存配置到后端
+    await timetableApi.updateConfig(newConfig)
+    
+    // 更新 Store 和本地缓存
     if (store.config) {
-        store.config = { 
-            ...store.config, 
-            ...form.value, 
-            period_settings_json: JSON.stringify(periodSettings.value) 
-        }
+        await store.updateConfig({
+            ...store.config,
+            ...newConfig
+        })
     }
     
     // 重新加载对应课表
     await loadTimetableForEdit()
+}
+
+function goBack() {
+    router.back()
 }
 
 async function loadTimetableForEdit() {
@@ -442,9 +444,5 @@ async function savePeriodTime() {
     
     // 立即保存配置
     await onConfigChange()
-}
-
-function goBack() {
-    router.back()
 }
 </script>

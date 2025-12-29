@@ -20,7 +20,7 @@
         class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center gap-3 cursor-pointer hover:shadow-md transition active:scale-95"
         @click="router.push('/homework/chinese/hanzi-hero')"
       >
-        <div class="w-14 h-14 rounded-full flex items-center justify-center">
+        <div class="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center p-2">
           <img src="@/assets/button/hanzihero.png" alt="汉字英雄" class="w-full h-full object-contain" />
         </div>
         <span class="font-semibold text-gray-700 dark:text-gray-200">汉字英雄</span>
