@@ -26,7 +26,8 @@ func Init(cfg *config.Config, lg *zap.Logger) (*gorm.DB, error) {
     // 自动迁移基础模型（后续可扩展）
     if err := db.AutoMigrate(&models.User{}, &models.Task{}, &models.Wish{}, &models.UserSettings{}, &models.TaskHistory{}, &models.WishRecord{}, &models.TaskCategory{}, &models.TaskOccurrence{},
         &models.DictationWordBank{}, &models.DictationSettings{}, &models.DictationHistory{}, &models.MistakeNotebook{},
-        &models.GrowthRecord{}, &models.GrowthTag{}, &models.GrowthComment{}); err != nil {
+        &models.GrowthRecord{}, &models.GrowthTag{}, &models.GrowthComment{},
+        &models.CourseDict{}, &models.Timetable{}, &models.TimetableConfig{}); err != nil {
         return nil, err
     }
 

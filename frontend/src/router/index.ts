@@ -75,6 +75,20 @@ const router = createRouter({
     { path: '/dictation/mistakes', name: 'MistakeBook', component: () => import('@/pages/dictation/MistakeBook.vue'), meta: { noNav: true } },
     { path: '/dictation/history', name: 'DictationHistory', component: () => import('@/pages/dictation/DictationHistory.vue'), meta: { noNav: true } },
 
+    // --- 课表模块 ---
+    {
+      path: '/timetable',
+      name: 'TimetableHome',
+      component: () => import('@/pages/timetable/TimetableHome.vue'),
+      meta: { noNav: true }
+    },
+    {
+      path: '/timetable/settings',
+      name: 'TimetableSettings',
+      component: () => import('@/pages/timetable/TimetableSettings.vue'),
+      meta: { noNav: true }
+    },
+
     // --- 小成长模块 ---
     {
       path: '/little-growth',

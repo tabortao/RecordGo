@@ -170,6 +170,19 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 			littleGrowth.DELETE("/tags/:id", handlers.DeleteGrowthTag)
 		}
 		api.POST("/upload/growth-file", handlers.UploadGrowthFile)
+
+		// 课表模块
+		timetable := api.Group("/timetable")
+		{
+			timetable.GET("/config", handlers.GetTimetableConfig)
+			timetable.PUT("/config", handlers.UpdateTimetableConfig)
+			timetable.GET("/courses", handlers.GetCourses)
+			timetable.POST("/courses", handlers.AddCourse)
+			timetable.PUT("/courses/:id", handlers.UpdateCourse)
+			timetable.DELETE("/courses/:id", handlers.DeleteCourse)
+			timetable.GET("/data", handlers.GetTimetable)
+			timetable.POST("/data", handlers.SaveTimetable)
+		}
 	}
 
 	r.PUT("/api/storage/put", handlers.StoragePut)
