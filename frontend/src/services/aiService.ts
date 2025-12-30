@@ -62,18 +62,13 @@ export async function testVisionConnection(config: AISettings): Promise<boolean>
     const apiKey = config.visionApiKey || config.apiKey
     const model = config.visionModel || config.model
     
-    // 1x1 Transparent Pixel Base64
-    const base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
-    
+    // Try text-only handshake first as it is lighter and supported by most multimodal models
     const payload = {
         model: model,
         messages: [
             {
                 role: "user",
-                content: [
-                    { type: "text", text: "Describe this image" },
-                    { type: "image_url", image_url: { url: `data:image/png;base64,${base64Image}` } }
-                ]
+                content: "Hello, just checking connection. Reply 'OK'."
             }
         ],
         max_tokens: 10
@@ -100,7 +95,7 @@ export async function testVisionConnection(config: AISettings): Promise<boolean>
             console.error('Test Vision Connection Failed:', response.status, await response.text())
             return false
         }
-
+        
         const data = await response.json()
         if (data.choices && data.choices.length > 0) {
             return true

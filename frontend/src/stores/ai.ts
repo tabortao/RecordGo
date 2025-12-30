@@ -43,7 +43,7 @@ export const PROVIDERS = {
     name: 'SiliconFlow (硅基流动)',
     url: 'https://api.siliconflow.cn/v1',
     model: 'deepseek-ai/DeepSeek-V3',
-    visionModel: ''
+    visionModel: 'zai-org/GLM-4.6V'
   },
   CUSTOM: {
     name: '自定义 / OpenAI 兼容',

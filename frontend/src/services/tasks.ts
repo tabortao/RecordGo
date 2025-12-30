@@ -66,6 +66,33 @@ export async function createTasksBatch(payload: any): Promise<{ items: TaskItem[
   return (await http.post('/tasks/batch', payload)) as any
 }
 
+export interface AITaskParseItem {
+  name: string
+  description: string
+  category: string
+  score: number
+  plan_minutes: number
+  start_date: string
+  end_date?: string
+  repeat_type: 'none'|'daily'|'weekdays'|'weekly'|'monthly'
+  weekly_days: number[]
+}
+
+export async function parseTaskByAI(text: string, image?: File, aiConfig?: { url: string; key: string; model: string }, categories?: string[]): Promise<{ tasks: AITaskParseItem[] }> {
+  const formData = new FormData()
+  formData.append('text', text)
+  if (image) formData.append('image', image)
+  if (aiConfig) {
+    formData.append('ai_base_url', aiConfig.url)
+    formData.append('ai_key', aiConfig.key)
+    formData.append('ai_model', aiConfig.model)
+  }
+  if (categories && categories.length > 0) {
+    formData.append('categories', categories.join(','))
+  }
+  return (await http.post('/ai/parse-task', formData)) as any
+}
+
 export async function updateTask(id: number, payload: any): Promise<TaskItem> {
   const norm = { ...payload }
   if (norm.start_date) {
