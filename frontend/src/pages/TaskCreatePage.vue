@@ -257,6 +257,7 @@ import { createTask, uploadTaskImage, updateTask, enqueueOfflineTask, parseTaskB
 import { prepareUpload } from '@/utils/image'
 
 import { useAuth } from '@/stores/auth'
+import { useAIStore } from '@/stores/ai'
 const auth = useAuth()
 const userId = auth.user?.id ?? 0
 function goBack() { router.back() }
@@ -371,7 +372,7 @@ async function submitForm() {
   })
 }
 
-import { useAIStore } from '@/stores/ai'
+import { recognizeImage } from '@/services/ocr'
 
 // --- AI 智能创建逻辑 ---
 const aiText = ref('')
@@ -393,16 +394,66 @@ async function handleAIParse() {
     return
   }
   aiLoading.value = true
+  
+  let finalText = aiText.value
+  let useVisionModel = !!aiImage.value
+
+  // OCR 优先逻辑
+  if (aiImage.value) {
+    const ocrSettings = aiStore.ocr
+    const activeOCR = ocrSettings?.activeModel
+    const ocrConfig = activeOCR ? ocrSettings.configs[activeOCR] : null
+
+    if (ocrConfig && ocrConfig.apiUrl && ocrConfig.token) {
+      try {
+        ElMessage.info('正在使用 OCR 识别图片内容...')
+        // 尝试压缩图片以提高 OCR 成功率和速度
+        let imageToOCR = aiImage.value
+        try {
+           imageToOCR = (await prepareUpload(imageToOCR, 0.8)) as File
+        } catch (e) {
+           console.warn('OCR图片压缩失败，使用原图', e)
+        }
+
+        const ocrResult = await recognizeImage(imageToOCR, activeOCR, ocrConfig)
+        if (ocrResult && ocrResult.trim().length > 0) {
+          finalText = (finalText ? finalText + '\n\n' : '') + `[图片OCR识别结果]:\n${ocrResult}`
+          useVisionModel = false // OCR 成功，转为纯文本模式
+          ElMessage.success('OCR 识别成功，正在进行智能分析...')
+        } else {
+          console.warn('OCR result empty, falling back to Vision Model')
+        }
+      } catch (e) {
+        console.error('OCR Error, falling back to Vision Model', e)
+        ElMessage.warning('OCR 服务调用失败，自动回退至 AI 视觉模型')
+      }
+    } else {
+      // 检查 AI 视觉模型配置
+      const config = aiStore.$state
+      // PRD 要求：若AI视觉模型也未配置，则显示提示
+      if (!config.visionApiKey && !config.apiKey && !config.visionApiBaseUrl) {
+         ElMessage.error('请先配置AI视觉模型或设置OCR服务的API_URL和TOKEN')
+         aiLoading.value = false
+         return
+      }
+    }
+  }
+
   try {
     const config = aiStore.$state
-    const hasImage = !!aiImage.value
+    const hasImage = useVisionModel
     const aiConfig = {
       url: hasImage ? (config.visionApiBaseUrl || config.apiBaseUrl) : config.apiBaseUrl,
       key: hasImage ? (config.visionApiKey || config.apiKey) : config.apiKey,
       model: hasImage ? (config.visionModel || config.model) : config.model
     }
     const categoryNames = categories.value.map(c => c.name)
-    const res = await parseTaskByAI(aiText.value, aiImage.value, aiConfig, categoryNames)
+    // 如果 OCR 成功，imageToPass 为 undefined，parseTaskByAI 将只处理文本
+    const imageToPass = useVisionModel ? aiImage.value : undefined
+    
+    console.log('[AI Task Create] Final Text sent to AI:', finalText)
+
+    const res = await parseTaskByAI(finalText, imageToPass, aiConfig, categoryNames)
     if (res.tasks && res.tasks.length > 0) {
       aiTasks.value = res.tasks
       ElMessage.success(`成功识别 ${res.tasks.length} 个任务`)

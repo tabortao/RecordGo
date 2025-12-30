@@ -87,6 +87,10 @@ func ParseTaskByAI(c *gin.Context) {
 		return
 	}
 
+	// Log the raw AI response for debugging
+	// fmt.Printf("[AI Raw Response]: %s\n", rawContent)
+	zap.L().Info("AI Raw Response", zap.String("content", rawContent))
+
 	// Step 2: Try to parse JSON tasks
 	tasks, err := parseTasksFromContent(rawContent)
 	if err != nil {
@@ -308,6 +312,8 @@ func performLLMCall(ctx *gin.Context, req AITaskParseReq, imageBase64 string) (s
 	systemPrompt := fmt.Sprintf(`You are a smart task extraction assistant for a Task Management App.
 Current Time: %s
 Your goal is to extract structured tasks from the user's input (text and/or image).
+The input may contain OCR results marked with "[图片OCR识别结果]". Please extract tasks from these results, ignoring OCR noise (random characters, page numbers, headers).
+If the OCR text contains a list of items, even if they lack time or details, extract them as tasks.
 
 Output Format: Return ONLY a JSON array of objects. Do not include Markdown formatting like `+"```json"+`.
 JSON Structure:

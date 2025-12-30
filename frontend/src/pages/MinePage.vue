@@ -117,7 +117,7 @@ import { usePermissions } from '@/composables/permissions'
 import { getStaticBase } from '@/services/http'
 import { presignView } from '@/services/storage'
 import { ElMessage } from 'element-plus'
-import { User, Edit, SwitchButton, Setting, Timer, List, Microphone, Coin, InfoFilled, Cpu } from '@element-plus/icons-vue'
+import { User, Edit, SwitchButton, Setting, Timer, List, Microphone, Coin, InfoFilled, Cpu, Document as DocumentIcon } from '@element-plus/icons-vue'
 import http from '@/services/http'
 
 // 中文注释：应用状态（用于退出登录时重置）
@@ -180,13 +180,14 @@ function onLogout() {
 // 中文注释：移除系统设置按钮对应的旧跳转函数
 
 // 中文注释：设置模块按钮（图标统一 18，与“编辑个人信息”一致）
-type SettingsKey = 'tomato' | 'tasks' | 'ai' | 'reading' | 'coins' | 'appearance' | 'about' | 'admin'
+type SettingsKey = 'tomato' | 'tasks' | 'ai' | 'ocr' | 'reading' | 'coins' | 'appearance' | 'about' | 'admin'
 
 const settingItems = computed(() => {
   const items: Array<{ key: SettingsKey; label: string; icon: any; fg: string }> = [
     { key: 'tomato', label: '番茄钟设置', icon: Timer, fg: '#ef4444' },
     { key: 'tasks', label: '任务设置', icon: List, fg: '#10b981' },
     { key: 'ai', label: 'AI模型设置', icon: Cpu, fg: '#6366f1' },
+    { key: 'ocr', label: 'OCR服务', icon: DocumentIcon, fg: '#3b82f6' },
     { key: 'reading', label: '朗读设置', icon: Microphone, fg: '#7c3aed' },
     { key: 'coins', label: '金币设置', icon: Coin, fg: '#f59e0b' },
     { key: 'appearance', label: '主题外观', icon: Setting, fg: '#2563eb' },
@@ -210,6 +211,7 @@ function goSettingsTab(k: SettingsKey) {
     tomato: '/settings/tomato',
     tasks: '/settings/tasks',
     ai: '/settings/ai',
+    ocr: '/settings/ocr',
     reading: '/settings/reading',
     coins: '/settings/coins',
     appearance: '/settings/appearance',
@@ -223,6 +225,7 @@ function isDisabled(k: SettingsKey): boolean {
   if (k === 'admin') return false
   if (k === 'about') return false
   if (k === 'ai') return false
+  if (k === 'ocr') return false
   if (k === 'appearance') return false
   if (k === 'tomato') return !canSettingTomato.value
   if (k === 'tasks') return !canSettingTasks.value

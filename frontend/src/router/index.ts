@@ -131,6 +131,7 @@ const router = createRouter({
     { path: '/settings/subjects', name: 'SettingsSubjects', component: () => import('@/pages/SettingsSubjectsPage.vue'), meta: { noNav: true } },
     { path: '/settings/coins', name: 'SettingsCoins', component: () => import('@/pages/SettingsCoinsPage.vue'), meta: { noNav: true } },
     { path: '/settings/ai', name: 'SettingsAI', component: () => import('@/pages/SettingsAIModelPage.vue'), meta: { noNav: true } },
+    { path: '/settings/ocr', name: 'SettingsOCR', component: () => import('@/pages/SettingsOCRPage.vue'), meta: { noNav: true } },
     { path: '/settings/about', name: 'SettingsAbout', component: () => import('@/pages/SettingsAboutPage.vue'), meta: { noNav: true } },
     { path: '/settings/help', name: 'Help', component: () => import('@/pages/HelpPage.vue'), meta: { noNav: true } },
     { path: '/settings/support', name: 'Support', component: () => import('@/pages/SupportPage.vue'), meta: { noNav: true } },

@@ -9,6 +9,20 @@ export interface ProviderConfig {
   visionModel: string
 }
 
+export interface OCRConfig {
+  apiUrl: string
+  token: string
+}
+
+export interface OCRSettings {
+  activeModel: 'PP-OCRv5' | 'PaddleOCR-VL' | 'PP-StructureV3'
+  configs: {
+    'PP-OCRv5': OCRConfig
+    'PaddleOCR-VL': OCRConfig
+    'PP-StructureV3': OCRConfig
+  }
+}
+
 export interface AISettings {
   apiBaseUrl: string
   apiKey: string
@@ -18,6 +32,7 @@ export interface AISettings {
   visionModel: string
   activeProvider: string
   savedProviderConfigs: Record<string, ProviderConfig>
+  ocr: OCRSettings
 }
 
 export const PROVIDERS = {
@@ -61,7 +76,15 @@ const DEFAULT_STATE: AISettings = {
   visionApiKey: '',
   visionModel: 'gemini-2.5-flash',
   activeProvider: 'GOOGLE',
-  savedProviderConfigs: {}
+  savedProviderConfigs: {},
+  ocr: {
+    activeModel: 'PP-OCRv5',
+    configs: {
+      'PP-OCRv5': { apiUrl: '', token: '' },
+      'PaddleOCR-VL': { apiUrl: '', token: '' },
+      'PP-StructureV3': { apiUrl: '', token: '' }
+    }
+  }
 }
 
 export const useAIStore = defineStore('ai', {

@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watchEffect } from 'vue'
-import { Setting, Timer, List, Microphone, Notebook, Coin, InfoFilled } from '@element-plus/icons-vue'
+import { Setting, Timer, List, Microphone, Notebook, Coin, InfoFilled, Document as DocumentIcon } from '@element-plus/icons-vue'
 import { useAppState } from '@/stores/appState'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -81,7 +81,7 @@ import { setCoins } from '@/services/coins'
 import { useAuth } from '@/stores/auth'
 
 // 中文注释：类型约束，修复模板中“string 不能分配到联合类型”的报错
- type SettingsKey = 'tomato' | 'tasks' | 'reading' | 'subjects' | 'coins' | 'appearance' | 'about'
+ type SettingsKey = 'tomato' | 'tasks' | 'reading' | 'subjects' | 'coins' | 'appearance' | 'about' | 'ocr'
  const items: Array<{ key: SettingsKey; label: string; icon: any; fg: string }> = [
   { key: 'tomato', label: '番茄钟设置', icon: Timer, fg: '#ef4444' },
   { key: 'tasks', label: '任务设置', icon: List, fg: '#10b981' },
@@ -89,7 +89,8 @@ import { useAuth } from '@/stores/auth'
   { key: 'subjects', label: '学科设置', icon: Notebook, fg: '#2563eb' },
   { key: 'coins', label: '金币设置', icon: Coin, fg: '#f59e0b' },
   { key: 'appearance', label: '主题外观', icon: Setting, fg: '#7c3aed' },
-  { key: 'about', label: '关于', icon: InfoFilled, fg: '#0ea5e9' }
+  { key: 'about', label: '关于', icon: InfoFilled, fg: '#0ea5e9' },
+  { key: 'ocr', label: 'OCR服务', icon: DocumentIcon, fg: '#3b82f6' }
 ]
  const active = ref<SettingsKey>('tomato')
 
@@ -97,7 +98,7 @@ import { useAuth } from '@/stores/auth'
 const route = useRoute()
 watchEffect(() => {
   const tab = String(route.query.tab || '')
- const allowed: SettingsKey[] = ['tomato', 'tasks', 'reading', 'subjects', 'coins', 'appearance', 'about']
+ const allowed: SettingsKey[] = ['tomato', 'tasks', 'reading', 'subjects', 'coins', 'appearance', 'about', 'ocr']
   if (allowed.includes(tab as SettingsKey)) {
     active.value = tab as SettingsKey
   }
@@ -131,6 +132,7 @@ function openDialog(k: SettingsKey) {
   else if (k === 'subjects') showSubjects.value = true
   else if (k === 'appearance') { router.push('/settings/appearance') }
   else if (k === 'about') { router.push('/settings/about') }
+  else if (k === 'ocr') { router.push('/settings/ocr') }
 }
 
 const auth = useAuth()

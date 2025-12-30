@@ -92,6 +92,8 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 		api.POST("/tasks/batch", handlers.CreateTasksBatch)
 		// 中文注释：AI 智能创建任务识别
 		api.POST("/ai/parse-task", handlers.ParseTaskByAI)
+		// 中文注释：OCR 代理接口（解决前端跨域问题）
+		api.POST("/proxy/ocr", handlers.HandleOCRProxy)
 		api.GET("/tasks", handlers.ListTasks)
 		api.GET("/tasks/:id", handlers.GetTask)
 		api.PUT("/tasks/:id", handlers.UpdateTask)
