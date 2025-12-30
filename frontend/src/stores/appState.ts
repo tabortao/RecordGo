@@ -21,12 +21,27 @@ export interface Permissions {
   view_only: boolean
 }
 
+// 中文注释：自定义 TTS 配置项
+export interface CustomTTSProfile {
+  id: string
+  name: string
+  apiUrl: string
+  apiKey: string
+  voiceId: string
+  speed: number
+  pitch: number
+  method?: 'GET' | 'POST'
+}
+
 // 中文注释：朗读（TTS）设置，支持语音、语速、音调与开关
 export interface SpeechSettings {
   enabled: boolean
+  engine: 'system' | 'custom' // 'system' | 'custom'
   voiceURI?: string | null
   rate: number // 语速（0.5~2.0，默认1）
   pitch: number // 音调（0~2，默认1）
+  customProfiles: CustomTTSProfile[] // 自定义 TTS 配置列表
+  activeCustomId: string | null // 当前选中的自定义配置 ID
 }
 
 export interface AppState {
@@ -71,9 +86,12 @@ const DEFAULT_STATE: AppState = {
   },
   speech: {
     enabled: true,
+    engine: 'system',
     voiceURI: null,
     rate: 1,
-    pitch: 1
+    pitch: 1,
+    customProfiles: [],
+    activeCustomId: null
   },
   // 中文注释：任务备注入口默认开启
   taskNotesEnabled: true

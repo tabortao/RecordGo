@@ -249,14 +249,21 @@ function playDing() {
   } catch (e) {}
 }
 
-function speak() {
+import { speak as speakText } from '@/utils/speech'
+import { useAppState } from '@/stores/appState'
+
+const appState = useAppState()
+
+async function speak() {
   if (!currentResult.value) return
   // 朗读：词组 + 逐字
   const text = `${currentResult.value.word}。${currentResult.value.example}`
-  const u = new SpeechSynthesisUtterance(text)
-  u.lang = 'zh-CN'
-  u.rate = 0.9
-  window.speechSynthesis.speak(u)
+  
+  await speakText(text, {
+    voiceURI: appState.speech.voiceURI || undefined,
+    rate: appState.speech.rate || 0.9,
+    pitch: appState.speech.pitch || 1.0
+  })
 }
 </script>
 

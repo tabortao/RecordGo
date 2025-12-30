@@ -1,3 +1,8 @@
+import { useAppState } from '@/stores/appState'
+import { createCustomAudio } from './customTTS'
+
+let currentAudio: HTMLAudioElement | null = null
+
 // 中文注释：Web Speech API 封装，提供语音列表与朗读函数
 
 export interface SpeakOptions {
@@ -5,6 +10,8 @@ export interface SpeakOptions {
   rate?: number
   pitch?: number
   lang?: string
+  onEnd?: () => void
+  onError?: (err: any) => void
 }
 
 // 中文注释：获取可用语音列表（可能需要等待 voiceschanged 事件）
@@ -31,8 +38,36 @@ export function pickChineseVoice(): SpeechSynthesisVoice | undefined {
 }
 
 // 中文注释：朗读文本；支持指定语音、语速与音调；异常时返回 false
-export function speak(text: string, opts: SpeakOptions = {}): boolean {
+export async function speak(text: string, opts: SpeakOptions = {}): Promise<boolean> {
+  stop() // Stop previous
+
   try {
+    // 尝试使用自定义 TTS
+    try {
+        const store = useAppState()
+        if (store.speech.engine === 'custom' && store.speech.activeCustomId) {
+            const profile = store.speech.customProfiles.find(p => p.id === store.speech.activeCustomId)
+            if (profile) {
+                const audio = await createCustomAudio(text, profile)
+                if (audio) {
+                    currentAudio = audio
+                    audio.onended = () => {
+                      opts.onEnd?.()
+                      if (currentAudio === audio) currentAudio = null
+                    }
+                    audio.onerror = (e) => {
+                      opts.onError?.(e)
+                      if (currentAudio === audio) currentAudio = null
+                    }
+                    await audio.play()
+                    return true
+                }
+            }
+        }
+    } catch (e) {
+        // Pinia 可能未初始化（极少情况），忽略并降级
+    }
+
     if (!('speechSynthesis' in window)) return false
     const utter = new SpeechSynthesisUtterance(text)
     // 语音
@@ -45,7 +80,10 @@ export function speak(text: string, opts: SpeakOptions = {}): boolean {
     // 语速与音调
     utter.rate = typeof opts.rate === 'number' ? Math.min(2, Math.max(0.5, opts.rate)) : 1
     utter.pitch = typeof opts.pitch === 'number' ? Math.min(2, Math.max(0, opts.pitch)) : 1
-    window.speechSynthesis.cancel() // 中文注释：先取消上一次朗读，避免叠加
+    
+    utter.onend = () => opts.onEnd?.()
+    utter.onerror = (e) => opts.onError?.(e)
+    
     window.speechSynthesis.speak(utter)
     return true
   } catch {
@@ -55,5 +93,9 @@ export function speak(text: string, opts: SpeakOptions = {}): boolean {
 
 // 中文注释：停止朗读
 export function stop() {
+  if (currentAudio) {
+    currentAudio.pause()
+    currentAudio = null
+  }
   try { window.speechSynthesis?.cancel?.() } catch {}
 }

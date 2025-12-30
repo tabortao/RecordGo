@@ -701,7 +701,7 @@ const dayCoins = computed(() => {
 })
 
 // 中文注释：朗读任务内容（格式："{任务分类}，{任务标题}，备注：{任务描述}"）
-function speakTask(t: TaskItem) {
+async function speakTask(t: TaskItem) {
   try {
     if (!store.speech.enabled) {
       ElMessage.info('朗读已关闭，可在“我的 → 朗读设置”开启')
@@ -711,7 +711,7 @@ function speakTask(t: TaskItem) {
     const title = (t.name || '').trim()
     const remark = (t.remark || t.description || '').trim()
     const text = `${category ? category + '，' : ''}${title}${remark ? '，备注：' + remark : ''}`
-    const ok = speak(text, { voiceURI: store.speech.voiceURI || undefined, rate: store.speech.rate, pitch: store.speech.pitch })
+    const ok = await speak(text, { voiceURI: store.speech.voiceURI || undefined, rate: store.speech.rate, pitch: store.speech.pitch })
     if (!ok) ElMessage.warning('当前浏览器不支持朗读或语音不可用')
   } catch {
     ElMessage.error('朗读失败，请稍后重试')

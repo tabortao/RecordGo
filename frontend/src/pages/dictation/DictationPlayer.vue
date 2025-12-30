@@ -78,6 +78,7 @@ import { useRouter } from 'vue-router'
 import { ArrowLeft, ArrowLeftBold, ArrowRightBold, VideoPlay, VideoPause, Sort } from '@element-plus/icons-vue'
 import { dictationApi, type DictationSettings } from '@/services/dictation'
 import { ElMessage } from 'element-plus'
+import { speak as speakTTS, stop as stopTTS } from '@/utils/speech'
 
 const router = useRouter()
 
@@ -215,7 +216,7 @@ function goBack() {
 
 function stop() {
   isPlaying.value = false
-  window.speechSynthesis.cancel()
+  stopTTS()
   clearTimeout(timer.value)
   clearInterval(elapsedTimer.value)
 }
@@ -278,8 +279,8 @@ function playLoop() {
 
 const audioRef = ref<HTMLAudioElement | null>(null)
 
-function speak(text: string, onEnd: () => void) {
-  window.speechSynthesis.cancel()
+async function speak(text: string, onEnd: () => void) {
+  stopTTS()
   
   // Check if text is a URL
   if (text.startsWith('http://') || text.startsWith('https://')) {
@@ -301,31 +302,17 @@ function speak(text: string, onEnd: () => void) {
     return
   }
 
-  const u = new SpeechSynthesisUtterance(text)
-  u.rate = settings.value.speed
-  
-  // Auto select voice based on language
   const isChinese = /[\u4e00-\u9fa5]/.test(text)
   let targetVoiceURI = isChinese ? settings.value.zh_voice_type : settings.value.en_voice_type
-  if (!targetVoiceURI) targetVoiceURI = settings.value.voice_type // Fallback
+  if (!targetVoiceURI) targetVoiceURI = settings.value.voice_type
 
-  if (targetVoiceURI) {
-    const v = window.speechSynthesis.getVoices().find(x => x.voiceURI === targetVoiceURI)
-    if (v) u.voice = v
-  }
-
-  if (!u.voice) {
-      // Try to match language if no specific voice
-    if (isChinese) {
-        u.lang = 'zh-CN'
-    } else {
-        u.lang = 'en-US'
-    }
-  }
-  
-  u.onend = onEnd
-  u.onerror = onEnd // handle error as end
-  window.speechSynthesis.speak(u)
+  await speakTTS(text, {
+    voiceURI: targetVoiceURI || undefined,
+    rate: settings.value.speed,
+    lang: isChinese ? 'zh-CN' : 'en-US',
+    onEnd: onEnd,
+    onError: onEnd
+  })
 }
 
 function prev() {

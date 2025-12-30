@@ -83,7 +83,6 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useNotesStore, type TaskNote, type NoteAttachment } from '@/stores/notes'
 import { useAuth } from '@/stores/auth'
-import { ElMessageBox } from 'element-plus'
 import { uploadNoteImage, uploadTaskAudio } from '@/services/tasks'
 import { normalizeUploadPath } from '@/services/wishes'
 import { prepareUpload } from '@/utils/image'
@@ -331,12 +330,12 @@ function removeNote(noteId: number) {
 }
 
 // 中文注释：朗读备注内容，遵循全局朗读设置（语音/语速/音调）
-function speakNote(text: string) {
+async function speakNote(text: string) {
   try {
     if (!appState.speech.enabled) return
     const s = (text || '').trim()
     if (!s) return
-    const ok = speak(s, { voiceURI: appState.speech.voiceURI || undefined, rate: appState.speech.rate, pitch: appState.speech.pitch })
+    const ok = await speak(s, { voiceURI: appState.speech.voiceURI || undefined, rate: appState.speech.rate, pitch: appState.speech.pitch })
     if (!ok) ElMessage.warning('当前浏览器不支持朗读或语音不可用')
   } catch {
     // 忽略错误，避免影响页面交互
