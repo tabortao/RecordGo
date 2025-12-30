@@ -209,6 +209,17 @@
                             <el-option label="每月" value="monthly" />
                          </el-select>
                       </el-form-item>
+                      <el-form-item v-if="task.repeat_type==='weekly'" label="选择星期">
+                        <el-checkbox-group v-model="task.weekly_days">
+                          <el-checkbox :label="1">周一</el-checkbox>
+                          <el-checkbox :label="2">周二</el-checkbox>
+                          <el-checkbox :label="3">周三</el-checkbox>
+                          <el-checkbox :label="4">周四</el-checkbox>
+                          <el-checkbox :label="5">周五</el-checkbox>
+                          <el-checkbox :label="6">周六</el-checkbox>
+                          <el-checkbox :label="7">周日</el-checkbox>
+                        </el-checkbox-group>
+                      </el-form-item>
                       <div class="flex gap-2">
                         <el-form-item label="开始日期" class="flex-1" required>
                            <el-date-picker v-model="task.start_date" type="date" :editable="false" :clearable="false" style="width: 100%" />

@@ -282,24 +282,26 @@ Rules:
    - Example: "本周末下午跑步5公里 1小时 20金币" -> name: "跑步", description: "本周末下午跑步5公里 1小时 20金币"
    - IMPORTANT: "description" MUST contain the EXACT ORIGINAL user text without modification, summarization, or translation. It is used for validation.
 2. Time Recognition: 
-   - Identify relative dates (e.g. "tomorrow", "next Monday") based on "Current Time".
+   - Identify relative dates based STRICTLY on "Current Time" (Year, Month, Day, Weekday).
+   - Pay special attention to YEAR transitions. If "Current Time" is Dec 2025 and the task is "next Thursday" (which falls in Jan), the year MUST be 2026.
+   - Example: If Current Time is "2025-12-30 Tuesday", and input is "Thursday", it means "2026-01-01" (The upcoming Thursday). Do NOT look back to 2025.
+   - "This weekend": usually means the upcoming Saturday or Sunday.
    - "start_date" is the date of the FIRST occurrence.
-   - "This weekend" ("本周末"): usually means the upcoming Saturday or Sunday. If today is Monday-Friday, it's the next Saturday.
 3. Repetition & Dates:
    - STRICTLY use one of these values for "repeat_type": "none", "daily", "weekly", "monthly", "weekdays". DO NOT use any other value.
    - "Every day" -> repeat_type: "daily"
    - "Every week" -> repeat_type: "weekly"
    - "Weekdays" -> repeat_type: "weekdays"
+   - "Every Wednesday" -> repeat_type: "weekly", weekly_days: [3] (1=Monday...7=Sunday)
+   - "Every Mon, Wed, Fri" -> repeat_type: "weekly", weekly_days: [1, 3, 5]
    - "Tomorrow 7am" (one time) -> repeat_type: "none", start_date="YYYY-MM-DD" (tomorrow), end_date=null
    - "Every day for 1 month" -> repeat_type: "daily", start_date="tomorrow" (or specified), end_date="1 month later"
    - If it's a repetitive task with a specific end date (e.g., "until next month"), set "end_date". Otherwise, "end_date" is null.
-4. Score/Coins: 
+4. Score/Coins & Duration: 
    - STRICTLY extract the number immediately preceding "金币", "积分", "points", "coins", "金币数量".
-   - Ignore numbers related to distance (km, m), duration (minutes, hours), or time unless they are explicitly labeled as score.
    - Example: "20金币" -> score: 20.
-   - Example: "10积分" -> score: 10.
-   - Example: "跑步5公里 1小时 20金币" -> score: 20 (NOT 5, NOT 1).
    - If NO score keywords are found, ONLY THEN use default score: 1.
+   - If NO duration is mentioned in the input, set "plan_minutes" to 0 (the system will default it to 20).
 %s
 6. Language: Output tasks in the same language as input (Chinese/English).
 `, nowStr, categoryPrompt)
