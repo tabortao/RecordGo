@@ -86,17 +86,73 @@ func ParseTaskByAI(c *gin.Context) {
 		return
 	}
 
-	// Rule Engine: Double-check scores
+	// Rule Engine: Double-check scores and duration
 	for i := range tasks {
 		tasks[i].Confidence = "Medium" // Default confidence
-		refinedScore := refineScoreWithRules(tasks[i].Description)
+
+		// Optimization: If only one task and req.Text is present, use raw text for rules
+		// This prevents AI from altering the description and breaking rule matching
+		textToAnalyze := tasks[i].Description
+		if len(tasks) == 1 && req.Text != "" {
+			textToAnalyze = req.Text
+		}
+
+		refinedScore := refineScoreWithRules(textToAnalyze)
 		if refinedScore > 0 {
 			tasks[i].Score = refinedScore
 			tasks[i].Confidence = "High" // Rule match increases confidence
 		}
+
+		refinedDuration := refineDurationWithRules(textToAnalyze)
+		if refinedDuration > 0 {
+			tasks[i].PlanMinutes = refinedDuration
+		}
+
+		// Default Duration Rule: If no duration is parsed (0), default to 20 minutes
+		if tasks[i].PlanMinutes == 0 {
+			tasks[i].PlanMinutes = 20
+		}
 	}
 
 	common.Ok(c, gin.H{"tasks": tasks})
+}
+
+// Helper to refine duration from text using Regex
+func refineDurationWithRules(text string) int {
+	if text == "" {
+		return 0
+	}
+
+	totalMinutes := 0
+
+	// 1. Match Hours: (number) + (hour keywords)
+	// Supports: "1小时", "1.5小时", "一小时"
+	reHour := regexp.MustCompile(`([0-9]+(?:\.[0-9]+)?|[零一二三四五六七八九十百]+)\s*(?:小时|h|hour|hours)`)
+	matchesHour := reHour.FindAllStringSubmatch(text, -1)
+	for _, match := range matchesHour {
+		if len(match) >= 2 {
+			numStr := match[1]
+			// Check for float
+			if valFloat, err := strconv.ParseFloat(numStr, 64); err == nil {
+				totalMinutes += int(valFloat * 60)
+			} else {
+				totalMinutes += parseNumber(numStr) * 60
+			}
+		}
+	}
+
+	// 2. Match Minutes: (number) + (minute keywords)
+	// Supports: "30分钟", "30 mins"
+	reMin := regexp.MustCompile(`([0-9]+|[零一二三四五六七八九十百]+)\s*(?:分钟|min|minute|minutes)`)
+	matchesMin := reMin.FindAllStringSubmatch(text, -1)
+	for _, match := range matchesMin {
+		if len(match) >= 2 {
+			numStr := match[1]
+			totalMinutes += parseNumber(numStr)
+		}
+	}
+
+	return totalMinutes
 }
 
 // Helper to refine score from text using Regex
@@ -135,19 +191,20 @@ func parseChineseNumber(s string) int {
 	temp := 0
 	for _, r := range s {
 		if v, ok := cnMap[r]; ok {
-			if v == 100 {
+			switch v {
+			case 100:
 				if temp == 0 {
 					temp = 1
 				}
 				val += temp * 100
 				temp = 0
-			} else if v == 10 {
+			case 10:
 				if temp == 0 {
 					temp = 1
 				}
 				val += temp * 10
 				temp = 0
-			} else {
+			default:
 				temp = v
 			}
 		}
@@ -164,8 +221,8 @@ type LLMRequest struct {
 }
 
 type LLMMessage struct {
-	Role    string      `json:"role"`
-	Content interface{} `json:"content"` // string or []ContentPart
+	Role    string `json:"role"`
+	Content any    `json:"content"` // string or []ContentPart
 }
 
 type ContentPart struct {
@@ -223,11 +280,13 @@ Rules:
 1. Title Summarization: The "name" MUST be concise. Remove any mention of time, duration, coins, points, or scores. 
    - Example: "每天早上7点背单词30分钟 10积分" -> name: "背单词", description: "每天早上7点背单词30分钟 10积分"
    - Example: "本周末下午跑步5公里 1小时 20金币" -> name: "跑步", description: "本周末下午跑步5公里 1小时 20金币"
+   - IMPORTANT: "description" MUST contain the EXACT ORIGINAL user text without modification, summarization, or translation. It is used for validation.
 2. Time Recognition: 
    - Identify relative dates (e.g. "tomorrow", "next Monday") based on "Current Time".
    - "start_date" is the date of the FIRST occurrence.
    - "This weekend" ("本周末"): usually means the upcoming Saturday or Sunday. If today is Monday-Friday, it's the next Saturday.
 3. Repetition & Dates:
+   - STRICTLY use one of these values for "repeat_type": "none", "daily", "weekly", "monthly", "weekdays". DO NOT use any other value.
    - "Every day" -> repeat_type: "daily"
    - "Every week" -> repeat_type: "weekly"
    - "Weekdays" -> repeat_type: "weekdays"

@@ -183,30 +183,40 @@
                       </el-tag>
                       <el-button type="danger" circle size="small" :icon="Delete" @click="removeAITask(idx)" />
                    </div>
-                   <el-form :model="task" label-width="70px" size="small">
-                      <el-form-item label="标题" required>
+                   <el-form :model="task" label-width="80px" size="default">
+                      <el-form-item label="任务标题" required>
                          <el-input v-model="task.name" />
                       </el-form-item>
-                      <el-form-item label="分类">
+                      <el-form-item label="任务分类" required>
                          <el-select v-model="task.category" style="width: 100%">
                             <el-option v-for="c in getCategories()" :key="c.name" :label="c.name" :value="c.name" />
                          </el-select>
                       </el-form-item>
                       <div class="flex gap-2">
-                         <el-form-item label="时长" class="flex-1">
-                            <el-input-number v-model="task.plan_minutes" :min="1" :controls="false" style="width: 100%" />
+                         <el-form-item label="计划时长" class="flex-1" required>
+                            <el-input-number v-model="task.plan_minutes" :min="1" :max="240" style="width: 100%" />
                          </el-form-item>
-                         <el-form-item label="金币" class="flex-1">
-                            <el-input-number v-model="task.score" :min="-10" :max="10" :controls="false" style="width: 100%" />
+                         <el-form-item label="任务金币" class="flex-1">
+                            <el-input-number v-model="task.score" :min="-10" :max="10" style="width: 100%" />
                          </el-form-item>
                       </div>
-                      <el-form-item label="重复">
+                      <el-form-item label="重复类型">
                          <el-select v-model="task.repeat_type" style="width: 100%">
                             <el-option label="无" value="none" />
                             <el-option label="每天" value="daily" />
+                            <el-option label="每个工作日" value="weekdays" />
                             <el-option label="每周" value="weekly" />
+                            <el-option label="每月" value="monthly" />
                          </el-select>
                       </el-form-item>
+                      <div class="flex gap-2">
+                        <el-form-item label="开始日期" class="flex-1" required>
+                           <el-date-picker v-model="task.start_date" type="date" :editable="false" :clearable="false" style="width: 100%" />
+                        </el-form-item>
+                        <el-form-item label="截止日期" class="flex-1">
+                           <el-date-picker v-model="task.end_date" type="date" :editable="false" :clearable="false" :disabled="task.repeat_type==='none'" style="width: 100%" />
+                        </el-form-item>
+                      </div>
                    </el-form>
                 </el-card>
              </div>

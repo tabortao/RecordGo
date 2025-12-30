@@ -91,7 +91,14 @@ export async function parseTaskByAI(text: string, image?: File, aiConfig?: { url
   if (categories && categories.length > 0) {
     formData.append('categories', categories.join(','))
   }
-  return (await http.post('/ai/parse-task', formData)) as any
+  const res = (await http.post('/ai/parse-task', formData)) as { tasks: AITaskParseItem[] }
+  if (res.tasks) {
+    res.tasks.forEach(t => {
+      // Default duration to 20 minutes if not present
+      if (!t.plan_minutes) t.plan_minutes = 20
+    })
+  }
+  return res
 }
 
 export async function updateTask(id: number, payload: any): Promise<TaskItem> {
