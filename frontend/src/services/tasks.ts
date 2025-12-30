@@ -91,7 +91,8 @@ export async function parseTaskByAI(text: string, image?: File, aiConfig?: { url
   if (categories && categories.length > 0) {
     formData.append('categories', categories.join(','))
   }
-  const res = (await http.post('/ai/parse-task', formData)) as { tasks: AITaskParseItem[] }
+  // Increase timeout for AI Vision tasks (120s)
+  const res = (await http.post('/ai/parse-task', formData, { timeout: 120000 })) as { tasks: AITaskParseItem[] }
   if (res.tasks) {
     res.tasks.forEach(t => {
       // Default duration to 20 minutes if not present

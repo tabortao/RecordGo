@@ -79,11 +79,60 @@ func ParseTaskByAI(c *gin.Context) {
 		imageBase64 = base64.StdEncoding.EncodeToString(buf.Bytes())
 	}
 
-	tasks, err := callLLM(c, req, imageBase64)
+	// Step 1: Call LLM (Vision or Text)
+	rawContent, err := performLLMCall(c, req, imageBase64)
 	if err != nil {
-		zap.L().Error("AI Call Failed", zap.Error(err))
+		zap.L().Error("AI Network Call Failed", zap.Error(err))
 		common.Error(c, 50001, "AI 服务调用失败: "+err.Error())
 		return
+	}
+
+	// Step 2: Try to parse JSON tasks
+	tasks, err := parseTasksFromContent(rawContent)
+	if err != nil {
+		// Fallback Strategy:
+		// If we used an image (Vision Model) and JSON parsing failed, it's likely an OCR model returning raw text.
+		// We should feed this raw text into the Text Model to extract tasks.
+		if imageBase64 != "" {
+			zap.L().Warn("Vision Model JSON Parse Failed, trying fallback to Text Model",
+				zap.Error(err),
+				zap.String("raw_content", rawContent),
+			)
+
+			// Update request: Append the OCR output to the original text, clear image
+			// We append the OCR content so we don't lose any original user instructions/context.
+			if req.Text != "" {
+				req.Text = req.Text + "\n\n[Image Content]:\n" + rawContent
+			} else {
+				req.Text = rawContent
+			}
+
+			if req.Text == "" {
+				req.Text = "Extract tasks from image."
+			}
+			imageBase64 = "" // Don't send image again
+
+			// Call Text Model
+			rawContent2, err2 := performLLMCall(c, req, "")
+			if err2 != nil {
+				zap.L().Error("Fallback AI Call Failed", zap.Error(err2))
+				common.Error(c, 50001, "AI 服务调用失败 (Fallback): "+err2.Error())
+				return
+			}
+
+			// Parse again
+			tasks, err = parseTasksFromContent(rawContent2)
+			if err != nil {
+				zap.L().Error("Fallback JSON Parse Failed", zap.Error(err), zap.String("content", rawContent2))
+				common.Error(c, 50001, "任务解析失败: "+err.Error())
+				return
+			}
+		} else {
+			// Text model failed to produce JSON
+			zap.L().Error("JSON Parse Failed", zap.Error(err), zap.String("content", rawContent))
+			common.Error(c, 50001, "结果解析失败: "+err.Error())
+			return
+		}
 	}
 
 	// Rule Engine: Double-check scores and duration
@@ -246,7 +295,7 @@ type LLMResponse struct {
 	} `json:"error"`
 }
 
-func callLLM(ctx *gin.Context, req AITaskParseReq, imageBase64 string) ([]AITaskItem, error) {
+func performLLMCall(ctx *gin.Context, req AITaskParseReq, imageBase64 string) (string, error) {
 	nowStr := time.Now().Format("2006-01-02 15:04:05 Monday")
 
 	categoryPrompt := ""
@@ -294,6 +343,8 @@ Rules:
    - "Weekdays" -> repeat_type: "weekdays"
    - "Every Wednesday" -> repeat_type: "weekly", weekly_days: [3] (1=Monday...7=Sunday)
    - "Every Mon, Wed, Fri" -> repeat_type: "weekly", weekly_days: [1, 3, 5]
+   - "Thursday" (without "Every") -> repeat_type: "none", start_date="YYYY-MM-DD" (the upcoming Thursday)
+   - "Every Thursday" -> repeat_type: "weekly", weekly_days: [4]. IMPORTANT: If today is Tuesday, "Every Wednesday" means TOMORROW (this week's Wednesday). Do NOT skip to next week. "start_date" must be the soonest occurrence.
    - "Tomorrow 7am" (one time) -> repeat_type: "none", start_date="YYYY-MM-DD" (tomorrow), end_date=null
    - "Every day for 1 month" -> repeat_type: "daily", start_date="tomorrow" (or specified), end_date="1 month later"
    - If it's a repetitive task with a specific end date (e.g., "until next month"), set "end_date". Otherwise, "end_date" is null.
@@ -337,37 +388,40 @@ Rules:
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", strings.TrimRight(req.AIBaseURL, "/")+"/chat/completions", bytes.NewBuffer(reqBody))
 
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Bearer "+req.AIKey)
 
-	client := &http.Client{Timeout: 60 * time.Second}
+	client := &http.Client{Timeout: 120 * time.Second}
 	resp, err := client.Do(httpReq)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	bodyBytes, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("API Error %d: %s", resp.StatusCode, string(bodyBytes))
+		return "", fmt.Errorf("API Error %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	var llmResp LLMResponse
 	if err := json.Unmarshal(bodyBytes, &llmResp); err != nil {
-		return nil, fmt.Errorf("JSON Parse Error: %v", err)
+		return "", fmt.Errorf("JSON Parse Error: %v", err)
 	}
 
 	if llmResp.Error != nil {
-		return nil, fmt.Errorf("API Error: %s", llmResp.Error.Message)
+		return "", fmt.Errorf("API Error: %s", llmResp.Error.Message)
 	}
 
 	if len(llmResp.Choices) == 0 {
-		return nil, fmt.Errorf("No response choices")
+		return "", fmt.Errorf("No response choices")
 	}
 
-	content := llmResp.Choices[0].Message.Content
+	return llmResp.Choices[0].Message.Content, nil
+}
+
+func parseTasksFromContent(content string) ([]AITaskItem, error) {
 	// Clean markdown code blocks if present
 	content = strings.TrimSpace(content)
 	content = strings.TrimPrefix(content, "```json")
@@ -389,6 +443,5 @@ Rules:
 			return nil, fmt.Errorf("Result Parse Error: %v, Content: %s", err, content)
 		}
 	}
-
 	return tasks, nil
 }
