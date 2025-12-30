@@ -177,7 +177,10 @@
 
              <div v-loading="aiLoading" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                 <el-card v-for="(task, idx) in aiTasks" :key="idx" shadow="hover" class="relative group">
-                   <div class="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <div class="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                      <el-tag v-if="task.confidence" size="small" :type="task.confidence === 'High' ? 'success' : 'warning'">
+                        置信度: {{ task.confidence === 'High' ? '高' : '中' }}
+                      </el-tag>
                       <el-button type="danger" circle size="small" :icon="Delete" @click="removeAITask(idx)" />
                    </div>
                    <el-form :model="task" label-width="70px" size="small">

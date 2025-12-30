@@ -76,6 +76,7 @@ export interface AITaskParseItem {
   end_date?: string
   repeat_type: 'none'|'daily'|'weekdays'|'weekly'|'monthly'
   weekly_days: number[]
+  confidence?: 'High' | 'Medium' | 'Low'
 }
 
 export async function parseTaskByAI(text: string, image?: File, aiConfig?: { url: string; key: string; model: string }, categories?: string[]): Promise<{ tasks: AITaskParseItem[] }> {

@@ -9,6 +9,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"recordgo/internal/common"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -38,6 +40,7 @@ type AITaskItem struct {
 	EndDate     *string `json:"end_date"`   // YYYY-MM-DD
 	RepeatType  string  `json:"repeat_type"`
 	WeeklyDays  []int   `json:"weekly_days"`
+	Confidence  string  `json:"confidence"` // High, Medium, Low
 }
 
 // ParseTaskByAI 处理 AI 识别请求
@@ -83,7 +86,74 @@ func ParseTaskByAI(c *gin.Context) {
 		return
 	}
 
+	// Rule Engine: Double-check scores
+	for i := range tasks {
+		tasks[i].Confidence = "Medium" // Default confidence
+		refinedScore := refineScoreWithRules(tasks[i].Description)
+		if refinedScore > 0 {
+			tasks[i].Score = refinedScore
+			tasks[i].Confidence = "High" // Rule match increases confidence
+		}
+	}
+
 	common.Ok(c, gin.H{"tasks": tasks})
+}
+
+// Helper to refine score from text using Regex
+func refineScoreWithRules(text string) int {
+	if text == "" {
+		return 0
+	}
+	// Match pattern: (number or chinese_number) + (space) + (coin/score keywords)
+	// Supports: "20金币", "20 金币", "二十金币", "10积分"
+	re := regexp.MustCompile(`([0-9]+|[零一二三四五六七八九十百]+)\s*(?:金币|积分|points|coins|进步数量)`)
+	matches := re.FindStringSubmatch(text)
+	if len(matches) >= 2 {
+		numStr := matches[1]
+		return parseNumber(numStr)
+	}
+	return 0
+}
+
+func parseNumber(s string) int {
+	// Try Arabic number first
+	if val, err := strconv.Atoi(s); err == nil {
+		return val
+	}
+	// Try Chinese number
+	return parseChineseNumber(s)
+}
+
+func parseChineseNumber(s string) int {
+	cnMap := map[rune]int{
+		'零': 0, '一': 1, '二': 2, '三': 3, '四': 4,
+		'五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
+		'十': 10, '百': 100,
+	}
+
+	val := 0
+	temp := 0
+	for _, r := range s {
+		if v, ok := cnMap[r]; ok {
+			if v == 100 {
+				if temp == 0 {
+					temp = 1
+				}
+				val += temp * 100
+				temp = 0
+			} else if v == 10 {
+				if temp == 0 {
+					temp = 1
+				}
+				val += temp * 10
+				temp = 0
+			} else {
+				temp = v
+			}
+		}
+	}
+	val += temp
+	return val
 }
 
 // LLMRequest OpenAI Compatible Request
