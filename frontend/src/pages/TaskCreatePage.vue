@@ -378,22 +378,51 @@ import { recognizeImage } from '@/services/ocr'
 const aiText = ref('')
 const aiFileList = ref<any[]>([])
 const aiImage = ref<File>()
+const isCompressing = ref(false)
 const aiLoading = ref(false)
+const aiLoadingText = ref('开始智能识别')
 const aiTasks = ref<AITaskParseItem[]>([])
 const aiSubmitting = ref(false)
 const aiStore = useAIStore()
 
-function handleAIImageChange(file: any) {
+async function handleAIImageChange(file: any) {
   aiImage.value = file.raw
   aiFileList.value = [file]
+  // 自动压缩
+  isCompressing.value = true
+  try {
+    const compressed = await prepareUpload(file.raw, 0.6)
+    aiImage.value = compressed
+  } catch (e) {
+    console.error('Auto compression failed', e)
+  } finally {
+    isCompressing.value = false
+  }
 }
 
 async function handleAIParse() {
-  if (!aiText.value && !aiImage.value) {
+  if (!aiText.value && !aiImage.value && !isCompressing.value) {
     ElMessage.warning('请输入文本或上传图片')
     return
   }
+  
+  if (isCompressing.value) {
+    aiLoadingText.value = '正在压缩图片...'
+    aiLoading.value = true
+    while (isCompressing.value) {
+      await new Promise(resolve => setTimeout(resolve, 200))
+    }
+    // 压缩完成后，如果用户清空了图片，需要重新检查
+    if (!aiText.value && !aiImage.value) {
+      aiLoading.value = false
+      aiLoadingText.value = '开始智能识别'
+      ElMessage.warning('请输入文本或上传图片')
+      return
+    }
+  }
+  
   aiLoading.value = true
+  aiLoadingText.value = '准备中...'
   
   let finalText = aiText.value
   let useVisionModel = !!aiImage.value
@@ -407,15 +436,11 @@ async function handleAIParse() {
     if (ocrConfig && ocrConfig.apiUrl && ocrConfig.token) {
       try {
         ElMessage.info('正在使用 OCR 识别图片内容...')
-        // 尝试压缩图片以提高 OCR 成功率和速度
-        let imageToOCR = aiImage.value
-        try {
-           imageToOCR = (await prepareUpload(imageToOCR, 0.8)) as File
-        } catch (e) {
-           console.warn('OCR图片压缩失败，使用原图', e)
-        }
+        // 图片已在上传时自动压缩
+        const imageToOCR = aiImage.value
 
-        const ocrResult = await recognizeImage(imageToOCR, activeOCR, ocrConfig)
+        aiLoadingText.value = '正在识别文字...'
+        const ocrResult = await recognizeImage(imageToOCR!, activeOCR, ocrConfig)
         if (ocrResult && ocrResult.trim().length > 0) {
           finalText = (finalText ? finalText + '\n\n' : '') + `[图片OCR识别结果]:\n${ocrResult}`
           useVisionModel = false // OCR 成功，转为纯文本模式
@@ -434,12 +459,14 @@ async function handleAIParse() {
       if (!config.visionApiKey && !config.apiKey && !config.visionApiBaseUrl) {
          ElMessage.error('请先配置AI视觉模型或设置OCR服务的API_URL和TOKEN')
          aiLoading.value = false
+         aiLoadingText.value = '开始智能识别'
          return
       }
     }
   }
 
   try {
+    aiLoadingText.value = '正在智能分析...'
     const config = aiStore.$state
     const hasImage = useVisionModel
     const aiConfig = {
@@ -449,6 +476,8 @@ async function handleAIParse() {
     }
     const categoryNames = categories.value.map(c => c.name)
     // 如果 OCR 成功，imageToPass 为 undefined，parseTaskByAI 将只处理文本
+    // 如果 OCR 失败或未配置，且 useVisionModel 为真，则传递图片
+    // 图片已在上传时自动压缩
     const imageToPass = useVisionModel ? aiImage.value : undefined
     
     console.log('[AI Task Create] Final Text sent to AI:', finalText)
@@ -464,6 +493,7 @@ async function handleAIParse() {
     ElMessage.error(e.message || 'AI 识别失败')
   } finally {
     aiLoading.value = false
+    aiLoadingText.value = '开始智能识别'
   }
 }
 

@@ -28,6 +28,10 @@
         <div>
           <div class="mb-1 text-sm text-gray-600 dark:text-gray-400">Token</div>
           <el-input v-model="configs['PP-OCRv5'].token" placeholder="请输入 Token" type="password" show-password />
+          <div class="mt-1 text-xs text-blue-500 cursor-pointer hover:underline flex items-center gap-1" @click="openLink('https://aistudio.baidu.com/paddleocr')">
+            <el-icon><Link /></el-icon>
+            点击这里获取密钥
+          </div>
         </div>
       </div>
       
@@ -54,6 +58,10 @@ const store = useAIStore()
 
 function goBack() {
   router.back()
+}
+
+function openLink(url: string) {
+  window.open(url, '_blank')
 }
 
 const configs = reactive<Record<string, OCRConfig>>({
