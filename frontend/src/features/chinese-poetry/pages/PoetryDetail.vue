@@ -111,9 +111,7 @@
        <!-- Footer Actions -->
        <div class="flex justify-between gap-4 mt-6">
            <el-button 
-             class="flex-1 !h-12 !text-base !rounded-xl !border-none"
-             color="#fce7f3" 
-             style="color: #db2777"
+             class="flex-1 !h-12 !text-base !rounded-xl !border-none !bg-pink-100 !text-pink-600 hover:!bg-pink-200 dark:!bg-pink-900/50 dark:!text-pink-300 dark:hover:!bg-pink-900"
              @click="router.push(`/homework/chinese/poetry/recite/${poem.id}`)"
            >
              <el-icon class="mr-2"><Reading /></el-icon>

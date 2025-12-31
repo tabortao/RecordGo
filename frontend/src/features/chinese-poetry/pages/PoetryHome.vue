@@ -74,6 +74,20 @@
         </div>
       </div>
 
+      <!-- Dashboard Stats - Recitation Summary -->
+      <div class="flex justify-between items-center px-4 mb-2">
+         <div class="flex items-baseline gap-1">
+             <span class="text-sm text-gray-500 dark:text-gray-400">已背诵</span>
+             <span class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ masteredCount }}</span>
+             <span class="text-xs text-gray-400">首</span>
+         </div>
+         <div class="flex items-baseline gap-1">
+             <span class="text-sm text-gray-500 dark:text-gray-400">今日学习</span>
+             <span class="text-xl font-bold text-pink-500">{{ todayStats.studiedCount }}</span>
+             <span class="text-xs text-gray-400">首</span>
+         </div>
+      </div>
+
       <!-- Ebbinghaus Plan & Calendar -->
       <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
          <div class="flex justify-between items-center mb-4">
@@ -112,14 +126,19 @@
            <div 
             v-for="poem in dailyReviewList" 
             :key="poem.id"
-            class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 border-orange-400 flex justify-between items-center cursor-pointer hover:shadow-md transition"
+            class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 border-orange-400 flex flex-col gap-3 cursor-pointer hover:shadow-md transition"
             @click="goToDetail(poem)"
           >
-            <div>
-               <div class="font-bold text-gray-800 dark:text-gray-200 mb-1">{{ poem.title_cns }}</div>
-               <div class="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 inline-block px-1.5 py-0.5 rounded">{{ poem.author_cns }}</div>
+            <div class="flex justify-between items-start w-full">
+                <div>
+                   <div class="font-bold text-gray-800 dark:text-gray-200 mb-1">{{ poem.title_cns }}</div>
+                   <div class="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 inline-block px-1.5 py-0.5 rounded">{{ poem.author_cns }}</div>
+                </div>
             </div>
-            <el-button type="warning" size="small" round color="#FB8C00" class="!text-white font-bold shadow-orange-200 shadow-md">复习</el-button>
+            <div class="flex justify-end gap-2 w-full border-t border-gray-50 dark:border-gray-700 pt-3">
+                 <el-button size="small" round @click.stop="goToDetail(poem)">去学习</el-button>
+                 <el-button type="primary" size="small" round color="#FB8C00" class="!text-white font-bold shadow-orange-200 shadow-md" @click.stop="goToRecite(poem.id)">去背诵</el-button>
+            </div>
           </div>
         </div>
       </div>
@@ -133,14 +152,19 @@
            <div 
             v-for="poem in dailyNewList" 
             :key="poem.id"
-            class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 border-blue-400 flex justify-between items-center cursor-pointer hover:shadow-md transition"
+            class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 border-blue-400 flex flex-col gap-3 cursor-pointer hover:shadow-md transition"
             @click="goToDetail(poem)"
           >
-            <div>
-               <div class="font-bold text-gray-800 dark:text-gray-200 mb-1">{{ poem.title_cns }}</div>
-               <div class="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 inline-block px-1.5 py-0.5 rounded">{{ poem.author_cns }}</div>
+            <div class="flex justify-between items-start w-full">
+                <div>
+                   <div class="font-bold text-gray-800 dark:text-gray-200 mb-1">{{ poem.title_cns }}</div>
+                   <div class="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 inline-block px-1.5 py-0.5 rounded">{{ poem.author_cns }}</div>
+                </div>
             </div>
-            <el-button type="primary" size="small" round color="#42A5F5" class="!text-white font-bold shadow-blue-200 shadow-md">学习</el-button>
+            <div class="flex justify-end gap-2 w-full border-t border-gray-50 dark:border-gray-700 pt-3">
+                 <el-button size="small" round @click.stop="goToDetail(poem)">去学习</el-button>
+                 <el-button type="primary" size="small" round color="#42A5F5" class="!text-white font-bold shadow-blue-200 shadow-md" @click.stop="goToRecite(poem.id)">去背诵</el-button>
+            </div>
           </div>
         </div>
       </div>
@@ -222,11 +246,21 @@ onMounted(() => {
 const dailyRecommendPoem = computed(() => store.dailyRecommendPoem)
 const dailyReviewList = computed(() => store.dailyReviewList)
 const dailyNewList = computed(() => store.dailyNewList)
-const todayStats = computed(() => store.dailyStats[dayjs().format('YYYY-MM-DD')] || { studiedCount: 0, reviewCount: 0 })
+const todayStats = computed(() => store.dailyStats[dayjs().format('YYYY-MM-DD')] || { studiedCount: 0 })
 const totalDays = computed(() => Object.keys(store.dailyStats).length)
+
+const isMastered = (id: number) => {
+    const record = store.studyRecords[id]
+    return record && record.nextReviewTime > Date.now() + 86400000 * 30 // Rough guess for mastery
+}
+
+const masteredCount = computed(() => {
+    return Object.keys(store.studyRecords).filter(id => isMastered(parseInt(id))).length
+})
 
 // Calendar Logic
 const today = dayjs()
+const selectedDate = ref(today.format('YYYY-MM-DD'))
 const currentMonth = today.format('YYYY年M月')
 const weekDays = computed(() => {
     // Start from 3 days ago to 3 days later, centered on today
@@ -239,7 +273,7 @@ const weekDays = computed(() => {
         const date = startOfWeek.add(i, 'day')
         const dateStr = date.format('YYYY-MM-DD')
         const stats = store.dailyStats[dateStr]
-        const hasTask = (stats && (stats.studiedCount > 0 || stats.reviewCount > 0)) || false
+        const hasTask = (stats && stats.studiedCount > 0) || false
         
         days.push({
             date: dateStr,
@@ -254,6 +288,13 @@ const weekDays = computed(() => {
 })
 
 const getDayStatusClass = (day: any) => {
+    const isSelected = day.date === selectedDate.value
+
+    if (isSelected) {
+        // Selected state: clearly visible light green background and dark green text
+        return 'bg-green-100 !text-green-800 dark:bg-green-900 dark:!text-green-100 font-bold border-2 border-green-300 dark:border-green-700 shadow-sm'
+    }
+
     if (day.isToday) {
         return 'bg-pink-500 text-white shadow-lg shadow-pink-200'
     }
@@ -264,13 +305,7 @@ const getDayStatusClass = (day: any) => {
 }
 
 const showDayDetail = (date: string) => {
-    // Show a modal or something? For now, just log or navigate
-    // In PRD: "点击日期可查看每日学习情况"
-    // Maybe filter the list below?
-    // For simplicity, we just keep current view as "Today's view"
-    if (date !== today.format('YYYY-MM-DD')) {
-        // Maybe implement historical view later
-    }
+    selectedDate.value = date
 }
 
 // Filtering
@@ -305,13 +340,12 @@ const filteredPoems = computed(() => {
     return poems
 })
 
-const isMastered = (id: number) => {
-    const record = store.studyRecords[id]
-    return record && record.nextReviewDate > Date.now() + 86400000 * 30 // Rough guess for mastery
-}
-
 const goToDetail = (poem: Poem) => {
     router.push(`/homework/chinese/poetry/${poem.id}`)
+}
+
+const goToRecite = (id: number) => {
+    router.push(`/homework/chinese/poetry/recite/${id}`)
 }
 </script>
 

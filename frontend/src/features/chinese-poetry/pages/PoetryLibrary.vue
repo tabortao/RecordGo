@@ -28,15 +28,15 @@
       </div>
 
       <!-- Tabs -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl p-1 shadow-sm border border-gray-100 dark:border-gray-700 flex">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl p-1 shadow-sm border border-gray-100 dark:border-gray-700 flex overflow-x-auto scrollbar-hide">
         <button 
           v-for="tab in tabs" 
           :key="tab.value"
           @click="activeTab = tab.value"
-          class="flex-1 py-2.5 text-sm font-medium rounded-xl transition-all relative z-10"
+          class="flex-1 min-w-[80px] py-2.5 text-sm font-medium rounded-xl transition-all relative z-10 whitespace-nowrap"
           :class="activeTab === tab.value ? 'bg-pink-50 text-pink-600 dark:bg-pink-900/30 dark:text-pink-300 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'"
         >
-          {{ tab.label }}
+          {{ tab.label }} <span class="text-xs opacity-80">({{ getTabCount(tab.value) }})</span>
         </button>
       </div>
 
@@ -108,7 +108,8 @@ const tabs = [
   { label: '小学', value: 'primary' },
   { label: '初中', value: 'middle' },
   { label: '高中', value: 'high' },
-  { label: '其他', value: 'other' }
+  { label: '其他', value: 'other' },
+  { label: '收藏', value: 'collection' }
 ]
 
 onMounted(() => {
@@ -119,13 +120,7 @@ const filteredPoems = computed(() => {
   let poems = poetryStore.poems
   
   // Filter by Tab
-  if (activeTab.value !== 'all') {
-    if (activeTab.value === 'other') {
-       poems = poems.filter(p => !p.tags || (!p.tags.includes('primary') && !p.tags.includes('middle') && !p.tags.includes('high')))
-    } else {
-       poems = poems.filter(p => p.tags && p.tags.includes(activeTab.value))
-    }
-  }
+  poems = filterByTab(poems, activeTab.value)
 
   // Filter by Search
   if (searchQuery.value) {
@@ -139,6 +134,21 @@ const filteredPoems = computed(() => {
 
   return poems
 })
+
+const filterByTab = (poems: Poem[], tab: string) => {
+    if (tab === 'all') return poems
+    if (tab === 'collection') {
+        return poems.filter(p => poetryStore.collections.includes(p.id))
+    }
+    if (tab === 'other') {
+       return poems.filter(p => !p.tags || (!p.tags.includes('primary') && !p.tags.includes('middle') && !p.tags.includes('high')))
+    }
+    return poems.filter(p => p.tags && p.tags.includes(tab))
+}
+
+const getTabCount = (tab: string) => {
+    return filterByTab(poetryStore.poems, tab).length
+}
 
 const getPoemTag = (poem: Poem) => {
     if (!poem.tags) return ''
