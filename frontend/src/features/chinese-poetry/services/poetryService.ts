@@ -1,7 +1,16 @@
 import { useAIStore } from '@/stores/ai'
 import type { Poem } from '../types'
+import http from '@/services/http'
 
 export class PoetryService {
+  async getPoetryData() {
+    return http.get('/poetry/data')
+  }
+
+  async savePoetryData(data: string) {
+    return http.post('/poetry/data', { data })
+  }
+
   async generateContent(poem: Poem, type: '译文' | '赏析' | '趣事'): Promise<string> {
     const aiStore = useAIStore()
     

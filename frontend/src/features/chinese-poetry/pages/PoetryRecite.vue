@@ -46,7 +46,7 @@
        </div>
 
        <!-- Controls -->
-       <div class="flex flex-col items-center gap-6 w-full max-w-md">
+       <div class="flex flex-col items-center gap-6 w-full max-w-md relative">
            <!-- Modes -->
            <div class="flex gap-2 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
                <button @click="mode = 'show'" :class="getModeClass('show')">看全文</button>
@@ -66,6 +66,14 @@
                <el-icon :size="40" class="text-white"><Microphone /></el-icon>
            </button>
            <div class="text-sm text-gray-500">按住 说话</div>
+           
+           <!-- Action Buttons (Bottom Left/Right) -->
+           <div class="absolute bottom-0 left-0">
+               <el-button type="primary" plain round size="default" @click="handleComplete">完成打卡</el-button>
+           </div>
+           <div class="absolute bottom-0 right-0">
+               <el-button type="success" plain round size="default" @click="handleMastered">记住了</el-button>
+           </div>
        </div>
     </div>
   </div>
@@ -121,5 +129,21 @@ const stopRecord = () => {
             }
         })
     }, 500)
+}
+
+const handleComplete = () => {
+    if (poem.value) {
+        store.recordStudy(poem.value.id, false)
+        ElMessage.success('打卡成功，学习次数 +1')
+        router.back()
+    }
+}
+
+const handleMastered = () => {
+    if (poem.value) {
+        store.recordStudy(poem.value.id, true)
+        ElMessage.success('太棒了！已标记为熟练背诵')
+        router.back()
+    }
 }
 </script>

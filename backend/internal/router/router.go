@@ -187,6 +187,13 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 			timetable.GET("/data", handlers.GetTimetable)
 			timetable.POST("/data", handlers.SaveTimetable)
 		}
+
+		// 古诗词模块
+		poetry := api.Group("/poetry")
+		{
+			poetry.GET("/data", handlers.GetPoetryData)
+			poetry.POST("/data", handlers.SavePoetryData)
+		}
 	}
 
 	r.PUT("/api/storage/put", handlers.StoragePut)

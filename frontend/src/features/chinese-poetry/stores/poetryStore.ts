@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import dayjs from 'dayjs'
+import { debounce } from 'lodash-es'
 import type { Poem, StudyRecord, DailyStats, DictationResult } from '../types'
 import rawPoems from '../data/chinese_poems.json'
+import { poetryService } from '@/services/poetry'
 
 // Ebbinghaus intervals in days: 1, 2, 4, 7, 15, 30
 const REVIEW_INTERVALS = [1, 2, 4, 7, 15, 30]
@@ -18,8 +20,57 @@ export const usePoetryStore = defineStore('poetry', () => {
   const poemUpdates = ref<Record<number, Partial<Poem>>>({}) // Store AI content for system poems
   const challengeRecords = ref<{ date: number, score: number, mode: string }[]>([])
 
+  // Sync Data Helper
+  const syncData = debounce(async () => {
+    const data = {
+      studyRecords: studyRecords.value,
+      dailyStats: dailyStats.value,
+      collections: collections.value,
+      customPoems: customPoems.value,
+      dictationRecords: dictationRecords.value,
+      poemUpdates: poemUpdates.value,
+      challengeRecords: challengeRecords.value
+    }
+    try {
+      await poetryService.savePoetryData(JSON.stringify(data))
+    } catch (e) {
+      console.error('Failed to sync poetry data', e)
+    }
+  }, 2000)
+
+  // Simple classification logic (Mock)
+  // In reality, this should come from a mapping file as per PRD
+  const classifyPoem = (p: any): string[] => {
+    const tags: string[] = []
+    // Mock logic based on keywords or authors commonly in textbooks
+    const primaryAuthors = ['李白', '杜甫', '白居易', '王维', '孟浩然', '骆宾王']
+    if (primaryAuthors.includes(p.author_cns) && p.paragraphs_cns.length <= 4) {
+      tags.push('primary')
+    } else if (p.dynasty_cns === '宋代' || p.dynasty_cns === '宋') {
+      tags.push('middle')
+    } else {
+      tags.push('high')
+    }
+    return tags
+  }
+
+  // Merge poems logic
+  const mergePoems = () => {
+    const loadedRaw = (rawPoems as any[]).map((p, idx) => {
+      const id = p.id || idx
+      const updates = poemUpdates.value[id] || {}
+      return {
+        ...p,
+        id, 
+        tags: classifyPoem(p),
+        ...updates
+      }
+    })
+    poems.value = [...loadedRaw, ...customPoems.value]
+  }
+
   // Init
-  const init = () => {
+  const init = async () => {
     // Load local storage
     const savedRecords = localStorage.getItem('poetry_records')
     if (savedRecords) studyRecords.value = JSON.parse(savedRecords)
@@ -42,48 +93,35 @@ export const usePoetryStore = defineStore('poetry', () => {
     const savedChallenges = localStorage.getItem('poetry_challenges')
     if (savedChallenges) challengeRecords.value = JSON.parse(savedChallenges)
 
-    // Merge raw poems with custom poems
-    // We need to ensure IDs don't clash. Raw poems use index as ID currently.
-    // Let's assume raw poems have IDs 0 to N. Custom poems start from 100000.
-    
-    const loadedRaw = (rawPoems as any[]).map((p, idx) => {
-      const id = p.id || idx
-      const updates = poemUpdates.value[id] || {}
-      return {
-        ...p,
-        id, 
-        tags: classifyPoem(p),
-        ...updates
+    // Try to fetch from backend
+    try {
+      const res = await poetryService.getPoetryData()
+      if (res && res.data) {
+        const data = JSON.parse(res.data)
+        if (data.studyRecords) studyRecords.value = data.studyRecords
+        if (data.dailyStats) dailyStats.value = data.dailyStats
+        if (data.collections) collections.value = data.collections
+        if (data.customPoems) customPoems.value = data.customPoems
+        if (data.dictationRecords) dictationRecords.value = data.dictationRecords
+        if (data.poemUpdates) poemUpdates.value = data.poemUpdates
+        if (data.challengeRecords) challengeRecords.value = data.challengeRecords
       }
-    })
-
-    poems.value = [...loadedRaw, ...customPoems.value]
-  }
-
-  // Simple classification logic (Mock)
-  // In reality, this should come from a mapping file as per PRD
-  const classifyPoem = (p: any): string[] => {
-    const tags: string[] = []
-    // Mock logic based on keywords or authors commonly in textbooks
-    const primaryAuthors = ['李白', '杜甫', '白居易', '王维', '孟浩然', '骆宾王']
-    if (primaryAuthors.includes(p.author_cns) && p.paragraphs_cns.length <= 4) {
-      tags.push('primary')
-    } else if (p.dynasty_cns === '宋代' || p.dynasty_cns === '宋') {
-      tags.push('middle')
-    } else {
-      tags.push('high')
+    } catch (e) {
+      console.error('Failed to load poetry data from backend', e)
     }
-    return tags
+
+    mergePoems()
   }
+
 
   // Persist helpers
-  const saveRecords = () => localStorage.setItem('poetry_records', JSON.stringify(studyRecords.value))
-  const saveStats = () => localStorage.setItem('poetry_stats', JSON.stringify(dailyStats.value))
-  const saveCollections = () => localStorage.setItem('poetry_collections', JSON.stringify(collections.value))
-  const saveCustom = () => localStorage.setItem('poetry_custom', JSON.stringify(customPoems.value))
-  const saveDictations = () => localStorage.setItem('poetry_dictations', JSON.stringify(dictationRecords.value))
-  const saveUpdates = () => localStorage.setItem('poetry_updates', JSON.stringify(poemUpdates.value))
-  const saveChallenges = () => localStorage.setItem('poetry_challenges', JSON.stringify(challengeRecords.value))
+  const saveRecords = () => { localStorage.setItem('poetry_records', JSON.stringify(studyRecords.value)); syncData() }
+  const saveStats = () => { localStorage.setItem('poetry_stats', JSON.stringify(dailyStats.value)); syncData() }
+  const saveCollections = () => { localStorage.setItem('poetry_collections', JSON.stringify(collections.value)); syncData() }
+  const saveCustom = () => { localStorage.setItem('poetry_custom', JSON.stringify(customPoems.value)); syncData() }
+  const saveDictations = () => { localStorage.setItem('poetry_dictations', JSON.stringify(dictationRecords.value)); syncData() }
+  const saveUpdates = () => { localStorage.setItem('poetry_updates', JSON.stringify(poemUpdates.value)); syncData() }
+  const saveChallenges = () => { localStorage.setItem('poetry_challenges', JSON.stringify(challengeRecords.value)); syncData() }
 
   // Actions
   const addCustomPoem = (poem: Omit<Poem, 'id'>) => {

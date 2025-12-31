@@ -61,8 +61,10 @@ const router = createRouter({
     { path: '/homework/chinese/pinyin/wheel', name: 'PinyinWheel', component: () => import('@/pages/PinyinWheelPage.vue'), meta: { noNav: true } },
     
     // --- 古诗词模块 ---
-    { path: '/homework/chinese/poetry', name: 'PoetryHome', component: () => import('@/features/chinese-poetry/pages/PoetryHome.vue'), meta: { noNav: true } },
+    { path: '/homework/chinese/poetry', name: 'PoetryCalendar', component: () => import('@/features/chinese-poetry/pages/PoetryCalendarPage.vue'), meta: { noNav: true } },
+    { path: '/homework/chinese/poetry/home', name: 'PoetryHome', component: () => import('@/features/chinese-poetry/pages/PoetryHome.vue'), meta: { noNav: true } },
     { path: '/homework/chinese/poetry/create', name: 'PoetryCreate', component: () => import('@/features/chinese-poetry/pages/PoetryEdit.vue'), meta: { noNav: true } },
+    { path: '/homework/chinese/poetry/library', name: 'PoetryLibrary', component: () => import('@/features/chinese-poetry/pages/PoetryLibrary.vue'), meta: { noNav: true } },
     { path: '/homework/chinese/poetry/edit/:id', name: 'PoetryEdit', component: () => import('@/features/chinese-poetry/pages/PoetryEdit.vue'), meta: { noNav: true } },
     { path: '/homework/chinese/poetry/:id', name: 'PoetryDetail', component: () => import('@/features/chinese-poetry/pages/PoetryDetail.vue'), meta: { noNav: true } },
     { path: '/homework/chinese/poetry/recite/:id', name: 'PoetryRecite', component: () => import('@/features/chinese-poetry/pages/PoetryRecite.vue'), meta: { noNav: true } },

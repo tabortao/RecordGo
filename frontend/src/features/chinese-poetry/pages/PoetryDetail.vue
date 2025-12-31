@@ -6,116 +6,128 @@
         <el-icon :size="22" class="cursor-pointer text-gray-600 dark:text-gray-300 hover:text-pink-500 transition" @click="router.back()"><ArrowLeft /></el-icon>
         <h1 class="text-xl font-bold text-gray-800 dark:text-white">古诗详情</h1>
       </div>
-      <div class="flex gap-4">
+      <div class="flex gap-3">
+         <div class="flex items-center gap-2">
+            <el-button circle size="small" :type="showPinyin ? 'primary' : ''" @click="showPinyin = !showPinyin">
+                <span class="text-xs font-bold" :class="showPinyin ? 'text-white' : 'text-gray-500'">拼</span>
+            </el-button>
+         </div>
          <el-icon :size="24" class="cursor-pointer transition hover:scale-110" :class="isCollected ? 'text-yellow-400' : 'text-gray-300'" @click="toggleCollection">
              <component :is="isCollected ? StarFilled : Star" />
          </el-icon>
-         <el-icon v-if="poem?.isCustom" :size="22" class="cursor-pointer text-gray-400 hover:text-blue-500 transition hover:scale-110" @click="router.push(`/homework/chinese/poetry/edit/${poem.id}`)"><Edit /></el-icon>
-         <el-icon v-if="poem?.isCustom" :size="22" class="cursor-pointer text-gray-400 hover:text-red-500 transition hover:scale-110" @click="handleDelete"><Delete /></el-icon>
       </div>
     </div>
 
-    <div v-if="poem" class="p-6 space-y-8 max-w-3xl mx-auto">
-       <!-- Poem Content Card -->
-       <div class="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl shadow-pink-100/50 dark:shadow-none border border-pink-50 dark:border-gray-700 text-center relative overflow-hidden">
-         <!-- Decorative background elements -->
-         <div class="absolute top-0 left-0 w-32 h-32 bg-pink-100/30 rounded-full blur-3xl -translate-x-10 -translate-y-10 pointer-events-none"></div>
-         <div class="absolute bottom-0 right-0 w-40 h-40 bg-purple-100/30 rounded-full blur-3xl translate-x-10 translate-y-10 pointer-events-none"></div>
-
-         <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-3 tracking-wide">{{ poem.title_cns }}</h2>
-         <div class="text-sm text-gray-500 dark:text-gray-400 mb-10 flex justify-center items-center gap-3">
-           <span class="bg-pink-50 dark:bg-gray-700 text-pink-600 dark:text-pink-300 px-3 py-1 rounded-full text-xs font-medium">{{ poem.dynasty_cns }}</span>
-           <span class="font-medium text-gray-600 dark:text-gray-300">{{ poem.author_cns }}</span>
-         </div>
-         
-         <div class="space-y-6 text-2xl leading-loose text-gray-700 dark:text-gray-200 font-serif tracking-widest mb-10">
-           <p v-for="(line, idx) in poem.paragraphs_cns" :key="idx" class="hover:text-pink-600 transition-colors duration-300">{{ line }}</p>
-         </div>
-
-         <!-- Audio Player Controls -->
-         <div class="flex flex-col items-center gap-3 mb-8">
-           <button 
-             @click="togglePlay"
-             class="w-16 h-16 rounded-full flex items-center justify-center transition-all transform hover:scale-105 active:scale-95 shadow-lg"
-             :class="isPlaying ? 'bg-gradient-to-br from-pink-400 to-rose-500 text-white shadow-pink-200' : 'bg-white text-pink-500 border-2 border-pink-100 hover:border-pink-300 hover:shadow-pink-100'"
-           >
-             <el-icon :size="32" v-if="!isPlaying" class="ml-1"><VideoPlay /></el-icon>
-             <el-icon :size="32" v-else class="animate-pulse"><VideoPause /></el-icon>
-           </button>
-           <span class="text-xs text-gray-400 font-medium">点击朗读</span>
-         </div>
-         
-         <div class="flex justify-center gap-6">
-             <el-button 
-               class="!h-12 !px-8 !text-base !rounded-full shadow-lg shadow-purple-100 hover:shadow-purple-200 transition-all transform hover:-translate-y-0.5 bg-gradient-to-r from-purple-400 to-indigo-400 border-none text-white" 
-               @click="router.push(`/homework/chinese/poetry/recite/${poem.id}`)"
-             >
-               背诵打卡
-             </el-button>
-             <el-button 
-               class="!h-12 !px-8 !text-base !rounded-full shadow-lg shadow-green-100 hover:shadow-green-200 transition-all transform hover:-translate-y-0.5 bg-gradient-to-r from-emerald-400 to-teal-400 border-none text-white" 
-               @click="router.push(`/homework/chinese/poetry/dictate/${poem.id}`)"
-             >
-               默写打卡
-             </el-button>
-         </div>
-       </div>
-
-       <!-- Study Stats Section (New) -->
-       <div v-if="studyRecord" class="grid grid-cols-3 gap-4">
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-50 dark:border-gray-700 text-center">
-             <div class="text-2xl font-bold text-gray-800 dark:text-white mb-1">{{ studyRecord.timesStudied }}</div>
-             <div class="text-xs text-gray-400">学习次数</div>
-          </div>
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-50 dark:border-gray-700 text-center">
-             <div class="text-2xl font-bold mb-1" :class="studyRecord.isMastered ? 'text-green-500' : 'text-gray-400'">
-                {{ studyRecord.isMastered ? '已掌握' : '学习中' }}
+    <div v-if="poem" class="p-6 max-w-4xl mx-auto">
+       
+       <!-- Main Card with Tabs -->
+       <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-xl shadow-pink-100/50 dark:shadow-none border border-pink-50 dark:border-gray-700 overflow-hidden">
+          
+          <!-- Poem Header (Title, Author) -->
+          <div class="p-8 pb-4 text-center border-b border-gray-50 dark:border-gray-700">
+             <div class="flex justify-between items-start mb-2">
+                <div class="text-left">
+                   <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100 tracking-wide mb-1">{{ poem.title_cns }}</h2>
+                   <div class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                      <span>{{ poem.dynasty_cns }} · {{ poem.author_cns }}</span>
+                   </div>
+                </div>
+                <!-- Status Tags -->
+                 <div class="flex flex-col items-end gap-1">
+                     <span class="bg-gray-100 dark:bg-gray-700 text-gray-500 text-xs px-2 py-0.5 rounded-full">{{ getPoemTag(poem) || '古诗' }}</span>
+                     <span class="text-xs px-2 py-0.5 rounded-full" :class="studyRecord?.isMastered ? 'bg-green-100 text-green-600' : 'bg-blue-50 text-blue-500'">
+                         {{ studyRecord?.isMastered ? '已背' : '未开始' }}
+                     </span>
+                 </div>
              </div>
-             <div class="text-xs text-gray-400">当前状态</div>
           </div>
-           <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-50 dark:border-gray-700 text-center">
-             <div class="text-2xl font-bold text-blue-500 mb-1">{{ lastDictationScore }}%</div>
-             <div class="text-xs text-gray-400">最近默写</div>
+
+          <!-- Tabs -->
+          <div class="flex border-b border-gray-100 dark:border-gray-700 bg-pink-50/30 dark:bg-gray-800">
+            <button 
+              v-for="tab in ['原文', '译文', '赏析', '趣事']" 
+              :key="tab"
+              @click="activeTab = tab as any"
+              class="flex-1 py-3 text-sm font-medium transition-all relative"
+              :class="activeTab === tab ? 'text-pink-600 bg-white dark:bg-gray-700 shadow-sm rounded-t-lg mx-1 mt-1' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+            >
+              {{ tab }}
+            </button>
+          </div>
+          
+          <!-- Content Area -->
+          <div class="p-8 min-h-[300px] flex flex-col justify-center">
+             
+             <!-- Tab: Original (Poem Content) -->
+             <div v-if="activeTab === '原文'" class="space-y-6">
+                <div class="flex flex-col items-center gap-6">
+                   <div v-for="(line, idx) in formattedLines" :key="idx" class="flex flex-wrap justify-center gap-x-1 gap-y-2">
+                      <!-- Character + Pinyin Pair -->
+                      <div v-for="(char, cIdx) in line.chars" :key="cIdx" class="flex flex-col items-center">
+                         <span v-if="showPinyin" class="text-xs text-gray-500 font-light h-4">{{ line.pinyins[cIdx] || '' }}</span>
+                         <span class="text-2xl text-gray-800 dark:text-gray-200 font-serif">{{ char }}</span>
+                      </div>
+                      <!-- Add comma/punctuation handling if needed, but simple char split usually works for display -->
+                   </div>
+                </div>
+
+                <!-- Audio Player -->
+                <div class="flex flex-col items-center gap-2 mt-8">
+                   <el-button 
+                     @click="togglePlay"
+                     class="!h-10 !px-4 !rounded-full shadow-sm"
+                     :type="isPlaying ? 'primary' : 'default'"
+                   >
+                     <el-icon class="mr-1"><VideoPlay v-if="!isPlaying" /><VideoPause v-else /></el-icon>
+                     朗读
+                   </el-button>
+                </div>
+             </div>
+
+             <!-- Other Tabs -->
+             <div v-else>
+               <div v-if="isLoadingAI" class="flex flex-col items-center justify-center py-12 text-gray-400">
+                 <div class="w-12 h-12 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin mb-4"></div>
+                 <span class="animate-pulse">AI 正在生成{{ activeTab }}...</span>
+               </div>
+               
+               <div v-else-if="getContent(activeTab)" class="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed text-justify px-4">
+                 {{ getContent(activeTab) }}
+               </div>
+               
+               <div v-else class="text-center py-12">
+                 <el-icon :size="40" class="text-gray-300 mb-4"><MagicStick /></el-icon>
+                 <p class="text-gray-400 mb-6 text-sm">暂无{{ activeTab }}内容</p>
+                 <el-button type="primary" plain round class="!px-6 !border-pink-300 !text-pink-500 hover:!bg-pink-50" @click="generateContent(activeTab)">
+                   <el-icon class="mr-2"><MagicStick /></el-icon>
+                   AI 生成{{ activeTab }}
+                 </el-button>
+               </div>
+             </div>
+
           </div>
        </div>
 
-       <!-- Tabs for Appreciation/Translation -->
-       <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-pink-50 dark:border-gray-700 overflow-hidden min-h-[300px]">
-         <div class="flex border-b border-gray-100 dark:border-gray-700">
-           <button 
-             v-for="tab in ['译文', '赏析', '趣事']" 
-             :key="tab"
-             @click="activeTab = tab as any"
-             class="flex-1 py-4 text-sm font-medium transition-all relative"
-             :class="activeTab === tab ? 'text-pink-600 bg-pink-50/50 dark:bg-pink-900/20' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
+       <!-- Footer Actions -->
+       <div class="flex justify-between gap-4 mt-6">
+           <el-button 
+             class="flex-1 !h-12 !text-base !rounded-xl !border-none"
+             color="#fce7f3" 
+             style="color: #db2777"
+             @click="router.push(`/homework/chinese/poetry/recite/${poem.id}`)"
            >
-             {{ tab }}
-             <div v-if="activeTab === tab" class="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-pink-500 rounded-t-full"></div>
-           </button>
-         </div>
-         
-         <div class="p-8">
-           <div v-if="isLoadingAI" class="flex flex-col items-center justify-center py-12 text-gray-400">
-             <div class="w-12 h-12 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin mb-4"></div>
-             <span class="animate-pulse">AI 正在生成{{ activeTab }}...</span>
-           </div>
-           
-           <div v-else-if="getContent(activeTab)" class="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed text-justify">
-             {{ getContent(activeTab) }}
-           </div>
-           
-           <div v-else class="text-center py-12">
-             <div class="bg-gray-50 dark:bg-gray-700/50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
-                <el-icon :size="40"><MagicStick /></el-icon>
-             </div>
-             <p class="text-gray-400 mb-6 text-sm">暂无{{ activeTab }}内容，点击下方按钮生成</p>
-             <el-button type="primary" plain round class="!px-6 !border-pink-300 !text-pink-500 hover:!bg-pink-50 hover:!border-pink-400" @click="generateContent(activeTab)">
-               <el-icon class="mr-2"><MagicStick /></el-icon>
-               AI 生成{{ activeTab }}
-             </el-button>
-           </div>
-         </div>
+             <el-icon class="mr-2"><Reading /></el-icon>
+             背诵打卡
+           </el-button>
+           <el-button 
+             class="flex-1 !h-12 !text-base !rounded-xl !border-none bg-blue-100 text-blue-600 hover:bg-blue-200" 
+             @click="router.push(`/homework/chinese/poetry/dictate/${poem.id}`)"
+           >
+             <el-icon class="mr-2"><EditPen /></el-icon>
+             默写打卡
+           </el-button>
        </div>
+
     </div>
     
     <div v-else class="p-20 text-center text-gray-500">
@@ -128,8 +140,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, VideoPlay, VideoPause, Loading, MagicStick, Star, StarFilled, Edit, Delete } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowLeft, VideoPlay, VideoPause, Loading, MagicStick, Star, StarFilled, Reading, EditPen } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import type { Poem } from '../types'
 import { usePoetryStore } from '../stores/poetryStore'
 import { useAppState } from '@/stores/appState'
@@ -143,36 +155,66 @@ const poetryStore = usePoetryStore()
 const poemId = computed(() => parseInt(route.params.id as string))
 const poem = computed<Poem | undefined>(() => poetryStore.getPoemById(poemId.value))
 
-const activeTab = ref<'译文' | '赏析' | '趣事'>('译文')
+const activeTab = ref<'原文' | '译文' | '赏析' | '趣事'>('原文')
 const isLoadingAI = ref(false)
 const isPlaying = ref(false)
+const showPinyin = ref(false) // Default to false
 const audioPlayer = ref<HTMLAudioElement | null>(null)
 const isCollected = computed(() => poem.value ? poetryStore.collections.includes(poem.value.id) : false)
 const studyRecord = computed(() => poem.value ? poetryStore.getRecord(poem.value.id) : null)
-const lastDictationScore = computed(() => {
-    if (!poem.value) return 0
-    const history = poetryStore.getDictationHistory(poem.value.id)
-    return history.length > 0 ? history[0].score : 0
+
+// Helper to determine tag based on ID or content (Mock logic)
+const getPoemTag = (p: Poem) => {
+    if (p.cat_cns) return p.cat_cns
+    return '古诗'
+}
+
+// Compute aligned lines for display
+const formattedLines = computed(() => {
+    if (!poem.value) return []
+    
+    return poem.value.paragraphs_cns.map((line, idx) => {
+        const chars = line.split('')
+        let pinyins: string[] = []
+        
+        if (poem.value?.paragraphs_py1 && poem.value.paragraphs_py1[idx]) {
+            // Simple space split. 
+            // Warning: This assumes pinyin string is perfectly space-separated matching chars.
+            // Punctuation in pinyin string (e.g., "，") needs to be handled if it is separated by space.
+            // Based on JSON check: "gū ... lái ，" (space before comma). 
+            // "孤...来，" (comma is char).
+            // So split(' ') should yield same length as split('').
+            const pyLine = poem.value.paragraphs_py1[idx]
+            pinyins = pyLine.split(' ').filter(s => s.trim() !== '') // remove empty splits
+        }
+        
+        // Safety: ensure lengths match or pad/truncate
+        // If mismatch, we might just show empty pinyin for some chars
+        return {
+            chars,
+            pinyins
+        }
+    })
 })
 
 onMounted(() => {
   poetryStore.init()
   if (!poem.value) {
-    // Retry once in case init is slow, though init is synchronous for localStorage
     if (!poetryStore.getPoemById(poemId.value)) {
        ElMessage.error('古诗不存在')
        router.back()
     }
   }
-  // Check initial tab content
-  checkAndGenerateContent(activeTab.value)
 })
 
 watch(activeTab, (newVal) => {
-    checkAndGenerateContent(newVal)
+    if (newVal !== '原文') {
+        checkAndGenerateContent(newVal)
+    }
 })
 
 const checkAndGenerateContent = (type: string) => {
+    if (type === '原文') return
     if (!getContent(type) && !isLoadingAI.value) {
         generateContent(type as any)
     }
@@ -190,11 +232,8 @@ const getContent = (type: string) => {
 
 const generateContent = async (_type: '译文' | '赏析' | '趣事') => {
   if (!poem.value) return
-  
   isLoadingAI.value = true
   try {
-    // In a real app, we would pass the 'type' to the generator.
-    // Our mock generator currently generates all fields at once.
     await poetryStore.generateAIContent(poem.value.id)
     ElMessage.success('AI 内容生成成功')
   } catch (e: any) {
@@ -211,19 +250,6 @@ const toggleCollection = () => {
     }
 }
 
-const handleDelete = () => {
-    if (!poem.value || !poem.value.isCustom) return
-    ElMessageBox.confirm('确定要删除这首古诗吗？此操作不可恢复。', '删除确认', {
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
-        type: 'warning'
-    }).then(() => {
-        poetryStore.deleteCustomPoem(poem.value!.id)
-        ElMessage.success('删除成功')
-        router.back()
-    })
-}
-
 onUnmounted(() => {
   stopAudio()
 })
@@ -233,22 +259,15 @@ const togglePlay = async () => {
     stopAudio()
   } else {
     if (!poem.value) return
-    
-    // Check if custom audio URL exists
     if (poem.value.audio_url) {
         playAudio(poem.value.audio_url)
         return
     }
-
-    // Use TTS
     const text = poem.value.title_cns + '。' + poem.value.author_cns + '。' + poem.value.paragraphs_cns.join('。')
-    
-    // Check for custom TTS profile
     let profile = null
     if (appState.speech.engine === 'custom' && appState.speech.activeCustomId) {
         profile = appState.speech.customProfiles.find((p: any) => p.id === appState.speech.activeCustomId)
     }
-
     if (profile) {
         try {
             const audio = await createCustomAudio(text, profile)
@@ -261,11 +280,10 @@ const togglePlay = async () => {
                 audio.play()
                 isPlaying.value = true
             }
-        } catch (e) {
+        } catch {
             ElMessage.error('语音生成失败')
         }
     } else {
-        // Browser native fallback
         const ut = new SpeechSynthesisUtterance(text)
         ut.lang = 'zh-CN'
         ut.onend = () => isPlaying.value = false
