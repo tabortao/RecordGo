@@ -60,6 +60,17 @@ const router = createRouter({
     { path: '/homework/chinese/pinyin', name: 'PinyinMenu', component: () => import('@/pages/PinyinMenuPage.vue'), meta: { noNav: true } },
     { path: '/homework/chinese/pinyin/wheel', name: 'PinyinWheel', component: () => import('@/pages/PinyinWheelPage.vue'), meta: { noNav: true } },
     
+    // --- 古诗词模块 ---
+    { path: '/homework/chinese/poetry', name: 'PoetryHome', component: () => import('@/features/chinese-poetry/pages/PoetryHome.vue'), meta: { noNav: true } },
+    { path: '/homework/chinese/poetry/create', name: 'PoetryCreate', component: () => import('@/features/chinese-poetry/pages/PoetryEdit.vue'), meta: { noNav: true } },
+    { path: '/homework/chinese/poetry/edit/:id', name: 'PoetryEdit', component: () => import('@/features/chinese-poetry/pages/PoetryEdit.vue'), meta: { noNav: true } },
+    { path: '/homework/chinese/poetry/:id', name: 'PoetryDetail', component: () => import('@/features/chinese-poetry/pages/PoetryDetail.vue'), meta: { noNav: true } },
+    { path: '/homework/chinese/poetry/recite/:id', name: 'PoetryRecite', component: () => import('@/features/chinese-poetry/pages/PoetryRecite.vue'), meta: { noNav: true } },
+      { path: '/homework/chinese/poetry/dictate/:id', name: 'PoetryDictate', component: () => import('@/features/chinese-poetry/pages/PoetryDictate.vue'), meta: { noNav: true } },
+      { path: '/homework/chinese/poetry/challenge', name: 'PoetryChallenge', component: () => import('@/features/chinese-poetry/pages/PoetryChallenge.vue'), meta: { noNav: true } },
+    { path: '/homework/chinese/poetry/stats', name: 'PoetryStats', component: () => import('@/features/chinese-poetry/pages/PoetryStats.vue'), meta: { noNav: true } },
+    { path: '/homework/chinese/poetry/daily', name: 'PoetryDaily', component: () => import('@/features/chinese-poetry/pages/PoetryHome.vue'), meta: { noNav: true } }, // Re-use home but maybe focus on daily? Or just redirect. For now, pointing to Home is fine or a specific daily page if needed. Let's just point to Home as "Daily" is embedded there. Actually, let's make a dedicated Daily page if requested? PRD says "Daily Poem" section. I'll just map it to Home for now or handle it via a query param.
+    
     // --- 听写大师模块 ---
     {
       path: '/dictation',

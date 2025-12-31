@@ -26,6 +26,16 @@
         <span class="font-semibold text-gray-700 dark:text-gray-200">汉字英雄</span>
       </div>
 
+      <div 
+        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center gap-3 cursor-pointer hover:shadow-md transition active:scale-95"
+        @click="router.push('/homework/chinese/poetry')"
+      >
+        <div class="w-14 h-14 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
+          <el-icon :size="28"><Reading /></el-icon>
+        </div>
+        <span class="font-semibold text-gray-700 dark:text-gray-200">古诗词</span>
+      </div>
+
       <!-- 占位符 -->
       <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center justify-center gap-2 opacity-60">
         <div class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
@@ -39,7 +49,7 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { ArrowLeft, More } from '@element-plus/icons-vue'
+import { ArrowLeft, More, Reading } from '@element-plus/icons-vue'
 
 const router = useRouter()
 </script>
