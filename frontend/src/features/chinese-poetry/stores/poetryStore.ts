@@ -1,10 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import dayjs from 'dayjs'
-import { debounce } from 'lodash-es'
 import type { Poem, StudyRecord, DailyStats, DictationResult } from '../types'
 import rawPoems from '../data/chinese_poems.json'
 import { poetryService } from '@/services/poetry'
+
+function debounce<T extends (...args: any[]) => any>(fn: T, wait = 0): (...args: Parameters<T>) => void {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  return (...args: Parameters<T>) => {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), wait)
+  }
+}
 
 // Ebbinghaus intervals in days: 1, 2, 4, 7, 15, 30
 const REVIEW_INTERVALS = [1, 2, 4, 7, 15, 30]

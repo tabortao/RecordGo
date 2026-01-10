@@ -82,22 +82,26 @@
               @add-comment="handleAddComment"
             />
           </div>
-          <div v-for="(group, year) in groupedRecords" :key="year" :id="'year-' + String(year)">
-             <div v-for="(months, month) in group" :key="month" :id="'month-' + String(year) + '-' + String(month)">
-                <TimelineCard 
-                  v-for="record in (months as unknown as import('@/stores/littleGrowth').GrowthRecord[])"
-                  :key="record.id" 
-                  :record="record" 
-                  :allTags="store.flattenedTags"
-                  :searchQuery="getSearchQuery()"
-                  @edit="handleEdit"
-                  @delete="handleDelete"
-                  @pin="handlePin"
-                  @filter-tag="handleTagSelect"
-                  @toggle-favorite="handleToggleFavorite"
-                  @add-comment="handleAddComment"
-                 />
-             </div>
+          <div v-for="year in sortedYears" :key="year" :id="'year-' + String(year)">
+            <div
+              v-for="month in (sortedMonthsByYear[year] || [])"
+              :key="month"
+              :id="'month-' + String(year) + '-' + String(month)"
+            >
+              <TimelineCard
+                v-for="record in (groupedRecords[year]?.[month] || [])"
+                :key="record.id"
+                :record="record"
+                :allTags="store.flattenedTags"
+                :searchQuery="getSearchQuery()"
+                @edit="handleEdit"
+                @delete="handleDelete"
+                @pin="handlePin"
+                @filter-tag="handleTagSelect"
+                @toggle-favorite="handleToggleFavorite"
+                @add-comment="handleAddComment"
+              />
+            </div>
           </div>
         </template>
         <div v-else class="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -411,6 +415,14 @@ const groupedRecords = computed<YearMonthGroups>(() => {
 
 const sortedYears = computed(() => {
   return Object.keys(groupedRecords.value).sort((a, b) => Number(b) - Number(a))
+})
+
+const sortedMonthsByYear = computed<Record<string, string[]>>(() => {
+  const res: Record<string, string[]> = {}
+  for (const [year, months] of Object.entries(groupedRecords.value)) {
+    res[year] = Object.keys(months).sort((a, b) => Number(b) - Number(a))
+  }
+  return res
 })
 
 const scrollToYear = (year: string) => {

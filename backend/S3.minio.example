@@ -1,0 +1,29 @@
+cd g:\Code\RecordGo\backend
+
+$env:SECRET_KEY = 'dev-secret'
+$env:DB_PATH = 'storage/database/recordgo.db'
+$env:STORAGE_ROOT = 'storage'
+$env:PORT = '8082'
+$env:GIN_MODE = 'debug'
+$env:ALLOW_ORIGINS = 'http://localhost:5173'
+$env:JWT_EXPIRE_DAYS = '365'
+
+# MinIO S3（path-style）
+$env:STORAGE_DRIVER = 's3'
+$env:S3_PROVIDER = 'minio'
+$env:S3_ENDPOINT = 'https://img.xxx.top'   # 你的 MinIO S3 API 域名
+$env:S3_REGION = 'cn-east-1'
+$env:S3_BUCKET = 'recordgo-test'
+$env:S3_ACCESS_KEY_ID = 'XXX'
+$env:S3_SECRET_ACCESS_KEY = 'XXXX'
+$env:S3_FORCE_PATH_STYLE = 'true'
+
+# 展示域名与对象键前缀
+$env:S3_PUBLIC_BASE_URL = 'https://img.xxx.top'   # 公共读域名
+$env:S3_KEY_PREFIX = ''                                
+
+# 其他
+$env:S3_PRESIGN_EXPIRE = '300'
+$env:MAX_UPLOAD_SIZE_MB = '10'
+
+go run ./cmd/server

@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"recordgo/internal/common"
+	"recordgo/internal/config"
 	"recordgo/internal/db"
 	"recordgo/internal/models"
 	"recordgo/internal/storage"
@@ -729,7 +730,18 @@ func uploadGrowthFile(st storage.Storage, file *multipart.FileHeader, uid uint, 
 
 	// Key: images/{uid}/little_growth/{type}_{timestamp}_{random}{ext}
 	filename := fmt.Sprintf("%s_%d%s", ftype, time.Now().UnixNano(), ext)
-	key := fmt.Sprintf("images/%d/little_growth/%s", uid, filename)
+	
+	// Apply S3_KEY_PREFIX if configured
+	cfg, _ := config.Load()
+	prefix := ""
+	if cfg != nil {
+		prefix = strings.Trim(strings.TrimSpace(cfg.S3KeyPrefix), "/")
+		if prefix != "" {
+			prefix = prefix + "/"
+		}
+	}
+	
+	key := fmt.Sprintf("%simages/%d/little_growth/%s", prefix, uid, filename)
 
 	// We need to determine content type
 	contentType := file.Header.Get("Content-Type")
