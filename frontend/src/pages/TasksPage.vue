@@ -484,7 +484,7 @@
       type="success"
       circle
       class="fixed no-pull"
-      :style="{ left: fabPos.x + 'px', top: fabPos.y + 'px', backgroundColor: '#22c55e', borderColor: '#22c55e' }"
+      :style="{ left: fabPos.x + 'px', top: fabPos.y + 'px', backgroundColor: '#22c55e', borderColor: '#22c55e', zIndex: 60 }"
       @mousedown="onFabDown"
       @touchstart="onFabTouchStart"
       @click="openCreate"
@@ -521,7 +521,7 @@
 // 中文注释：任务页面逻辑，统一使用服务层 API，实现表单校验与错误提示
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus/es/components/form'
 import { Plus, Clock, List, Coin, Money, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound, Sort, Headset, CirclePlusFilled } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import { useAuth } from '@/stores/auth'
@@ -1441,6 +1441,7 @@ onMounted(async () => {
   updateMobile()
   window.addEventListener('resize', updateMobile)
   initFab()
+  window.addEventListener('resize', clampFabIntoViewport)
   if (wrapperRef.value) {
     wrapperRef.value.addEventListener('touchmove', onTouchMove as any, { passive: false })
   }
@@ -1526,6 +1527,15 @@ const activeTaskId = ref<number | null>(null)
 // 创建任务浮动按钮：可拖动并持久化位置；默认靠近底部导航栏并与右侧保持间距
 const fabPos = ref<{ x: number; y: number }>({ x: 0, y: 0 })
 const fabKey = 'createTaskFabPos'
+function clampFabIntoViewport() {
+  const size = 64
+  const maxX = Math.max(8, window.innerWidth - size)
+  const maxY = Math.max(8, window.innerHeight - size)
+  fabPos.value = {
+    x: Math.max(8, Math.min(maxX, fabPos.value.x)),
+    y: Math.max(8, Math.min(maxY, fabPos.value.y)),
+  }
+}
 function initFab() {
   try {
     const raw = localStorage.getItem(fabKey)
@@ -1533,12 +1543,14 @@ function initFab() {
       const p = JSON.parse(raw)
       if (typeof p?.x === 'number' && typeof p?.y === 'number') {
         fabPos.value = p
+        clampFabIntoViewport()
         return
       }
     }
   } catch {}
   const margin = 24
   fabPos.value = { x: window.innerWidth - 64 - margin, y: window.innerHeight - 64 - (isMobile.value ? 96 : 80) }
+  clampFabIntoViewport()
 }
 function saveFab() {
   try { localStorage.setItem(fabKey, JSON.stringify(fabPos.value)) } catch {}
