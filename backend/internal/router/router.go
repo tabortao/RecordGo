@@ -56,7 +56,6 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 		// 中文注释：认证路由（登录/注册）
 		api.POST("/auth/register", handlers.Register)
 		api.POST("/auth/login", handlers.Login)
-		api.POST("/auth/reset-password", handlers.ResetPassword)
 		// 中文注释：子账号令牌登录（免密码，仅限子账号）
 		api.POST("/auth/token-login", handlers.TokenLogin)
 		// 中文注释：账号安全与资料

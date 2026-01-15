@@ -8,68 +8,68 @@ import (
 
 // 中文注释：配置结构体，统一管理环境变量与默认值
 type Config struct {
-    SecretKey   string
-    DBPath      string
-    StorageRoot string
-    Port        string
-    Env         string // release 或 debug
-    // 中文注释：是否启用父子账号金币池同步（子账号显示与操作均使用父账号金币）
-    ParentCoinsSync bool
-    AllowedOrigins  []string
-    StorageDriver   string
-    S3Provider      string
-    S3Endpoint      string
-    S3Region        string
-    S3Bucket        string
-    S3AccessKeyID   string
-    S3SecretAccessKey string
-    S3ForcePathStyle bool
-    S3PresignExpire  int64
-    S3PublicBaseURL  string
-    MaxUploadSizeMB  int
-    AllowMIME        string
-    JWTExpireDays    int
-    S3KeyPrefix      string
+	SecretKey   string
+	DBPath      string
+	StorageRoot string
+	Port        string
+	Env         string // release 或 debug
+	// 中文注释：是否启用父子账号金币池同步（子账号显示与操作均使用父账号金币）
+	ParentCoinsSync   bool
+	AllowedOrigins    []string
+	StorageDriver     string
+	S3Provider        string
+	S3Endpoint        string
+	S3Region          string
+	S3Bucket          string
+	S3AccessKeyID     string
+	S3SecretAccessKey string
+	S3ForcePathStyle  bool
+	S3PresignExpire   int64
+	S3PublicBaseURL   string
+	MaxUploadSizeMB   int
+	AllowMIME         string
+	JWTExpireDays     int
+	S3KeyPrefix       string
 }
 
 // Load 读取环境变量并提供默认值
 func Load() (*Config, error) {
-    v := viper.New()
-    v.AutomaticEnv()
-    // 中文注释：为满足“子账号与主账号金币池共享”的默认规则，开启父子金币同步默认值
-    v.SetDefault("PARENT_COINS_SYNC", true)
-    v.SetDefault("ALLOW_ORIGINS", "https://recordgo.netlify.app")
-    v.SetDefault("STORAGE_DRIVER", "local")
-    v.SetDefault("S3_FORCE_PATH_STYLE", false)
-    v.SetDefault("S3_PRESIGN_EXPIRE", 300)
-    v.SetDefault("MAX_UPLOAD_SIZE_MB", 10)
-    v.SetDefault("ALLOW_MIME", "image/webp,audio/mpeg,audio/wav")
-    v.SetDefault("JWT_EXPIRE_DAYS", 365)
-    v.SetDefault("S3_KEY_PREFIX", "")
+	v := viper.New()
+	v.AutomaticEnv()
+	// 中文注释：为满足“子账号与主账号金币池共享”的默认规则，开启父子金币同步默认值
+	v.SetDefault("PARENT_COINS_SYNC", true)
+	v.SetDefault("ALLOW_ORIGINS", "https://recordgo.netlify.app")
+	v.SetDefault("STORAGE_DRIVER", "local")
+	v.SetDefault("S3_FORCE_PATH_STYLE", false)
+	v.SetDefault("S3_PRESIGN_EXPIRE", 300)
+	v.SetDefault("MAX_UPLOAD_SIZE_MB", 10)
+	v.SetDefault("ALLOW_MIME", "image/webp,audio/mpeg,audio/wav")
+	v.SetDefault("JWT_EXPIRE_DAYS", 365)
+	v.SetDefault("S3_KEY_PREFIX", "")
 
-    cfg := &Config{
-        SecretKey:   v.GetString("SECRET_KEY"),
-        DBPath:      defaultString(v.GetString("DB_PATH"), "storage/database/recordgo.db"),
-        StorageRoot: defaultString(v.GetString("STORAGE_ROOT"), "storage"),
-        Port:        defaultString(v.GetString("PORT"), "8080"),
-        Env:         defaultString(v.GetString("GIN_MODE"), "release"),
-        // 中文注释：PARENT_COINS_SYNC 读取为布尔值，默认 true（可通过环境变量覆盖为 false）
-        ParentCoinsSync: v.GetBool("PARENT_COINS_SYNC"),
-        StorageDriver:   defaultString(v.GetString("STORAGE_DRIVER"), "local"),
-        S3Provider:      v.GetString("S3_PROVIDER"),
-        S3Endpoint:      v.GetString("S3_ENDPOINT"),
-        S3Region:        v.GetString("S3_REGION"),
-        S3Bucket:        v.GetString("S3_BUCKET"),
-        S3AccessKeyID:   v.GetString("S3_ACCESS_KEY_ID"),
-        S3SecretAccessKey: v.GetString("S3_SECRET_ACCESS_KEY"),
-        S3ForcePathStyle: v.GetBool("S3_FORCE_PATH_STYLE"),
-        S3PresignExpire:  v.GetInt64("S3_PRESIGN_EXPIRE"),
-        S3PublicBaseURL:  v.GetString("S3_PUBLIC_BASE_URL"),
-        MaxUploadSizeMB:  v.GetInt("MAX_UPLOAD_SIZE_MB"),
-        AllowMIME:        v.GetString("ALLOW_MIME"),
-        JWTExpireDays:    v.GetInt("JWT_EXPIRE_DAYS"),
-        S3KeyPrefix:      v.GetString("S3_KEY_PREFIX"),
-    }
+	cfg := &Config{
+		SecretKey:   v.GetString("SECRET_KEY"),
+		DBPath:      defaultString(v.GetString("DB_PATH"), "storage/database/recordgo.db"),
+		StorageRoot: defaultString(v.GetString("STORAGE_ROOT"), "storage"),
+		Port:        defaultString(v.GetString("PORT"), "8080"),
+		Env:         defaultString(v.GetString("GIN_MODE"), "release"),
+		// 中文注释：PARENT_COINS_SYNC 读取为布尔值，默认 true（可通过环境变量覆盖为 false）
+		ParentCoinsSync:   v.GetBool("PARENT_COINS_SYNC"),
+		StorageDriver:     defaultString(v.GetString("STORAGE_DRIVER"), "local"),
+		S3Provider:        v.GetString("S3_PROVIDER"),
+		S3Endpoint:        v.GetString("S3_ENDPOINT"),
+		S3Region:          v.GetString("S3_REGION"),
+		S3Bucket:          v.GetString("S3_BUCKET"),
+		S3AccessKeyID:     v.GetString("S3_ACCESS_KEY_ID"),
+		S3SecretAccessKey: v.GetString("S3_SECRET_ACCESS_KEY"),
+		S3ForcePathStyle:  v.GetBool("S3_FORCE_PATH_STYLE"),
+		S3PresignExpire:   v.GetInt64("S3_PRESIGN_EXPIRE"),
+		S3PublicBaseURL:   v.GetString("S3_PUBLIC_BASE_URL"),
+		MaxUploadSizeMB:   v.GetInt("MAX_UPLOAD_SIZE_MB"),
+		AllowMIME:         v.GetString("ALLOW_MIME"),
+		JWTExpireDays:     v.GetInt("JWT_EXPIRE_DAYS"),
+		S3KeyPrefix:       v.GetString("S3_KEY_PREFIX"),
+	}
 
 	originsRaw := v.GetString("ALLOW_ORIGINS")
 	cfg.AllowedOrigins = splitAndTrim(originsRaw)

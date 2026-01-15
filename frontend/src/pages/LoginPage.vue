@@ -1,90 +1,77 @@
 <template>
-  <!-- 中文注释：现代化登录页面，Tailwind 渐变背景 + 居中卡片 -->
-  <div class="min-h-screen bg-gradient-to-br from-sky-50 to-indigo-100 flex items-center justify-center p-4">
-    <el-card class="w-full max-w-[400px] rounded-xl shadow-lg border" body-class="p-5">
-      <template #header>
-        <div class="text-center">
-          <div class="text-xl font-semibold">任务积分助手 · 登录</div>
-        </div>
-      </template>
-      <el-form label-position="top" @submit.prevent>
-        <div class="flex justify-center mb-2">
-          <el-radio-group v-model="mode" size="small">
-            <el-radio-button label="account">账号密码</el-radio-button>
-            <el-radio-button label="token">令牌登录</el-radio-button>
-          </el-radio-group>
-        </div>
+  <div class="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-950 to-indigo-950">
+    <div class="absolute -top-32 -left-32 h-[420px] w-[420px] rounded-full bg-indigo-600/30 blur-3xl" />
+    <div class="absolute -bottom-40 -right-40 h-[520px] w-[520px] rounded-full bg-sky-500/20 blur-3xl" />
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(255,255,255,0.05),transparent_45%)]" />
 
-        <template v-if="mode==='account'">
-          <el-form-item label="用户名">
-            <el-input v-model="username" placeholder="请输入用户名" />
-          </el-form-item>
-          <el-form-item label="密码">
-            <!-- 中文注释：启用 Element Plus 内置的小眼睛图标进行显示/隐藏切换 -->
-            <el-input v-model="password" type="password" show-password placeholder="请输入密码" />
-          </el-form-item>
-          <div class="flex items-center justify-between mb-2">
-            <el-checkbox v-model="rememberMe">记住我</el-checkbox>
-            <button class="text-sm text-gray-500 hover:text-indigo-600" type="button" @click="toRegister">去注册</button>
+    <div class="relative mx-auto flex min-h-screen w-full max-w-5xl items-center px-4 py-10">
+      <div class="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
+        <div class="hidden md:flex flex-col justify-center rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur">
+          <div class="text-3xl font-semibold tracking-tight text-white">作业家</div>
+          <div class="mt-2 text-sm text-white/70">用更轻的操作，养成更稳的习惯</div>
+          <div class="mt-6 space-y-3 text-sm text-white/80">
+            <div class="rounded-lg border border-white/10 bg-white/5 p-3">任务、心愿、积分一体化管理</div>
+            <div class="rounded-lg border border-white/10 bg-white/5 p-3">子账号令牌登录，家庭协作更方便</div>
+            <div class="rounded-lg border border-white/10 bg-white/5 p-3">登录后支持在“我的-设置”里修改密码</div>
           </div>
-          <div class="flex justify-end mb-3">
-            <button class="text-sm text-gray-500 hover:text-indigo-600" type="button" @click="openReset">忘记密码</button>
-          </div>
-          <el-button type="primary" class="w-full" :loading="loading" @click="doLogin">登录</el-button>
-        </template>
-
-        <template v-else>
-          <el-form-item label="子账号令牌">
-            <el-input v-model="token" placeholder="请输入子账号令牌" />
-          </el-form-item>
-          <div class="flex items-center justify-between mb-3">
-            <el-checkbox v-model="rememberMe">记住我</el-checkbox>
-            <button class="text-sm text-gray-500 hover:text-indigo-600" type="button" @click="toRegister">去注册</button>
-          </div>
-          <el-button type="primary" class="w-full" @click="doTokenLogin">令牌登录</el-button>
-        </template>
-
-        <div class="flex justify-center mt-3 text-xs text-gray-500">
-          <button class="hover:text-gray-600" type="button" @click="clearCache">清空缓存</button>
         </div>
-      </el-form>
-    </el-card>
-  </div>
 
-  <el-dialog v-model="resetVisible" width="420px">
-    <template #header>
-      <div class="font-semibold">忘记密码</div>
-    </template>
-    <el-form label-position="top">
-      <el-form-item label="用户名">
-        <el-input v-model="resetUsername" placeholder="请输入用户名" />
-      </el-form-item>
-      <el-form-item label="手机号">
-        <el-input v-model="resetPhone" placeholder="请输入注册时绑定的手机号" />
-      </el-form-item>
-      <el-alert v-if="tempPassword" type="success" :closable="false" show-icon>
-        <template #title>临时密码：{{ tempPassword }}</template>
-        <template #default>
-          <div class="text-xs text-gray-600">登录后将提示你设置新密码</div>
-        </template>
-      </el-alert>
-    </el-form>
-    <template #footer>
-      <div class="flex justify-end gap-2">
-        <el-button @click="resetVisible=false">关闭</el-button>
-        <el-button v-if="tempPassword" @click="copyTemp">复制密码</el-button>
-        <el-button v-if="tempPassword" type="primary" @click="fillAndClose">去登录</el-button>
-        <el-button v-else type="primary" :loading="resetLoading" @click="doReset">重置为临时密码</el-button>
+        <div class="rounded-2xl border border-white/10 bg-white/95 p-6 shadow-2xl shadow-black/30 backdrop-blur md:p-8">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="text-xl font-semibold text-slate-900">作业家 · 登录</div>
+              <div class="mt-1 text-xs text-slate-500">欢迎回来</div>
+            </div>
+          </div>
+
+          <div class="mt-5 flex justify-center">
+            <el-radio-group v-model="mode" size="small">
+              <el-radio-button label="account">账号密码</el-radio-button>
+              <el-radio-button label="token">令牌登录</el-radio-button>
+            </el-radio-group>
+          </div>
+
+          <el-form class="mt-5" label-position="top" @submit.prevent>
+            <template v-if="mode==='account'">
+              <el-form-item label="用户名">
+                <el-input v-model="username" placeholder="请输入用户名" />
+              </el-form-item>
+              <el-form-item label="密码">
+                <el-input v-model="password" type="password" show-password placeholder="请输入密码" />
+              </el-form-item>
+              <div class="flex items-center justify-between">
+                <el-checkbox v-model="rememberMe">记住我</el-checkbox>
+                <button class="text-sm text-slate-500 hover:text-indigo-600" type="button" @click="toRegister">去注册</button>
+              </div>
+              <el-button type="primary" class="mt-4 w-full" :loading="loading" @click="doLogin">登录</el-button>
+            </template>
+
+            <template v-else>
+              <el-form-item label="子账号令牌">
+                <el-input v-model="token" placeholder="请输入子账号令牌" />
+              </el-form-item>
+              <div class="flex items-center justify-between">
+                <el-checkbox v-model="rememberMe">记住我</el-checkbox>
+                <button class="text-sm text-slate-500 hover:text-indigo-600" type="button" @click="toRegister">去注册</button>
+              </div>
+              <el-button type="primary" class="mt-4 w-full" :loading="loading" @click="doTokenLogin">令牌登录</el-button>
+            </template>
+
+            <div class="mt-4 flex justify-center text-xs text-slate-400">
+              <button class="hover:text-slate-600" type="button" @click="clearCache">清空缓存</button>
+            </div>
+          </el-form>
+        </div>
       </div>
-    </template>
-  </el-dialog>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
-import { apiLogin, apiResetPassword, apiTokenLogin } from '@/services/auth'
+import { apiLogin, apiTokenLogin } from '@/services/auth'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
 
@@ -98,12 +85,6 @@ const appState = useAppState()
 // 中文注释：记住我（默认未勾选），勾选则写入 localStorage；未勾选仅本次会话
 const rememberMe = ref(false)
 const loading = ref(false)
-
-const resetVisible = ref(false)
-const resetUsername = ref('')
-const resetPhone = ref('')
-const resetLoading = ref(false)
-const tempPassword = ref('')
 
 onMounted(() => {
   // 中文注释：若从注册页带回用户名，自动回填
@@ -140,8 +121,10 @@ async function doLogin() {
 }
 
 async function doTokenLogin() {
+  if (loading.value) return
   if (!token.value) { ElMessage.error('请输入令牌'); return }
   try {
+    loading.value = true
     const resp = await apiTokenLogin(token.value)
     auth.setLogin(resp.token, resp.user, rememberMe.value)
     // 中文注释：令牌登录同样同步全局金币
@@ -151,6 +134,8 @@ async function doTokenLogin() {
     router.replace(redirect)
   } catch (e: any) {
     ElMessage.error(e?.message || '令牌登录失败')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -161,53 +146,6 @@ function clearCache() {
 
 function toRegister() {
   router.push('/register')
-}
-
-function openReset() {
-  resetUsername.value = username.value || ''
-  resetPhone.value = ''
-  tempPassword.value = ''
-  resetVisible.value = true
-}
-
-async function doReset() {
-  if (resetLoading.value) return
-  if (!resetUsername.value.trim() || !resetPhone.value.trim()) {
-    ElMessage.error('请输入用户名与手机号')
-    return
-  }
-  try {
-    resetLoading.value = true
-    const resp = await apiResetPassword(resetUsername.value.trim(), resetPhone.value.trim())
-    tempPassword.value = (resp as any)?.temp_password || ''
-    if (!tempPassword.value) {
-      ElMessage.error('重置失败')
-      return
-    }
-    ElMessage.success('已生成临时密码')
-  } catch (e: any) {
-    ElMessage.error(e?.message || '重置失败')
-  } finally {
-    resetLoading.value = false
-  }
-}
-
-async function copyTemp() {
-  if (!tempPassword.value) return
-  try {
-    await navigator.clipboard.writeText(tempPassword.value)
-    ElMessage.success('已复制')
-  } catch {
-    ElMessage.error('复制失败，请手动复制')
-  }
-}
-
-function fillAndClose() {
-  if (!resetUsername.value || !tempPassword.value) return
-  mode.value = 'account'
-  username.value = resetUsername.value
-  password.value = tempPassword.value
-  resetVisible.value = false
 }
 </script>
 
