@@ -1,8 +1,10 @@
 package handlers
 
 import (
+    "crypto/rand"
     "crypto/sha256"
     "encoding/hex"
+    "fmt"
     "time"
     "strings"
     
@@ -20,6 +22,7 @@ type RegisterReq struct {
     Username string `json:"username"`
     Password string `json:"password"`
     Nickname string `json:"nickname"`
+    Phone    string `json:"phone"`
 }
 
 type LoginReq struct {
@@ -42,8 +45,24 @@ type Claims struct {
 // 中文注释：Register 用户注册；首次注册的用户为 admin，后续为 user
 func Register(c *gin.Context) {
     var req RegisterReq
-    if err := c.ShouldBindJSON(&req); err != nil || req.Username == "" || req.Password == "" {
-        common.Error(c, 40001, "参数错误：请填写用户名与密码")
+    if err := c.ShouldBindJSON(&req); err != nil {
+        common.Error(c, 40001, "参数错误")
+        return
+    }
+    req.Username = strings.TrimSpace(req.Username)
+    req.Password = strings.TrimSpace(req.Password)
+    req.Nickname = strings.TrimSpace(req.Nickname)
+    req.Phone = strings.TrimSpace(req.Phone)
+    if req.Username == "" || req.Password == "" || req.Phone == "" {
+        common.Error(c, 40001, "参数错误：请填写用户名、密码与手机号")
+        return
+    }
+    if len([]rune(req.Username)) < 4 {
+        common.Error(c, 40004, "用户名不少于4个字符")
+        return
+    }
+    if !isStrongPassword(req.Password) {
+        common.Error(c, 40005, "密码需包含数字、大写字母与小写字母")
         return
     }
 
@@ -71,6 +90,7 @@ func Register(c *gin.Context) {
         Permissions: `{"view_only": false}`,
         Nickname:    ifEmpty(req.Nickname, req.Username),
         AvatarPath:  "storage/images/avatars/default.png",
+        Phone:       req.Phone,
         Coins:       0,
         Tomatoes:    0,
     }
@@ -156,6 +176,7 @@ func Login(c *gin.Context) {
             "avatar_path": u.AvatarPath,
             "phone": u.Phone,
             "email": u.Email,
+            "must_change_password": u.MustChangePassword,
             // VIP 字段
             "last_login_time": now.Format(time.RFC3339),
             "is_vip": u.IsVIP,
@@ -165,8 +186,91 @@ func Login(c *gin.Context) {
     })
 }
 
+type ResetPasswordReq struct {
+    Username string `json:"username"`
+    Phone    string `json:"phone"`
+}
+
+func ResetPassword(c *gin.Context) {
+    var req ResetPasswordReq
+    if err := c.ShouldBindJSON(&req); err != nil {
+        common.Error(c, 40001, "参数错误")
+        return
+    }
+    req.Username = strings.TrimSpace(req.Username)
+    req.Phone = strings.TrimSpace(req.Phone)
+    if req.Username == "" || req.Phone == "" {
+        common.Error(c, 40001, "参数错误：请填写用户名与手机号")
+        return
+    }
+    var u models.User
+    if err := db.DB().Where("username = ?", req.Username).First(&u).Error; err != nil {
+        if err == gorm.ErrRecordNotFound {
+            common.Error(c, 40401, "用户不存在")
+            return
+        }
+        common.Error(c, 50002, "查询用户失败")
+        return
+    }
+    if strings.TrimSpace(u.Phone) == "" {
+        common.Error(c, 40006, "该账号未绑定手机号，无法自助重置密码")
+        return
+    }
+    if strings.TrimSpace(u.Phone) != req.Phone {
+        common.Error(c, 40007, "手机号与用户名不匹配")
+        return
+    }
+    tmp, err := generateTempPassword()
+    if err != nil {
+        common.Error(c, 50020, "生成临时密码失败")
+        return
+    }
+    h := sha256.Sum256([]byte(tmp))
+    if err := db.DB().Model(&u).Updates(map[string]any{
+        "password_sha":          hex.EncodeToString(h[:]),
+        "must_change_password":  true,
+    }).Error; err != nil {
+        common.Error(c, 50021, "重置密码失败")
+        return
+    }
+    common.Ok(c, gin.H{"temp_password": tmp})
+}
+
 // 中文注释：空字符串兼容处理
 func ifEmpty(s string, def string) string {
     if s == "" { return def }
     return s
+}
+
+func isStrongPassword(pw string) bool {
+    if len([]rune(pw)) < 6 {
+        return false
+    }
+    hasUpper := false
+    hasLower := false
+    hasDigit := false
+    for _, r := range pw {
+        if r >= 'A' && r <= 'Z' {
+            hasUpper = true
+        } else if r >= 'a' && r <= 'z' {
+            hasLower = true
+        } else if r >= '0' && r <= '9' {
+            hasDigit = true
+        }
+    }
+    return hasUpper && hasLower && hasDigit
+}
+
+func generateTempPassword() (string, error) {
+    const digits = "0123456789"
+    b := make([]byte, 6)
+    if _, err := rand.Read(b); err != nil {
+        return "", err
+    }
+    out := make([]byte, 0, 8)
+    out = append(out, 'R', 'g')
+    for i := 0; i < len(b); i++ {
+        out = append(out, digits[int(b[i])%len(digits)])
+    }
+    return fmt.Sprintf("%s", string(out)), nil
 }

@@ -153,6 +153,7 @@ async function onSave() {
         return
       }
       await changePassword(oldPassword.value, newPassword.value)
+      auth.updateUser({ must_change_password: false })
     }
 
     ElMessage.success('个人信息已保存')

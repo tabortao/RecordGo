@@ -15,6 +15,7 @@ export interface LoginResp {
     avatar_path: string
     phone?: string
     email?: string
+    must_change_password?: boolean
     // VIP 字段
     last_login_time?: string | null
     is_vip?: boolean
@@ -28,12 +29,16 @@ export async function apiLogin(username: string, password: string) {
   return await http.post<LoginResp>('/auth/login', { username, password })
 }
 
-export async function apiRegister(username: string, password: string, nickname?: string) {
+export async function apiRegister(username: string, password: string, phone: string, nickname?: string) {
   // 中文注释：调用后端注册接口
-  return await http.post('/auth/register', { username, password, nickname })
+  return await http.post('/auth/register', { username, password, phone, nickname })
 }
 
 // 中文注释：子账号令牌登录（免密码，仅限子账号使用）
 export async function apiTokenLogin(token: string) {
   return await http.post<LoginResp>('/auth/token-login', { token })
+}
+
+export async function apiResetPassword(username: string, phone: string) {
+  return await http.post<{ temp_password: string }>('/auth/reset-password', { username, phone })
 }

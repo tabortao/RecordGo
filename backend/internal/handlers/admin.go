@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"recordgo/internal/common"
 	"recordgo/internal/db"
 	"recordgo/internal/models"
@@ -216,4 +218,34 @@ func AdminDeleteUser(c *gin.Context) {
 	}
 	zap.L().Warn("管理员删除用户", zap.String("user_id", id))
 	common.Ok(c, gin.H{"deleted": true})
+}
+
+func AdminResetPassword(c *gin.Context) {
+	if !requireAdmin(c) {
+		return
+	}
+	id := strings.TrimSpace(c.Param("id"))
+	if id == "" {
+		common.Error(c, 40001, "用户ID不能为空")
+		return
+	}
+	var u models.User
+	if err := db.DB().First(&u, id).Error; err != nil {
+		common.Error(c, 40400, "用户不存在")
+		return
+	}
+	tmp, err := generateTempPassword()
+	if err != nil {
+		common.Error(c, 50020, "生成临时密码失败")
+		return
+	}
+	h := sha256.Sum256([]byte(tmp))
+	if err := db.DB().Model(&u).Updates(map[string]any{
+		"password_sha":         hex.EncodeToString(h[:]),
+		"must_change_password": true,
+	}).Error; err != nil {
+		common.Error(c, 50021, "重置密码失败")
+		return
+	}
+	common.Ok(c, gin.H{"temp_password": tmp})
 }

@@ -44,9 +44,10 @@
             <el-tag :type="row.is_disabled ? 'danger' : 'success'">{{ row.is_disabled ? '禁用' : '正常' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="320">
+        <el-table-column label="操作" width="400">
           <template #default="{ row }">
             <el-button size="small" @click="openVIP(row)">VIP设置</el-button>
+            <el-button size="small" type="primary" @click="resetPwd(row)">重置密码</el-button>
             <el-button size="small" type="warning" @click="toggleDisabled(row)">{{ row.is_disabled ? '启用' : '禁用' }}</el-button>
             <el-button size="small" type="danger" @click="removeUser(row)">删除</el-button>
           </template>
@@ -148,6 +149,16 @@ async function removeUser(u: any) {
     await http.delete(`/admin/users/${u.id}`)
     ElMessage.success('已删除用户')
     await loadUsers()
+  } catch {}
+}
+
+async function resetPwd(u: any) {
+  try {
+    await ElMessageBox.confirm(`确认重置用户 ${u.username} 的密码？`, '确认', { type: 'warning' })
+    const data = await http.post(`/admin/users/${u.id}/reset-password`, {}) as any
+    const pw = String(data?.temp_password || '')
+    if (!pw) { ElMessage.error('重置失败'); return }
+    await ElMessageBox.alert(`临时密码：${pw}\n该用户下次登录将被要求修改密码。`, '临时密码', { type: 'success' })
   } catch {}
 }
 </script>

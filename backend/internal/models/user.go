@@ -26,6 +26,8 @@ type User struct {
 	VIPExpireTime  *time.Time `json:"vip_expire_time"`
 	IsLifetimeVIP  bool       `json:"is_lifetime_vip"`
 	IsDisabled     bool       `json:"is_disabled"`
+	// 新增：是否必须修改密码（用于忘记密码临时密码登录后强制改密）
+	MustChangePassword bool       `json:"must_change_password"`
 	CreatedAt   time.Time     `json:"created_at"`
 	UpdatedAt   time.Time     `json:"updated_at"`
 }
