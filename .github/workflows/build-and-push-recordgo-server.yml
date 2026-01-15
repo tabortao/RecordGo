@@ -34,7 +34,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
-          install: true
           platforms: ${{ env.DOCKER_PLATFORMS }}
 
       - name: Extract version
