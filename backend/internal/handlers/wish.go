@@ -56,24 +56,27 @@ type UpdateWishReq struct {
 
 // 中文注释：列出某用户心愿，若该用户首次访问，则自动创建 6 个内置心愿
 func ListWishes(c *gin.Context) {
-    cl := extractClaims(c)
-    if cl == nil {
-        common.Error(c, 40100, "未登录或令牌无效")
-        return
-    }
-    uid := cl.UserID
-    if cl.ParentID != nil { uid = *cl.ParentID }
-    if s := strings.TrimSpace(c.Query("user_id")); s != "" {
-        if v, err := strconv.Atoi(s); err == nil && v > 0 {
-            if canAccessUser(c, uint(v)) { uid = uint(v) } else { deny(c, "无权限查看该用户心愿"); return }
-        }
-    }
-    var items []models.Wish
-    if err := db.DB().Where("user_id = ?", uid).Order("created_at DESC").Find(&items).Error; err != nil {
-        common.Error(c, 50010, "查询心愿失败")
-        return
-    }
-    if len(items) == 0 {
+	cl := extractClaims(c)
+	if cl == nil {
+		common.Error(c, 40100, "未登录或令牌无效")
+		return
+	}
+	uid := cl.UserID
+	if cl.ParentID != nil {
+		uid = *cl.ParentID
+	}
+
+	var childIDs []uint
+	_ = db.DB().Model(&models.User{}).Where("parent_id = ?", uid).Pluck("id", &childIDs).Error
+	if len(childIDs) > 0 {
+		_ = db.DB().Model(&models.Wish{}).Where("user_id IN ?", childIDs).Update("user_id", uid).Error
+	}
+	var items []models.Wish
+	if err := db.DB().Where("user_id = ?", uid).Order("created_at DESC").Find(&items).Error; err != nil {
+		common.Error(c, 50010, "查询心愿失败")
+		return
+	}
+	if len(items) == 0 {
 		// 首次访问：创建 6 个内置心愿（图标文件名用于前端映射 src/assets/wishs）
 		type defWish struct {
 			name, content, unit string
@@ -88,36 +91,44 @@ func ListWishes(c *gin.Context) {
 			{"自由活动", "1金币可兑换自由活动10分钟", "分钟", 1, 10},
 		}
 		for _, d := range defaults {
-            w := models.Wish{UserID: uid, Name: d.name, Content: d.content, Icon: d.name + ".png", NeedCoins: d.coins, ExchangeAmount: d.amount, Unit: d.unit, BuiltIn: true}
-            _ = db.DB().Create(&w).Error
-        }
-        _ = db.DB().Where("user_id = ?", uid).Order("created_at DESC").Find(&items).Error
-    }
-    common.Ok(c, items)
+			w := models.Wish{UserID: uid, Name: d.name, Content: d.content, Icon: d.name + ".png", NeedCoins: d.coins, ExchangeAmount: d.amount, Unit: d.unit, BuiltIn: true}
+			_ = db.DB().Create(&w).Error
+		}
+		_ = db.DB().Where("user_id = ?", uid).Order("created_at DESC").Find(&items).Error
+	}
+	common.Ok(c, items)
 }
 
 // CreateWish 创建心愿
 func CreateWish(c *gin.Context) {
-    // 中文注释：子账号权限校验——需要具备 wishes.create 权限；家长默认放行
-    if !hasPermission(c, "wishes", "create") {
-        deny(c, "无权限创建心愿")
-        return
-    }
-    var req CreateWishReq
-    if err := c.ShouldBindJSON(&req); err != nil {
-        common.Error(c, 40001, "参数错误")
-        return
-    }
-    cl := extractClaims(c)
-    if cl == nil { common.Error(c, 40100, "未登录或令牌无效"); return }
-    if req.UserID == 0 {
-        if cl.ParentID != nil { req.UserID = *cl.ParentID } else { req.UserID = cl.UserID }
-    }
-    if req.UserID == 0 || req.Name == "" || req.NeedCoins <= 0 {
-        common.Error(c, 40002, "用户、名称与所需金币必填且合法")
-        return
-    }
-    if !canAccessUser(c, req.UserID) { deny(c, "无权限为该用户创建心愿"); return }
+	// 中文注释：子账号权限校验——需要具备 wishes.create 权限；家长默认放行
+	if !hasPermission(c, "wishes", "create") {
+		deny(c, "无权限创建心愿")
+		return
+	}
+	var req CreateWishReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.Error(c, 40001, "参数错误")
+		return
+	}
+	cl := extractClaims(c)
+	if cl == nil {
+		common.Error(c, 40100, "未登录或令牌无效")
+		return
+	}
+	if cl.ParentID != nil {
+		req.UserID = *cl.ParentID
+	} else {
+		req.UserID = cl.UserID
+	}
+	if req.UserID == 0 || req.Name == "" || req.NeedCoins <= 0 {
+		common.Error(c, 40002, "用户、名称与所需金币必填且合法")
+		return
+	}
+	if !canAccessUser(c, req.UserID) {
+		deny(c, "无权限为该用户创建心愿")
+		return
+	}
 	w := models.Wish{
 		UserID:         req.UserID,
 		Name:           req.Name,
@@ -137,35 +148,41 @@ func CreateWish(c *gin.Context) {
 
 // GetWish 查询单个心愿详情
 func GetWish(c *gin.Context) {
-    id := c.Param("id")
-    var w models.Wish
-    if err := db.DB().First(&w, id).Error; err != nil {
-        common.Error(c, 40401, "心愿不存在")
-        return
-    }
-    if !canAccessUser(c, w.UserID) { deny(c, "无权限查看该心愿"); return }
-    common.Ok(c, w)
+	id := c.Param("id")
+	var w models.Wish
+	if err := db.DB().First(&w, id).Error; err != nil {
+		common.Error(c, 40401, "心愿不存在")
+		return
+	}
+	if !canAccessUser(c, w.UserID) {
+		deny(c, "无权限查看该心愿")
+		return
+	}
+	common.Ok(c, w)
 }
 
 // UpdateWish 编辑心愿
 func UpdateWish(c *gin.Context) {
-    id := c.Param("id")
-    // 中文注释：子账号权限校验——需要具备 wishes.edit 权限；家长默认放行
-    if !hasPermission(c, "wishes", "edit") {
-        deny(c, "无权限编辑心愿")
-        return
-    }
-    var req UpdateWishReq
-    if err := c.ShouldBindJSON(&req); err != nil {
-        common.Error(c, 40001, "参数错误")
-        return
-    }
-    var w models.Wish
-    if err := db.DB().First(&w, id).Error; err != nil {
-        common.Error(c, 40401, "心愿不存在")
-        return
-    }
-    if !canAccessUser(c, w.UserID) { deny(c, "无权限编辑该心愿"); return }
+	id := c.Param("id")
+	// 中文注释：子账号权限校验——需要具备 wishes.edit 权限；家长默认放行
+	if !hasPermission(c, "wishes", "edit") {
+		deny(c, "无权限编辑心愿")
+		return
+	}
+	var req UpdateWishReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.Error(c, 40001, "参数错误")
+		return
+	}
+	var w models.Wish
+	if err := db.DB().First(&w, id).Error; err != nil {
+		common.Error(c, 40401, "心愿不存在")
+		return
+	}
+	if !canAccessUser(c, w.UserID) {
+		deny(c, "无权限编辑该心愿")
+		return
+	}
 	if req.Name != nil {
 		w.Name = *req.Name
 	}
@@ -193,19 +210,22 @@ func UpdateWish(c *gin.Context) {
 
 // DeleteWish 删除心愿（允许删除内置心愿）
 func DeleteWish(c *gin.Context) {
-    // 中文注释：删除心愿时，若为自定义心愿且图标为上传到 storage/uploads 的文件，则同步删除对应图片
-    // 中文注释：子账号权限校验——需要具备 wishes.delete 权限；家长默认放行
-    if !hasPermission(c, "wishes", "delete") {
-        deny(c, "无权限删除心愿")
-        return
-    }
-    id := c.Param("id")
-    var w models.Wish
-    if err := db.DB().First(&w, id).Error; err != nil {
-        common.Error(c, 40401, "心愿不存在")
-        return
-    }
-    if !canAccessUser(c, w.UserID) { deny(c, "无权限删除该心愿"); return }
+	// 中文注释：删除心愿时，若为自定义心愿且图标为上传到 storage/uploads 的文件，则同步删除对应图片
+	// 中文注释：子账号权限校验——需要具备 wishes.delete 权限；家长默认放行
+	if !hasPermission(c, "wishes", "delete") {
+		deny(c, "无权限删除心愿")
+		return
+	}
+	id := c.Param("id")
+	var w models.Wish
+	if err := db.DB().First(&w, id).Error; err != nil {
+		common.Error(c, 40401, "心愿不存在")
+		return
+	}
+	if !canAccessUser(c, w.UserID) {
+		deny(c, "无权限删除该心愿")
+		return
+	}
 	// 条件：非内置且 Icon 指向 uploads 路径（相对路径）
 	// 注意：内置心愿的图标是内置 PNG 文件名（如 “看电视.png”），不应删除；
 	// 前端上传的自定义图标存储为 “uploads/images/wish/{用户id}/xxx.webp”。
@@ -230,69 +250,77 @@ func DeleteWish(c *gin.Context) {
 
 // 中文注释：心愿兑换请求结构体
 type ExchangeReq struct {
-    UserID uint `json:"user_id"`
-    Count  int  `json:"count"` // 中文注释：一次兑换的份数，默认 1
-    Remark string `json:"remark"` // 中文注释：可选备注，记录兑换心愿时的说明
+	UserID uint   `json:"user_id"`
+	Count  int    `json:"count"`  // 中文注释：一次兑换的份数，默认 1
+	Remark string `json:"remark"` // 中文注释：可选备注，记录兑换心愿时的说明
 }
 
 // ExchangeWish 兑换心愿：扣减金币、累计心愿兑换次数、写入兑换记录
 func ExchangeWish(c *gin.Context) {
-    id := c.Param("id")
-    // 中文注释：子账号权限校验——需要具备 wishes.exchange 权限；家长默认放行
-    if !hasPermission(c, "wishes", "exchange") {
-        deny(c, "无权限兑换心愿")
-        return
-    }
-    var req ExchangeReq
-    if err := c.ShouldBindJSON(&req); err != nil {
-        common.Error(c, 40001, "参数错误")
-        return
-    }
-    if req.Count <= 0 {
-        req.Count = 1
-    }
-    if cl := extractClaims(c); cl != nil {
-        if cl.ParentID != nil { req.UserID = *cl.ParentID }
-    }
-    var w models.Wish
-    if err := db.DB().First(&w, id).Error; err != nil {
-        common.Error(c, 40401, "心愿不存在")
-        return
-    }
-    if !canAccessUser(c, req.UserID) { deny(c, "无权限兑换该用户心愿"); return }
-    if w.UserID != req.UserID { common.Error(c, 40007, "心愿与用户不匹配"); return }
-    var u models.User
-    if err := db.DB().First(&u, req.UserID).Error; err != nil {
+	id := c.Param("id")
+	// 中文注释：子账号权限校验——需要具备 wishes.exchange 权限；家长默认放行
+	if !hasPermission(c, "wishes", "exchange") {
+		deny(c, "无权限兑换心愿")
+		return
+	}
+	var req ExchangeReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.Error(c, 40001, "参数错误")
+		return
+	}
+	if req.Count <= 0 {
+		req.Count = 1
+	}
+	if cl := extractClaims(c); cl != nil {
+		if cl.ParentID != nil {
+			req.UserID = *cl.ParentID
+		}
+	}
+	var w models.Wish
+	if err := db.DB().First(&w, id).Error; err != nil {
+		common.Error(c, 40401, "心愿不存在")
+		return
+	}
+	if !canAccessUser(c, req.UserID) {
+		deny(c, "无权限兑换该用户心愿")
+		return
+	}
+	if w.UserID != req.UserID {
+		common.Error(c, 40007, "心愿与用户不匹配")
+		return
+	}
+	var u models.User
+	if err := db.DB().First(&u, req.UserID).Error; err != nil {
 		// 中文注释：开发环境兜底——如果用户不存在，自动创建一个测试用户并给予初始金币
 		// 说明：正式环境应通过登录/注册获得用户，这里仅为便于联调前端心愿功能
 		u = models.User{ID: req.UserID, Username: fmt.Sprintf("user%d", req.UserID), Role: "user", Coins: 100, Nickname: "测试用户"}
 		_ = db.DB().Create(&u).Error
 	}
-    // 中文注释：确定金币实际归属用户（父或本人）
-    target := u
-    if cfg2, _ := config.Load(); cfg2 != nil && cfg2.ParentCoinsSync && u.ParentID != nil {
-        var parent models.User
-        if err := db.DB().First(&parent, *u.ParentID).Error; err == nil {
-            target = parent
-        }
-    }
-    // 中文注释：按数量计算总金币需求，并校验余额
-    totalCost := int64(w.NeedCoins * req.Count)
-    if target.Coins < totalCost {
-        common.Error(c, 40006, "金币不足")
-        return
-    }
-    // 扣减金币与心愿计数
-    target.Coins -= totalCost
-    w.Exchanged += req.Count
-    if err := db.DB().Save(&target).Error; err != nil {
-        common.Error(c, 50014, "扣减金币失败")
-        return
-    }
-    if err := db.DB().Save(&w).Error; err != nil {
-        common.Error(c, 50015, "更新心愿失败")
-        return
-    }
+	// 中文注释：确定金币实际归属用户（父或本人）
+	target := u
+	if cfg2, _ := config.Load(); cfg2 != nil && cfg2.ParentCoinsSync && u.ParentID != nil {
+		var parent models.User
+		if err := db.DB().First(&parent, *u.ParentID).Error; err == nil {
+			target = parent
+		}
+	}
+	// 中文注释：按数量计算总金币需求，并校验余额
+	totalCost := int64(w.NeedCoins * req.Count)
+	if target.Coins < totalCost {
+		common.Error(c, 40006, "金币不足")
+		return
+	}
+	// 扣减金币与心愿计数
+	target.Coins -= totalCost
+	w.Exchanged += req.Count
+	if err := db.DB().Save(&target).Error; err != nil {
+		common.Error(c, 50014, "扣减金币失败")
+		return
+	}
+	if err := db.DB().Save(&w).Error; err != nil {
+		common.Error(c, 50015, "更新心愿失败")
+		return
+	}
 	// 写入兑换记录
 	rec := models.WishRecord{
 		UserID:    req.UserID,
@@ -309,42 +337,47 @@ func ExchangeWish(c *gin.Context) {
 		common.Error(c, 50016, "写入兑换记录失败")
 		return
 	}
-    // 中文注释：返回 user_coins 为金币实际归属用户（父或本人）的最新值，便于前端统一展示
-    common.Ok(c, gin.H{"wish": w, "user_coins": target.Coins, "record": rec})
+	// 中文注释：返回 user_coins 为金币实际归属用户（父或本人）的最新值，便于前端统一展示
+	common.Ok(c, gin.H{"wish": w, "user_coins": target.Coins, "record": rec})
 }
 
 // ListWishRecords 分页查询兑换记录（支持 user_id 过滤）
 func ListWishRecords(c *gin.Context) {
-    page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-    size, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
-    if page < 1 {
-        page = 1
-    }
-    if size < 1 || size > 100 {
-        size = 10
-    }
-    cl := extractClaims(c)
-    if cl == nil { common.Error(c, 40100, "未登录或令牌无效"); return }
-    uid := cl.UserID
-    if cl.ParentID != nil { uid = *cl.ParentID }
-    if s := strings.TrimSpace(c.Query("user_id")); s != "" {
-        if v, err := strconv.Atoi(s); err == nil && v > 0 {
-            if canAccessUser(c, uint(v)) { uid = uint(v) } else { deny(c, "无权限查看该用户兑换记录"); return }
-        }
-    }
-    q := db.DB().Model(&models.WishRecord{}).Where("user_id = ?", uid)
-    start := strings.TrimSpace(c.Query("start"))
-    end := strings.TrimSpace(c.Query("end"))
-    if start != "" {
-        if t, err := time.Parse("2006-01-02", start); err == nil {
-            q = q.Where("created_at >= ?", t)
-        }
-    }
-    if end != "" {
-        if t, err := time.Parse("2006-01-02", end); err == nil {
-            q = q.Where("created_at < ?", t.Add(24*time.Hour))
-        }
-    }
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	size, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	if page < 1 {
+		page = 1
+	}
+	if size < 1 || size > 100 {
+		size = 10
+	}
+	cl := extractClaims(c)
+	if cl == nil {
+		common.Error(c, 40100, "未登录或令牌无效")
+		return
+	}
+	uid := cl.UserID
+	if cl.ParentID != nil {
+		uid = *cl.ParentID
+	}
+	var childIDs []uint
+	_ = db.DB().Model(&models.User{}).Where("parent_id = ?", uid).Pluck("id", &childIDs).Error
+	familyIDs := make([]uint, 0, 1+len(childIDs))
+	familyIDs = append(familyIDs, uid)
+	familyIDs = append(familyIDs, childIDs...)
+	q := db.DB().Model(&models.WishRecord{}).Where("user_id IN ?", familyIDs)
+	start := strings.TrimSpace(c.Query("start"))
+	end := strings.TrimSpace(c.Query("end"))
+	if start != "" {
+		if t, err := time.Parse("2006-01-02", start); err == nil {
+			q = q.Where("created_at >= ?", t)
+		}
+	}
+	if end != "" {
+		if t, err := time.Parse("2006-01-02", end); err == nil {
+			q = q.Where("created_at < ?", t.Add(24*time.Hour))
+		}
+	}
 	var total int64
 	q.Count(&total)
 	var items []models.WishRecord
@@ -357,22 +390,25 @@ func ListWishRecords(c *gin.Context) {
 
 // UploadWishIcon 上传心愿图标（前端需先压缩并转换为 webp）
 func UploadWishIcon(c *gin.Context) {
-    userID := c.PostForm("user_id")
-    if userID == "" {
-        common.Error(c, 40001, "缺少 user_id")
-        return
-    }
-    if v, err := strconv.Atoi(strings.TrimSpace(userID)); err != nil || v <= 0 {
-        common.Error(c, 40001, "非法 user_id")
-        return
-    } else {
-        if !canAccessUser(c, uint(v)) { deny(c, "无权限上传该用户图标"); return }
-    }
-    file, err := c.FormFile("file")
-    if err != nil {
-        common.Error(c, 40002, "缺少文件")
-        return
-    }
+	userID := c.PostForm("user_id")
+	if userID == "" {
+		common.Error(c, 40001, "缺少 user_id")
+		return
+	}
+	if v, err := strconv.Atoi(strings.TrimSpace(userID)); err != nil || v <= 0 {
+		common.Error(c, 40001, "非法 user_id")
+		return
+	} else {
+		if !canAccessUser(c, uint(v)) {
+			deny(c, "无权限上传该用户图标")
+			return
+		}
+	}
+	file, err := c.FormFile("file")
+	if err != nil {
+		common.Error(c, 40002, "缺少文件")
+		return
+	}
 	// 保存到 storage/uploads/images/wish/{用户id}
 	path, err := saveWishIcon(file, userID)
 	if err != nil {
@@ -388,7 +424,7 @@ func saveWishIcon(file *multipart.FileHeader, userID string) (string, error) {
 	if strings.TrimSpace(root) == "" {
 		root = "storage"
 	}
-    dir := filepath.Join(root, "uploads", "images", userID, "wish")
+	dir := filepath.Join(root, "uploads", "images", userID, "wish")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", fmt.Errorf("创建目录失败: %w", err)
 	}
@@ -399,8 +435,8 @@ func saveWishIcon(file *multipart.FileHeader, userID string) (string, error) {
 		return "", err
 	}
 	// 返回相对路径，前端与后端均可记录
-    rel := filepath.ToSlash(filepath.Join("uploads", "images", userID, "wish", filename))
-    return rel, nil
+	rel := filepath.ToSlash(filepath.Join("uploads", "images", userID, "wish", filename))
+	return rel, nil
 }
 
 // cSaveUploadedFile 兼容性的保存封装（避免跨平台路径问题）
