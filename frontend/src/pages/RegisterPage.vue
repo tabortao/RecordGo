@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import type { FormInstance, FormRules } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus/es/components/form'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
 import { apiRegister } from '@/services/auth'
