@@ -59,6 +59,7 @@ const router = createRouter({
     { path: '/homework/chinese/hanzi-hero', name: 'HanziHero', component: () => import('@/pages/homework/HanziHeroPage.vue'), meta: { noNav: true } },
     { path: '/homework/chinese/pinyin', name: 'PinyinMenu', component: () => import('@/pages/PinyinMenuPage.vue'), meta: { noNav: true } },
     { path: '/homework/chinese/pinyin/wheel', name: 'PinyinWheel', component: () => import('@/pages/PinyinWheelPage.vue'), meta: { noNav: true } },
+    { path: '/homework/chinese/pinyin/adventure', name: 'PinyinAdventure', component: () => import('@/pages/homework/PinyinAdventurePage.vue'), meta: { noNav: true } },
     
     // --- 听写大师模块 ---
     {

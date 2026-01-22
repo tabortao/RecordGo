@@ -18,14 +18,16 @@
         <span class="text-xs text-green-600/70">互动游戏</span>
       </div>
 
-      <!-- 占位符 -->
-      <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center justify-center gap-2 opacity-60">
-        <span class="text-3xl grayscale">🔤</span>
-        <span class="text-sm text-gray-500">声母表 (待开发)</span>
-      </div>
-       <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center justify-center gap-2 opacity-60">
-        <span class="text-3xl grayscale">🔊</span>
-        <span class="text-sm text-gray-500">韵母表 (待开发)</span>
+      <div 
+        class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 shadow-sm border border-blue-100 dark:border-blue-800 flex flex-col items-center justify-center gap-3 cursor-pointer hover:shadow-md transition active:scale-95 relative overflow-hidden group"
+        @click="router.push('/homework/chinese/pinyin/adventure')"
+      >
+        <div class="absolute -right-4 -top-4 w-16 h-16 bg-blue-200 rounded-full opacity-20 group-hover:scale-150 transition duration-500"></div>
+        <div class="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center text-3xl">
+          🏰
+        </div>
+        <span class="font-bold text-blue-700 dark:text-blue-400">智能拼音大闯关</span>
+        <span class="text-xs text-blue-600/70">互动游戏</span>
       </div>
     </div>
   </div>
