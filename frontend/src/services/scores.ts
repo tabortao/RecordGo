@@ -5,11 +5,19 @@ export interface ScoreRecord {
   user_id: number
   subject: string
   exam_name: string
+  exam_type: string
+  grade: string
+  term: string
+  topic: string
+  difficulty: string
   exam_date: string
   score: number
   full_score: number
-  rank: number | null
+  class_rank: number | null
+  rank_type: string
+  grade_rank: number | null
   class_avg: number | null
+  class_highest: number | null
   photo_url: string
   remark: string
   created_at: string
@@ -27,11 +35,19 @@ export async function getScore(id: number): Promise<ScoreRecord> {
 export async function createScore(payload: {
   subject: string
   exam_name: string
+  exam_type?: string
+  grade?: string
+  term?: string
+  topic?: string
+  difficulty?: string
   exam_date: string
   score: number
   full_score: number
-  rank?: number | null
+  class_rank?: number | null
+  rank_type?: string
+  grade_rank?: number | null
   class_avg?: number | null
+  class_highest?: number | null
   photo_url?: string
   remark?: string
 }): Promise<ScoreRecord> {
@@ -41,11 +57,19 @@ export async function createScore(payload: {
 export async function updateScore(id: number, payload: Partial<{
   subject: string
   exam_name: string
+  exam_type: string
+  grade: string
+  term: string
+  topic: string
+  difficulty: string
   exam_date: string
   score: number
   full_score: number
-  rank: number | null
+  class_rank: number | null
+  rank_type: string
+  grade_rank: number | null
   class_avg: number | null
+  class_highest: number | null
   photo_url: string
   remark: string
 }>): Promise<ScoreRecord> {

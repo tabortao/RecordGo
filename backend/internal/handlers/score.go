@@ -13,11 +13,19 @@ import (
 type ScoreCreateReq struct {
 	Subject   string   `json:"subject"`
 	ExamName  string   `json:"exam_name"`
+	ExamType  string   `json:"exam_type"`
+	Grade     string   `json:"grade"`
+	Term      string   `json:"term"`
+	Topic     string   `json:"topic"`
+	Difficulty string  `json:"difficulty"`
 	ExamDate  string   `json:"exam_date"`
 	Score     float64  `json:"score"`
 	FullScore float64  `json:"full_score"`
-	Rank      *int     `json:"rank"`
+	ClassRank *int     `json:"class_rank"`
+	RankType  string   `json:"rank_type"`
+	GradeRank *int     `json:"grade_rank"`
 	ClassAvg  *float64 `json:"class_avg"`
+	ClassHighest *float64 `json:"class_highest"`
 	PhotoURL  string   `json:"photo_url"`
 	Remark    string   `json:"remark"`
 }
@@ -25,11 +33,19 @@ type ScoreCreateReq struct {
 type ScoreUpdateReq struct {
 	Subject   *string  `json:"subject"`
 	ExamName  *string  `json:"exam_name"`
+	ExamType  *string  `json:"exam_type"`
+	Grade     *string  `json:"grade"`
+	Term      *string  `json:"term"`
+	Topic     *string  `json:"topic"`
+	Difficulty *string `json:"difficulty"`
 	ExamDate  *string  `json:"exam_date"`
 	Score     *float64 `json:"score"`
 	FullScore *float64 `json:"full_score"`
-	Rank      *int     `json:"rank"`
+	ClassRank *int     `json:"class_rank"`
+	RankType  *string  `json:"rank_type"`
+	GradeRank *int     `json:"grade_rank"`
 	ClassAvg  *float64 `json:"class_avg"`
+	ClassHighest *float64 `json:"class_highest"`
 	PhotoURL  *string  `json:"photo_url"`
 	Remark    *string  `json:"remark"`
 }
@@ -115,11 +131,19 @@ func CreateScore(c *gin.Context) {
 		UserID:    uid,
 		Subject:   req.Subject,
 		ExamName:  req.ExamName,
+		ExamType:  req.ExamType,
+		Grade:     req.Grade,
+		Term:      req.Term,
+		Topic:     req.Topic,
+		Difficulty: req.Difficulty,
 		ExamDate:  d,
 		Score:     req.Score,
 		FullScore: req.FullScore,
-		Rank:      req.Rank,
+		ClassRank: req.ClassRank,
+		RankType:  req.RankType,
+		GradeRank: req.GradeRank,
 		ClassAvg:  req.ClassAvg,
+		ClassHighest: req.ClassHighest,
 		PhotoURL:  req.PhotoURL,
 		Remark:    req.Remark,
 	}
@@ -170,6 +194,21 @@ func UpdateScore(c *gin.Context) {
 	if req.ExamName != nil {
 		item.ExamName = *req.ExamName
 	}
+	if req.ExamType != nil {
+		item.ExamType = *req.ExamType
+	}
+	if req.Grade != nil {
+		item.Grade = *req.Grade
+	}
+	if req.Term != nil {
+		item.Term = *req.Term
+	}
+	if req.Topic != nil {
+		item.Topic = *req.Topic
+	}
+	if req.Difficulty != nil {
+		item.Difficulty = *req.Difficulty
+	}
 	if req.ExamDate != nil {
 		d, err := time.ParseInLocation("2006-01-02", *req.ExamDate, time.Local)
 		if err != nil {
@@ -196,11 +235,20 @@ func UpdateScore(c *gin.Context) {
 		common.Error(c, 40004, "分数范围错误")
 		return
 	}
-	if req.Rank != nil {
-		item.Rank = req.Rank
+	if req.ClassRank != nil {
+		item.ClassRank = req.ClassRank
+	}
+	if req.RankType != nil {
+		item.RankType = *req.RankType
+	}
+	if req.GradeRank != nil {
+		item.GradeRank = req.GradeRank
 	}
 	if req.ClassAvg != nil {
 		item.ClassAvg = req.ClassAvg
+	}
+	if req.ClassHighest != nil {
+		item.ClassHighest = req.ClassHighest
 	}
 	if req.PhotoURL != nil {
 		item.PhotoURL = *req.PhotoURL

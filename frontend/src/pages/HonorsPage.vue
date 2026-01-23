@@ -40,9 +40,9 @@
               class="max-h-full max-w-full object-contain"
             />
           </div>
-          <div class="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 px-3 py-2 text-sm text-white bg-gradient-to-t from-black/60 via-black/20 to-transparent">
+          <div class="flex items-center justify-between gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200">
             <div class="truncate font-semibold">{{ item.title }}</div>
-            <div class="text-xs">{{ formatDate(item.awarded_at) }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(item.awarded_at) }}</div>
           </div>
         </div>
       </div>

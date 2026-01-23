@@ -7,8 +7,12 @@
           <h2 class="font-semibold text-gray-800 dark:text-gray-100">荣誉详情</h2>
         </div>
         <div class="flex items-center gap-2">
-          <el-button size="small" @click="openEdit">编辑</el-button>
-          <el-button size="small" type="danger" @click="onDelete">删除</el-button>
+          <el-button size="small" circle @click="openEdit">
+            <el-icon><Edit /></el-icon>
+          </el-button>
+          <el-button size="small" type="danger" circle @click="onDelete">
+            <el-icon><Delete /></el-icon>
+          </el-button>
         </div>
       </div>
     </div>
@@ -67,7 +71,7 @@
 <script setup lang="ts">
 // 中文注释：荣誉详情与编辑逻辑
 import { computed, onMounted, ref } from 'vue'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ArrowLeft, Delete, Edit } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 import router from '@/router'
 import dayjs from 'dayjs'

@@ -26,7 +26,20 @@
       </div>
       <div v-if="records.length === 0" class="text-sm text-gray-500 dark:text-gray-400">暂无记录</div>
       <div v-else class="space-y-2">
-        <el-card v-for="item in records" :key="item.id" shadow="hover" class="rounded-lg">
+        <el-card
+          v-for="item in records"
+          :key="item.id"
+          shadow="hover"
+          class="rounded-lg group relative"
+          @click="toggleDelete(item.id)"
+        >
+          <button
+            class="absolute right-3 top-3 h-7 w-7 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 transition group-hover:opacity-100"
+            :class="activeDeleteId === item.id ? 'opacity-100' : ''"
+            @click.stop="onDelete(item.id)"
+          >
+            <el-icon><Delete /></el-icon>
+          </button>
           <div class="flex items-center justify-between">
             <div>
               <div class="text-sm text-gray-500 dark:text-gray-400">{{ formatDate(item.record_date) }}</div>
@@ -37,7 +50,6 @@
                 左眼 {{ item.left_value }} 右眼 {{ item.right_value }}
               </div>
             </div>
-            <el-button type="danger" size="small" @click="onDelete(item.id)">删除</el-button>
           </div>
         </el-card>
       </div>
@@ -81,7 +93,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ArrowLeft, Delete } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 import router from '@/router'
 import dayjs from 'dayjs'
@@ -116,6 +128,7 @@ const formValue = ref<number | null>(null)
 const formLeft = ref<number | null>(null)
 const formRight = ref<number | null>(null)
 const chartTab = ref<'week' | 'month' | 'year' | 'all'>('year')
+const activeDeleteId = ref<number | null>(null)
 
 function formatDate(d: string) {
   return dayjs(d).format('YYYY-MM-DD')
@@ -181,6 +194,10 @@ async function onDelete(id: number) {
   }
   await deleteGrowthRecord(id)
   await load()
+}
+
+function toggleDelete(id: number) {
+  activeDeleteId.value = activeDeleteId.value === id ? null : id
 }
 
 onMounted(load)

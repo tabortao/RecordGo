@@ -6,7 +6,7 @@
           <el-icon :size="18" class="cursor-pointer text-gray-600 dark:text-gray-300" @click="router.back()"><ArrowLeft /></el-icon>
           <h2 class="font-semibold text-gray-800 dark:text-gray-100">成绩</h2>
         </div>
-        <el-button type="primary" size="small" @click="openDialog">新增成绩</el-button>
+        <el-button type="primary" size="small" @click="openCreate">新增成绩</el-button>
       </div>
     </div>
 
@@ -21,14 +21,6 @@
           <div class="flex items-center gap-1">
             <span class="text-gray-500 dark:text-gray-400">性别</span>
             <span class="text-gray-800 dark:text-gray-100">{{ genderText }}</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <span class="text-gray-500 dark:text-gray-400">年级</span>
-            <span class="text-gray-800 dark:text-gray-100">未设置</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <span class="text-gray-500 dark:text-gray-400">学期</span>
-            <span class="text-gray-800 dark:text-gray-100">未设置</span>
           </div>
         </div>
       </div>
@@ -122,70 +114,13 @@
             <span>{{ item.score }} / {{ item.full_score }}</span>
           </div>
           <div class="mt-2 text-xs text-gray-600 dark:text-gray-300 flex flex-wrap gap-3">
-            <span>排名：{{ item.rank ?? '-' }}</span>
+            <span>班级排名：{{ item.class_rank ?? '-' }}</span>
+            <span>年级排名：{{ item.grade_rank ?? '-' }}</span>
             <span>班级均分：{{ item.class_avg ?? '-' }}</span>
           </div>
         </div>
       </div>
     </div>
-
-    <el-dialog v-model="showDialog" title="新增成绩" width="520px">
-      <div class="space-y-3">
-        <div class="space-y-2">
-          <label class="text-sm text-gray-600 dark:text-gray-300">学科</label>
-          <el-select v-model="formSubject" placeholder="请选择学科" class="w-full">
-            <el-option v-for="s in subjectOptions" :key="s" :label="s" :value="s" />
-          </el-select>
-        </div>
-        <div class="space-y-2">
-          <label class="text-sm text-gray-600 dark:text-gray-300">考试名称</label>
-          <el-input v-model="formExamName" placeholder="请输入考试名称" />
-        </div>
-        <div class="space-y-2">
-          <label class="text-sm text-gray-600 dark:text-gray-300">考试日期</label>
-          <el-date-picker v-model="formExamDate" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" class="w-full" />
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="space-y-2">
-            <label class="text-sm text-gray-600 dark:text-gray-300">分数</label>
-            <el-input-number v-model="formScore" :min="0" class="w-full" />
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm text-gray-600 dark:text-gray-300">满分</label>
-            <el-input-number v-model="formFullScore" :min="1" class="w-full" />
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="space-y-2">
-            <label class="text-sm text-gray-600 dark:text-gray-300">排名</label>
-            <el-input-number v-model="formRank" :min="1" class="w-full" />
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm text-gray-600 dark:text-gray-300">班级均分</label>
-            <el-input-number v-model="formClassAvg" :min="0" class="w-full" />
-          </div>
-        </div>
-        <div class="space-y-2">
-          <label class="text-sm text-gray-600 dark:text-gray-300">备注</label>
-          <el-input v-model="formRemark" type="textarea" :rows="3" placeholder="可填写补充说明" />
-        </div>
-        <div class="space-y-2">
-          <label class="text-sm text-gray-600 dark:text-gray-300">成绩照片（可选）</label>
-          <div class="flex items-center gap-3">
-            <div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-              <img v-if="photoPreview" :src="photoPreview" class="w-full h-full object-cover" />
-            </div>
-            <input type="file" accept="image/*" @change="onSelectPhoto" />
-          </div>
-        </div>
-      </div>
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <el-button @click="showDialog = false">取消</el-button>
-          <el-button type="primary" :loading="saving" @click="submit">保存</el-button>
-        </div>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -194,11 +129,8 @@ import { computed, onMounted, ref } from 'vue'
 import { ArrowLeft, DataAnalysis, TrendCharts } from '@element-plus/icons-vue'
 import router from '@/router'
 import dayjs from 'dayjs'
-import { ElMessage } from 'element-plus'
 import { useAuth } from '@/stores/auth'
-import { createScore, listScores, type ScoreRecord } from '@/services/scores'
-import { getStorageInfo, presignUpload, putToURL } from '@/services/storage'
-import { toWebp } from '@/utils/image'
+import { listScores, type ScoreRecord } from '@/services/scores'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
@@ -209,28 +141,9 @@ use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer
 
 const auth = useAuth()
 const records = ref<ScoreRecord[]>([])
-const showDialog = ref(false)
-const saving = ref(false)
 
 const subjectFilter = ref('all')
 const dateRange = ref<[string, string] | null>(null)
-
-const formSubject = ref('')
-const formExamName = ref('')
-const formExamDate = ref<string>(dayjs().format('YYYY-MM-DD'))
-const formScore = ref<number | null>(null)
-const formFullScore = ref<number | null>(null)
-const formRank = ref<number | null>(null)
-const formClassAvg = ref<number | null>(null)
-const formRemark = ref('')
-const photoFile = ref<File | null>(null)
-const photoPreview = ref('')
-
-const storageInfo = ref<{ driver: string; public_base_url?: string } | null>(null)
-
-const subjectOptions = [
-  '语文', '数学', '英语', '科学', '体育', '物理', '化学', '政治', '历史', '地理', '综合', '自定义'
-]
 
 const displayName = computed(() => {
   const u = auth.user
@@ -382,15 +295,14 @@ function subjectCardClass(subject: string) {
     语文: 'bg-amber-50/70 dark:bg-amber-500/10',
     数学: 'bg-indigo-50/70 dark:bg-indigo-500/10',
     英语: 'bg-emerald-50/70 dark:bg-emerald-500/10',
-    科学: 'bg-cyan-50/70 dark:bg-cyan-500/10',
-    体育: 'bg-orange-50/70 dark:bg-orange-500/10',
     物理: 'bg-purple-50/70 dark:bg-purple-500/10',
     化学: 'bg-rose-50/70 dark:bg-rose-500/10',
-    政治: 'bg-teal-50/70 dark:bg-teal-500/10',
+    生物: 'bg-fuchsia-50/70 dark:bg-fuchsia-500/10',
     历史: 'bg-yellow-50/70 dark:bg-yellow-500/10',
     地理: 'bg-lime-50/70 dark:bg-lime-500/10',
-    综合: 'bg-sky-50/70 dark:bg-sky-500/10',
-    自定义: 'bg-gray-50/70 dark:bg-gray-700/30'
+    政治: 'bg-teal-50/70 dark:bg-teal-500/10',
+    信息技术: 'bg-blue-50/70 dark:bg-blue-500/10',
+    科学: 'bg-cyan-50/70 dark:bg-cyan-500/10'
   }
   return map[subject] || 'bg-gray-50/70 dark:bg-gray-700/30'
 }
@@ -401,59 +313,15 @@ function subjectBadgeClass(subject: string) {
     数学: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/30 dark:text-indigo-200',
     英语: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/30 dark:text-emerald-200',
     科学: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-500/30 dark:text-cyan-200',
-    体育: 'bg-orange-100 text-orange-700 dark:bg-orange-500/30 dark:text-orange-200',
     物理: 'bg-purple-100 text-purple-700 dark:bg-purple-500/30 dark:text-purple-200',
     化学: 'bg-rose-100 text-rose-700 dark:bg-rose-500/30 dark:text-rose-200',
+    生物: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-500/30 dark:text-fuchsia-200',
     政治: 'bg-teal-100 text-teal-700 dark:bg-teal-500/30 dark:text-teal-200',
     历史: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/30 dark:text-yellow-200',
     地理: 'bg-lime-100 text-lime-700 dark:bg-lime-500/30 dark:text-lime-200',
-    综合: 'bg-sky-100 text-sky-700 dark:bg-sky-500/30 dark:text-sky-200',
-    自定义: 'bg-gray-100 text-gray-700 dark:bg-gray-600/40 dark:text-gray-200'
+    信息技术: 'bg-blue-100 text-blue-700 dark:bg-blue-500/30 dark:text-blue-200'
   }
   return map[subject] || 'bg-gray-100 text-gray-700 dark:bg-gray-600/40 dark:text-gray-200'
-}
-
-async function ensureStorageInfo() {
-  if (!storageInfo.value) {
-    storageInfo.value = await getStorageInfo()
-  }
-  return storageInfo.value
-}
-
-function openDialog() {
-  formSubject.value = ''
-  formExamName.value = ''
-  formExamDate.value = dayjs().format('YYYY-MM-DD')
-  formScore.value = null
-  formFullScore.value = null
-  formRank.value = null
-  formClassAvg.value = null
-  formRemark.value = ''
-  photoFile.value = null
-  photoPreview.value = ''
-  showDialog.value = true
-}
-
-async function onSelectPhoto(e: Event) {
-  const input = e.target as HTMLInputElement
-  const f = input.files && input.files[0]
-  if (!f) return
-  const converted = await toWebp(f)
-  photoFile.value = converted
-  photoPreview.value = URL.createObjectURL(converted)
-}
-
-async function uploadPhoto(file: File): Promise<string> {
-  const info = await ensureStorageInfo()
-  const ext = (file.name.split('.').pop() || 'webp').toLowerCase()
-  const contentType = file.type || 'image/webp'
-  const userId = auth.user?.id || 0
-  const resp = await presignUpload({ resource_type: 'score_image', user_id: userId, content_type: contentType, ext })
-  await putToURL(resp.upload_url, file, resp.headers)
-  if (info?.public_base_url) {
-    return `${info.public_base_url.replace(/\/+$/, '')}/${resp.object_key}`
-  }
-  return resp.object_key
 }
 
 async function load() {
@@ -470,43 +338,8 @@ function openDetail(id: number) {
   router.push(`/grades/${id}`)
 }
 
-async function submit() {
-  if (!formSubject.value || !formExamName.value.trim() || !formExamDate.value) {
-    ElMessage.error('请填写学科、考试名称与日期')
-    return
-  }
-  if (formScore.value === null || formFullScore.value === null) {
-    ElMessage.error('请填写分数与满分')
-    return
-  }
-  if (formScore.value < 0 || formScore.value > formFullScore.value) {
-    ElMessage.error('分数范围错误')
-    return
-  }
-  saving.value = true
-  try {
-    let photoUrl = ''
-    if (photoFile.value) {
-      photoUrl = await uploadPhoto(photoFile.value)
-    }
-    await createScore({
-      subject: formSubject.value,
-      exam_name: formExamName.value.trim(),
-      exam_date: formExamDate.value,
-      score: formScore.value,
-      full_score: formFullScore.value,
-      rank: formRank.value,
-      class_avg: formClassAvg.value,
-      remark: formRemark.value.trim(),
-      photo_url: photoUrl
-    })
-    showDialog.value = false
-    await load()
-  } catch (e: any) {
-    ElMessage.error(e?.message || '保存失败')
-  } finally {
-    saving.value = false
-  }
+function openCreate() {
+  router.push('/grades/create')
 }
 
 onMounted(load)
