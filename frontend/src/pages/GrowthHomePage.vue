@@ -26,43 +26,22 @@
               </div>
             </div>
           </div>
-          <div class="w-56 rounded-xl border border-gray-100 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 p-3">
+          <div class="w-48 rounded-xl border border-gray-100 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 p-3">
             <div class="flex items-center justify-between">
-              <div class="text-xs text-gray-500 dark:text-gray-400">BMI</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">BMI 指数</div>
               <el-icon class="cursor-pointer text-gray-400 hover:text-blue-500" @click="openBmiInfo"><QuestionFilled /></el-icon>
             </div>
-            <div class="mt-3 flex items-center justify-center">
-              <svg viewBox="0 0 200 200" class="h-36 w-36">
-                <path
-                  d="M 20 140 A 80 80 0 0 1 180 140"
-                  stroke="currentColor"
-                  stroke-width="14"
-                  fill="none"
-                  class="text-gray-200 dark:text-gray-700"
-                />
-                <path
-                  v-for="seg in bmiArcSegments"
-                  :key="seg.color"
-                  :d="seg.path"
-                  :stroke="seg.color"
-                  stroke-width="14"
-                  fill="none"
-                  stroke-linecap="butt"
-                />
-                <line
-                  v-if="bmiPointer"
-                  x1="100"
-                  y1="140"
-                  :x2="bmiPointer.x"
-                  :y2="bmiPointer.y"
-                  stroke="#ef4444"
-                  stroke-width="4"
-                  stroke-linecap="round"
-                />
-                <circle v-if="bmiPointer" :cx="bmiPointer.x" :cy="bmiPointer.y" r="5" fill="#ef4444" />
-                <text x="100" y="112" text-anchor="middle" fill="currentColor" class="text-[12px] text-gray-500 dark:text-gray-400">BMI</text>
-                <text x="100" y="132" text-anchor="middle" fill="currentColor" class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ displayBmiText }}</text>
-              </svg>
+            <div class="mt-4 flex items-center gap-4">
+              <div class="flex flex-col items-center">
+                <img :src="genderAvatarSrc" class="h-16 w-16" alt="性别头像" />
+                <div class="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">BMI</div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">{{ displayBmiText }}</div>
+                <div class="mt-1 text-xs px-2 py-0.5 rounded-full inline-block bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300">
+                  {{ bmiStatusText }}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -107,6 +86,8 @@ import { listGrowthRecords, type GrowthMetricRecord, type GrowthMetricType } fro
 import dayjs from 'dayjs'
 import router from '@/router'
 import defaultAvatar from '@/assets/avatars/default.png'
+import boyAvatar from '@/assets/avatars/boy.svg'
+import girlAvatar from '@/assets/avatars/girl.svg'
 import { getStaticBase } from '@/services/http'
 import { presignView } from '@/services/storage'
 
@@ -134,6 +115,12 @@ const genderText = computed(() => {
   if (g === 'male') return '男'
   if (g === 'female') return '女'
   return '未设置'
+})
+
+const genderAvatarSrc = computed(() => {
+  const g = auth.user?.child_gender || ''
+  if (g === 'male') return boyAvatar
+  return girlAvatar
 })
 
 const avatarSrc = ref<string>(defaultAvatar)
@@ -190,43 +177,13 @@ const bmiValue = computed(() => {
 
 const displayBmiValue = computed(() => (bmiValue.value ?? 16.64))
 const displayBmiText = computed(() => (bmiValue.value === null ? '16.64' : bmiValue.value.toFixed(1)))
-
-const bmiSegments = [
-  { start: 0, end: 18.5, color: '#3b82f6' },
-  { start: 18.5, end: 25, color: '#22c55e' },
-  { start: 25, end: 30, color: '#f59e0b' },
-  { start: 30, end: 40, color: '#fca5a5' },
-  { start: 40, end: 50, color: '#ef4444' }
-]
-
-function valueToAngle(value: number) {
-  const v = Math.max(0, Math.min(50, value))
-  return 180 - (v / 50) * 180
-}
-
-function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
-  const rad = (angle - 90) * (Math.PI / 180)
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
-}
-
-function describeArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
-  const start = polarToCartesian(cx, cy, r, endAngle)
-  const end = polarToCartesian(cx, cy, r, startAngle)
-  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1'
-  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`
-}
-
-const bmiArcSegments = computed(() => {
-  return bmiSegments.map((seg) => {
-    const startAngle = valueToAngle(seg.start)
-    const endAngle = valueToAngle(seg.end)
-    return { color: seg.color, path: describeArc(100, 140, 80, startAngle, endAngle) }
-  })
-})
-
-const bmiPointer = computed(() => {
-  const angle = valueToAngle(displayBmiValue.value)
-  return polarToCartesian(100, 140, 62, angle)
+const bmiStatusText = computed(() => {
+  const v = displayBmiValue.value
+  if (v < 18.5) return '偏瘦'
+  if (v < 25) return '正常'
+  if (v < 30) return '偏胖'
+  if (v < 40) return '肥胖'
+  return '高度肥胖'
 })
 
 function openRecords(type: GrowthMetricType) {

@@ -14,14 +14,14 @@
         <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">基本信息</div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="space-y-2">
-            <label class="text-sm text-gray-600 dark:text-gray-300">科目（必填项）</label>
+            <label class="text-sm text-gray-600 dark:text-gray-300">科目<span class="text-red-500">*</span></label>
             <el-select v-model="formSubject" placeholder="请选择科目" class="w-full">
               <el-option v-for="s in subjectOptions" :key="s" :label="s" :value="s" />
             </el-select>
           </div>
           <div class="space-y-2">
-            <label class="text-sm text-gray-600 dark:text-gray-300">考试名称（必填项）</label>
-            <el-input v-model="formExamName" placeholder="请输入考试名称" />
+            <label class="text-sm text-gray-600 dark:text-gray-300">考试名称</label>
+            <el-input v-model="formExamName" placeholder="不填写将根据选项自动生成" />
           </div>
           <div class="space-y-2">
             <label class="text-sm text-gray-600 dark:text-gray-300">考试类型</label>
@@ -62,11 +62,11 @@
         <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">成绩信息</div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="space-y-2">
-            <label class="text-sm text-gray-600 dark:text-gray-300">得分（必填项）</label>
+            <label class="text-sm text-gray-600 dark:text-gray-300">得分<span class="text-red-500">*</span></label>
             <el-input-number v-model="formScore" :min="0" class="w-full" />
           </div>
           <div class="space-y-2">
-            <label class="text-sm text-gray-600 dark:text-gray-300">满分（必填项，默认100分）</label>
+            <label class="text-sm text-gray-600 dark:text-gray-300">满分<span class="text-red-500">*</span></label>
             <el-input-number v-model="formFullScore" :min="1" class="w-full" />
           </div>
           <div class="space-y-2">
@@ -128,7 +128,7 @@ import { useAuth } from '@/stores/auth'
 
 const auth = useAuth()
 const saving = ref(false)
-const formSubject = ref('')
+const formSubject = ref('语文')
 const formExamName = ref('')
 const formExamType = ref('')
 const formGrade = ref('')
@@ -191,10 +191,17 @@ async function submit() {
     ElMessage.error('请选择科目')
     return
   }
-  if (!formExamName.value.trim()) {
-    ElMessage.error('请输入考试名称')
-    return
+  
+  // 如果考试名称为空，则自动生成
+  let examName = formExamName.value.trim()
+  if (!examName) {
+    examName = `${formGrade.value}${formTerm.value}${formSubject.value}${formExamType.value}`
+    // 清理可能出现的空字符串
+    if (examName === '') {
+      examName = '未命名考试'
+    }
   }
+
   if (!formExamDate.value) {
     ElMessage.error('请选择考试日期')
     return
@@ -215,7 +222,7 @@ async function submit() {
     }
     await createScore({
       subject: formSubject.value,
-      exam_name: formExamName.value.trim(),
+      exam_name: examName,
       exam_type: formExamType.value,
       grade: formGrade.value,
       term: formTerm.value,
