@@ -25,16 +25,14 @@
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
       <div class="space-y-2">
-        <label class="text-sm text-gray-600">孩子生日</label>
+        <label class="text-sm text-gray-600">生日</label>
         <el-date-picker v-model="editChildBirthday" type="date" value-format="YYYY-MM-DD" placeholder="请选择生日" class="w-full" />
       </div>
       <div class="space-y-2">
-        <label class="text-sm text-gray-600">孩子性别</label>
+        <label class="text-sm text-gray-600">性别</label>
         <el-select v-model="editChildGender" placeholder="请选择性别" class="w-full">
           <el-option label="男" value="male" />
           <el-option label="女" value="female" />
-          <el-option label="其他" value="other" />
-          <el-option label="未知" value="unknown" />
         </el-select>
       </div>
     </div>
@@ -116,7 +114,7 @@ const editNickname = ref(auth.user?.nickname || '')
 const editPhone = ref(auth.user?.phone || '')
 const editEmail = ref(auth.user?.email || '')
 const editChildBirthday = ref(auth.user?.child_birthday || '')
-const editChildGender = ref(auth.user?.child_gender || 'unknown')
+const editChildGender = ref(auth.user?.child_gender || '')
 const avatarFile = ref<File | null>(null)
 const avatarPreview = ref<string>('')
 const oldPassword = ref('')
@@ -149,7 +147,7 @@ async function onSave() {
     if (phoneTrim !== (auth.user?.phone || '')) payload.phone = phoneTrim
     if (emailTrim !== (auth.user?.email || '')) payload.email = emailTrim
     if ((editChildBirthday.value || '') !== (auth.user?.child_birthday || '')) payload.child_birthday = editChildBirthday.value || ''
-    if ((editChildGender.value || '') !== (auth.user?.child_gender || '')) payload.child_gender = editChildGender.value || 'unknown'
+    if ((editChildGender.value || '') !== (auth.user?.child_gender || '')) payload.child_gender = editChildGender.value || ''
     if (Object.keys(payload).length > 0) {
       await updateProfile(payload)
       auth.updateUser(payload)

@@ -8,6 +8,8 @@ export interface GrowthMetricRecord {
   metric_type: GrowthMetricType
   record_date: string
   value: number
+  left_value: number
+  right_value: number
   created_at: string
   updated_at: string
 }
@@ -18,7 +20,7 @@ export async function listGrowthRecords(type?: GrowthMetricType) {
   return await http.get('/growth/records', { params }) as { items: GrowthMetricRecord[]; total: number }
 }
 
-export async function createGrowthRecord(payload: { metric_type: GrowthMetricType; record_date: string; value: number }) {
+export async function createGrowthRecord(payload: { metric_type: GrowthMetricType; record_date: string; value?: number; left_value?: number; right_value?: number }) {
   return await http.post('/growth/records', payload) as GrowthMetricRecord
 }
 

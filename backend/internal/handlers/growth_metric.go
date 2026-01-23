@@ -22,6 +22,8 @@ type GrowthMetricCreateReq struct {
 	MetricType string  `json:"metric_type"`
 	RecordDate string  `json:"record_date"`
 	Value      float64 `json:"value"`
+	LeftValue  float64 `json:"left_value"`
+	RightValue float64 `json:"right_value"`
 }
 
 func ListGrowthMetricRecords(c *gin.Context) {
@@ -64,10 +66,6 @@ func CreateGrowthMetricRecord(c *gin.Context) {
 		common.Error(c, 40002, "指标类型错误")
 		return
 	}
-	if req.Value <= 0 {
-		common.Error(c, 40003, "数值必须大于0")
-		return
-	}
 	if req.RecordDate == "" {
 		common.Error(c, 40004, "日期不能为空")
 		return
@@ -81,7 +79,20 @@ func CreateGrowthMetricRecord(c *gin.Context) {
 		UserID:     cl.UserID,
 		MetricType: req.MetricType,
 		RecordDate: d,
-		Value:      req.Value,
+	}
+	if req.MetricType == "vision" {
+		if req.LeftValue <= 0 || req.RightValue <= 0 {
+			common.Error(c, 40003, "左右眼数值必须大于0")
+			return
+		}
+		item.LeftValue = req.LeftValue
+		item.RightValue = req.RightValue
+	} else {
+		if req.Value <= 0 {
+			common.Error(c, 40003, "数值必须大于0")
+			return
+		}
+		item.Value = req.Value
 	}
 	if err := db.DB().Create(&item).Error; err != nil {
 		common.Error(c, 50002, "创建失败")
