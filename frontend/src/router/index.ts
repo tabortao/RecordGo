@@ -128,6 +128,18 @@ const router = createRouter({
       component: () => import('@/pages/GrowthRecordsPage.vue'),
       meta: { noNav: true }
     },
+    {
+      path: '/honors',
+      name: 'Honors',
+      component: () => import('@/pages/HonorsPage.vue'),
+      meta: { noNav: true }
+    },
+    {
+      path: '/honors/:id',
+      name: 'HonorDetail',
+      component: () => import('@/pages/HonorDetailPage.vue'),
+      meta: { noNav: true }
+    },
 
     {
       path: '/mine',

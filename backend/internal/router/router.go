@@ -183,6 +183,16 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 			growth.DELETE("/records/:id", handlers.DeleteGrowthMetricRecord)
 		}
 
+		// 中文注释：荣誉模块
+		honors := api.Group("/honors")
+		{
+			honors.GET("", handlers.ListHonors)
+			honors.POST("", handlers.CreateHonor)
+			honors.GET("/:id", handlers.GetHonor)
+			honors.PUT("/:id", handlers.UpdateHonor)
+			honors.DELETE("/:id", handlers.DeleteHonor)
+		}
+
 		// 课表模块
 		timetable := api.Group("/timetable")
 		{

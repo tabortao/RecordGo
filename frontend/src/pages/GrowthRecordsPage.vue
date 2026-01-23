@@ -115,7 +115,7 @@ const formDate = ref<string>(dayjs().format('YYYY-MM-DD'))
 const formValue = ref<number | null>(null)
 const formLeft = ref<number | null>(null)
 const formRight = ref<number | null>(null)
-const chartTab = ref<'week' | 'month' | 'year' | 'all'>('week')
+const chartTab = ref<'week' | 'month' | 'year' | 'all'>('year')
 
 function formatDate(d: string) {
   return dayjs(d).format('YYYY-MM-DD')

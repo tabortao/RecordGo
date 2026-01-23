@@ -19,12 +19,6 @@
       </div>
 
       <div class="flex items-center gap-2 flex-nowrap overflow-x-auto hide-scrollbar">
-        <button
-          class="px-3 py-1 rounded-full bg-emerald-500 text-white text-xs font-medium shadow-sm hover:bg-emerald-600 active:scale-95 transition"
-          @click="router.push('/growth')"
-        >
-          生长
-        </button>
         <div v-if="store.activeFilterTagId || store.onlyFavorites" class="flex items-center gap-2 bg-purple-100 px-3 py-1 rounded-full mr-2 whitespace-nowrap dark:bg-purple-900/30">
           <span class="text-xs text-purple-600 font-medium dark:text-purple-300">正在筛选: {{ activeTagName }}</span>
           <el-icon class="text-purple-400 cursor-pointer hover:text-purple-600" @click="clearFilter"><Close /></el-icon>
@@ -72,6 +66,30 @@
     <!-- Main Content (Timeline) -->
     <div class="flex-1 overflow-y-auto p-4 pb-24 relative dark:bg-gray-900 bg-[#F5F7FA] px-0 sm:px-4 pt-16" ref="scrollContainer" @scroll="handleScroll">
       <div class="max-w-2xl mx-auto w-full">
+        <!-- 中文注释：快捷入口按钮组（荣誉/生长/成绩） -->
+        <div class="grid grid-cols-3 gap-2 px-4 mb-3 sm:px-0">
+          <button
+            class="flex items-center justify-center gap-1 rounded-xl border border-amber-100 bg-amber-50 text-amber-700 px-3 py-2 text-xs font-semibold shadow-sm transition hover:shadow-md dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200"
+            @click="router.push('/honors')"
+          >
+            <el-icon :size="16"><Trophy /></el-icon>
+            <span>荣誉</span>
+          </button>
+          <button
+            class="flex items-center justify-center gap-1 rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-700 px-3 py-2 text-xs font-semibold shadow-sm transition hover:shadow-md dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-200"
+            @click="router.push('/growth')"
+          >
+            <el-icon :size="16"><TrendCharts /></el-icon>
+            <span>生长</span>
+          </button>
+          <button
+            class="flex items-center justify-center gap-1 rounded-xl border border-blue-100 bg-blue-50 text-blue-700 px-3 py-2 text-xs font-semibold shadow-sm transition hover:shadow-md dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-200"
+            @click="router.push('/grades')"
+          >
+            <el-icon :size="16"><DataAnalysis /></el-icon>
+            <span>成绩</span>
+          </button>
+        </div>
         <template v-if="hasRecords">
           <div v-if="hasPinnedRecords" class="mb-2">
             <TimelineCard 
@@ -181,7 +199,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Menu, Plus, Close, Files, Search, Calendar, Top } from '@element-plus/icons-vue'
+import { ArrowLeft, Menu, Plus, Close, Files, Search, Calendar, Top, Trophy, TrendCharts, DataAnalysis } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useLittleGrowthStore } from '@/stores/littleGrowth'
 import { useWindowSize, useDraggable, useStorage, useIntervalFn } from '@vueuse/core'

@@ -196,6 +196,9 @@ func buildKey(req presignReq) (string, error) {
 		return filepath.ToSlash(prefix + "images/" + strconv.Itoa(int(req.UserID)) + "/task_images/" + "audio_" + strconv.Itoa(int(req.UserID)) + "_" + strconv.Itoa(int(*req.TaskID)) + "_" + strconv.FormatInt(ts, 10) + "_" + strconv.FormatInt(ns, 10) + "." + aext), nil
 	case "wish_image":
 		return filepath.ToSlash(prefix + "images/" + strconv.Itoa(int(req.UserID)) + "/wish/" + "wish_" + strconv.Itoa(int(req.UserID)) + "_" + strconv.FormatInt(ts, 10) + "_" + strconv.FormatInt(ns, 10) + "." + ext), nil
+	case "honor_image":
+		// 中文注释：荣誉照片对象存储路径
+		return filepath.ToSlash(prefix + "images/" + strconv.Itoa(int(req.UserID)) + "/honors/" + "honor_" + strconv.Itoa(int(req.UserID)) + "_" + strconv.FormatInt(ts, 10) + "_" + strconv.FormatInt(ns, 10) + "." + ext), nil
 	default:
 		return "", nil
 	}
