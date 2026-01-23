@@ -176,6 +176,13 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 		}
 		api.POST("/upload/growth-file", handlers.UploadGrowthFile)
 
+		growth := api.Group("/growth")
+		{
+			growth.GET("/records", handlers.ListGrowthMetricRecords)
+			growth.POST("/records", handlers.CreateGrowthMetricRecord)
+			growth.DELETE("/records/:id", handlers.DeleteGrowthMetricRecord)
+		}
+
 		// 课表模块
 		timetable := api.Group("/timetable")
 		{

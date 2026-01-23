@@ -183,6 +183,8 @@ func Login(c *gin.Context) {
 			"avatar_path":          u.AvatarPath,
 			"phone":                u.Phone,
 			"email":                u.Email,
+			"child_birthday":       u.ChildBirthday,
+			"child_gender":         u.ChildGender,
 			"must_change_password": u.MustChangePassword,
 			// VIP 字段
 			"last_login_time": now.Format(time.RFC3339),

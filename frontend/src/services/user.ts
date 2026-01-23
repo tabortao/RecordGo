@@ -15,7 +15,7 @@ export async function updateNickname(nickname: string) {
 }
 
 // 中文注释：更新用户资料（昵称/电话/邮箱），字段可选
-export async function updateProfile(payload: { nickname?: string, phone?: string, email?: string }) {
+export async function updateProfile(payload: { nickname?: string, phone?: string, email?: string, child_birthday?: string, child_gender?: string }) {
   return await http.put('/user/profile', payload) as any
 }
 

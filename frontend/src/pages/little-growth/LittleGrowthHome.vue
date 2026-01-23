@@ -19,6 +19,12 @@
       </div>
 
       <div class="flex items-center gap-2 flex-nowrap overflow-x-auto hide-scrollbar">
+        <button
+          class="px-3 py-1 rounded-full bg-emerald-500 text-white text-xs font-medium shadow-sm hover:bg-emerald-600 active:scale-95 transition"
+          @click="router.push('/growth')"
+        >
+          生长
+        </button>
         <div v-if="store.activeFilterTagId || store.onlyFavorites" class="flex items-center gap-2 bg-purple-100 px-3 py-1 rounded-full mr-2 whitespace-nowrap dark:bg-purple-900/30">
           <span class="text-xs text-purple-600 font-medium dark:text-purple-300">正在筛选: {{ activeTagName }}</span>
           <el-icon class="text-purple-400 cursor-pointer hover:text-purple-600" @click="clearFilter"><Close /></el-icon>

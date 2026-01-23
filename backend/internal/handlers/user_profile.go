@@ -61,6 +61,8 @@ type UpdateProfileReq struct {
 	Nickname *string `json:"nickname"`
 	Phone    *string `json:"phone"`
 	Email    *string `json:"email"`
+	ChildBirthday *string `json:"child_birthday"`
+	ChildGender   *string `json:"child_gender"`
 }
 
 func UpdateProfile(c *gin.Context) {
@@ -96,11 +98,17 @@ func UpdateProfile(c *gin.Context) {
 		}
 		u.Email = e
 	}
+	if req.ChildBirthday != nil {
+		u.ChildBirthday = strings.TrimSpace(*req.ChildBirthday)
+	}
+	if req.ChildGender != nil {
+		u.ChildGender = strings.TrimSpace(*req.ChildGender)
+	}
 	if err := db.DB().Save(&u).Error; err != nil {
 		common.Error(c, 50010, "更新昵称失败")
 		return
 	}
-	common.Ok(c, gin.H{"nickname": u.Nickname, "phone": u.Phone, "email": u.Email})
+	common.Ok(c, gin.H{"nickname": u.Nickname, "phone": u.Phone, "email": u.Email, "child_birthday": u.ChildBirthday, "child_gender": u.ChildGender})
 }
 
 // ChangePassword 修改密码

@@ -117,6 +117,19 @@ const router = createRouter({
     },
 
     {
+      path: '/growth',
+      name: 'GrowthHome',
+      component: () => import('@/pages/GrowthHomePage.vue'),
+      meta: { noNav: true }
+    },
+    {
+      path: '/growth/records/:type',
+      name: 'GrowthRecords',
+      component: () => import('@/pages/GrowthRecordsPage.vue'),
+      meta: { noNav: true }
+    },
+
+    {
       path: '/mine',
       name: 'Mine',
       component: () => import('@/pages/MinePage.vue')

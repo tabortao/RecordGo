@@ -17,6 +17,8 @@ type User struct {
 	AvatarPath  string    `gorm:"size:256" json:"avatar_path"`
 	Phone       string    `gorm:"size:32" json:"phone"`
 	Email       string    `gorm:"size:128" json:"email"`
+	ChildBirthday string  `gorm:"size:16" json:"child_birthday"`
+	ChildGender   string  `gorm:"size:16" json:"child_gender"`
 	ParentID    *uint     `json:"parent_id"`
 	LoginTokenExpireAt *time.Time `json:"login_token_expire_at"`
 	// 新增：最后登录时间

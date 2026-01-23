@@ -14,6 +14,8 @@ export interface AuthUser {
   avatar_path: string
   phone?: string
   email?: string
+  child_birthday?: string
+  child_gender?: string
   must_change_password?: boolean
   // VIP 字段（由后端返回）
   last_login_time?: string | null
