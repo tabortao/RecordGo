@@ -192,6 +192,14 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 			honors.PUT("/:id", handlers.UpdateHonor)
 			honors.DELETE("/:id", handlers.DeleteHonor)
 		}
+		scores := api.Group("/scores")
+		{
+			scores.GET("", handlers.ListScores)
+			scores.POST("", handlers.CreateScore)
+			scores.GET("/:id", handlers.GetScore)
+			scores.PUT("/:id", handlers.UpdateScore)
+			scores.DELETE("/:id", handlers.DeleteScore)
+		}
 
 		// 课表模块
 		timetable := api.Group("/timetable")

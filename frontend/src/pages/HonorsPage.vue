@@ -26,22 +26,25 @@
       </div>
 
       <div v-if="records.length === 0" class="text-sm text-gray-500 dark:text-gray-400">暂无荣誉记录</div>
-      <div v-else class="space-y-3">
-        <el-card v-for="item in records" :key="item.id" shadow="hover" class="rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 cursor-pointer" @click="openDetail(item.id)">
-          <div class="flex gap-3">
-            <div class="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
-              <img v-if="resolvePhoto(item.photo_url)" :src="resolvePhoto(item.photo_url)" class="w-full h-full object-cover" />
-            </div>
-            <div class="flex-1">
-              <div class="flex items-center justify-between">
-                <div class="text-base font-semibold text-gray-800 dark:text-gray-100">{{ item.title }}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(item.awarded_at) }}</div>
-              </div>
-              <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ item.issuer || '颁发机构未填写' }}</div>
-              <div v-if="item.remark" class="text-xs text-gray-400 mt-1 line-clamp-2">{{ item.remark }}</div>
-            </div>
+      <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div
+          v-for="item in records"
+          :key="item.id"
+          class="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-800 cursor-pointer"
+          @click="openDetail(item.id)"
+        >
+          <div class="flex h-52 items-center justify-center bg-gradient-to-br from-amber-50 via-white to-amber-100 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900">
+            <img
+              v-if="resolvePhoto(item.photo_url)"
+              :src="resolvePhoto(item.photo_url)"
+              class="max-h-full max-w-full object-contain"
+            />
           </div>
-        </el-card>
+          <div class="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 px-3 py-2 text-sm text-white bg-gradient-to-t from-black/60 via-black/20 to-transparent">
+            <div class="truncate font-semibold">{{ item.title }}</div>
+            <div class="text-xs">{{ formatDate(item.awarded_at) }}</div>
+          </div>
+        </div>
       </div>
     </div>
 

@@ -140,6 +140,18 @@ const router = createRouter({
       component: () => import('@/pages/HonorDetailPage.vue'),
       meta: { noNav: true }
     },
+    {
+      path: '/grades',
+      name: 'Scores',
+      component: () => import('@/pages/ScoresPage.vue'),
+      meta: { noNav: true }
+    },
+    {
+      path: '/grades/:id',
+      name: 'ScoreDetail',
+      component: () => import('@/pages/ScoreDetailPage.vue'),
+      meta: { noNav: true }
+    },
 
     {
       path: '/mine',
