@@ -10,6 +10,7 @@ type GrowthMetricRecord struct {
 	Value      float64   `json:"value"`
 	LeftValue  float64   `json:"left_value"`
 	RightValue float64   `json:"right_value"`
+	Remark     string    `gorm:"size:255" json:"remark"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }

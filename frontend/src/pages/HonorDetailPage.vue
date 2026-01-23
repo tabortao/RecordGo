@@ -6,11 +6,11 @@
           <el-icon :size="18" class="cursor-pointer text-gray-600 dark:text-gray-300" @click="router.back()"><ArrowLeft /></el-icon>
           <h2 class="font-semibold text-gray-800 dark:text-gray-100">荣誉详情</h2>
         </div>
-        <div class="flex items-center gap-2">
-          <el-button size="small" circle @click="openEdit">
+        <div class="flex items-center gap-2 group">
+          <el-button size="small" circle class="opacity-0 transition group-hover:opacity-100" @click="openEdit">
             <el-icon><Edit /></el-icon>
           </el-button>
-          <el-button size="small" type="danger" circle @click="onDelete">
+          <el-button size="small" type="danger" circle class="opacity-0 transition group-hover:opacity-100" @click="onDelete">
             <el-icon><Delete /></el-icon>
           </el-button>
         </div>

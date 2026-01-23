@@ -27,7 +27,7 @@
       <div v-if="records.length === 0" class="text-sm text-gray-500 dark:text-gray-400">暂无记录</div>
       <div v-else class="space-y-2">
         <el-card
-          v-for="item in records"
+          v-for="item in pagedRecords"
           :key="item.id"
           shadow="hover"
           class="rounded-lg group relative"
@@ -49,9 +49,22 @@
               <div v-if="type === 'vision'" class="text-xs text-gray-500 dark:text-gray-400">
                 左眼 {{ item.left_value }} 右眼 {{ item.right_value }}
               </div>
+              <div v-if="item.remark" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ item.remark }}
+              </div>
             </div>
           </div>
         </el-card>
+      </div>
+      <div v-if="records.length > pageSize" class="flex justify-center pt-2">
+        <el-pagination
+          :page-size="pageSize"
+          :current-page="currentPage"
+          layout="prev, pager, next"
+          :total="records.length"
+          background
+          @current-change="onPageChange"
+        />
       </div>
 
       <div v-if="type === 'vision'" class="rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-3 text-sm text-gray-600 dark:text-gray-300">
@@ -80,6 +93,10 @@
             <el-input-number v-model="formRight" :min="0" :precision="2" :step="0.1" class="flex-1" controls-position="right" placeholder="请输入右眼数值" />
           </div>
         </div>
+        <div class="flex items-start gap-3">
+          <div class="w-14 text-sm text-gray-600 dark:text-gray-300 pt-2">备注</div>
+          <el-input v-model="formRemark" type="textarea" :rows="2" class="flex-1" placeholder="可填写本次记录说明" />
+        </div>
       </div>
       <template #footer>
         <div class="flex justify-end gap-2">
@@ -92,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { ArrowLeft, Delete } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 import router from '@/router'
@@ -122,11 +139,14 @@ const unit = computed(() => typeConfig[type.value]?.unit || '')
 const unitName = computed(() => typeConfig[type.value]?.unitName || '')
 
 const records = ref<GrowthMetricRecord[]>([])
+const pageSize = 10
+const currentPage = ref(1)
 const showDialog = ref(false)
 const formDate = ref<string>(dayjs().format('YYYY-MM-DD'))
 const formValue = ref<number | null>(null)
 const formLeft = ref<number | null>(null)
 const formRight = ref<number | null>(null)
+const formRemark = ref('')
 const chartTab = ref<'week' | 'month' | 'year' | 'all'>('year')
 const activeDeleteId = ref<number | null>(null)
 
@@ -139,6 +159,7 @@ function openDialog() {
   formValue.value = null
   formLeft.value = null
   formRight.value = null
+  formRemark.value = ''
   showDialog.value = true
 }
 
@@ -174,13 +195,13 @@ async function submit() {
       ElMessage.error('请输入有效视力数值')
       return
     }
-    await createGrowthRecord({ metric_type: type.value, record_date: formDate.value, left_value: Number(formLeft.value), right_value: Number(formRight.value) })
+    await createGrowthRecord({ metric_type: type.value, record_date: formDate.value, left_value: Number(formLeft.value), right_value: Number(formRight.value), remark: formRemark.value.trim() })
   } else {
     if (!formValue.value || formValue.value <= 0) {
       ElMessage.error('请输入有效数值')
       return
     }
-    await createGrowthRecord({ metric_type: type.value, record_date: formDate.value, value: Number(formValue.value) })
+    await createGrowthRecord({ metric_type: type.value, record_date: formDate.value, value: Number(formValue.value), remark: formRemark.value.trim() })
   }
   showDialog.value = false
   await load()
@@ -199,6 +220,20 @@ async function onDelete(id: number) {
 function toggleDelete(id: number) {
   activeDeleteId.value = activeDeleteId.value === id ? null : id
 }
+
+function onPageChange(page: number) {
+  currentPage.value = page
+}
+
+const pagedRecords = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return records.value.slice(start, start + pageSize)
+})
+
+watch(records, (list) => {
+  const maxPage = Math.max(1, Math.ceil(list.length / pageSize))
+  if (currentPage.value > maxPage) currentPage.value = 1
+})
 
 onMounted(load)
 

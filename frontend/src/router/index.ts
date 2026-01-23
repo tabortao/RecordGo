@@ -129,6 +129,12 @@ const router = createRouter({
       meta: { noNav: true }
     },
     {
+      path: '/growth/bmi-info',
+      name: 'GrowthBmiInfo',
+      component: () => import('@/pages/GrowthBmiInfoPage.vue'),
+      meta: { noNav: true }
+    },
+    {
       path: '/honors',
       name: 'Honors',
       component: () => import('@/pages/HonorsPage.vue'),
@@ -144,6 +150,12 @@ const router = createRouter({
       path: '/grades',
       name: 'Scores',
       component: () => import('@/pages/ScoresPage.vue'),
+      meta: { noNav: true }
+    },
+    {
+      path: '/grades/create',
+      name: 'ScoreCreate',
+      component: () => import('@/pages/ScoreCreatePage.vue'),
       meta: { noNav: true }
     },
     {

@@ -24,6 +24,7 @@ type GrowthMetricCreateReq struct {
 	Value      float64 `json:"value"`
 	LeftValue  float64 `json:"left_value"`
 	RightValue float64 `json:"right_value"`
+	Remark     string  `json:"remark"`
 }
 
 func ListGrowthMetricRecords(c *gin.Context) {
@@ -79,6 +80,7 @@ func CreateGrowthMetricRecord(c *gin.Context) {
 		UserID:     cl.UserID,
 		MetricType: req.MetricType,
 		RecordDate: d,
+		Remark:     req.Remark,
 	}
 	if req.MetricType == "vision" {
 		if req.LeftValue <= 0 || req.RightValue <= 0 {

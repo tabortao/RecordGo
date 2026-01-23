@@ -14,13 +14,13 @@
         <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">基本信息</div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="space-y-2">
-            <label class="text-sm text-gray-600 dark:text-gray-300">科目</label>
+            <label class="text-sm text-gray-600 dark:text-gray-300">科目（必填项）</label>
             <el-select v-model="formSubject" placeholder="请选择科目" class="w-full">
               <el-option v-for="s in subjectOptions" :key="s" :label="s" :value="s" />
             </el-select>
           </div>
           <div class="space-y-2">
-            <label class="text-sm text-gray-600 dark:text-gray-300">考试名称</label>
+            <label class="text-sm text-gray-600 dark:text-gray-300">考试名称（必填项）</label>
             <el-input v-model="formExamName" placeholder="请输入考试名称" />
           </div>
           <div class="space-y-2">
@@ -62,11 +62,11 @@
         <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">成绩信息</div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="space-y-2">
-            <label class="text-sm text-gray-600 dark:text-gray-300">得分</label>
+            <label class="text-sm text-gray-600 dark:text-gray-300">得分（必填项）</label>
             <el-input-number v-model="formScore" :min="0" class="w-full" />
           </div>
           <div class="space-y-2">
-            <label class="text-sm text-gray-600 dark:text-gray-300">满分</label>
+            <label class="text-sm text-gray-600 dark:text-gray-300">满分（必填项，默认100分）</label>
             <el-input-number v-model="formFullScore" :min="1" class="w-full" />
           </div>
           <div class="space-y-2">

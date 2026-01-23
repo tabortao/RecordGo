@@ -11,7 +11,10 @@
       <div class="rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
         <div class="flex items-center justify-between gap-4">
           <div class="flex-1">
-            <div class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ displayName }}</div>
+            <div class="flex items-center gap-3">
+              <el-avatar :size="44" :src="avatarSrc" />
+              <div class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ displayName }}</div>
+            </div>
             <div class="mt-2 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
               <div class="flex items-center gap-1">
                 <span class="text-gray-500 dark:text-gray-400">年龄</span>
@@ -23,11 +26,43 @@
               </div>
             </div>
           </div>
-          <div class="relative w-24 h-24">
-            <div class="absolute inset-0 rounded-full" :style="bmiRingStyle"></div>
-            <div class="absolute inset-2 rounded-full bg-white dark:bg-gray-800 flex flex-col items-center justify-center">
+          <div class="w-56 rounded-xl border border-gray-100 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 p-3">
+            <div class="flex items-center justify-between">
               <div class="text-xs text-gray-500 dark:text-gray-400">BMI</div>
-              <div class="text-base font-semibold" :class="bmiColorClass">{{ bmiText }}</div>
+              <el-icon class="cursor-pointer text-gray-400 hover:text-blue-500" @click="openBmiInfo"><QuestionFilled /></el-icon>
+            </div>
+            <div class="mt-3 flex items-center justify-center">
+              <svg viewBox="0 0 200 200" class="h-36 w-36">
+                <path
+                  d="M 20 140 A 80 80 0 0 1 180 140"
+                  stroke="currentColor"
+                  stroke-width="14"
+                  fill="none"
+                  class="text-gray-200 dark:text-gray-700"
+                />
+                <path
+                  v-for="seg in bmiArcSegments"
+                  :key="seg.color"
+                  :d="seg.path"
+                  :stroke="seg.color"
+                  stroke-width="14"
+                  fill="none"
+                  stroke-linecap="butt"
+                />
+                <line
+                  v-if="bmiPointer"
+                  x1="100"
+                  y1="140"
+                  :x2="bmiPointer.x"
+                  :y2="bmiPointer.y"
+                  stroke="#ef4444"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                />
+                <circle v-if="bmiPointer" :cx="bmiPointer.x" :cy="bmiPointer.y" r="5" fill="#ef4444" />
+                <text x="100" y="112" text-anchor="middle" fill="currentColor" class="text-[12px] text-gray-500 dark:text-gray-400">BMI</text>
+                <text x="100" y="132" text-anchor="middle" fill="currentColor" class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ displayBmiText }}</text>
+              </svg>
             </div>
           </div>
         </div>
@@ -65,12 +100,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { ArrowLeft, TrendCharts, Histogram, Medal, View, Position } from '@element-plus/icons-vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { ArrowLeft, TrendCharts, Histogram, Medal, View, Position, QuestionFilled } from '@element-plus/icons-vue'
 import { useAuth } from '@/stores/auth'
 import { listGrowthRecords, type GrowthMetricRecord, type GrowthMetricType } from '@/services/growth'
 import dayjs from 'dayjs'
 import router from '@/router'
+import defaultAvatar from '@/assets/avatars/default.png'
+import { getStaticBase } from '@/services/http'
+import { presignView } from '@/services/storage'
 
 const auth = useAuth()
 
@@ -97,6 +135,18 @@ const genderText = computed(() => {
   if (g === 'female') return '女'
   return '未设置'
 })
+
+const avatarSrc = ref<string>(defaultAvatar)
+async function updateAvatar() {
+  const p = auth.user?.avatar_path
+  if (!p) { avatarSrc.value = defaultAvatar; return }
+  const s = String(p)
+  if (/storage\/images\/avatars\/default\.png$/i.test(s) || /(^|\/)default\.png$/i.test(s)) { avatarSrc.value = defaultAvatar; return }
+  if (/^https?:\/\//i.test(s)) { avatarSrc.value = s; return }
+  const base = getStaticBase()
+  if (/uploads\//i.test(s)) { avatarSrc.value = `${base}/api/${s.replace(/^\/+/, '')}`; return }
+  try { avatarSrc.value = await presignView(s) } catch { avatarSrc.value = defaultAvatar }
+}
 
 const metricCards: Array<{ type: GrowthMetricType; name: string; unit: string; icon: any; textClass: string; iconClass: string; bgClass: string }> = [
   { type: 'height', name: '身高', unit: 'cm', icon: Histogram, textClass: 'text-emerald-700 dark:text-emerald-300', iconClass: 'text-emerald-500', bgClass: 'bg-emerald-50/70 dark:bg-emerald-500/10' },
@@ -138,36 +188,53 @@ const bmiValue = computed(() => {
   return Number(bmi.toFixed(1))
 })
 
-const bmiText = computed(() => {
-  if (bmiValue.value === null) return '未计算'
-  return bmiValue.value.toFixed(1)
+const displayBmiValue = computed(() => (bmiValue.value ?? 16.64))
+const displayBmiText = computed(() => (bmiValue.value === null ? '16.64' : bmiValue.value.toFixed(1)))
+
+const bmiSegments = [
+  { start: 0, end: 18.5, color: '#3b82f6' },
+  { start: 18.5, end: 25, color: '#22c55e' },
+  { start: 25, end: 30, color: '#f59e0b' },
+  { start: 30, end: 40, color: '#fca5a5' },
+  { start: 40, end: 50, color: '#ef4444' }
+]
+
+function valueToAngle(value: number) {
+  const v = Math.max(0, Math.min(50, value))
+  return 180 - (v / 50) * 180
+}
+
+function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
+  const rad = (angle - 90) * (Math.PI / 180)
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
+}
+
+function describeArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
+  const start = polarToCartesian(cx, cy, r, endAngle)
+  const end = polarToCartesian(cx, cy, r, startAngle)
+  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1'
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`
+}
+
+const bmiArcSegments = computed(() => {
+  return bmiSegments.map((seg) => {
+    const startAngle = valueToAngle(seg.start)
+    const endAngle = valueToAngle(seg.end)
+    return { color: seg.color, path: describeArc(100, 140, 80, startAngle, endAngle) }
+  })
 })
 
-const bmiPercent = computed(() => {
-  if (bmiValue.value === null) return 0
-  const min = 10
-  const max = 35
-  const clamped = Math.min(max, Math.max(min, bmiValue.value))
-  return (clamped - min) / (max - min)
-})
-
-const bmiColorClass = computed(() => {
-  if (bmiValue.value === null) return 'text-gray-400'
-  if (bmiValue.value < 18.5) return 'text-sky-600 dark:text-sky-300'
-  if (bmiValue.value < 24) return 'text-emerald-600 dark:text-emerald-300'
-  if (bmiValue.value < 28) return 'text-orange-500 dark:text-orange-300'
-  return 'text-rose-500 dark:text-rose-300'
-})
-
-const bmiRingStyle = computed(() => {
-  const deg = Math.round(bmiPercent.value * 360)
-  return {
-    background: `conic-gradient(#10b981 ${deg}deg, #e5e7eb 0deg)`
-  }
+const bmiPointer = computed(() => {
+  const angle = valueToAngle(displayBmiValue.value)
+  return polarToCartesian(100, 140, 62, angle)
 })
 
 function openRecords(type: GrowthMetricType) {
   router.push(`/growth/records/${type}`)
+}
+
+function openBmiInfo() {
+  router.push('/growth/bmi-info')
 }
 
 async function load() {
@@ -193,7 +260,11 @@ async function load() {
   latestByType.value = map
 }
 
-onMounted(load)
+onMounted(() => {
+  updateAvatar()
+  load()
+})
+watch(() => auth.user?.avatar_path, () => { updateAvatar() })
 </script>
 
 <style scoped>

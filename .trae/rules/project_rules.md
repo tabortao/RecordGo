@@ -10,6 +10,9 @@
 - 前端具有热加载，修改无需刷新即可生效，无需再次启动前端，前端使用`pnpm dev` ，默认前端已经启动在 `http://localhost:5173`
 - 请记住 不要pnpm build，项目已经启动了 pnpm dev，不需要再次启动前端了，具有热加载。
 - 代码编写需满足`.trae\documents\常见错误.md`中的要求。
+- 文档、注释使用中文编写。
+- 前端使用pnpm代替npm。
+- 每次执行任务，先在.trae\plans文件夹中按日期+任务名，创建好本次任务的计划，然后按照计划逐步执行任务并消项。
 
 ---
 
@@ -32,11 +35,6 @@
 - 项目目标：面向学生的任务与积分管理工具，通过简洁界面与激励机制，帮助培养学习与时间管理习惯。
 - 架构：前后端分离，RESTful API；前端缓存与 PWA 离线支持；支持 Docker 部署。
 - 页面结构（底部导航三页）：任务、心愿、我的。
-- 文件存储：
-  - 用户头像：`storage/uploads/images/avatars/{用户id}`
-  - 任务图片：`storage/uploads/images/task_images/{用户id}`
-  - 心愿图片：`storage/uploads/images/wish/{用户id}`
-  - 默认荣誉图：`storage/images/honors`
 - 数据库：`storage/database/recordgo.db`
 - 前端强约束：所有字段必须与后端接口保持一致；上传图片需前端压缩并转为 `webp`。
 
@@ -67,10 +65,6 @@ pnpm dev
 # 生产构建与本地预览
 pnpm build
 pnpm preview
-
-# 若使用 npm
-npm install
-npm run dev
 ```
 
 说明：
@@ -111,17 +105,6 @@ go build -o .\bin\server.exe ./cmd/server
 - SQLite 驱动需使用纯 Go 版本（推荐 GORM 适配器：`github.com/glebarez/sqlite`）。
 - 首次运行会自动创建数据库与必要目录（如代码已实现自动化）。
 
-### 2.4 Docker 运行（可选）
-
-```powershell
-# 如提供 docker-compose.yml
-docker compose up -d
-
-# 或直接构建镜像与运行容器（示例）
-docker build -t recordgo-backend ./backend
-docker run -d --name recordgo-api -p 8080:8080 -e SECRET_KEY="replace" -v ${PWD}/storage:/app/storage recordgo-backend
-```
-
 ---
 
 ## 3. 必须遵守的技术规范与约束
@@ -152,8 +135,8 @@ docker run -d --name recordgo-api -p 8080:8080 -e SECRET_KEY="replace" -v ${PWD}
 - 运行时：`vue@3`、`vue-router@4`、`pinia`、`element-plus`
 - 网络与工具：`axios`、`@vueuse/core`、`dayjs`、`lodash-es`
 - 构建与工程：`vite`、`typescript`、`unplugin-auto-import`、`unplugin-vue-components`
-- 样式：`tailwindcss`（或等价方案）
-- PWA：`vite-plugin-pwa`（可选，启用离线支持）
+- 样式：`tailwindcss`
+- PWA：`vite-plugin-pwa`（启用离线支持）
 
 ### 4.2 后端主要依赖
 
@@ -170,7 +153,6 @@ docker run -d --name recordgo-api -p 8080:8080 -e SECRET_KEY="replace" -v ${PWD}
 - Windows 10/11，PowerShell 7（推荐）
 - Node.js ≥ 18 LTS，Go 1.24.1
 - 开发网络：可访问本地 `http://localhost:8080`（后端）与 `http://localhost:5173`（前端）
-- 可选：Docker Desktop 最新版
 
 ---
 
@@ -227,10 +209,6 @@ docker run -d --name recordgo-api -p 8080:8080 -e SECRET_KEY="replace" -v ${PWD}
 ## 附录 A：目录与路径约定
 
 - `storage/database/recordgo.db`：SQLite 数据库文件。
-- `storage/uploads/images/avatars/{用户id}`：用户头像上传目录。
-- `storage/uploads/images/task_images/{用户id}`：任务图片上传目录。
-- `storage/uploads/images/wish/{用户id}`：心愿图片上传目录。
-- `storage/images/honors`：默认荣誉图标目录。
 
 ---
 

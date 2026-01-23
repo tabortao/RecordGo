@@ -12,7 +12,10 @@
 
     <div class="p-4 space-y-4">
       <div class="rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
-        <div class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ displayName }}</div>
+        <div class="flex items-center gap-3">
+          <el-avatar :size="44" :src="avatarSrc" />
+          <div class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ displayName }}</div>
+        </div>
         <div class="mt-2 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
           <div class="flex items-center gap-1">
             <span class="text-gray-500 dark:text-gray-400">年龄</span>
@@ -40,8 +43,8 @@
               class="max-h-full max-w-full object-contain"
             />
           </div>
-          <div class="flex items-center justify-between gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200">
-            <div class="truncate font-semibold">{{ item.title }}</div>
+          <div class="flex flex-col items-center gap-1 px-3 py-2 text-sm text-gray-700 dark:text-gray-200">
+            <div class="w-full truncate text-center font-semibold">{{ item.title }}</div>
             <div class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(item.awarded_at) }}</div>
           </div>
         </div>
@@ -87,8 +90,7 @@
 </template>
 
 <script setup lang="ts">
-// 中文注释：荣誉列表页逻辑
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import router from '@/router'
@@ -97,6 +99,8 @@ import { useAuth } from '@/stores/auth'
 import { createHonor, listHonors, type HonorRecord } from '@/services/honors'
 import { getStorageInfo, presignUpload, presignView, putToURL } from '@/services/storage'
 import { toWebp } from '@/utils/image'
+import defaultAvatar from '@/assets/avatars/default.png'
+import { getStaticBase } from '@/services/http'
 
 const auth = useAuth()
 const records = ref<HonorRecord[]>([])
@@ -136,8 +140,8 @@ const genderText = computed(() => {
 
 const photoResolvedMap = ref<Record<string, string>>({})
 const storageInfo = ref<{ driver: string; public_base_url?: string } | null>(null)
+const avatarSrc = ref<string>(defaultAvatar)
 
-// 中文注释：解析照片 URL，非 http 地址走预签名
 function resolvePhoto(url: string) {
   if (!url) return ''
   if (/^https?:\/\//i.test(url)) return url
@@ -176,7 +180,6 @@ async function ensureStorageInfo() {
   return storageInfo.value
 }
 
-// 中文注释：上传荣誉照片并返回可存储的 URL
 async function uploadPhoto(file: File): Promise<string> {
   const info = await ensureStorageInfo()
   const ext = (file.name.split('.').pop() || 'webp').toLowerCase()
@@ -227,7 +230,22 @@ async function submit() {
   }
 }
 
-onMounted(load)
+async function updateAvatar() {
+  const p = auth.user?.avatar_path
+  if (!p) { avatarSrc.value = defaultAvatar; return }
+  const s = String(p)
+  if (/storage\/images\/avatars\/default\.png$/i.test(s) || /(^|\/)default\.png$/i.test(s)) { avatarSrc.value = defaultAvatar; return }
+  if (/^https?:\/\//i.test(s)) { avatarSrc.value = s; return }
+  const base = getStaticBase()
+  if (/uploads\//i.test(s)) { avatarSrc.value = `${base}/api/${s.replace(/^\/+/, '')}`; return }
+  try { avatarSrc.value = await presignView(s) } catch { avatarSrc.value = defaultAvatar }
+}
+
+onMounted(() => {
+  updateAvatar()
+  load()
+})
+watch(() => auth.user?.avatar_path, () => { updateAvatar() })
 </script>
 
 <style scoped>
