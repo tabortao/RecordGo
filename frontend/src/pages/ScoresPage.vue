@@ -30,28 +30,28 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">学情概览</h1>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div class="rounded-2xl p-5 bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg shadow-emerald-200 dark:shadow-none relative overflow-hidden group">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
-                <div class="text-sm font-medium text-white/90 flex items-center gap-1 relative z-10">
-                  <el-icon class="text-white"><DataLine /></el-icon> 平均得分率
+              <div class="rounded-2xl p-5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-50 dark:bg-emerald-900/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                <div class="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 relative z-10">
+                  <el-icon class="text-emerald-500"><DataLine /></el-icon> 平均得分率
                 </div>
-                <div class="mt-2 text-3xl font-black tracking-tight text-white relative z-10">{{ avgRateText }}</div>
+                <div class="mt-2 text-3xl font-black tracking-tight text-gray-900 dark:text-white relative z-10">{{ avgRateText }}</div>
               </div>
               
-              <div class="rounded-2xl p-5 bg-gradient-to-br from-orange-400 to-rose-500 text-white shadow-lg shadow-orange-200 dark:shadow-none relative overflow-hidden group">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
-                <div class="text-sm font-medium text-white/90 flex items-center gap-1 relative z-10">
-                  <el-icon class="text-white"><Top /></el-icon> 最高分记录
+              <div class="rounded-2xl p-5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-orange-50 dark:bg-orange-900/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                <div class="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 relative z-10">
+                  <el-icon class="text-orange-500"><Top /></el-icon> 最高分记录
                 </div>
-                <div class="mt-2 text-3xl font-black tracking-tight text-white relative z-10">{{ maxScoreText }}</div>
+                <div class="mt-2 text-3xl font-black tracking-tight text-gray-900 dark:text-white relative z-10">{{ maxScoreText }}</div>
               </div>
               
-              <div class="rounded-2xl p-5 bg-gradient-to-br from-indigo-400 to-purple-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none relative overflow-hidden group">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
-                <div class="text-sm font-medium text-white/90 flex items-center gap-1 relative z-10">
-                  <el-icon class="text-white"><Bottom /></el-icon> 最低分记录
+              <div class="rounded-2xl p-5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-indigo-50 dark:bg-indigo-900/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                <div class="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 relative z-10">
+                  <el-icon class="text-indigo-500"><Bottom /></el-icon> 最低分记录
                 </div>
-                <div class="mt-2 text-3xl font-black tracking-tight text-white relative z-10">{{ minScoreText }}</div>
+                <div class="mt-2 text-3xl font-black tracking-tight text-gray-900 dark:text-white relative z-10">{{ minScoreText }}</div>
               </div>
             </div>
 

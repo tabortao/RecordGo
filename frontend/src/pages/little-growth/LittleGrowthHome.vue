@@ -76,7 +76,6 @@
             <div class="relative z-10 flex flex-col items-center gap-2">
               <div class="rounded-full bg-amber-100 p-2.5 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 shadow-sm relative">
                 <el-icon :size="20" class="text-amber-600 dark:text-amber-400"><TrophyBase /></el-icon>
-                <div class="absolute top-0 right-0 w-2.5 h-2.5 bg-amber-500 rounded-full border-2 border-white dark:border-gray-800"></div>
               </div>
               <span class="text-xs font-bold text-gray-700 dark:text-gray-200 tracking-wide">荣誉墙</span>
             </div>

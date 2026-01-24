@@ -9,11 +9,7 @@ module.exports = {
     extend: {
       colors: {
         primary: '#22c55e',
-        brand: '#22c55e',
-        sky: '#60a5fa',
-        amber: '#f59e0b',
-        pink: '#ec4899',
-        teal: '#14b8a6'
+        brand: '#22c55e'
       }
     }
   },
