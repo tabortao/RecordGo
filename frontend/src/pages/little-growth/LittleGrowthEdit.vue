@@ -1,14 +1,18 @@
 <template>
-  <div class="min-h-screen bg-white dark:bg-gray-900 flex flex-col">
+  <div class="min-h-screen bg-[#F5F7FA] dark:bg-gray-900 flex flex-col relative">
     <!-- Header -->
-    <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 z-20">
-      <div class="flex items-center gap-2 cursor-pointer" @click="router.back()">
-        <el-icon class="text-gray-600 dark:text-gray-300 text-lg"><ArrowLeft /></el-icon>
-        <span class="text-gray-600 dark:text-gray-300">取消</span>
+    <div class="px-4 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 transition-colors">
+      <div 
+        class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300"
+        @click="router.back()"
+      >
+        <el-icon><ArrowLeft /></el-icon>
       </div>
-      <h1 class="font-bold text-lg dark:text-white">{{ isEdit ? '编辑记录' : '新记录' }}</h1>
+      
+      <span class="font-bold text-gray-800 dark:text-gray-100 text-base">{{ isEdit ? '编辑美好回忆' : '记录美好瞬间' }}</span>
+      
       <button 
-        class="bg-purple-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+        class="bg-purple-600 text-white px-5 py-1.5 rounded-full text-sm font-bold shadow-lg shadow-purple-200 dark:shadow-purple-900/20 hover:bg-purple-700 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
         :disabled="(!form.content && previewImages.length === 0 && !audioUrl) || loading || uploading"
         @click="save"
       >
@@ -16,78 +20,98 @@
       </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-4">
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24">
       <div class="max-w-2xl mx-auto space-y-6">
-        <!-- Date & Visibility -->
-        <div class="flex items-center gap-2 justify-between">
-          <el-date-picker
-            v-model="form.date"
-            type="datetime"
-            placeholder="选择日期时间"
-            format="YYYY年MM月DD日 HH:mm"
-            :clearable="false"
-            class="!w-52"
-          />
-          <el-radio-group v-model="form.visibility" size="small">
-            <el-radio-button :label="0">家庭可见</el-radio-button>
-            <el-radio-button :label="1">仅自己</el-radio-button>
-          </el-radio-group>
+        
+        <!-- Meta Card (Date & Visibility) -->
+        <div class="bg-white dark:bg-gray-800 rounded-3xl p-2 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-wrap items-center gap-2">
+           <div class="flex-1 min-w-[200px] relative group">
+              <el-date-picker
+                v-model="form.date"
+                type="datetime"
+                placeholder="选择日期时间"
+                format="YYYY年MM月DD日 HH:mm"
+                :clearable="false"
+                class="!w-full custom-datepicker"
+                :prefix-icon="Calendar"
+              />
+           </div>
+           <div class="bg-gray-100 dark:bg-gray-700 h-8 w-[1px] mx-1 hidden sm:block"></div>
+           <div class="flex p-1 bg-gray-100 dark:bg-gray-700 rounded-2xl">
+             <button 
+               v-for="opt in [{l: 0, t: '家庭可见'}, {l: 1, t: '仅自己'}]" 
+               :key="opt.l"
+               class="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+               :class="form.visibility === opt.l ? 'bg-white dark:bg-gray-600 text-purple-600 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
+               @click="form.visibility = opt.l"
+             >
+               {{ opt.t }}
+             </button>
+           </div>
         </div>
 
-        <!-- Content -->
-        <div class="relative">
-          <el-input
+        <!-- Main Editor Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 relative group focus-within:ring-2 ring-purple-100 dark:ring-purple-900/30 transition-all">
+          <textarea
             v-model="form.content"
-            type="textarea"
-            :rows="6"
-            placeholder="记录这一刻的美好... 输入 # 可快速添加标签"
-            class="text-lg dark:bg-gray-800"
-            resize="none"
-            @input="handleInput"
-          />
+            rows="6"
+            placeholder="今天发生了什么有趣的事？(输入 # 可快速添加标签)"
+            class="w-full text-lg text-gray-800 dark:text-gray-200 placeholder-gray-400 bg-transparent border-none outline-none resize-none leading-relaxed custom-scrollbar"
+            @input="(e) => handleInput((e.target as HTMLTextAreaElement).value)"
+          ></textarea>
           
           <!-- Smart Tag Suggestions -->
-          <div v-if="showTagSuggestions" class="absolute top-full left-0 z-10 bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 rounded-lg mt-1 w-full max-h-48 overflow-y-auto">
-            <div class="flex flex-wrap gap-2 p-2">
-              <div 
-                v-for="tag in suggestedTags" 
-                :key="tag.id"
-                class="px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-purple-100 dark:hover:bg-purple-900/50 hover:text-purple-600 dark:hover:text-purple-300 cursor-pointer text-sm text-gray-700 dark:text-gray-300 transition-colors"
-                @click="selectSuggestedTag(tag)"
-              >
-                {{ tag.name }}
+          <transition name="fade-slide">
+            <div v-if="showTagSuggestions" class="absolute top-full left-0 z-20 bg-white dark:bg-gray-800 shadow-xl border border-gray-100 dark:border-gray-700 rounded-2xl mt-2 w-full overflow-hidden">
+              <div class="p-3 bg-gray-50 dark:bg-gray-700/50 text-xs font-bold text-gray-500 dark:text-gray-400">标签建议</div>
+              <div class="max-h-48 overflow-y-auto p-2">
+                <div class="flex flex-wrap gap-2">
+                  <div 
+                    v-for="tag in suggestedTags" 
+                    :key="tag.id"
+                    class="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 cursor-pointer text-sm transition-colors flex items-center gap-1"
+                    @click="selectSuggestedTag(tag)"
+                  >
+                    <span>#</span> {{ tag.name }}
+                  </div>
+                </div>
+                <div v-if="suggestedTags.length === 0" class="px-3 py-4 text-center text-gray-400 text-xs">
+                  输入空格以创建新标签
+                </div>
               </div>
             </div>
-            <div v-if="suggestedTags.length === 0" class="px-3 py-2 text-gray-400 text-xs">
-              输入空格以创建新标签
-            </div>
-          </div>
+          </transition>
         </div>
 
-        <!-- Images -->
-        <div>
-          <div class="grid grid-cols-4 gap-2 mb-2">
-            <div 
-              v-for="(img, index) in previewImages" 
-              :key="index"
-              class="relative aspect-square rounded-xl overflow-hidden group bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
-            >
-              <!-- Changed to object-contain for 100% display -->
-              <img :src="img" class="w-full h-full object-contain" />
-              <div class="absolute top-1 right-1 p-1 bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" @click="removeImage(index)">
-                <el-icon><Close /></el-icon>
-              </div>
-            </div>
-            
-            <div 
-              v-if="previewImages.length < 9"
-              class="aspect-square rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 flex flex-col items-center justify-center text-gray-400 hover:border-purple-400 hover:text-purple-500 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800"
-              @click="triggerUpload"
-            >
-              <el-icon :size="20" v-if="!uploading"><Camera /></el-icon>
-              <el-icon :size="20" v-else class="animate-spin"><Loading /></el-icon>
-              <span class="text-[10px] mt-1">{{ uploading ? '上传中' : '添加照片' }}</span>
-            </div>
+        <!-- Media Area -->
+        <div class="space-y-4">
+          <!-- Images Grid -->
+          <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+             <div 
+               v-for="(img, index) in previewImages" 
+               :key="index"
+               class="relative aspect-square rounded-2xl overflow-hidden group shadow-sm border border-gray-100 dark:border-gray-700"
+             >
+               <el-image :src="img" fit="cover" class="w-full h-full transition-transform duration-500 group-hover:scale-110" />
+               <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div 
+                    class="bg-white/90 dark:bg-gray-800/90 text-red-500 p-2 rounded-full cursor-pointer hover:scale-110 transition-transform shadow-sm"
+                    @click="removeImage(index)"
+                  >
+                    <el-icon><Close /></el-icon>
+                  </div>
+               </div>
+             </div>
+             
+             <div 
+               v-if="previewImages.length < 9"
+               class="aspect-square rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-gray-400 hover:border-purple-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-all cursor-pointer bg-white dark:bg-gray-800"
+               @click="triggerUpload"
+             >
+               <el-icon :size="24" v-if="!uploading" class="mb-1"><Camera /></el-icon>
+               <el-icon :size="24" v-else class="animate-spin mb-1"><Loading /></el-icon>
+               <span class="text-xs font-medium">{{ uploading ? '上传中' : '添加照片' }}</span>
+             </div>
           </div>
           <input 
             type="file" 
@@ -97,78 +121,95 @@
             multiple 
             @change="handleFileChange" 
           />
+
+          <!-- Audio Recorder -->
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4">
+              <div 
+                class="w-12 h-12 rounded-full flex items-center justify-center cursor-pointer transition-all active:scale-95 shadow-sm"
+                :class="isRecording ? 'bg-red-50 text-red-500 ring-4 ring-red-100 dark:ring-red-900/30 animate-pulse' : 'bg-purple-50 text-purple-600 hover:bg-purple-100 dark:bg-purple-900/20 dark:text-purple-300'"
+                @click="toggleRecording"
+              >
+                  <el-icon :size="22"><Microphone /></el-icon>
+              </div>
+              
+              <div class="flex-1 min-w-0">
+                  <div v-if="isRecording" class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-red-500 animate-ping"></div>
+                    <span class="text-red-500 font-bold tracking-wide">{{ formatRecordingTime(recordingTime) }}</span>
+                    <span class="text-xs text-gray-400 ml-2">正在录音...</span>
+                  </div>
+                  <div v-else-if="audioUrl" class="flex items-center gap-3">
+                      <div class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full px-3 py-1 flex items-center gap-2">
+                         <el-icon class="text-purple-500"><VideoPlay /></el-icon>
+                         <audio :src="audioUrl" controls class="h-8 w-full bg-transparent custom-audio" />
+                      </div>
+                      <div class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors" @click="removeAudio">
+                        <el-icon><Delete /></el-icon>
+                      </div>
+                  </div>
+                  <div v-else class="text-gray-400 text-sm">点击麦克风录制语音备注</div>
+              </div>
+
+              <!-- Hidden Upload for manual selection if needed -->
+              <el-upload
+                  v-if="!isRecording && !audioUrl"
+                  action="#"
+                  :auto-upload="false"
+                  accept="audio/*"
+                  :show-file-list="false"
+                  :on-change="handleAudioUpload"
+              >
+                  <div class="text-xs text-purple-600 dark:text-purple-400 font-medium cursor-pointer hover:underline px-2">上传文件</div>
+              </el-upload>
+          </div>
         </div>
 
-        <!-- Audio -->
-        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-            <div 
-              class="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-colors"
-              :class="isRecording ? 'bg-red-100 text-red-500 animate-pulse' : 'bg-white dark:bg-gray-700 text-purple-600 shadow-sm hover:bg-purple-50 dark:hover:bg-gray-600'"
-              @click="toggleRecording"
-            >
-                <el-icon :size="20"><Microphone /></el-icon>
-            </div>
-            
-            <div class="flex-1">
-                <div v-if="isRecording" class="text-red-500 text-sm font-medium">正在录音 {{ recordingTime }}s</div>
-                <div v-else-if="audioUrl" class="flex items-center gap-2">
-                    <audio :src="audioUrl" controls class="h-8 w-full max-w-[200px]" />
-                    <el-icon class="text-gray-400 cursor-pointer hover:text-red-500" @click="removeAudio"><Delete /></el-icon>
-                </div>
-                <div v-else class="text-gray-400 text-sm">点击录制音频或上传</div>
-            </div>
-
-            <el-upload
-                action="#"
-                :auto-upload="false"
-                accept="audio/*"
-                :show-file-list="false"
-                :on-change="handleAudioUpload"
-            >
-                <el-button size="small" round :loading="uploading">上传</el-button>
-            </el-upload>
-        </div>
-
-        <!-- Selected Tags -->
+        <!-- Tags List -->
         <div class="flex flex-wrap gap-2">
           <div 
             v-for="tagId in form.tags" 
             :key="tagId"
-            class="px-3 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 rounded-full text-sm flex items-center gap-1"
+            class="px-3 py-1.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 rounded-xl text-sm font-medium flex items-center gap-1.5 border border-purple-100 dark:border-purple-800/50"
           >
-            <span>{{ getTagName(tagId) }}</span>
-            <el-icon class="cursor-pointer hover:text-purple-800 dark:hover:text-purple-200" @click="removeTag(tagId)"><Close /></el-icon>
+            <span># {{ getTagName(tagId) }}</span>
+            <el-icon class="cursor-pointer hover:text-purple-800 dark:hover:text-purple-100" @click="removeTag(tagId)"><Close /></el-icon>
           </div>
+          
           <div
             v-for="pt in pendingTags"
             :key="pt.parentName ? (pt.parentName + '/' + pt.name) : ('__pending__' + pt.name)"
-            class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-sm flex items-center gap-1"
+            class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-sm font-medium flex items-center gap-1.5 border border-gray-200 dark:border-gray-600"
           >
-            <span>待创建：{{ pt.parentName ? (pt.parentName + '/' + pt.name) : pt.name }}</span>
-            <el-icon class="cursor-pointer hover:text-gray-800 dark:hover:text-gray-200" @click="removePending(pt)"><Close /></el-icon>
+            <span># 待创建：{{ pt.parentName ? (pt.parentName + '/' + pt.name) : pt.name }}</span>
+            <el-icon class="cursor-pointer hover:text-gray-800 dark:hover:text-gray-100" @click="removePending(pt)"><Close /></el-icon>
           </div>
           
-          <el-popover placement="bottom" :width="240" trigger="click">
+          <el-popover placement="bottom" :width="280" trigger="click" popper-class="custom-popover">
             <template #reference>
-              <button class="px-3 py-1 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 rounded-full text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-1">
-                <el-icon><Plus /></el-icon> 标签
+              <button class="px-3 py-1.5 border border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 rounded-xl text-sm hover:border-purple-400 hover:text-purple-500 dark:hover:border-purple-400 dark:hover:text-purple-400 flex items-center gap-1 transition-colors">
+                <el-icon><Plus /></el-icon> 添加标签
               </button>
             </template>
-            <div class="space-y-2 max-h-64 overflow-y-auto dark:bg-gray-800 dark:text-gray-200 p-2">
-              <div class="text-xs text-gray-500">选择已有标签</div>
-              <div 
-                v-for="tag in store.tags" 
-                :key="tag.id"
-                class="px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer text-sm rounded"
-                @click="addTagById(tag.id)"
-              >
-                {{ tag.name }}
+            <div class="p-1">
+              <div class="text-xs font-bold text-gray-500 mb-2 px-1">选择已有标签</div>
+              <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto custom-scrollbar mb-3">
+                <div 
+                  v-for="tag in store.tags" 
+                  :key="tag.id"
+                  class="px-2.5 py-1 bg-gray-50 dark:bg-gray-700/50 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-300 cursor-pointer text-sm rounded-lg transition-colors border border-transparent hover:border-purple-100 dark:hover:border-purple-800"
+                  @click="addTagById(tag.id)"
+                >
+                  {{ tag.name }}
+                </div>
               </div>
-              <div class="pt-2 border-t border-gray-200 dark:border-gray-700"></div>
-              <div class="text-xs text-gray-500">新建标签（支持 A/B）</div>
-              <div class="flex items-center gap-2">
-                <el-input v-model="newTagInput" placeholder="如：学习/语文 或 语文" size="small" />
-                <el-button size="small" type="primary" @click="addNewTagDraft">添加</el-button>
+              
+              <div class="pt-2 border-t border-gray-100 dark:border-gray-700">
+                <div class="text-xs font-bold text-gray-500 mb-2 px-1">新建标签</div>
+                <div class="flex items-center gap-2">
+                  <el-input v-model="newTagInput" placeholder="如：学习/语文" size="small" class="flex-1" />
+                  <el-button size="small" type="primary" color="#9333ea" @click="addNewTagDraft">添加</el-button>
+                </div>
+                <div class="text-[10px] text-gray-400 mt-1 px-1">支持 "父/子" 格式快速创建分类标签</div>
               </div>
             </div>
           </el-popover>
@@ -181,7 +222,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Close, Camera, Plus, Microphone, Delete, Loading } from '@element-plus/icons-vue'
+import { ArrowLeft, Close, Camera, Plus, Microphone, Delete, Loading, Calendar, VideoPlay } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
 import { useLittleGrowthStore, type Tag } from '@/stores/littleGrowth'
@@ -252,8 +293,6 @@ const addTagById = (id: string) => {
   }
 }
 
-// 移除未使用的 addTag 函数
-
 const removeTag = (id: string) => {
   form.value.tags = form.value.tags.filter(t => t !== id)
 }
@@ -267,6 +306,7 @@ const showTagSuggestions = ref(false)
 const tagSearchQuery = ref('')
 
 const handleInput = async (val: string) => {
+  form.value.content = val
   const match = val.match(/#([^\s]*)$/)
   if (match) {
     showTagSuggestions.value = true
@@ -291,7 +331,7 @@ const handleInput = async (val: string) => {
 
 const suggestedTags = computed(() => {
   const query = tagSearchQuery.value.toLowerCase()
-  return store.tags.filter(t => t.name.toLowerCase().includes(query)).slice(0, 5)
+  return store.tags.filter(t => t.name.toLowerCase().includes(query)).slice(0, 10)
 })
 
 const selectSuggestedTag = (tag: Tag) => {
@@ -361,6 +401,12 @@ const removeImage = (index: number) => {
 }
 
 // --- Audio ---
+const formatRecordingTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return `${m}:${s.toString().padStart(2, '0')}`
+}
+
 const toggleRecording = async () => {
   if (isRecording.value) {
     mediaRecorder?.stop()
@@ -448,6 +494,7 @@ const save = async () => {
 
     const data = {
       ...form.value,
+      date: dayjs(form.value.date).format('YYYY-MM-DD HH:mm:ss'), // 修复日期问题：明确格式化
       images: previewImages.value,
       audio: audioUrl.value,
       tags: Array.from(new Set([...(form.value.tags || []), ...resolvedIds]))
@@ -470,3 +517,36 @@ const save = async () => {
   }
 }
 </script>
+
+<style scoped>
+.custom-datepicker :deep(.el-input__wrapper) {
+  box-shadow: none !important;
+  background-color: transparent;
+  padding-left: 0;
+}
+.custom-datepicker :deep(.el-input__inner) {
+  font-weight: 600;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+.dark .custom-datepicker :deep(.el-input__inner) {
+  color: #e5e7eb;
+}
+
+.custom-audio {
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+.custom-audio::-webkit-media-controls-panel {
+  background-color: transparent;
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.2s ease;
+}
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>

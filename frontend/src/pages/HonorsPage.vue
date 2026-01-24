@@ -1,88 +1,206 @@
 <template>
-  <div class="min-h-screen bg-[#F5F7FA] dark:bg-gray-900">
-    <div class="bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
-      <div class="px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <el-icon :size="18" class="cursor-pointer text-gray-600 dark:text-gray-300" @click="router.back()"><ArrowLeft /></el-icon>
-          <h2 class="font-semibold text-gray-800 dark:text-gray-100">荣誉</h2>
+  <div class="min-h-screen bg-[#F5F7FA] dark:bg-gray-900 flex flex-col">
+    <!-- Header -->
+    <div class="px-4 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 transition-colors">
+      <div class="flex items-center gap-3">
+        <div 
+          class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300"
+          @click="router.back()"
+        >
+          <el-icon><ArrowLeft /></el-icon>
         </div>
-        <el-button type="primary" size="small" @click="openDialog">添加荣誉</el-button>
+        <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">荣誉墙</h2>
+      </div>
+      <button 
+        class="bg-gradient-to-r from-amber-400 to-amber-500 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg shadow-amber-200 dark:shadow-amber-900/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-1"
+        @click="openDialog"
+      >
+        <el-icon><Plus /></el-icon>
+        <span>添加荣誉</span>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24">
+      <div class="max-w-5xl mx-auto space-y-6">
+        <!-- Profile Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center sm:items-start gap-6 relative overflow-hidden">
+          <!-- Decoration -->
+          <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-100 to-transparent dark:from-amber-900/20 rounded-bl-full -z-0 opacity-50"></div>
+          
+          <div class="relative z-10">
+            <div class="relative">
+              <el-avatar :size="80" :src="avatarSrc" class="border-4 border-white dark:border-gray-700 shadow-md" />
+              <div class="absolute -bottom-1 -right-1 bg-amber-400 text-white p-1.5 rounded-full shadow-sm">
+                <el-icon :size="16"><Trophy /></el-icon>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex-1 text-center sm:text-left z-10">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">{{ displayName }}</h1>
+            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-sm">
+              <div class="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-medium">
+                {{ ageText }}
+              </div>
+              <div class="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-medium">
+                {{ genderText }}
+              </div>
+              <div class="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                <el-icon><Medal /></el-icon>
+                <span>共 {{ records.length }} 项荣誉</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div v-if="records.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400">
+          <div class="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+            <el-icon :size="40" class="text-gray-300 dark:text-gray-600"><Trophy /></el-icon>
+          </div>
+          <p>暂无荣誉记录，快去记录第一次高光时刻吧~</p>
+        </div>
+
+        <!-- Grid Layout -->
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div
+            v-for="item in records"
+            :key="item.id"
+            class="group relative bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 dark:border-gray-700 cursor-pointer flex flex-col"
+            @click="openDetail(item.id)"
+          >
+            <!-- Image Area -->
+            <div class="aspect-[4/3] bg-gray-100 dark:bg-gray-900 relative overflow-hidden">
+              <img
+                v-if="resolvePhoto(item.photo_url)"
+                :src="resolvePhoto(item.photo_url)"
+                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              <div class="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-300" v-else>
+                <el-icon :size="32"><Picture /></el-icon>
+              </div>
+              <!-- Overlay Date -->
+              <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12">
+                <div class="text-white text-xs font-medium flex items-center gap-1">
+                  <el-icon><Calendar /></el-icon>
+                  <span>{{ formatDate(item.awarded_at) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-4 flex-1 flex flex-col">
+              <h3 class="text-base font-bold text-gray-900 dark:text-white line-clamp-2 mb-2 leading-tight group-hover:text-amber-500 transition-colors">
+                {{ item.title }}
+              </h3>
+              <div class="mt-auto flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <el-icon><School /></el-icon>
+                <span class="truncate">{{ item.issuer || '未知机构' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="p-4 space-y-4">
-      <div class="rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
-        <div class="flex items-center gap-3">
-          <el-avatar :size="44" :src="avatarSrc" />
-          <div class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ displayName }}</div>
+    <!-- Add Dialog -->
+    <el-dialog 
+      v-model="showDialog" 
+      title="添加荣誉" 
+      width="90%" 
+      class="max-w-md rounded-2xl overflow-hidden"
+      :show-close="false"
+      align-center
+    >
+      <template #header>
+        <div class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <div class="w-1 bg-amber-500 h-4 rounded-full"></div>
+          添加新荣誉
         </div>
-        <div class="mt-2 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
-          <div class="flex items-center gap-1">
-            <span class="text-gray-500 dark:text-gray-400">年龄</span>
-            <span class="text-gray-800 dark:text-gray-100">{{ ageText }}</span>
+      </template>
+      
+      <div class="space-y-5 py-2">
+        <!-- Photo Upload -->
+        <div class="flex justify-center">
+          <div class="relative group cursor-pointer" @click="triggerFileSelect">
+            <div 
+              class="w-32 h-32 rounded-2xl bg-gray-50 dark:bg-gray-700/50 border-2 border-dashed border-gray-200 dark:border-gray-600 flex flex-col items-center justify-center overflow-hidden transition-colors hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/10"
+              :class="{'border-amber-500 bg-amber-50 dark:bg-amber-900/10': photoPreview}"
+            >
+              <img v-if="photoPreview" :src="photoPreview" class="w-full h-full object-cover" />
+              <template v-else>
+                <el-icon :size="28" class="text-gray-400 group-hover:text-amber-500 transition-colors"><Camera /></el-icon>
+                <span class="text-xs text-gray-400 mt-2 font-medium group-hover:text-amber-500">上传照片</span>
+              </template>
+            </div>
+            <div v-if="photoPreview" class="absolute -top-2 -right-2 bg-white dark:bg-gray-800 text-red-500 rounded-full p-1 shadow-md border border-gray-100 dark:border-gray-700 z-10" @click.stop="clearPhoto">
+              <el-icon><Close /></el-icon>
+            </div>
           </div>
-          <div class="flex items-center gap-1">
-            <span class="text-gray-500 dark:text-gray-400">性别</span>
-            <span class="text-gray-800 dark:text-gray-100">{{ genderText }}</span>
-          </div>
+          <input type="file" ref="fileInput" class="hidden" accept="image/*" @change="onSelectPhoto" />
         </div>
-      </div>
 
-      <div v-if="records.length === 0" class="text-sm text-gray-500 dark:text-gray-400">暂无荣誉记录</div>
-      <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <div
-          v-for="item in records"
-          :key="item.id"
-          class="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-800 cursor-pointer"
-          @click="openDetail(item.id)"
-        >
-          <div class="flex h-52 items-center justify-center bg-gradient-to-br from-amber-50 via-white to-amber-100 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900">
-            <img
-              v-if="resolvePhoto(item.photo_url)"
-              :src="resolvePhoto(item.photo_url)"
-              class="max-h-full max-w-full object-contain"
+        <div class="space-y-4">
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1">荣誉名称</label>
+            <el-input 
+              v-model="formTitle" 
+              placeholder="例如：三好学生奖状" 
+              class="custom-input"
             />
           </div>
-          <div class="flex flex-col items-center gap-1 px-3 py-2 text-sm text-gray-700 dark:text-gray-200">
-            <div class="w-full truncate text-center font-semibold">{{ item.title }}</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(item.awarded_at) }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <el-dialog v-model="showDialog" title="添加荣誉" width="420px">
-      <div class="space-y-3">
-        <div class="space-y-2">
-          <label class="text-sm text-gray-600 dark:text-gray-300">荣誉名称</label>
-          <el-input v-model="formTitle" placeholder="请输入荣誉名称" />
-        </div>
-        <div class="space-y-2">
-          <label class="text-sm text-gray-600 dark:text-gray-300">颁发机构</label>
-          <el-input v-model="formIssuer" placeholder="请输入颁发机构" />
-        </div>
-        <div class="space-y-2">
-          <label class="text-sm text-gray-600 dark:text-gray-300">颁发日期</label>
-          <el-date-picker v-model="formDate" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" class="w-full" />
-        </div>
-        <div class="space-y-2">
-          <label class="text-sm text-gray-600 dark:text-gray-300">备注</label>
-          <el-input v-model="formRemark" type="textarea" :rows="3" placeholder="可填写补充说明" />
-        </div>
-        <div class="space-y-2">
-          <label class="text-sm text-gray-600 dark:text-gray-300">荣誉照片</label>
-          <div class="flex items-center gap-3">
-            <div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
-              <img v-if="photoPreview" :src="photoPreview" class="w-full h-full object-cover" />
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1">颁发机构</label>
+              <el-input 
+                v-model="formIssuer" 
+                placeholder="例如：xx学校" 
+                class="custom-input"
+              />
             </div>
-            <input type="file" accept="image/*" @change="onSelectPhoto" />
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1">颁发日期</label>
+              <el-date-picker 
+                v-model="formDate" 
+                type="date" 
+                value-format="YYYY-MM-DD" 
+                placeholder="选择日期" 
+                class="!w-full custom-input" 
+                :clearable="false"
+              />
+            </div>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1">备注说明</label>
+            <el-input 
+              v-model="formRemark" 
+              type="textarea" 
+              :rows="3" 
+              placeholder="记录一下当时的心情吧..." 
+              class="custom-input"
+              resize="none"
+            />
           </div>
         </div>
       </div>
+
       <template #footer>
-        <div class="flex justify-end gap-2">
-          <el-button @click="showDialog = false">取消</el-button>
-          <el-button type="primary" :loading="saving" @click="submit">保存</el-button>
+        <div class="flex gap-3 pt-2">
+          <button 
+            class="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            @click="showDialog = false"
+          >
+            取消
+          </button>
+          <button 
+            class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-white font-bold text-sm shadow-lg shadow-amber-200 dark:shadow-amber-900/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+            :disabled="saving"
+            @click="submit"
+          >
+            {{ saving ? '保存中...' : '保存荣誉' }}
+          </button>
         </div>
       </template>
     </el-dialog>
@@ -91,7 +209,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ArrowLeft, Plus, Trophy, Medal, Picture, Calendar, School, Camera, Close } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import router from '@/router'
 import { ElMessage } from 'element-plus'
@@ -106,6 +224,7 @@ const auth = useAuth()
 const records = ref<HonorRecord[]>([])
 const showDialog = ref(false)
 const saving = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
 
 const formTitle = ref('')
 const formIssuer = ref('')
@@ -162,6 +281,16 @@ function openDialog() {
   photoFile.value = null
   photoPreview.value = ''
   showDialog.value = true
+}
+
+function triggerFileSelect() {
+  fileInput.value?.click()
+}
+
+function clearPhoto() {
+  photoFile.value = null
+  photoPreview.value = ''
+  if (fileInput.value) fileInput.value.value = ''
 }
 
 async function onSelectPhoto(e: Event) {
@@ -223,6 +352,7 @@ async function submit() {
     })
     showDialog.value = false
     await load()
+    ElMessage.success('添加成功')
   } catch (e: any) {
     ElMessage.error(e?.message || '保存失败')
   } finally {
@@ -249,4 +379,48 @@ watch(() => auth.user?.avatar_path, () => { updateAvatar() })
 </script>
 
 <style scoped>
+.custom-input :deep(.el-input__wrapper) {
+  background-color: #f9fafb;
+  border-radius: 0.75rem;
+  box-shadow: none !important;
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  transition: all 0.2s;
+}
+.dark .custom-input :deep(.el-input__wrapper) {
+  background-color: #374151;
+  border-color: #4b5563;
+}
+.custom-input :deep(.el-input__wrapper:hover),
+.custom-input :deep(.el-input__wrapper.is-focus) {
+  border-color: #f59e0b;
+  background-color: #fff;
+}
+.dark .custom-input :deep(.el-input__wrapper:hover),
+.dark .custom-input :deep(.el-input__wrapper.is-focus) {
+  border-color: #f59e0b;
+  background-color: #1f2937;
+}
+.custom-input :deep(.el-textarea__inner) {
+  background-color: #f9fafb;
+  border-radius: 0.75rem;
+  box-shadow: none !important;
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+}
+.dark .custom-input :deep(.el-textarea__inner) {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #fff;
+}
+.custom-input :deep(.el-textarea__inner:hover),
+.custom-input :deep(.el-textarea__inner:focus) {
+  border-color: #f59e0b;
+  background-color: #fff;
+}
+.dark .custom-input :deep(.el-textarea__inner:hover),
+.dark .custom-input :deep(.el-textarea__inner:focus) {
+  border-color: #f59e0b;
+  background-color: #1f2937;
+}
 </style>

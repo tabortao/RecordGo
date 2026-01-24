@@ -1,77 +1,126 @@
 <template>
-  <div class="min-h-screen bg-[#F5F7FA] dark:bg-gray-900">
-    <div class="bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
-      <div class="px-4 py-3 flex items-center gap-2">
-        <el-icon :size="18" class="cursor-pointer text-gray-600 dark:text-gray-300" @click="router.back()"><ArrowLeft /></el-icon>
-        <h2 class="font-semibold text-gray-800 dark:text-gray-100">生长</h2>
+  <div class="min-h-screen bg-[#F5F7FA] dark:bg-gray-900 flex flex-col">
+    <!-- Header -->
+    <div class="px-4 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 transition-colors">
+      <div class="flex items-center gap-3">
+        <div 
+          class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300"
+          @click="router.back()"
+        >
+          <el-icon><ArrowLeft /></el-icon>
+        </div>
+        <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">生长记录</h2>
       </div>
+      <!-- Right Placeholder for potential future actions -->
+      <div class="w-8"></div>
     </div>
 
-    <div class="p-4 space-y-4">
-      <div class="rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
-        <div class="flex items-center justify-between gap-4">
-          <div class="flex-1">
-            <div class="flex items-center gap-3">
-              <el-avatar :size="44" :src="avatarSrc" />
-              <div class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ displayName }}</div>
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24">
+      <div class="max-w-4xl mx-auto space-y-6">
+        <!-- Profile & BMI Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden">
+          <!-- Background Decoration -->
+          <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-50 to-transparent dark:from-blue-900/10 rounded-bl-[100px] -z-0"></div>
+          
+          <div class="relative z-10 flex flex-col sm:flex-row gap-8">
+            <!-- Left: Profile Info -->
+            <div class="flex-1 flex items-center gap-5">
+               <div class="relative">
+                 <el-avatar :size="72" :src="avatarSrc" class="border-4 border-white dark:border-gray-700 shadow-md" />
+                 <div class="absolute -bottom-1 -right-1 bg-green-400 text-white p-1 rounded-full shadow-sm border-2 border-white dark:border-gray-800">
+                    <el-icon :size="12"><TrendCharts /></el-icon>
+                 </div>
+               </div>
+               <div>
+                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1.5">{{ displayName }}</h1>
+                 <div class="flex flex-wrap gap-2">
+                   <span class="px-2.5 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300">{{ ageText }}</span>
+                   <span class="px-2.5 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300">{{ genderText }}</span>
+                 </div>
+               </div>
             </div>
-            <div class="mt-2 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
-              <div class="flex items-center gap-1">
-                <span class="text-gray-500 dark:text-gray-400">年龄</span>
-                <span class="text-gray-800 dark:text-gray-100">{{ ageText }}</span>
-              </div>
-              <div class="flex items-center gap-1">
-                <span class="text-gray-500 dark:text-gray-400">性别</span>
-                <span class="text-gray-800 dark:text-gray-100">{{ genderText }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="w-48 rounded-xl border border-gray-100 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 p-3">
-            <div class="flex items-center justify-between">
-              <div class="text-xs text-gray-500 dark:text-gray-400">BMI 指数</div>
-              <el-icon class="cursor-pointer text-gray-400 hover:text-blue-500" @click="openBmiInfo"><QuestionFilled /></el-icon>
-            </div>
-            <div class="mt-4 flex items-center gap-4">
-              <div class="flex flex-col items-center">
-                <img :src="genderAvatarSrc" class="h-16 w-16" alt="性别头像" />
-                <div class="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">BMI</div>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">{{ displayBmiText }}</div>
-                <div class="mt-1 text-xs px-2 py-0.5 rounded-full inline-block bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300">
-                  {{ bmiStatusText }}
-                </div>
-              </div>
+
+            <!-- Right: BMI Status -->
+            <div class="sm:w-64 bg-white/60 dark:bg-gray-700/30 rounded-2xl p-4 border border-gray-100 dark:border-gray-600/30 backdrop-blur-sm">
+               <div class="flex items-center justify-between mb-3">
+                 <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">BMI 指数</span>
+                 <el-tooltip content="点击查看 BMI 详情与建议" placement="top">
+                   <div class="cursor-pointer text-gray-400 hover:text-blue-500 transition-colors" @click="openBmiInfo">
+                     <el-icon><QuestionFilled /></el-icon>
+                   </div>
+                 </el-tooltip>
+               </div>
+               
+               <div class="flex items-center gap-4">
+                 <div class="relative">
+                   <div class="w-14 h-14 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center overflow-hidden">
+                     <img :src="genderAvatarSrc" class="w-10 h-10 object-contain" alt="Gender Avatar" />
+                   </div>
+                 </div>
+                 <div>
+                   <div class="text-3xl font-black text-gray-800 dark:text-white leading-none mb-1">{{ displayBmiText }}</div>
+                   <div 
+                     class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold"
+                     :class="{
+                       'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300': bmiStatusText === '偏瘦',
+                       'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300': bmiStatusText === '正常',
+                       'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300': bmiStatusText === '偏胖',
+                       'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300': bmiStatusText === '肥胖' || bmiStatusText === '高度肥胖'
+                     }"
+                   >
+                     {{ bmiStatusText }}
+                   </div>
+                 </div>
+               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div
-          v-for="card in metricCards"
-          :key="card.type"
-          class="rounded-2xl border border-transparent p-4 cursor-pointer transition hover:shadow-md"
-          :class="card.bgClass"
-          @click="openRecords(card.type)"
-        >
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 font-semibold" :class="card.textClass">
-              <el-icon :size="18" :class="card.iconClass"><component :is="card.icon" /></el-icon>
-              <span>{{ card.name }}</span>
-            </div>
-            <el-icon :size="18" class="text-blue-500"><TrendCharts /></el-icon>
-          </div>
-          <div class="mt-3 text-sm text-gray-600 dark:text-gray-300">
-            <span v-if="latestByType[card.type]">
-              {{ formatValue(card.type, latestByType[card.type]!) }} {{ card.unit }}
-            </span>
-            <span v-else>暂无记录</span>
-          </div>
-          <div class="mt-1 text-xs text-gray-400">
-            <span v-if="latestByType[card.type]">{{ formatDate(latestByType[card.type]?.record_date) }}</span>
-            <span v-else>点击添加记录</span>
-          </div>
+        <!-- Metrics Grid -->
+        <div>
+           <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 mb-4 ml-1 uppercase tracking-wider">各项指标记录</h3>
+           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+             <div
+               v-for="card in metricCards"
+               :key="card.type"
+               class="group relative bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
+               @click="openRecords(card.type)"
+             >
+               <!-- Card Bg Decoration -->
+               <div class="absolute top-0 right-0 w-24 h-24 rounded-bl-full opacity-20 transition-transform group-hover:scale-110" :class="card.bgClass"></div>
+               
+               <div class="relative z-10 flex flex-col h-full">
+                 <div class="flex items-center justify-between mb-4">
+                   <div class="w-10 h-10 rounded-2xl flex items-center justify-center transition-colors" :class="card.bgClass">
+                      <el-icon :size="20" :class="card.iconClass"><component :is="card.icon" /></el-icon>
+                   </div>
+                   <div class="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-gray-300 group-hover:text-blue-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-all">
+                     <el-icon><ArrowRight /></el-icon>
+                   </div>
+                 </div>
+                 
+                 <div class="mb-1">
+                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ card.name }}</span>
+                 </div>
+                 
+                 <div class="flex items-baseline gap-1 mt-auto">
+                    <template v-if="latestByType[card.type]">
+                      <span class="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+                        {{ formatValue(card.type, latestByType[card.type]!) }}
+                      </span>
+                      <span class="text-sm font-bold text-gray-400">{{ card.unit }}</span>
+                    </template>
+                    <span v-else class="text-lg font-bold text-gray-300 dark:text-gray-600">暂无记录</span>
+                 </div>
+                 
+                 <div class="mt-2 flex items-center gap-1.5 text-xs font-medium text-gray-400">
+                   <el-icon><Clock /></el-icon>
+                   <span v-if="latestByType[card.type]">更新于 {{ formatDate(latestByType[card.type]?.record_date) }}</span>
+                   <span v-else>点击添加第一条记录</span>
+                 </div>
+               </div>
+             </div>
+           </div>
         </div>
       </div>
     </div>
@@ -80,7 +129,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { ArrowLeft, TrendCharts, Histogram, Medal, View, Position, QuestionFilled } from '@element-plus/icons-vue'
+import { ArrowLeft, TrendCharts, Histogram, Medal, View, Position, QuestionFilled, ArrowRight, Clock } from '@element-plus/icons-vue'
 import { useAuth } from '@/stores/auth'
 import { listGrowthRecords, type GrowthMetricRecord, type GrowthMetricType } from '@/services/growth'
 import dayjs from 'dayjs'

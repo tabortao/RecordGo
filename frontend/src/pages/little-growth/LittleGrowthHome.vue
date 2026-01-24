@@ -217,9 +217,9 @@
     <div 
       v-if="showBackToTop"
         ref="backToTopRef"
-        class="fixed z-50 w-10 h-10 bg-purple-600 text-white rounded-full shadow-lg flex items-center justify-center cursor-pointer hover:bg-purple-700 active:scale-95 transition-all"
+        class="fixed z-50 w-10 h-10 bg-purple-600 text-white rounded-full shadow-lg flex items-center justify-center cursor-pointer hover:bg-purple-700 active:scale-95 transition-all touch-none"
         :style="backToTopStyle"
-        @click="scrollToTop"
+        @click.stop="scrollToTop"
       >
         <el-icon><Top /></el-icon>
       </div>
@@ -292,16 +292,25 @@ const showBackToTop = ref(false)
 
 // Draggable Back to Top
 const backToTopRef = ref<HTMLElement | null>(null)
-const initialPos = useStorage('back-to-top-pos', { x: width.value - 60, y: height.value - 100 })
+// Initialize position. Note: we don't know window size on SSR or early init, so we default to bottom right.
+// We'll update it in onMounted if needed or let useDraggable handle it.
+// To ensure it shows on desktop, we avoid complex logic that might be hiding it based on screen width unless intended.
+const initialPos = useStorage('back-to-top-pos', { x: 0, y: 0 }) 
+
 const { style: backToTopStyle } = useDraggable(backToTopRef as any, {
   initialValue: initialPos,
   onEnd: (position) => {
     initialPos.value = position
-  }
+  },
+  preventDefault: true
 })
 
+// Initialize position if it's 0,0 (first run) to bottom right
 onMounted(() => {
   store.fetchRecords()
+  if (initialPos.value.x === 0 && initialPos.value.y === 0) {
+      initialPos.value = { x: width.value - 60, y: height.value - 100 }
+  }
 })
 
 function openSidebar() { showSidebar.value = true }

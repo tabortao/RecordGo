@@ -1,107 +1,246 @@
 <template>
-  <div class="min-h-screen bg-[#F5F7FA] dark:bg-gray-900">
-    <div class="bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
-      <div class="px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <el-icon :size="18" class="cursor-pointer text-gray-600 dark:text-gray-300" @click="router.back()"><ArrowLeft /></el-icon>
-          <h2 class="font-semibold text-gray-800 dark:text-gray-100">{{ title }}</h2>
+  <div class="min-h-screen bg-[#F5F7FA] dark:bg-gray-900 flex flex-col relative">
+    <!-- Header -->
+    <div class="px-4 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 transition-colors">
+      <div class="flex items-center gap-3">
+        <div 
+          class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300"
+          @click="router.back()"
+        >
+          <el-icon><ArrowLeft /></el-icon>
         </div>
-        <el-button type="primary" size="small" @click="openDialog">添加记录</el-button>
+        <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">{{ title }}记录</h2>
       </div>
+      <button 
+        class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg shadow-blue-200 dark:shadow-blue-900/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-1"
+        @click="openDialog"
+      >
+        <el-icon><Plus /></el-icon>
+        <span>添加记录</span>
+      </button>
     </div>
 
-    <div class="p-4 space-y-4">
-      <div class="rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-3">
-        <el-tabs v-model="chartTab" type="card" class="mb-2">
-          <el-tab-pane label="本周" name="week" />
-          <el-tab-pane label="本月" name="month" />
-          <el-tab-pane label="本年" name="year" />
-          <el-tab-pane label="全部" name="all" />
-        </el-tabs>
-        <VChart :option="chartOption" autoresize style="height: 200px;" />
-      </div>
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24">
+      <div class="max-w-3xl mx-auto space-y-6">
+        <!-- Chart Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
+              <el-icon><TrendCharts /></el-icon> 数据趋势
+            </h3>
+            <div class="flex bg-gray-100 dark:bg-gray-700/50 p-1 rounded-xl">
+              <button 
+                v-for="tab in [{k: 'week', l: '周'}, {k: 'month', l: '月'}, {k: 'year', l: '年'}, {k: 'all', l: '全部'}]" 
+                :key="tab.k"
+                class="px-3 py-1 rounded-lg text-xs font-bold transition-all"
+                :class="chartTab === tab.k ? 'bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'"
+                @click="chartTab = tab.k as any"
+              >
+                {{ tab.l }}
+              </button>
+            </div>
+          </div>
+          <div class="h-56 w-full">
+            <VChart :option="chartOption" autoresize class="w-full h-full" />
+          </div>
+        </div>
 
-      <div class="flex items-center justify-between">
-        <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">记录的数据</div>
-      </div>
-      <div v-if="records.length === 0" class="text-sm text-gray-500 dark:text-gray-400">暂无记录</div>
-      <div v-else class="space-y-2">
-        <el-card
-          v-for="item in pagedRecords"
-          :key="item.id"
-          shadow="hover"
-          class="rounded-lg group relative"
-          @click="toggleDelete(item.id)"
-        >
-          <button
-            class="absolute right-3 top-3 h-7 w-7 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 transition group-hover:opacity-100"
-            :class="activeDeleteId === item.id ? 'opacity-100' : ''"
-            @click.stop="onDelete(item.id)"
-          >
-            <el-icon><Delete /></el-icon>
-          </button>
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-sm text-gray-500 dark:text-gray-400">{{ formatDate(item.record_date) }}</div>
-              <div class="text-base font-semibold text-gray-800 dark:text-gray-100">
-                {{ formatRecordValue(item) }} {{ unit }}
+        <!-- Vision Guide -->
+        <div v-if="type === 'vision'" class="bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl p-4 border border-blue-100 dark:border-blue-800/30 flex gap-3">
+          <el-icon class="text-blue-500 text-lg flex-shrink-0 mt-0.5"><InfoFilled /></el-icon>
+          <div class="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
+            <p class="font-bold mb-1">视力记录说明</p>
+            <p class="opacity-90">采用 5 分记录法（LogMAR）评估。5.0（对应小数 1.0）为正常视力标准。建议定期检查，关注视力变化趋势。</p>
+          </div>
+        </div>
+
+        <!-- Records List -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between px-1">
+            <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">历史数据</h3>
+            <span class="text-xs font-medium text-gray-400 bg-gray-100 dark:bg-gray-700/50 px-2 py-0.5 rounded-full">共 {{ records.length }} 条</span>
+          </div>
+
+          <div v-if="records.length === 0" class="flex flex-col items-center justify-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
+            <div class="w-16 h-16 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-3">
+              <el-icon :size="24" class="text-gray-300"><Document /></el-icon>
+            </div>
+            <p class="text-sm">暂无记录，点击右上角添加</p>
+          </div>
+
+          <div v-else class="space-y-3">
+            <div
+              v-for="item in pagedRecords"
+              :key="item.id"
+              class="group bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden"
+              @click="toggleDelete(item.id)"
+            >
+              <!-- Delete Overlay -->
+              <div 
+                class="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-white via-white to-transparent dark:from-gray-800 dark:via-gray-800 flex items-center justify-end pr-4 transition-opacity duration-200"
+                :class="activeDeleteId === item.id ? 'opacity-100 z-20' : 'opacity-0 -z-10 group-hover:opacity-100 group-hover:z-20'"
+              >
+                <button
+                  class="h-8 w-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors shadow-sm"
+                  @click.stop="onDelete(item.id)"
+                >
+                  <el-icon><Delete /></el-icon>
+                </button>
               </div>
-              <div v-if="type === 'vision'" class="text-xs text-gray-500 dark:text-gray-400">
-                左眼 {{ item.left_value }} 右眼 {{ item.right_value }}
+
+              <div class="flex items-center justify-between relative z-10">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex flex-col items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-100 dark:border-indigo-800/30">
+                    <span class="text-xs opacity-60">{{ dayjs(item.record_date).format('MM') }}月</span>
+                    <span class="text-sm leading-none">{{ dayjs(item.record_date).format('DD') }}</span>
+                  </div>
+                  
+                  <div>
+                    <div class="flex items-baseline gap-1.5">
+                      <span class="text-xl font-black text-gray-900 dark:text-white tracking-tight">
+                        {{ formatRecordValue(item) }}
+                      </span>
+                      <span class="text-xs font-bold text-gray-400" v-if="unit">{{ unit }}</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 mt-0.5">
+                      <span class="text-xs text-gray-400">{{ dayjs(item.record_date).format('YYYY年') }}</span>
+                      <div v-if="type === 'vision'" class="text-[10px] bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded font-medium">
+                        左 {{ item.left_value }} / 右 {{ item.right_value }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="item.remark" class="hidden sm:block text-xs text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded-lg max-w-[120px] truncate">
+                  {{ item.remark }}
+                </div>
               </div>
-              <div v-if="item.remark" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                {{ item.remark }}
+              
+              <!-- Mobile Remark -->
+              <div v-if="item.remark" class="sm:hidden mt-3 pt-2 border-t border-gray-50 dark:border-gray-700/50 text-xs text-gray-500 dark:text-gray-400 flex items-start gap-1">
+                <el-icon class="mt-0.5 text-gray-300"><ChatLineSquare /></el-icon>
+                <span>{{ item.remark }}</span>
               </div>
             </div>
           </div>
-        </el-card>
-      </div>
-      <div v-if="records.length > pageSize" class="flex justify-center pt-2">
-        <el-pagination
-          :page-size="pageSize"
-          :current-page="currentPage"
-          layout="prev, pager, next"
-          :total="records.length"
-          background
-          @current-change="onPageChange"
-        />
-      </div>
 
-      <div v-if="type === 'vision'" class="rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-3 text-sm text-gray-600 dark:text-gray-300">
-        <div class="font-semibold text-gray-700 dark:text-gray-200 mb-1">记录说明</div>
-        <div>采用5分记录法（LogMAR视力记录法的一种衍生形式）对国际标准视力表进行评估时，通常将视力结果为5.0（对应小数记录法的1.0）定义为正常视力。该数值表示被检查者能够清晰分辨视角为1分角（1 arcminute）的最小视标细节，代表最佳矫正视力水平。</div>
+          <div v-if="records.length > pageSize" class="flex justify-center pt-4">
+            <el-pagination
+              :page-size="pageSize"
+              :current-page="currentPage"
+              layout="prev, pager, next"
+              :total="records.length"
+              background
+              @current-change="onPageChange"
+              class="custom-pagination"
+            />
+          </div>
+        </div>
       </div>
     </div>
 
-    <el-dialog v-model="showDialog" title="添加记录" width="360px">
-      <div class="space-y-3">
-        <div class="flex items-center gap-3">
-          <div class="w-14 text-sm text-gray-600 dark:text-gray-300">日期</div>
-          <el-date-picker v-model="formDate" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" class="flex-1" />
+    <!-- Add Dialog -->
+    <el-dialog 
+      v-model="showDialog" 
+      :title="`添加${title}记录`" 
+      width="90%" 
+      class="max-w-md rounded-2xl overflow-hidden"
+      :show-close="false"
+      align-center
+    >
+      <template #header>
+        <div class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <div class="w-1 bg-indigo-500 h-4 rounded-full"></div>
+          记录新数据
         </div>
-        <div v-if="type !== 'vision'" class="flex items-center gap-3">
-          <div class="w-14 text-sm text-gray-600 dark:text-gray-300">{{ unitName }}</div>
-          <el-input-number v-model="formValue" :min="0" :precision="2" :step="0.1" class="flex-1" controls-position="right" placeholder="请输入数值" />
+      </template>
+
+      <div class="space-y-5 py-2">
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1">记录日期</label>
+          <el-date-picker 
+            v-model="formDate" 
+            type="date" 
+            value-format="YYYY-MM-DD" 
+            placeholder="选择日期" 
+            class="!w-full custom-input" 
+            :clearable="false"
+          />
         </div>
-        <div v-else class="space-y-2">
-          <div class="flex items-center gap-3">
-            <div class="w-14 text-sm text-gray-600 dark:text-gray-300">左眼</div>
-            <el-input-number v-model="formLeft" :min="0" :precision="2" :step="0.1" class="flex-1" controls-position="right" placeholder="请输入左眼数值" />
+
+        <div v-if="type !== 'vision'" class="space-y-1.5">
+          <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1">{{ title }}数值 ({{ unit }})</label>
+          <div class="relative">
+            <el-input-number 
+              v-model="formValue" 
+              :min="0" 
+              :precision="2" 
+              :step="0.1" 
+              class="!w-full custom-input-number" 
+              controls-position="right" 
+              placeholder="0.00" 
+            />
+            <div class="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold pointer-events-none">{{ unit }}</div>
           </div>
-          <div class="flex items-center gap-3">
-            <div class="w-14 text-sm text-gray-600 dark:text-gray-300">右眼</div>
-            <el-input-number v-model="formRight" :min="0" :precision="2" :step="0.1" class="flex-1" controls-position="right" placeholder="请输入右眼数值" />
+        </div>
+
+        <div v-else class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1">左眼视力</label>
+            <el-input-number 
+              v-model="formLeft" 
+              :min="0" 
+              :max="5.3"
+              :precision="1" 
+              :step="0.1" 
+              class="!w-full custom-input-number" 
+              controls-position="right" 
+              placeholder="5.0" 
+            />
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1">右眼视力</label>
+            <el-input-number 
+              v-model="formRight" 
+              :min="0" 
+              :max="5.3"
+              :precision="1" 
+              :step="0.1" 
+              class="!w-full custom-input-number" 
+              controls-position="right" 
+              placeholder="5.0" 
+            />
           </div>
         </div>
-        <div class="flex items-start gap-3">
-          <div class="w-14 text-sm text-gray-600 dark:text-gray-300 pt-2">备注</div>
-          <el-input v-model="formRemark" type="textarea" :rows="2" class="flex-1" placeholder="可填写本次记录说明" />
+
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1">备注说明</label>
+          <el-input 
+            v-model="formRemark" 
+            type="textarea" 
+            :rows="3" 
+            placeholder="例如：最近吃得比较多..." 
+            class="custom-input"
+            resize="none"
+          />
         </div>
       </div>
+
       <template #footer>
-        <div class="flex justify-end gap-2">
-          <el-button @click="showDialog = false">取消</el-button>
-          <el-button type="primary" @click="submit">保存</el-button>
+        <div class="flex gap-3 pt-2">
+          <button 
+            class="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            @click="showDialog = false"
+          >
+            取消
+          </button>
+          <button 
+            class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold text-sm shadow-lg shadow-blue-200 dark:shadow-blue-900/20 hover:scale-[1.02] active:scale-95 transition-all"
+            @click="submit"
+          >
+            保存记录
+          </button>
         </div>
       </template>
     </el-dialog>
@@ -110,7 +249,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { ArrowLeft, Delete } from '@element-plus/icons-vue'
+import { ArrowLeft, Delete, Plus, TrendCharts, InfoFilled, Document, ChatLineSquare } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 import router from '@/router'
 import dayjs from 'dayjs'
@@ -335,4 +474,71 @@ const chartOption = computed(() => {
 </script>
 
 <style scoped>
+.custom-pagination :deep(.el-pagination.is-background .el-pager li:not(.is-disabled).is-active) {
+  background-color: #6366f1;
+}
+.dark .custom-pagination :deep(.el-pagination.is-background .el-pager li:not(.is-disabled).is-active) {
+  background-color: #4f46e5;
+}
+
+.custom-input :deep(.el-input__wrapper) {
+  background-color: #f9fafb;
+  border-radius: 0.75rem;
+  box-shadow: none !important;
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  transition: all 0.2s;
+}
+.dark .custom-input :deep(.el-input__wrapper) {
+  background-color: #374151;
+  border-color: #4b5563;
+}
+.custom-input :deep(.el-input__wrapper:hover),
+.custom-input :deep(.el-input__wrapper.is-focus) {
+  border-color: #6366f1;
+  background-color: #fff;
+}
+.dark .custom-input :deep(.el-input__wrapper:hover),
+.dark .custom-input :deep(.el-input__wrapper.is-focus) {
+  border-color: #6366f1;
+  background-color: #1f2937;
+}
+
+.custom-input :deep(.el-textarea__inner) {
+  background-color: #f9fafb;
+  border-radius: 0.75rem;
+  box-shadow: none !important;
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+}
+.dark .custom-input :deep(.el-textarea__inner) {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #fff;
+}
+.custom-input :deep(.el-textarea__inner:hover),
+.custom-input :deep(.el-textarea__inner:focus) {
+  border-color: #6366f1;
+  background-color: #fff;
+}
+.dark .custom-input :deep(.el-textarea__inner:hover),
+.dark .custom-input :deep(.el-textarea__inner:focus) {
+  border-color: #6366f1;
+  background-color: #1f2937;
+}
+
+.custom-input-number :deep(.el-input__wrapper) {
+  background-color: #f9fafb;
+  border-radius: 0.75rem;
+  box-shadow: none !important;
+  border: 1px solid #e5e7eb;
+}
+.dark .custom-input-number :deep(.el-input__wrapper) {
+  background-color: #374151;
+  border-color: #4b5563;
+}
+.custom-input-number :deep(.el-input__wrapper:hover),
+.custom-input-number :deep(.el-input__wrapper.is-focus) {
+  border-color: #6366f1;
+}
 </style>

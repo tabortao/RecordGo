@@ -1,122 +1,203 @@
 <template>
-  <div class="min-h-screen bg-[#F5F7FA] dark:bg-gray-900">
-    <div class="bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
-      <div class="px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <el-icon :size="18" class="cursor-pointer text-gray-600 dark:text-gray-300" @click="router.back()"><ArrowLeft /></el-icon>
-          <h2 class="font-semibold text-gray-800 dark:text-gray-100">成绩</h2>
+  <div class="min-h-screen bg-[#F5F7FA] dark:bg-gray-900 flex flex-col">
+    <!-- Header -->
+    <div class="px-4 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 transition-colors">
+      <div class="flex items-center gap-3">
+        <div 
+          class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300"
+          @click="router.back()"
+        >
+          <el-icon><ArrowLeft /></el-icon>
         </div>
-        <el-button type="primary" size="small" @click="openCreate">新增成绩</el-button>
+        <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">成绩分析</h2>
       </div>
+      <button 
+        class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg shadow-blue-200 dark:shadow-blue-900/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-1"
+        @click="openCreate"
+      >
+        <el-icon><Plus /></el-icon>
+        <span>新增成绩</span>
+      </button>
     </div>
 
-    <div class="p-4 space-y-4">
-      <div class="rounded-2xl bg-gradient-to-br from-indigo-50 via-white to-rose-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 border border-indigo-100 dark:border-gray-700 p-4 shadow-sm">
-        <div class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ displayName }}</div>
-        <div class="mt-2 flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
-          <div class="flex items-center gap-1">
-            <span class="text-gray-500 dark:text-gray-400">年龄</span>
-            <span class="text-gray-800 dark:text-gray-100">{{ ageText }}</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <span class="text-gray-500 dark:text-gray-400">性别</span>
-            <span class="text-gray-800 dark:text-gray-100">{{ genderText }}</span>
-          </div>
-        </div>
-      </div>
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24">
+      <div class="max-w-6xl mx-auto space-y-6">
+        <!-- Overview Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-indigo-50 to-transparent dark:from-indigo-900/10 rounded-bl-[100px] -z-0"></div>
+          
+          <div class="relative z-10">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">学情概览</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div class="rounded-2xl p-5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-50 dark:bg-emerald-900/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                <div class="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 relative z-10">
+                  <el-icon class="text-emerald-500"><DataLine /></el-icon> 平均得分率
+                </div>
+                <div class="mt-2 text-3xl font-black tracking-tight text-gray-900 dark:text-white relative z-10">{{ avgRateText }}</div>
+              </div>
+              
+              <div class="rounded-2xl p-5 text-white bg-gradient-to-br from-orange-400 to-rose-500 shadow-lg shadow-orange-200 dark:shadow-none relative overflow-hidden group">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                <div class="text-sm font-medium opacity-90 flex items-center gap-1">
+                  <el-icon><Top /></el-icon> 最高分记录
+                </div>
+                <div class="mt-2 text-3xl font-black tracking-tight">{{ maxScoreText }}</div>
+              </div>
+              
+              <div class="rounded-2xl p-5 text-white bg-gradient-to-br from-indigo-400 to-purple-600 shadow-lg shadow-indigo-200 dark:shadow-none relative overflow-hidden group">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                <div class="text-sm font-medium opacity-90 flex items-center gap-1">
+                  <el-icon><Bottom /></el-icon> 最低分记录
+                </div>
+                <div class="mt-2 text-3xl font-black tracking-tight">{{ minScoreText }}</div>
+              </div>
+            </div>
 
-      <div class="rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
-        <div class="flex flex-wrap items-center gap-3">
-          <el-select v-model="subjectFilter" size="small" class="min-w-[120px]" placeholder="全部学科">
-            <el-option label="全部学科" value="all" />
-            <el-option v-for="s in subjects" :key="s" :label="s" :value="s" />
-          </el-select>
-          <el-date-picker
-            v-model="dateRange"
-            type="daterange"
-            unlink-panels
-            value-format="YYYY-MM-DD"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            class="min-w-[240px]"
-            size="small"
-          />
-          <el-button size="small" @click="resetFilters">重置</el-button>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div class="rounded-2xl p-4 text-white bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-sm">
-          <div class="text-sm opacity-90">平均得分率</div>
-          <div class="mt-2 text-2xl font-semibold">{{ avgRateText }}</div>
-        </div>
-        <div class="rounded-2xl p-4 text-white bg-gradient-to-br from-orange-400 to-pink-500 shadow-sm">
-          <div class="text-sm opacity-90">最高分</div>
-          <div class="mt-2 text-2xl font-semibold">{{ maxScoreText }}</div>
-        </div>
-        <div class="rounded-2xl p-4 text-white bg-gradient-to-br from-purple-400 to-indigo-600 shadow-sm">
-          <div class="text-sm opacity-90">最低分</div>
-          <div class="mt-2 text-2xl font-semibold">{{ minScoreText }}</div>
-        </div>
-      </div>
-
-      <div class="rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
-        <div class="flex items-center gap-2 text-gray-800 dark:text-gray-100 font-semibold">
-          <el-icon><TrendCharts /></el-icon>
-          <span>各科成绩变化趋势</span>
-        </div>
-        <div class="mt-3 h-64">
-          <VChart v-if="multiSubjectOption" :option="multiSubjectOption" autoresize />
-          <div v-else class="text-sm text-gray-400 dark:text-gray-500">暂无数据</div>
-        </div>
-      </div>
-
-      <div class="rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
-        <div class="flex items-center gap-2 text-gray-800 dark:text-gray-100 font-semibold">
-          <el-icon><DataAnalysis /></el-icon>
-          <span>总分变化趋势</span>
-        </div>
-        <div class="mt-3 h-64">
-          <VChart v-if="totalScoreOption" :option="totalScoreOption" autoresize />
-          <div v-else class="text-sm text-gray-400 dark:text-gray-500">暂无数据</div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div
-          v-for="item in subjectTrendOptions"
-          :key="item.subject"
-          class="rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-4 shadow-sm"
-        >
-          <div class="text-gray-800 dark:text-gray-100 font-semibold">{{ item.subject }} 得分率趋势</div>
-          <div class="mt-3 h-56">
-            <VChart :option="item.option" autoresize />
+            <!-- Filters -->
+            <div class="flex flex-wrap items-center gap-3 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-2xl">
+              <el-select v-model="subjectFilter" size="default" class="!w-32 custom-select" placeholder="全部学科">
+                <el-option label="全部学科" value="all" />
+                <el-option v-for="s in subjects" :key="s" :label="s" :value="s" />
+              </el-select>
+              <div class="h-6 w-[1px] bg-gray-200 dark:bg-gray-600 mx-1"></div>
+              <el-date-picker
+                v-model="dateRange"
+                type="daterange"
+                unlink-panels
+                value-format="YYYY-MM-DD"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                class="!w-64 custom-date-picker"
+                size="default"
+                :prefix-icon="Calendar"
+              />
+              <button 
+                v-if="subjectFilter !== 'all' || dateRange"
+                class="ml-auto text-xs font-bold text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-300 px-3 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                @click="resetFilters"
+              >
+                重置筛选
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div v-if="filteredRecords.length === 0" class="text-sm text-gray-500 dark:text-gray-400">暂无成绩记录</div>
-      <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div
-          v-for="item in filteredRecords"
-          :key="item.id"
-          class="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm transition hover:shadow-md cursor-pointer"
-          :class="subjectCardClass(item.subject)"
-          @click="openDetail(item.id)"
-        >
-          <div class="flex items-center justify-between">
-            <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ item.exam_name }}</div>
-            <div class="text-xs text-gray-500 dark:text-gray-300">{{ formatDate(item.exam_date) }}</div>
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <div class="flex items-center gap-2 mb-6">
+              <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                <el-icon :size="20"><TrendCharts /></el-icon>
+              </div>
+              <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">各科成绩走势</h3>
+            </div>
+            <div class="h-64 w-full">
+              <VChart v-if="multiSubjectOption" :option="multiSubjectOption" autoresize class="w-full h-full" />
+              <div v-else class="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
+                <el-icon :size="32" class="mb-2 opacity-50"><DataLine /></el-icon>
+                <span class="text-xs">暂无趋势数据</span>
+              </div>
+            </div>
           </div>
-          <div class="mt-2 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-            <span class="px-2 py-0.5 rounded-full text-xs" :class="subjectBadgeClass(item.subject)">{{ item.subject }}</span>
-            <span>{{ item.score }} / {{ item.full_score }}</span>
+
+          <div class="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <div class="flex items-center gap-2 mb-6">
+              <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                <el-icon :size="20"><DataAnalysis /></el-icon>
+              </div>
+              <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">总分变化趋势</h3>
+            </div>
+            <div class="h-64 w-full">
+              <VChart v-if="totalScoreOption" :option="totalScoreOption" autoresize class="w-full h-full" />
+              <div v-else class="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
+                <el-icon :size="32" class="mb-2 opacity-50"><DataLine /></el-icon>
+                <span class="text-xs">暂无趋势数据</span>
+              </div>
+            </div>
           </div>
-          <div class="mt-2 text-xs text-gray-600 dark:text-gray-300 flex flex-wrap gap-3">
-            <span>班级排名：{{ item.class_rank ?? '-' }}</span>
-            <span>年级排名：{{ item.grade_rank ?? '-' }}</span>
-            <span>班级均分：{{ item.class_avg ?? '-' }}</span>
+        </div>
+
+        <!-- Subject Trends List -->
+        <div v-if="subjectTrendOptions.length > 0" class="space-y-4">
+          <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 ml-1 uppercase tracking-wider">单科详细分析</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div
+              v-for="item in subjectTrendOptions"
+              :key="item.subject"
+              class="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
+            >
+              <div class="flex items-center gap-2 mb-4">
+                <span class="px-2.5 py-1 rounded-lg text-xs font-bold" :class="subjectBadgeClass(item.subject)">{{ item.subject }}</span>
+                <span class="text-xs text-gray-400">得分率趋势</span>
+              </div>
+              <div class="h-40 w-full">
+                <VChart :option="item.option" autoresize class="w-full h-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Records List -->
+        <div class="space-y-4">
+          <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 ml-1 uppercase tracking-wider flex items-center justify-between">
+            <span>历史成绩记录</span>
+            <span class="text-xs font-normal normal-case bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">共 {{ filteredRecords.length }} 条</span>
+          </h3>
+          
+          <div v-if="filteredRecords.length === 0" class="flex flex-col items-center justify-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
+            <div class="w-16 h-16 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-3">
+              <el-icon :size="24" class="text-gray-300"><Document /></el-icon>
+            </div>
+            <p class="text-sm">暂无符合条件的成绩记录</p>
+          </div>
+          
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+              v-for="item in filteredRecords"
+              :key="item.id"
+              class="group bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer relative overflow-hidden"
+              @click="openDetail(item.id)"
+            >
+              <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-gray-50 to-transparent dark:from-gray-700/20 rounded-bl-full -z-0 transition-transform group-hover:scale-110"></div>
+              
+              <div class="relative z-10">
+                <div class="flex items-start justify-between mb-3">
+                  <div class="flex-1 min-w-0 mr-4">
+                    <h4 class="text-base font-bold text-gray-900 dark:text-white truncate mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{{ item.exam_name }}</h4>
+                    <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                      <el-icon><Calendar /></el-icon>
+                      <span>{{ formatDate(item.exam_date) }}</span>
+                    </div>
+                  </div>
+                  <div class="flex flex-col items-end">
+                     <span class="text-2xl font-black text-gray-900 dark:text-white leading-none">
+                       {{ item.score }}<span class="text-xs font-medium text-gray-400 ml-0.5">/{{ item.full_score }}</span>
+                     </span>
+                     <span class="px-2 py-0.5 rounded-md text-[10px] font-bold mt-1" :class="subjectBadgeClass(item.subject)">
+                       {{ item.subject }}
+                     </span>
+                  </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gray-50 dark:border-gray-700/50">
+                  <div class="text-center">
+                    <div class="text-[10px] text-gray-400 mb-0.5">班级排名</div>
+                    <div class="text-sm font-bold text-gray-700 dark:text-gray-200">{{ item.class_rank || '-' }}</div>
+                  </div>
+                  <div class="text-center border-l border-gray-50 dark:border-gray-700/50">
+                    <div class="text-[10px] text-gray-400 mb-0.5">年级排名</div>
+                    <div class="text-sm font-bold text-gray-700 dark:text-gray-200">{{ item.grade_rank || '-' }}</div>
+                  </div>
+                  <div class="text-center border-l border-gray-50 dark:border-gray-700/50">
+                    <div class="text-[10px] text-gray-400 mb-0.5">班级均分</div>
+                    <div class="text-sm font-bold text-gray-700 dark:text-gray-200">{{ item.class_avg || '-' }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -126,7 +207,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ArrowLeft, DataAnalysis, TrendCharts } from '@element-plus/icons-vue'
+import { ArrowLeft, DataAnalysis, TrendCharts, Plus, DataLine, Top, Bottom, Calendar, Document } from '@element-plus/icons-vue'
 import router from '@/router'
 import dayjs from 'dayjs'
 import { useAuth } from '@/stores/auth'
@@ -346,4 +427,33 @@ onMounted(load)
 </script>
 
 <style scoped>
+.custom-select :deep(.el-input__wrapper) {
+  background-color: transparent;
+  box-shadow: none !important;
+  padding: 0 8px;
+}
+.custom-select :deep(.el-input__inner) {
+  font-weight: 600;
+  color: #4b5563;
+}
+.dark .custom-select :deep(.el-input__inner) {
+  color: #e5e7eb;
+}
+
+.custom-date-picker :deep(.el-input__wrapper) {
+  background-color: transparent;
+  box-shadow: none !important;
+  padding: 0 8px;
+}
+.custom-date-picker :deep(.el-range-input) {
+  background-color: transparent;
+  font-size: 13px;
+  color: #4b5563;
+}
+.dark .custom-date-picker :deep(.el-range-input) {
+  color: #e5e7eb;
+}
+.custom-date-picker :deep(.el-range-separator) {
+  color: #9ca3af;
+}
 </style>
