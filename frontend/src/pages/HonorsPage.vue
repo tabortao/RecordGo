@@ -12,7 +12,7 @@
         <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">荣誉墙</h2>
       </div>
       <button 
-        class="bg-gradient-to-r from-amber-400 to-amber-500 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg shadow-amber-200 dark:shadow-amber-900/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-1"
+        class="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white px-4 py-2 rounded-full text-sm font-black shadow-lg shadow-amber-200/60 dark:shadow-amber-900/20 ring-1 ring-white/30 dark:ring-white/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
         @click="openDialog"
       >
         <el-icon><Plus /></el-icon>
@@ -108,7 +108,7 @@
       v-model="showDialog" 
       title="添加荣誉" 
       width="90%" 
-      class="max-w-md rounded-2xl overflow-hidden"
+      class="max-w-md rounded-2xl overflow-hidden flex flex-col max-h-[90vh]"
       :show-close="false"
       align-center
     >
@@ -119,7 +119,7 @@
         </div>
       </template>
       
-      <div class="space-y-5 py-2">
+      <div class="space-y-5 py-2 overflow-y-auto flex-1 px-1">
         <!-- Photo Upload -->
         <div class="flex justify-center">
           <div class="relative group cursor-pointer" @click="triggerFileSelect">
@@ -195,7 +195,7 @@
             取消
           </button>
           <button 
-            class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-white font-bold text-sm shadow-lg shadow-amber-200 dark:shadow-amber-900/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+            class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white font-black text-sm shadow-lg shadow-amber-200/70 dark:shadow-amber-900/20 ring-1 ring-white/20 dark:ring-white/10 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-60 disabled:hover:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
             :disabled="saving"
             @click="submit"
           >

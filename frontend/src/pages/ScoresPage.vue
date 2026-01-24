@@ -30,28 +30,28 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">学情概览</h1>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div class="rounded-2xl p-5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-50 dark:bg-emerald-900/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
-                <div class="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 relative z-10">
-                  <el-icon class="text-emerald-500"><DataLine /></el-icon> 平均得分率
+              <div class="rounded-2xl p-5 bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg shadow-emerald-200 dark:shadow-none relative overflow-hidden group">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                <div class="text-sm font-medium text-white/90 flex items-center gap-1 relative z-10">
+                  <el-icon class="text-white"><DataLine /></el-icon> 平均得分率
                 </div>
-                <div class="mt-2 text-3xl font-black tracking-tight text-gray-900 dark:text-white relative z-10">{{ avgRateText }}</div>
+                <div class="mt-2 text-3xl font-black tracking-tight text-white relative z-10">{{ avgRateText }}</div>
               </div>
               
-              <div class="rounded-2xl p-5 text-white bg-gradient-to-br from-orange-400 to-rose-500 shadow-lg shadow-orange-200 dark:shadow-none relative overflow-hidden group">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
-                <div class="text-sm font-medium opacity-90 flex items-center gap-1">
-                  <el-icon><Top /></el-icon> 最高分记录
+              <div class="rounded-2xl p-5 bg-gradient-to-br from-orange-400 to-rose-500 text-white shadow-lg shadow-orange-200 dark:shadow-none relative overflow-hidden group">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                <div class="text-sm font-medium text-white/90 flex items-center gap-1 relative z-10">
+                  <el-icon class="text-white"><Top /></el-icon> 最高分记录
                 </div>
-                <div class="mt-2 text-3xl font-black tracking-tight">{{ maxScoreText }}</div>
+                <div class="mt-2 text-3xl font-black tracking-tight text-white relative z-10">{{ maxScoreText }}</div>
               </div>
               
-              <div class="rounded-2xl p-5 text-white bg-gradient-to-br from-indigo-400 to-purple-600 shadow-lg shadow-indigo-200 dark:shadow-none relative overflow-hidden group">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
-                <div class="text-sm font-medium opacity-90 flex items-center gap-1">
-                  <el-icon><Bottom /></el-icon> 最低分记录
+              <div class="rounded-2xl p-5 bg-gradient-to-br from-indigo-400 to-purple-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none relative overflow-hidden group">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                <div class="text-sm font-medium text-white/90 flex items-center gap-1 relative z-10">
+                  <el-icon class="text-white"><Bottom /></el-icon> 最低分记录
                 </div>
-                <div class="mt-2 text-3xl font-black tracking-tight">{{ minScoreText }}</div>
+                <div class="mt-2 text-3xl font-black tracking-tight text-white relative z-10">{{ minScoreText }}</div>
               </div>
             </div>
 
@@ -210,7 +210,6 @@ import { computed, onMounted, ref } from 'vue'
 import { ArrowLeft, DataAnalysis, TrendCharts, Plus, DataLine, Top, Bottom, Calendar, Document } from '@element-plus/icons-vue'
 import router from '@/router'
 import dayjs from 'dayjs'
-import { useAuth } from '@/stores/auth'
 import { listScores, type ScoreRecord } from '@/services/scores'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -220,35 +219,10 @@ import { CanvasRenderer } from 'echarts/renderers'
 
 use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
-const auth = useAuth()
 const records = ref<ScoreRecord[]>([])
 
 const subjectFilter = ref('all')
 const dateRange = ref<[string, string] | null>(null)
-
-const displayName = computed(() => {
-  const u = auth.user
-  if (!u) return '未登录'
-  const n = (u.nickname || '').trim()
-  return n ? n : u.username
-})
-
-const ageText = computed(() => {
-  const b = auth.user?.child_birthday || ''
-  if (!b) return '未设置'
-  const d = dayjs(b)
-  if (!d.isValid()) return '未设置'
-  const years = dayjs().diff(d, 'year')
-  return years >= 0 ? `${years}岁` : '未设置'
-})
-
-const genderText = computed(() => {
-  const g = auth.user?.child_gender || ''
-  if (!g) return '未设置'
-  if (g === 'male') return '男'
-  if (g === 'female') return '女'
-  return '未设置'
-})
 
 const subjects = computed(() => Array.from(new Set(records.value.map((r) => r.subject))).filter(Boolean))
 
@@ -369,23 +343,6 @@ const subjectTrendOptions = computed(() => {
 
 function formatDate(d: string) {
   return dayjs(d).format('YYYY-MM-DD')
-}
-
-function subjectCardClass(subject: string) {
-  const map: Record<string, string> = {
-    语文: 'bg-amber-50/70 dark:bg-amber-500/10',
-    数学: 'bg-indigo-50/70 dark:bg-indigo-500/10',
-    英语: 'bg-emerald-50/70 dark:bg-emerald-500/10',
-    物理: 'bg-purple-50/70 dark:bg-purple-500/10',
-    化学: 'bg-rose-50/70 dark:bg-rose-500/10',
-    生物: 'bg-fuchsia-50/70 dark:bg-fuchsia-500/10',
-    历史: 'bg-yellow-50/70 dark:bg-yellow-500/10',
-    地理: 'bg-lime-50/70 dark:bg-lime-500/10',
-    政治: 'bg-teal-50/70 dark:bg-teal-500/10',
-    信息技术: 'bg-blue-50/70 dark:bg-blue-500/10',
-    科学: 'bg-cyan-50/70 dark:bg-cyan-500/10'
-  }
-  return map[subject] || 'bg-gray-50/70 dark:bg-gray-700/30'
 }
 
 function subjectBadgeClass(subject: string) {

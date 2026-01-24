@@ -74,8 +74,9 @@
           >
             <div class="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-amber-50 dark:bg-amber-900/20 transition-transform group-hover:scale-110"></div>
             <div class="relative z-10 flex flex-col items-center gap-2">
-              <div class="rounded-full bg-amber-100 p-2.5 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 shadow-sm">
-                <el-icon :size="20"><Trophy /></el-icon>
+              <div class="rounded-full bg-amber-100 p-2.5 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 shadow-sm relative">
+                <el-icon :size="20" class="text-amber-600 dark:text-amber-400"><TrophyBase /></el-icon>
+                <div class="absolute top-0 right-0 w-2.5 h-2.5 bg-amber-500 rounded-full border-2 border-white dark:border-gray-800"></div>
               </div>
               <span class="text-xs font-bold text-gray-700 dark:text-gray-200 tracking-wide">荣誉墙</span>
             </div>
@@ -87,8 +88,9 @@
           >
             <div class="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-emerald-50 dark:bg-emerald-900/20 transition-transform group-hover:scale-110"></div>
             <div class="relative z-10 flex flex-col items-center gap-2">
-              <div class="rounded-full bg-emerald-100 p-2.5 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 shadow-sm">
-                <el-icon :size="20"><TrendCharts /></el-icon>
+              <div class="rounded-full bg-emerald-100 p-2.5 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 shadow-sm relative">
+                <el-icon :size="20" class="text-emerald-600 dark:text-emerald-400 fill-current"><TrendCharts /></el-icon>
+                <div class="absolute top-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-gray-800"></div>
               </div>
               <span class="text-xs font-bold text-gray-700 dark:text-gray-200 tracking-wide">生长记录</span>
             </div>
@@ -256,7 +258,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Menu, Plus, Close, Files, Search, Calendar, Top, Trophy, TrendCharts, DataAnalysis } from '@element-plus/icons-vue'
+import { ArrowLeft, Menu, Plus, Close, Files, Search, Calendar, Top, TrophyBase, TrendCharts, DataAnalysis } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useLittleGrowthStore } from '@/stores/littleGrowth'
 import { useWindowSize, useDraggable, useStorage, useIntervalFn } from '@vueuse/core'

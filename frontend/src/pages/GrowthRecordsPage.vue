@@ -275,8 +275,6 @@ const typeConfig: Record<GrowthMetricType, { title: string; unit: string; unitNa
 
 const title = computed(() => typeConfig[type.value]?.title || '记录')
 const unit = computed(() => typeConfig[type.value]?.unit || '')
-const unitName = computed(() => typeConfig[type.value]?.unitName || '')
-
 const records = ref<GrowthMetricRecord[]>([])
 const pageSize = 10
 const currentPage = ref(1)
@@ -288,10 +286,6 @@ const formRight = ref<number | null>(null)
 const formRemark = ref('')
 const chartTab = ref<'week' | 'month' | 'year' | 'all'>('year')
 const activeDeleteId = ref<number | null>(null)
-
-function formatDate(d: string) {
-  return dayjs(d).format('YYYY-MM-DD')
-}
 
 function openDialog() {
   formDate.value = dayjs().format('YYYY-MM-DD')
