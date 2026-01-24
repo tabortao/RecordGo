@@ -1,75 +1,124 @@
 <template>
-  <div class="p-4 space-y-4">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <el-icon :size="18" class="cursor-pointer text-gray-600" @click="goBack"><ArrowLeft /></el-icon>
-        <h2 class="font-semibold">操作记录</h2>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 pb-20 transition-colors duration-300">
+    <!-- 顶部导航栏 -->
+    <div class="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <button 
+          @click="goBack"
+          class="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300">
+          <el-icon :size="20"><ArrowLeft /></el-icon>
+        </button>
+        <span class="font-bold text-lg text-gray-800 dark:text-gray-100">操作记录</span>
       </div>
       <div class="flex items-center gap-2">
-        <el-popover placement="bottom-end" trigger="click">
+        <el-popover placement="bottom-end" trigger="click" width="auto" :show-arrow="false" popper-class="!p-2 !rounded-xl !shadow-xl !border-gray-100 dark:!border-gray-800 dark:!bg-gray-900">
           <template #reference>
-            <el-button link type="primary">
-              <el-icon :size="18"><Filter /></el-icon>
-              <span class="ml-1">筛选</span>
-            </el-button>
+            <button class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 transition-colors">
+              <el-icon><Calendar /></el-icon>
+              <span>{{ dayjs(selectedDate).format('MM-DD') }}</span>
+            </button>
           </template>
-          <div class="space-y-2">
-            <div class="text-sm text-gray-500">按日期筛选</div>
-            <el-date-picker v-model="selectedDate" type="date" placeholder="选择日期" :editable="false" value-format="YYYY-MM-DD" />
+          <div class="space-y-2 p-1">
+            <div class="text-xs font-medium text-gray-500 dark:text-gray-400 px-1">选择日期</div>
+            <el-date-picker 
+              v-model="selectedDate" 
+              type="date" 
+              placeholder="选择日期" 
+              :editable="false" 
+              value-format="YYYY-MM-DD" 
+              :disabled-date="(d) => d > new Date()"
+              class="!w-full custom-date-picker"
+            />
           </div>
         </el-popover>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <el-card shadow="hover" class="rounded-lg">
-        <div class="flex items-center gap-2 mb-2">
-          <el-icon :size="18" style="color:#10b981"><CircleCheck /></el-icon>
-          <div class="font-semibold">任务完成记录</div>
-        </div>
-        <div v-if="taskRecords.length === 0" class="text-sm text-gray-500">无记录</div>
-        <div v-else class="space-y-2">
-          <div v-for="r in taskRecords" :key="r.key" class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <el-tag type="success" size="small">完成</el-tag>
-              <div class="font-medium">{{ r.name }}</div>
-              <div class="text-xs text-gray-500">{{ r.date }}</div>
+    <div class="max-w-4xl mx-auto p-4 md:p-6 space-y-6 animate-fade-in-up">
+      <!-- 任务完成记录 -->
+      <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-50 dark:border-gray-800/50 flex items-center justify-between bg-gradient-to-r from-green-50/50 to-transparent dark:from-green-900/10">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
+               <el-icon :size="20"><CircleCheck /></el-icon>
             </div>
-            <div class="flex items-center gap-1">
-              <el-icon :size="18" style="color:#f59e0b"><Coin /></el-icon>
-              <div class="font-semibold">+{{ r.coins }}</div>
+            <div>
+              <div class="font-bold text-gray-800 dark:text-gray-100">任务完成</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5" v-if="taskRecords.length > 0">
+                 共获得 <span class="text-orange-500 font-bold">+{{ taskTotalCoins }}</span> 金币
+              </div>
+            </div>
+          </div>
+          <el-tag v-if="taskRecords.length > 0" type="success" effect="light" round size="small">{{ taskRecords.length }} 项</el-tag>
+        </div>
+        
+        <div v-if="taskRecords.length === 0" class="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
+           <el-icon :size="48" class="mb-2 opacity-20"><CircleCheck /></el-icon>
+           <span class="text-sm">暂无完成记录</span>
+        </div>
+        
+        <div v-else class="divide-y divide-gray-50 dark:divide-gray-800/50">
+          <div v-for="r in taskRecords" :key="r.key" class="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-1.5 h-1.5 rounded-full bg-green-400"></div>
+              <div>
+                <div class="font-medium text-gray-800 dark:text-gray-200">{{ r.name }}</div>
+                <div class="text-xs text-gray-400 mt-0.5">{{ formatTime(r.date) }}</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 bg-orange-50 dark:bg-orange-900/10 px-2 py-1 rounded-lg border border-orange-100 dark:border-orange-900/20">
+              <el-icon :size="14" class="text-orange-500"><Coin /></el-icon>
+              <span class="font-bold text-orange-500 text-sm">+{{ r.coins }}</span>
             </div>
           </div>
         </div>
-      </el-card>
+      </div>
 
-      <el-card shadow="hover" class="rounded-lg">
-        <div class="flex items-center gap-2 mb-2">
-          <el-icon :size="18" style="color:#0ea5e9"><Document /></el-icon>
-          <div class="font-semibold">心愿兑换记录</div>
-        </div>
-        <div v-if="wishRecordsForDay.length === 0" class="text-sm text-gray-500">无记录</div>
-        <div v-else class="space-y-2">
-          <div v-for="w in wishRecordsForDay" :key="w.id" class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <el-tag type="warning" size="small">兑换</el-tag>
-              <div class="font-medium">{{ w.wish_name }}</div>
-              <div class="text-xs text-gray-500">{{ formatDate(w.created_at) }}</div>
+      <!-- 心愿兑换记录 -->
+      <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-50 dark:border-gray-800/50 flex items-center justify-between bg-gradient-to-r from-blue-50/50 to-transparent dark:from-blue-900/10">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+               <el-icon :size="20"><Present /></el-icon>
             </div>
-            <div class="flex items-center gap-1">
-              <el-icon :size="18" style="color:#ef4444"><Coin /></el-icon>
-              <div class="font-semibold">-{{ w.coins_used }}</div>
+            <div>
+              <div class="font-bold text-gray-800 dark:text-gray-100">心愿兑换</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5" v-if="wishRecordsForDay.length > 0">
+                 共消耗 <span class="text-gray-500 font-bold">-{{ wishTotalCoins }}</span> 金币
+              </div>
+            </div>
+          </div>
+          <el-tag v-if="wishRecordsForDay.length > 0" type="primary" effect="light" round size="small">{{ wishRecordsForDay.length }} 项</el-tag>
+        </div>
+        
+        <div v-if="wishRecordsForDay.length === 0" class="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
+           <el-icon :size="48" class="mb-2 opacity-20"><Present /></el-icon>
+           <span class="text-sm">暂无兑换记录</span>
+        </div>
+        
+        <div v-else class="divide-y divide-gray-50 dark:divide-gray-800/50">
+          <div v-for="w in wishRecordsForDay" :key="w.id" class="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+              <div>
+                <div class="font-medium text-gray-800 dark:text-gray-200">{{ w.wish_name }}</div>
+                <div class="text-xs text-gray-400 mt-0.5">{{ formatTime(w.created_at) }}</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700">
+              <el-icon :size="14" class="text-gray-500"><Coin /></el-icon>
+              <span class="font-bold text-gray-500 text-sm">-{{ w.coins_used }}</span>
             </div>
           </div>
         </div>
-      </el-card>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { ArrowLeft, CircleCheck, Coin, Document, Filter } from '@element-plus/icons-vue'
+import { ArrowLeft, CircleCheck, Coin, Present, Calendar } from '@element-plus/icons-vue'
 import router from '@/router'
 import dayjs from 'dayjs'
 import { listTaskOccurrences, listTasks, type TaskItem } from '@/services/tasks'
@@ -85,6 +134,10 @@ const wishRecords = ref<any[]>([])
 const allTasks = ref<TaskItem[]>([])
 
 function formatDate(ts: string) { return dayjs(ts).format('YYYY-MM-DD HH:mm') }
+function formatTime(ts: string) { return dayjs(ts).format('HH:mm') }
+
+const taskTotalCoins = computed(() => taskRecords.value.reduce((sum, r) => sum + r.coins, 0))
+const wishTotalCoins = computed(() => wishRecordsForDay.value.reduce((sum, w) => sum + w.coins_used, 0))
 
 async function loadTasksMap() {
   try {
@@ -146,4 +199,16 @@ watch(selectedDate, async () => { await loadTaskRecords(); await loadWishRecords
 </script>
 
 <style scoped>
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+
+:deep(.custom-date-picker .el-input__wrapper) {
+  box-shadow: none !important;
+  background-color: transparent !important;
+}
 </style>

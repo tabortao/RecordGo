@@ -1,145 +1,217 @@
 <template>
-  <!-- 中文注释：子账号管理页面，支持列表、创建、编辑、删除与令牌生成 -->
-  <div class="p-4 space-y-4">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <el-icon :size="18" class="cursor-pointer" title="返回" @click="router.push('/mine')"><ArrowLeft /></el-icon>
-        <el-icon :size="18" style="color:#22c55e"><User /></el-icon>
-        <span class="font-semibold">子账号管理</span>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 pb-20 transition-colors duration-300">
+    <!-- 顶部导航栏 -->
+    <div class="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <button 
+          @click="router.push('/mine')"
+          class="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300">
+          <el-icon :size="20"><ArrowLeft /></el-icon>
+        </button>
+        <span class="font-bold text-lg text-gray-800 dark:text-gray-100">子账号管理</span>
       </div>
-      <div class="text-sm text-gray-500">共 {{ children.length }} 个子账号</div>
+      <el-button v-if="allowManage" type="primary" size="small" @click="openCreate" class="!rounded-lg !px-4">
+        <el-icon class="mr-1"><Plus /></el-icon>创建
+      </el-button>
     </div>
-    <el-card shadow="never">
 
+    <div class="max-w-4xl mx-auto p-4 md:p-6 animate-fade-in-up">
       <!-- 权限不足提示 -->
-      <div v-if="!allowManage" class="py-6">
-        <div class="text-gray-700 mb-3">当前权限不允许管理子账号。</div>
-        <el-button type="primary" @click="router.push('/mine')">返回我的</el-button>
+      <div v-if="!allowManage" class="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+        <div class="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4 text-gray-400">
+          <el-icon :size="40"><Lock /></el-icon>
+        </div>
+        <div class="text-gray-600 dark:text-gray-400 font-medium mb-4">当前权限不允许管理子账号</div>
+        <el-button type="primary" @click="router.push('/mine')" class="!rounded-lg">返回个人中心</el-button>
       </div>
 
       <div v-else>
-        <div class="flex justify-between items-center mb-3">
-          <div class="text-gray-600 text-sm">提示：令牌登录仅限子账号使用。</div>
-          <el-button type="success" @click="openCreate">创建子账号</el-button>
+        <!-- 统计与提示 -->
+        <div class="flex items-center justify-between mb-4 px-1">
+          <div class="text-sm text-gray-500 dark:text-gray-400">共 {{ children.length }} 个子账号</div>
+          <div class="text-xs text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded border border-orange-100 dark:border-orange-900/30">
+            提示：令牌登录仅限子账号使用
+          </div>
         </div>
 
-          <el-table :data="children" v-loading="loading" border>
-          <el-table-column label="头像" width="80">
-            <template #default="{ row }">
-              <el-avatar :size="36" :src="avatarsMap[row.id] || defaultAvatar" />
-            </template>
-          </el-table-column>
-          <el-table-column prop="nickname" label="昵称" min-width="140" />
-          <el-table-column label="权限 JSON" min-width="220">
-            <template #default="{ row }">
-              <div class="text-xs text-gray-600 break-words">{{ row.permissions?.trim() || '{"view_only":true}' }}</div>
-            </template>
-          </el-table-column>
-          <el-table-column label="令牌" min-width="360">
-            <template #default="{ row }">
-              <div class="flex items-center gap-2">
-                <el-input v-model="row.login_token" placeholder="未生成" readonly class="flex-1" />
-                <el-select v-model="expiresMap[row.id]" size="small" style="width:120px" placeholder="有效期">
-                  <el-option label="永久" :value="0" />
-                  <el-option label="1小时" :value="3600" />
-                  <el-option label="24小时" :value="86400" />
-                  <el-option label="7天" :value="604800" />
-                </el-select>
-                <el-button size="small" @click="copy(row.login_token)" :disabled="!row.login_token">复制</el-button>
-                <el-button size="small" type="primary" @click="refreshToken(row)">刷新令牌</el-button>
+        <!-- 子账号列表 (卡片式) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div v-for="row in children" :key="row.id" 
+            class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col">
+            
+            <div class="p-5 flex items-center gap-4 border-b border-gray-50 dark:border-gray-800/50">
+              <el-avatar :size="56" :src="avatarsMap[row.id] || defaultAvatar" class="border-2 border-white dark:border-gray-800 shadow-sm" />
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-lg text-gray-800 dark:text-gray-100 truncate">{{ row.nickname }}</div>
+                <div class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                  <el-icon><Key /></el-icon>
+                  <span>ID: {{ row.id }}</span>
+                </div>
               </div>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="180">
-            <template #default="{ row }">
-              <div class="flex items-center gap-2">
-                <el-button size="small" @click="openEdit(row)">编辑</el-button>
-                <el-button size="small" type="danger" @click="onDelete(row)">删除</el-button>
+              <el-dropdown trigger="click">
+                <button class="p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-400">
+                  <el-icon :size="20"><MoreFilled /></el-icon>
+                </button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="openEdit(row)"><el-icon><Edit /></el-icon>编辑信息</el-dropdown-item>
+                    <el-dropdown-item divided class="text-red-500" @click="onDelete(row)"><el-icon><Delete /></el-icon>删除账号</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
+
+            <div class="p-5 flex-1 flex flex-col gap-4">
+              <!-- 权限概览 -->
+              <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3">
+                <div class="text-xs font-medium text-gray-500 mb-2">权限配置</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400 break-all font-mono leading-relaxed line-clamp-2">
+                  {{ row.permissions?.trim() || '{"view_only":true}' }}
+                </div>
               </div>
-            </template>
-          </el-table-column>
-        </el-table>
+
+              <!-- 令牌管理 -->
+              <div class="mt-auto">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-medium text-gray-500">登录令牌</span>
+                  <div class="flex gap-2">
+                     <el-select v-model="expiresMap[row.id]" size="small" style="width:90px" placeholder="有效期" class="custom-tiny-select">
+                        <el-option label="永久" :value="0" />
+                        <el-option label="1小时" :value="3600" />
+                        <el-option label="24小时" :value="86400" />
+                        <el-option label="7天" :value="604800" />
+                      </el-select>
+                      <button @click="refreshToken(row)" class="text-xs text-blue-500 hover:text-blue-600 font-medium">刷新</button>
+                  </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                  <div class="flex-1 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2 text-xs text-gray-600 dark:text-gray-300 font-mono truncate border border-gray-100 dark:border-gray-700">
+                    {{ row.login_token || '未生成' }}
+                  </div>
+                  <button 
+                    @click="copy(row.login_token)" 
+                    :disabled="!row.login_token"
+                    class="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    <el-icon><CopyDocument /></el-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 创建卡片 (如果没有数据时显示) -->
+          <button v-if="children.length === 0 && !loading" @click="openCreate" class="flex flex-col items-center justify-center h-64 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl hover:border-blue-400 hover:bg-blue-50/50 dark:hover:border-blue-800 dark:hover:bg-blue-900/10 transition-all group">
+             <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-blue-500 mb-4 group-hover:scale-110 transition-transform">
+                <el-icon :size="32"><Plus /></el-icon>
+             </div>
+             <span class="font-medium text-gray-600 dark:text-gray-400">创建第一个子账号</span>
+          </button>
+        </div>
       </div>
-    </el-card>
+    </div>
 
     <!-- 创建/编辑 子账号弹窗 -->
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑子账号' : '创建子账号'" :width="isMobile ? '92vw' : '720px'">
-      <el-form label-position="top" @submit.prevent>
-        <el-form-item label="昵称" required>
-          <el-input v-model="form.nickname" placeholder="请输入子账号昵称" />
-        </el-form-item>
-        <!-- 中文注释：头像上传（前端转 webp），创建时先暂存，保存后再上传并写入子账号头像路径 -->
-        <el-form-item label="头像">
-          <div class="flex items-center gap-3">
-            <el-avatar :size="48" :src="avatarPreview || avatarDialogSrc" />
-            <el-button size="small" @click="triggerAvatarPick">选择头像</el-button>
+    <el-dialog 
+      v-model="dialogVisible" 
+      :title="isEdit ? '编辑子账号' : '创建子账号'" 
+      :width="isMobile ? '95vw' : '680px'"
+      class="rounded-2xl overflow-hidden custom-dialog"
+      append-to-body
+    >
+      <el-form label-position="top" @submit.prevent class="max-h-[70vh] overflow-y-auto px-1">
+        <!-- 基础信息 -->
+        <div class="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-6 mb-6">
+          <div class="flex flex-col items-center gap-2">
+            <div class="relative group cursor-pointer" @click="triggerAvatarPick">
+               <el-avatar :size="80" :src="avatarPreview || avatarDialogSrc" class="border shadow-sm" />
+               <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs">更换</div>
+            </div>
+            <div v-if="avatarPreview" class="text-xs text-red-500 cursor-pointer" @click="clearAvatar">移除</div>
             <input ref="avatarInput" type="file" accept="image/*" class="hidden" @change="onAvatarPicked" />
-            <el-button v-if="avatarPreview" size="small" @click="clearAvatar">移除</el-button>
           </div>
-          <div class="text-xs text-gray-500 mt-1">前端自动转换为 webp；建议小于 2MB。</div>
-        </el-form-item>
-        <el-form-item label="权限模板（可选）">
-          <div class="flex items-center gap-3">
-            <el-select v-model="permTemplate" placeholder="选择模板以快速填充" style="width:240px" @change="applyTemplate">
-              <el-option label="仅查看" value="view_only" />
-              <el-option label="可完成任务（仅状态）" value="tasks_status" />
-              <el-option label="任务增删改查" value="tasks_full" />
-              <el-option label="全部权限" value="full" />
-            </el-select>
-            <span class="text-xs text-gray-500">选择后可在下方勾选微调</span>
-          </div>
-        </el-form-item>
-
-        <!-- 中文注释：勾选式权限编辑（模块/动作粒度） -->
-        <el-form-item label="基础权限">
-          <el-checkbox v-model="permModel.view_only">仅查看（禁用所有操作）</el-checkbox>
-        </el-form-item>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="rounded border p-3">
-            <div class="font-medium mb-2">账户</div>
-            <el-checkbox v-model="permModel.account.manage_children" :disabled="permModel.view_only">管理子账号</el-checkbox>
-          </div>
-          <div class="rounded border p-3">
-            <div class="font-medium mb-2">任务</div>
-            <div class="space-y-1">
-              <el-checkbox v-model="permModel.tasks.create" :disabled="permModel.view_only">创建</el-checkbox>
-              <el-checkbox v-model="permModel.tasks.edit" :disabled="permModel.view_only">编辑</el-checkbox>
-              <el-checkbox v-model="permModel.tasks.delete" :disabled="permModel.view_only">删除</el-checkbox>
-              <el-checkbox v-model="permModel.tasks.status" :disabled="permModel.view_only">更改状态</el-checkbox>
-            </div>
-          </div>
-          <div class="rounded border p-3">
-            <div class="font-medium mb-2">心愿</div>
-            <div class="space-y-1">
-              <el-checkbox v-model="permModel.wishes.create" :disabled="permModel.view_only">创建</el-checkbox>
-              <el-checkbox v-model="permModel.wishes.edit" :disabled="permModel.view_only">编辑</el-checkbox>
-              <el-checkbox v-model="permModel.wishes.delete" :disabled="permModel.view_only">删除</el-checkbox>
-              <el-checkbox v-model="permModel.wishes.exchange" :disabled="permModel.view_only">兑换</el-checkbox>
-            </div>
+          
+          <div class="space-y-4">
+            <el-form-item label="昵称" required class="!mb-0">
+              <el-input v-model="form.nickname" placeholder="请输入子账号昵称" size="large" />
+            </el-form-item>
+            
+            <el-form-item label="快速模板" class="!mb-0">
+              <el-select v-model="permTemplate" placeholder="选择权限模板" @change="applyTemplate" size="large">
+                <el-option label="仅查看" value="view_only" />
+                <el-option label="可完成任务（仅状态）" value="tasks_status" />
+                <el-option label="任务增删改查" value="tasks_full" />
+                <el-option label="全部权限" value="full" />
+              </el-select>
+            </el-form-item>
           </div>
         </div>
 
-        <!-- 中文注释：设置权限分组（控制“我的”页设置入口）-->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-          <div class="rounded border p-3">
-            <div class="font-medium mb-2">设置（系统）</div>
-            <div class="space-y-1">
-              <el-checkbox v-model="permModel.settings.tomato">番茄钟设置</el-checkbox>
-              <el-checkbox v-model="permModel.settings.tasks" :disabled="permModel.view_only">任务设置</el-checkbox>
-              <el-checkbox v-model="permModel.settings.coins" :disabled="permModel.view_only">金币设置</el-checkbox>
-              <el-checkbox v-model="permModel.settings.reading">朗读设置</el-checkbox>
+        <el-divider content-position="left">详细权限配置</el-divider>
+
+        <!-- 权限配置 -->
+        <div class="space-y-4">
+          <div class="flex items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
+             <el-checkbox v-model="permModel.view_only" size="large">
+               <span class="font-medium">仅查看模式</span>
+               <span class="text-xs text-gray-500 ml-2">禁用所有增删改操作</span>
+             </el-checkbox>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- 账户权限 -->
+            <div class="p-4 border border-gray-100 dark:border-gray-700 rounded-xl hover:shadow-sm transition-shadow">
+              <div class="font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
+                <el-icon class="text-blue-500"><User /></el-icon>账户权限
+              </div>
+              <el-checkbox v-model="permModel.account.manage_children" :disabled="permModel.view_only">管理子账号</el-checkbox>
             </div>
-            <div class="text-xs text-gray-500 mt-2">提示：仅查看模式下“任务设置/金币设置”不可用。</div>
+
+            <!-- 任务权限 -->
+            <div class="p-4 border border-gray-100 dark:border-gray-700 rounded-xl hover:shadow-sm transition-shadow">
+              <div class="font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
+                <el-icon class="text-green-500"><List /></el-icon>任务权限
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <el-checkbox v-model="permModel.tasks.create" :disabled="permModel.view_only">创建</el-checkbox>
+                <el-checkbox v-model="permModel.tasks.edit" :disabled="permModel.view_only">编辑</el-checkbox>
+                <el-checkbox v-model="permModel.tasks.delete" :disabled="permModel.view_only">删除</el-checkbox>
+                <el-checkbox v-model="permModel.tasks.status" :disabled="permModel.view_only">状态</el-checkbox>
+              </div>
+            </div>
+
+            <!-- 心愿权限 -->
+            <div class="p-4 border border-gray-100 dark:border-gray-700 rounded-xl hover:shadow-sm transition-shadow">
+              <div class="font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
+                <el-icon class="text-purple-500"><Present /></el-icon>心愿权限
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <el-checkbox v-model="permModel.wishes.create" :disabled="permModel.view_only">创建</el-checkbox>
+                <el-checkbox v-model="permModel.wishes.edit" :disabled="permModel.view_only">编辑</el-checkbox>
+                <el-checkbox v-model="permModel.wishes.delete" :disabled="permModel.view_only">删除</el-checkbox>
+                <el-checkbox v-model="permModel.wishes.exchange" :disabled="permModel.view_only">兑换</el-checkbox>
+              </div>
+            </div>
+
+            <!-- 设置权限 -->
+            <div class="p-4 border border-gray-100 dark:border-gray-700 rounded-xl hover:shadow-sm transition-shadow">
+              <div class="font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
+                <el-icon class="text-orange-500"><Setting /></el-icon>设置访问
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <el-checkbox v-model="permModel.settings.tomato">番茄钟</el-checkbox>
+                <el-checkbox v-model="permModel.settings.tasks" :disabled="permModel.view_only">任务</el-checkbox>
+                <el-checkbox v-model="permModel.settings.coins" :disabled="permModel.view_only">金币</el-checkbox>
+                <el-checkbox v-model="permModel.settings.reading">朗读</el-checkbox>
+              </div>
+            </div>
           </div>
         </div>
-
-        <div class="text-xs text-gray-500 mt-3">提交时将自动生成与后端一致的权限 JSON。</div>
       </el-form>
       <template #footer>
-        <div class="flex justify-end gap-2">
-          <el-button @click="dialogVisible=false">取消</el-button>
-          <el-button type="primary" @click="submit">{{ isEdit ? '保存' : '创建' }}</el-button>
+        <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+          <el-button @click="dialogVisible=false" class="!rounded-lg">取消</el-button>
+          <el-button type="primary" @click="submit" class="!rounded-lg px-6">{{ isEdit ? '保存修改' : '立即创建' }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -157,7 +229,7 @@ import { usePermissions } from '@/composables/permissions'
 import { listSubAccounts, createSubAccount, updateSubAccount, deleteSubAccount, generateChildToken, type ChildAccount } from '@/services/subaccounts'
 import { prepareUpload } from '@/utils/image'
 import { uploadAvatar } from '@/services/user'
-import { ArrowLeft, User } from '@element-plus/icons-vue'
+import { ArrowLeft, User, Plus, MoreFilled, Key, Edit, Delete, CopyDocument, Lock, List, Present, Setting } from '@element-plus/icons-vue'
 
 // 中文注释：权限校验（家长允许；子账号需具备 account.manage_children）
 const { isParent, manageChildren } = usePermissions()
@@ -437,4 +509,34 @@ onMounted(() => { loadList() })
 </script>
 
 <style scoped>
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+
+:deep(.custom-tiny-select .el-input__wrapper) {
+  padding: 0 4px !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+:deep(.custom-dialog .el-dialog__body) {
+  padding: 20px 24px !important;
+}
+
+:deep(.el-checkbox.is-bordered) {
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+:deep(.el-checkbox.is-bordered.is-checked) {
+  background-color: #eff6ff;
+  border-color: #3b82f6;
+}
+:deep(.dark .el-checkbox.is-bordered.is-checked) {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+}
 </style>
