@@ -66,65 +66,122 @@
     <!-- Main Content (Timeline) -->
     <div class="flex-1 overflow-y-auto p-4 pb-24 relative dark:bg-gray-900 bg-[#F5F7FA] px-0 sm:px-4 pt-16" ref="scrollContainer" @scroll="handleScroll">
       <div class="max-w-2xl mx-auto w-full">
-        <!-- 中文注释：快捷入口按钮组（荣誉/生长/成绩） -->
-        <div class="grid grid-cols-3 gap-2 px-4 mb-3 sm:px-0">
+        <!-- 快捷入口卡片 -->
+        <div class="grid grid-cols-3 gap-3 px-4 mb-8 sm:px-0">
           <button
-            class="flex items-center justify-center gap-1 rounded-xl border border-amber-100 bg-amber-50 text-amber-700 px-3 py-2 text-xs font-semibold shadow-sm transition hover:shadow-md dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200"
+            class="group relative overflow-hidden rounded-2xl bg-white p-3 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
             @click="router.push('/honors')"
           >
-            <el-icon :size="16"><Trophy /></el-icon>
-            <span>荣誉</span>
+            <div class="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-amber-50 dark:bg-amber-900/20 transition-transform group-hover:scale-110"></div>
+            <div class="relative z-10 flex flex-col items-center gap-2">
+              <div class="rounded-full bg-amber-100 p-2.5 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 shadow-sm">
+                <el-icon :size="20"><Trophy /></el-icon>
+              </div>
+              <span class="text-xs font-bold text-gray-700 dark:text-gray-200 tracking-wide">荣誉墙</span>
+            </div>
           </button>
+          
           <button
-            class="flex items-center justify-center gap-1 rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-700 px-3 py-2 text-xs font-semibold shadow-sm transition hover:shadow-md dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-200"
+            class="group relative overflow-hidden rounded-2xl bg-white p-3 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
             @click="router.push('/growth')"
           >
-            <el-icon :size="16"><TrendCharts /></el-icon>
-            <span>生长</span>
+            <div class="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-emerald-50 dark:bg-emerald-900/20 transition-transform group-hover:scale-110"></div>
+            <div class="relative z-10 flex flex-col items-center gap-2">
+              <div class="rounded-full bg-emerald-100 p-2.5 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 shadow-sm">
+                <el-icon :size="20"><TrendCharts /></el-icon>
+              </div>
+              <span class="text-xs font-bold text-gray-700 dark:text-gray-200 tracking-wide">生长记录</span>
+            </div>
           </button>
+          
           <button
-            class="flex items-center justify-center gap-1 rounded-xl border border-blue-100 bg-blue-50 text-blue-700 px-3 py-2 text-xs font-semibold shadow-sm transition hover:shadow-md dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-200"
+            class="group relative overflow-hidden rounded-2xl bg-white p-3 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
             @click="router.push('/grades')"
           >
-            <el-icon :size="16"><DataAnalysis /></el-icon>
-            <span>成绩</span>
+            <div class="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-blue-50 dark:bg-blue-900/20 transition-transform group-hover:scale-110"></div>
+            <div class="relative z-10 flex flex-col items-center gap-2">
+              <div class="rounded-full bg-blue-100 p-2.5 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 shadow-sm">
+                <el-icon :size="20"><DataAnalysis /></el-icon>
+              </div>
+              <span class="text-xs font-bold text-gray-700 dark:text-gray-200 tracking-wide">成绩分析</span>
+            </div>
           </button>
         </div>
+
         <template v-if="hasRecords">
-          <div v-if="hasPinnedRecords" class="mb-2">
-            <TimelineCard 
-              v-for="record in (pinnedRecords as unknown as import('@/stores/littleGrowth').GrowthRecord[])"
-              :key="record.id"
-              :record="record"
-              :allTags="store.flattenedTags"
-              :searchQuery="getSearchQuery()"
-              @edit="handleEdit"
-              @delete="handleDelete"
-              @pin="handlePin"
-              @filter-tag="handleTagSelect"
-              @toggle-favorite="handleToggleFavorite"
-              @add-comment="handleAddComment"
-            />
+          <!-- 置顶记录 -->
+          <div v-if="hasPinnedRecords" class="mb-8 px-4 sm:px-0">
+             <div class="flex items-center gap-2 mb-3 text-purple-600 dark:text-purple-400">
+                <el-icon><Top /></el-icon>
+                <span class="text-sm font-bold">置顶回忆</span>
+             </div>
+             <div class="space-y-4">
+                <TimelineCard 
+                  v-for="record in (pinnedRecords as unknown as import('@/stores/littleGrowth').GrowthRecord[])"
+                  :key="record.id"
+                  :record="record"
+                  :allTags="store.flattenedTags"
+                  :searchQuery="getSearchQuery()"
+                  @edit="handleEdit"
+                  @delete="handleDelete"
+                  @pin="handlePin"
+                  @filter-tag="handleTagSelect"
+                  @toggle-favorite="handleToggleFavorite"
+                  @add-comment="handleAddComment"
+                />
+             </div>
           </div>
-          <div v-for="year in sortedYears" :key="year" :id="'year-' + String(year)">
-            <div
-              v-for="month in (sortedMonthsByYear[year] || [])"
-              :key="month"
-              :id="'month-' + String(year) + '-' + String(month)"
-            >
-              <TimelineCard
-                v-for="record in (groupedRecords[year]?.[month] || [])"
-                :key="record.id"
-                :record="record"
-                :allTags="store.flattenedTags"
-                :searchQuery="getSearchQuery()"
-                @edit="handleEdit"
-                @delete="handleDelete"
-                @pin="handlePin"
-                @filter-tag="handleTagSelect"
-                @toggle-favorite="handleToggleFavorite"
-                @add-comment="handleAddComment"
-              />
+
+          <!-- 时间轴列表 -->
+          <div class="relative">
+            <!-- 桌面端左侧连接线 -->
+            <div class="absolute left-8 top-4 bottom-0 w-0.5 bg-gradient-to-b from-purple-200 via-purple-100 to-transparent dark:from-purple-900/40 dark:via-purple-900/20 hidden sm:block"></div>
+
+            <div v-for="year in sortedYears" :key="year" :id="'year-' + String(year)" class="relative mb-12">
+                <!-- 年份标题 (Sticky) -->
+                <div class="sticky top-[72px] z-10 mb-6 pl-4 sm:pl-16 transition-all duration-300">
+                    <span class="inline-block rounded-full bg-white/90 px-5 py-1.5 text-2xl font-black text-gray-800 shadow-sm backdrop-blur-md dark:bg-gray-800/90 dark:text-white border border-gray-100 dark:border-gray-700">
+                        {{ year }}<span class="text-sm font-normal text-gray-500 ml-1">年</span>
+                    </span>
+                </div>
+
+                <div
+                  v-for="month in (sortedMonthsByYear[year] || [])"
+                  :key="month"
+                  :id="'month-' + String(year) + '-' + String(month)"
+                  class="mb-8 relative"
+                >
+                  <!-- 月份标记 -->
+                  <div class="mb-4 flex items-center gap-4 pl-4 sm:pl-0">
+                      <!-- Desktop: 圆形月份标 -->
+                      <div class="hidden sm:flex h-16 w-16 items-center justify-center rounded-full border-[6px] border-[#F5F7FA] bg-white text-purple-600 shadow-sm z-10 dark:border-gray-900 dark:bg-gray-800 dark:text-purple-400">
+                          <span class="text-lg font-bold">{{ month }}月</span>
+                      </div>
+                      
+                      <!-- Mobile: 胶囊月份标 -->
+                      <div class="sm:hidden flex items-center gap-2">
+                          <div class="h-6 w-1.5 rounded-full bg-purple-500"></div>
+                          <span class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ month }}月</span>
+                      </div>
+                  </div>
+
+                  <!-- 卡片列表容器 -->
+                  <div class="px-4 sm:px-0 sm:pl-24 space-y-6">
+                      <TimelineCard
+                        v-for="record in (groupedRecords[year]?.[month] || [])"
+                        :key="record.id"
+                        :record="record"
+                        :allTags="store.flattenedTags"
+                        :searchQuery="getSearchQuery()"
+                        @edit="handleEdit"
+                        @delete="handleDelete"
+                        @pin="handlePin"
+                        @filter-tag="handleTagSelect"
+                        @toggle-favorite="handleToggleFavorite"
+                        @add-comment="handleAddComment"
+                      />
+                  </div>
+                </div>
             </div>
           </div>
         </template>

@@ -1,43 +1,53 @@
 <template>
   <div 
-    class="bg-white rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] transition-shadow duration-300 mb-4 dark:bg-gray-800 group"
+    class="relative bg-white rounded-3xl p-5 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 dark:bg-gray-800 dark:border-gray-700 group overflow-hidden"
   >
+    <!-- Decoration -->
+    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/10 dark:to-blue-900/10 rounded-bl-full -z-0 opacity-50"></div>
+
     <!-- Header -->
-    <div class="flex justify-between items-start mb-2">
+    <div class="flex justify-between items-start mb-3 relative z-10">
       <div class="flex items-center gap-3">
-         <el-avatar :size="40" :src="avatarUrl" class="flex-shrink-0 border border-gray-100 dark:border-gray-700" />
+         <div class="relative">
+           <el-avatar :size="44" :src="avatarUrl" class="flex-shrink-0 border-2 border-white shadow-sm dark:border-gray-700" />
+           <div v-if="record.is_pinned" class="absolute -top-1 -right-1 bg-amber-400 text-white rounded-full p-0.5 shadow-sm">
+             <el-icon :size="10"><Top /></el-icon>
+           </div>
+         </div>
          <div class="flex flex-col">
-            <span class="text-sm font-bold text-gray-800 dark:text-gray-100 leading-tight">{{ nickname }}</span>
-            <div class="text-xs text-gray-400 dark:text-gray-500 inline-flex items-center gap-1 mt-0.5">
-               <span>{{ formatDateBadge(record.date) }} {{ formatTime(record.date) }}</span>
-               <el-icon v-if="record.is_pinned" class="text-purple-500"><Top /></el-icon>
+            <span class="text-base font-bold text-gray-800 dark:text-gray-100 leading-tight">{{ nickname }}</span>
+            <div class="text-xs text-gray-400 dark:text-gray-500 inline-flex items-center gap-1 mt-0.5 font-medium">
+               <span>{{ formatDateBadge(record.date) }}</span>
+               <span class="w-0.5 h-0.5 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+               <span>{{ formatTime(record.date) }}</span>
             </div>
          </div>
       </div>
       
-      <div class="flex items-center gap-1 transition-opacity" :class="record.is_favorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'">
-        <!-- Favorite Icon (left) -->
-        <div class="inline-flex items-center h-5 px-1 rounded cursor-pointer hover:bg-black/5 transition-colors" @click.stop="$emit('toggle-favorite', record.id)">
-          <el-icon :size="16" :class="record.is_favorite ? 'text-yellow-400' : 'text-gray-400'">
+      <div class="flex items-center gap-1">
+        <!-- Favorite Icon -->
+        <div 
+          class="inline-flex items-center justify-center w-8 h-8 rounded-full cursor-pointer transition-all active:scale-90" 
+          :class="record.is_favorite ? 'bg-yellow-50 text-yellow-400 dark:bg-yellow-900/20' : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500 dark:hover:bg-gray-700'"
+          @click.stop="$emit('toggle-favorite', record.id)"
+        >
+          <el-icon :size="18">
             <StarFilled v-if="record.is_favorite" />
             <Star v-else />
           </el-icon>
         </div>
-        <!-- Comment Icon -->
-        <div class="inline-flex items-center h-5 px-1 rounded cursor-pointer hover:bg-black/5 transition-colors" @click.stop="toggleCommentBox">
-          <el-icon :size="16" class="text-gray-400"><ChatDotSquare /></el-icon>
-        </div>
-
+        
+        <!-- More Actions -->
         <el-dropdown trigger="click" @command="handleCommand">
-          <div class="inline-flex items-center h-5 px-1 rounded cursor-pointer hover:bg-black/5 transition-colors">
-            <el-icon :size="16" class="text-gray-400"><MoreFilled /></el-icon>
+          <div class="inline-flex items-center justify-center w-8 h-8 rounded-full cursor-pointer hover:bg-gray-100 text-gray-400 transition-colors dark:hover:bg-gray-700">
+            <el-icon :size="18"><MoreFilled /></el-icon>
           </div>
           <template #dropdown>
-            <el-dropdown-menu>
+            <el-dropdown-menu class="rounded-xl overflow-hidden">
               <el-dropdown-item command="pin" :icon="Top">{{ record.is_pinned ? '取消置顶' : '置顶' }}</el-dropdown-item>
-              <el-dropdown-item command="copy" :icon="CopyDocument">复制</el-dropdown-item>
-              <el-dropdown-item command="edit" :icon="Edit">编辑</el-dropdown-item>
-              <el-dropdown-item command="delete" :icon="Delete" class="text-red-500">删除</el-dropdown-item>
+              <el-dropdown-item command="copy" :icon="CopyDocument">复制内容</el-dropdown-item>
+              <el-dropdown-item command="edit" :icon="Edit">编辑记录</el-dropdown-item>
+              <el-dropdown-item command="delete" :icon="Delete" class="text-red-500">删除记录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -45,26 +55,26 @@
     </div>
 
     <!-- Content -->
-    <div class="mb-1">
-      <p v-if="!searchQuery" class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-base">{{ record.content }}</p>
-      <p v-else class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-base" v-html="highlightedContent"></p>
+    <div class="mb-3 relative z-10 pl-[56px]">
+      <p v-if="!searchQuery" class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-[15px]">{{ record.content }}</p>
+      <p v-else class="text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed text-[15px]" v-html="highlightedContent"></p>
     </div>
 
     <!-- Gallery -->
-    <div v-if="record.images && record.images.length > 0" class="mb-1">
+    <div v-if="record.images && record.images.length > 0" class="mb-3 pl-[56px] relative z-10">
       <div class="grid gap-2" :class="gridClass">
         <div 
           v-for="(img, index) in record.images" 
           :key="index"
-          class="relative overflow-hidden rounded-xl group"
+          class="relative overflow-hidden rounded-2xl group/img bg-gray-100 dark:bg-gray-900"
           :class="imgClass()"
         >
           <el-image 
             :src="img" 
             :preview-src-list="record.images"
             :initial-index="index"
-            fit="contain" 
-            class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+            fit="cover" 
+            class="w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-110"
             loading="lazy"
             hide-on-click-modal
             preview-teleported
@@ -73,21 +83,31 @@
       </div>
     </div>
 
-    <!-- Footer: Tags -->
-    <div v-if="displayTags.length > 0" class="flex flex-wrap gap-2 mt-3 mb-2">
-      <span 
-        v-for="tag in displayTags" 
-        :key="tag.id"
-        class="px-2.5 py-1 rounded-full text-xs leading-none font-medium transition-colors cursor-pointer"
-        :style="getTagStyle(tag.color)"
-        @click.stop="$emit('filter-tag', tag.id)"
-      >
-        {{ tag.name }}
-      </span>
+    <!-- Footer: Tags & Comments Trigger -->
+    <div class="flex items-center justify-between pl-[56px] mt-2 relative z-10">
+        <div class="flex flex-wrap gap-2">
+          <span 
+            v-for="tag in displayTags" 
+            :key="tag.id"
+            class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer hover:opacity-80 active:scale-95"
+            :style="getTagStyle(tag.color)"
+            @click.stop="$emit('filter-tag', tag.id)"
+          >
+            # {{ tag.name }}
+          </span>
+        </div>
+        
+        <div 
+            class="flex items-center gap-1.5 text-gray-400 hover:text-purple-600 cursor-pointer transition-colors text-xs font-medium px-2 py-1 rounded-full hover:bg-purple-50 dark:hover:bg-purple-900/20"
+            @click.stop="toggleCommentBox"
+        >
+            <el-icon :size="14"><ChatDotSquare /></el-icon>
+            <span>{{ record.comments?.length ? record.comments.length : '评论' }}</span>
+        </div>
     </div>
 
     <!-- Comments Section -->
-    <div v-if="(record.comments && record.comments.length > 0) || showInput" class="mt-2 bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 relative">
+    <div v-if="(record.comments && record.comments.length > 0) || showInput" class="mt-4 ml-[56px] bg-gray-50/80 dark:bg-gray-900/50 rounded-2xl p-4 relative z-10 border border-gray-100 dark:border-gray-700/50">
         <!-- Triangle indicator (optional, omitted for simplicity) -->
         
         <!-- Comments List -->
@@ -250,11 +270,6 @@ const formatTime = (dateStr?: string) => {
   }
   return ''
 }
-
-const textColorClass = computed(() => {
-  return 'text-gray-600 dark:text-gray-300'
-})
-
 
  function hexToRgba(hex: string, alpha: number) {
     let c: any;
