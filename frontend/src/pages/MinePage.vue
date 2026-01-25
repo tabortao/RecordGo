@@ -86,16 +86,35 @@
              <div class="w-1 h-4 bg-orange-500 rounded-full shadow-sm"></div>
              <span class="font-bold text-gray-800 dark:text-gray-100 text-sm">数据管理</span>
           </div>
-          <div class="p-1 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-             <button class="flex flex-col items-center justify-center py-4 rounded-xl bg-gray-50 dark:bg-gray-700/30 hover:bg-orange-50 dark:hover:bg-gray-700 transition-colors group" @click="router.push('/data/records')">
-                <el-icon :size="24" class="text-orange-500 mb-2 group-hover:scale-110 transition-transform"><List /></el-icon>
-                <span class="text-xs font-medium text-gray-600 dark:text-gray-300">操作记录</span>
+         <div class="p-1">
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-1">
+             <button
+               class="group w-full flex items-center justify-between px-3 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 active:scale-[0.99] transition-all duration-200"
+               @click="router.push('/data/records')"
+             >
+               <div class="flex items-center gap-3">
+                 <div class="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
+                   <el-icon :size="16"><List /></el-icon>
+                 </div>
+                 <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">操作记录</span>
+               </div>
+               <el-icon class="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 transition-colors"><ArrowRight /></el-icon>
              </button>
-             <button class="flex flex-col items-center justify-center py-4 rounded-xl bg-gray-50 dark:bg-gray-700/30 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors group" @click="showClearDialog = true">
-                <el-icon :size="24" class="text-red-500 mb-2 group-hover:scale-110 transition-transform"><SwitchButton /></el-icon>
-                <span class="text-xs font-medium text-gray-600 dark:text-gray-300">清除数据</span>
+
+             <button
+               class="group w-full flex items-center justify-between px-3 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 active:scale-[0.99] transition-all duration-200"
+               @click="showClearDialog = true"
+             >
+               <div class="flex items-center gap-3">
+                 <div class="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
+                   <el-icon :size="16"><SwitchButton /></el-icon>
+                 </div>
+                 <span class="text-gray-700 dark:text-gray-200 font-medium text-sm">清除数据</span>
+               </div>
+               <el-icon class="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 transition-colors"><ArrowRight /></el-icon>
              </button>
-          </div>
+           </div>
+         </div>
        </div>
 
        <!-- 系统设置 -->

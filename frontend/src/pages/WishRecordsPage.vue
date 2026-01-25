@@ -1,61 +1,72 @@
 <template>
-  <!-- 中文注释：独立的心愿兑换记录页面，顶部返回图标；响应式卡片列表 -->
-  <div class="p-4 space-y-4">
-    <div class="flex items-center gap-2">
-      <el-icon :size="18" class="cursor-pointer text-gray-600" @click="goBack"><ArrowLeft /></el-icon>
-      <el-icon :size="18" class="text-emerald-600"><List /></el-icon>
-      <h2 class="font-semibold">兑换记录</h2>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      <el-card v-for="item in records" :key="item.id" class="rounded-lg" shadow="hover">
-        <div class="flex gap-3 items-start">
-          <!-- 中文注释：显示对应心愿的图标（内置/上传均支持） -->
-          <img :src="getIconSrc(item)" class="w-8 h-8 rounded" />
-          <div class="flex-1">
-            <div class="flex justify-between items-start">
-              <div>
-                <div class="font-medium">{{ item.wish_name }}</div>
-                <div class="text-xs text-gray-500 mt-1">{{ item.created_at }}</div>
-              </div>
-              <el-tag :type="item.status === 'success' ? 'success' : 'info'">{{ item.status }}</el-tag>
+  <SettingsShell title="领取记录" subtitle="记录每一次兑换" :icon="List" tone="emerald" container-class="max-w-5xl">
+    <SettingsCard>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div
+          v-for="item in records"
+          :key="item.id"
+          class="group rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4 shadow-sm hover:shadow-md transition"
+        >
+          <div class="flex items-start gap-3">
+            <div class="relative">
+              <div class="absolute -inset-2 rounded-2xl bg-emerald-200/35 dark:bg-emerald-500/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <img :src="getIconSrc(item)" class="relative w-10 h-10 rounded-2xl ring-1 ring-black/5 dark:ring-white/10" />
             </div>
-            <div class="mt-3 text-sm text-gray-700">数量：{{ item.amount }} {{ item.unit }}</div>
-            <div class="mt-1 text-sm text-gray-700">消耗金币：{{ item.coins_used }}</div>
-            <!-- 中文注释：展示兑换备注（若填写） -->
-            <div class="mt-1 text-xs text-gray-500" v-if="item.remark && item.remark.trim()">备注：{{ item.remark }}</div>
+
+            <div class="min-w-0 flex-1">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="truncate text-base font-extrabold tracking-tight text-gray-900 dark:text-gray-50">{{ item.wish_name }}</div>
+                  <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ item.created_at }}</div>
+                </div>
+                <el-tag :type="item.status === 'success' ? 'success' : 'info'" class="!rounded-full">{{ item.status }}</el-tag>
+              </div>
+
+              <div class="mt-3 grid grid-cols-2 gap-2">
+                <div class="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/60 dark:bg-gray-950/30 px-3 py-2">
+                  <div class="text-[11px] font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">数量</div>
+                  <div class="mt-0.5 text-base font-extrabold text-gray-900 dark:text-gray-50">{{ item.amount }} {{ item.unit }}</div>
+                </div>
+                <div class="rounded-2xl border border-amber-100/70 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-900/15 px-3 py-2">
+                  <div class="text-[11px] font-extrabold uppercase tracking-wider text-amber-700/70 dark:text-amber-300/70">消耗金币</div>
+                  <div class="mt-0.5 text-base font-extrabold text-amber-800 dark:text-amber-200">{{ item.coins_used }}</div>
+                </div>
+              </div>
+
+              <div v-if="item.remark && item.remark.trim()" class="mt-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/55 dark:bg-gray-950/25 px-3 py-2 text-sm text-gray-600 dark:text-gray-300">
+                备注：{{ item.remark }}
+              </div>
+            </div>
           </div>
         </div>
-      </el-card>
-    </div>
+      </div>
 
-    <!-- 分页 -->
-    <div class="flex justify-end mt-2">
-      <el-pagination
-        layout="prev, pager, next"
-        :current-page="page"
-        :page-size="pageSize"
-        :total="total"
-        @current-change="onPageChange"
-      />
-    </div>
-  </div>
+      <div class="flex justify-end mt-4">
+        <el-pagination
+          layout="prev, pager, next"
+          :current-page="page"
+          :page-size="pageSize"
+          :total="total"
+          @current-change="onPageChange"
+        />
+      </div>
+    </SettingsCard>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
-// 中文注释：加载心愿兑换记录，支持分页，点击返回图标返回上一页
 import { ref, onMounted, computed } from 'vue'
-import router from '@/router'
-import { ArrowLeft, List } from '@element-plus/icons-vue'
+import { List } from '@element-plus/icons-vue'
 import { listWishRecords, listWishes, type WishRecord, type Wish } from '@/services/wishes'
 import { getStaticBase } from '@/services/http'
 import { presignView } from '@/services/storage'
 import { ElMessage } from 'element-plus'
 import { useAuth } from '@/stores/auth'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 const auth = useAuth()
 const userId = computed(() => auth.user?.id ?? 0)
-function goBack() { router.back() }
 
 const records = ref<WishRecord[]>([])
 const page = ref(1)

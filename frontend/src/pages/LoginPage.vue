@@ -1,5 +1,5 @@
 <template>
-  <AuthShell brand-title="RecordGo" brand-subtitle="把计划变成结果，把努力变成积分">
+  <AuthShell brand-title="作业家" brand-subtitle="把计划变成结果，把努力变成积分">
     <div class="flex items-start justify-between gap-3">
       <div>
         <div class="text-xl font-extrabold text-slate-900 tracking-tight">登录</div>
@@ -24,8 +24,7 @@
         </el-form-item>
         <div class="flex items-center justify-between gap-2">
           <div class="flex flex-col gap-1">
-            <el-checkbox v-model="rememberMe">记住账号密码</el-checkbox>
-            <div class="text-[11px] text-slate-400">仅保存在本机浏览器，本功能请自行评估安全风险</div>
+            <el-checkbox v-model="rememberMe">记住我</el-checkbox>
           </div>
           <button class="text-sm font-semibold text-slate-500 hover:text-indigo-700" type="button" @click="toRegister">去注册</button>
         </div>

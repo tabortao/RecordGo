@@ -1,57 +1,82 @@
 <template>
-  <!-- 中文注释：独立创建心愿页面，顶部返回图标；响应式布局 -->
-  <div class="p-4 space-y-4">
-    <!-- 顶部栏：返回 + 标题 -->
-    <div class="flex items-center gap-2">
-      <el-icon :size="18" class="cursor-pointer text-gray-600" @click="goBack"><ArrowLeft /></el-icon>
-      <el-icon :size="18" class="text-emerald-600"><Plus /></el-icon>
-      <h2 class="font-semibold">创建心愿</h2>
-    </div>
-
-    <!-- 响应式网格：移动端单列，桌面端双列/多列 -->
-    <div class="grid grid-cols-1 gap-4">
-      <el-card shadow="never" class="rounded-lg">
-        <el-form :model="form" label-width="90px">
-          <el-form-item label="心愿图标">
-            <div class="flex items-center gap-2">
-              <img v-if="form.icon_preview || form.icon" :src="form.icon_preview || iconResolved" class="w-10 h-10 rounded" @error="onIconError" />
-              <el-upload :auto-upload="false" :show-file-list="false" accept="image/*" @change="onPickIcon">
-                <el-button type="primary" size="small">选择图片</el-button>
-              </el-upload>
+  <SettingsShell title="创建心愿" subtitle="自定义图标、金币与单位" :icon="Plus" tone="emerald" container-class="max-w-3xl">
+    <SettingsCard>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
+          <div class="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">心愿图标</div>
+          <div class="mt-3 flex items-center gap-3">
+            <div class="relative">
+              <div class="absolute -inset-2 rounded-2xl bg-emerald-200/40 dark:bg-emerald-500/10 blur-xl" />
+              <img
+                v-if="form.icon_preview || form.icon"
+                :src="form.icon_preview || iconResolved"
+                class="relative w-12 h-12 rounded-2xl ring-1 ring-black/5 dark:ring-white/10"
+                @error="onIconError"
+              />
+              <div v-else class="relative w-12 h-12 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/30" />
             </div>
-          </el-form-item>
-          <el-form-item label="心愿名称"><el-input v-model="form.name" /></el-form-item>
-          <el-form-item label="心愿描述"><el-input type="textarea" v-model="form.content" /></el-form-item>
-          <el-form-item label="所需金币"><el-input-number v-model="form.need_coins" :min="1" /></el-form-item>
-          <el-form-item label="单位">
-            <el-select v-model="form.unit" style="width: 100%">
+            <el-upload :auto-upload="false" :show-file-list="false" accept="image/*" @change="onPickIcon">
+              <el-button type="primary" class="!rounded-2xl">选择图片</el-button>
+            </el-upload>
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
+          <el-form :model="form" label-position="top">
+            <el-form-item label="心愿名称">
+              <el-input v-model="form.name" placeholder="例如：看电影" />
+            </el-form-item>
+            <el-form-item label="心愿描述">
+              <el-input type="textarea" v-model="form.content" :rows="3" placeholder="写一句更具体的目标" />
+            </el-form-item>
+          </el-form>
+        </div>
+      </div>
+
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
+          <div class="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">所需金币</div>
+          <div class="mt-3">
+            <el-input-number v-model="form.need_coins" :min="1" controls-position="right" class="w-full" />
+          </div>
+        </div>
+        <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
+          <div class="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">单位</div>
+          <div class="mt-3">
+            <el-select v-model="form.unit" class="w-full">
               <el-option label="个" value="个" /><el-option label="次" value="次" />
               <el-option label="分钟" value="分钟" /><el-option label="元" value="元" />
             </el-select>
-          </el-form-item>
-          <el-form-item label="兑换数量"><el-input-number v-model="form.exchange_amount" :min="1" /></el-form-item>
-        </el-form>
-      </el-card>
-    </div>
+          </div>
+        </div>
+        <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
+          <div class="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">兑换数量</div>
+          <div class="mt-3">
+            <el-input-number v-model="form.exchange_amount" :min="1" controls-position="right" class="w-full" />
+          </div>
+        </div>
+      </div>
 
-    <!-- 底部操作区 -->
-    <div class="flex justify-end gap-2">
-      <el-button @click="goBack">取消</el-button>
-      <el-button type="primary" @click="submitForm">确定</el-button>
-    </div>
-  </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <el-button class="!rounded-2xl" @click="goBack">取消</el-button>
+        <el-button type="primary" class="!rounded-2xl" @click="submitForm">确定</el-button>
+      </div>
+    </SettingsCard>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
 import { reactive, computed, ref, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Plus } from '@element-plus/icons-vue'
+import { Plus } from '@element-plus/icons-vue'
 import router from '@/router'
 import { createWish, uploadWishIcon, normalizeUploadPath } from '@/services/wishes'
 import { prepareUpload } from '@/utils/image'
 import { presignView } from '@/services/storage'
 import { getStaticBase } from '@/services/http'
 import { useAuth } from '@/stores/auth'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 const auth = useAuth()
 const userId = computed(() => auth.user?.id ?? 0)

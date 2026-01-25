@@ -13,7 +13,9 @@
         <div class="hidden md:flex flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl shadow-2xl shadow-black/30">
           <div>
             <div class="inline-flex items-center gap-2">
-              <div class="h-10 w-10 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-white font-extrabold tracking-tight">RG</div>
+              <div class="h-10 w-10 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center">
+                <img :src="brandIcon" alt="App Icon" class="h-7 w-7 rounded-xl" />
+              </div>
               <div class="text-3xl font-extrabold tracking-tight text-white">{{ brandTitle }}</div>
             </div>
             <div class="mt-2 text-sm text-white/70">{{ brandSubtitle }}</div>
@@ -35,12 +37,14 @@
 </template>
 
 <script setup lang="ts">
+import brandIcon from '@/assets/favicon/android-chrome-192x192.png'
+
 withDefaults(defineProps<{
   brandTitle?: string
   brandSubtitle?: string
   tips?: string[]
 }>(), {
-  brandTitle: 'RecordGo',
+  brandTitle: '作业家',
   brandSubtitle: '用更轻的操作，养成更稳的习惯',
   tips: () => [
     '任务、心愿、积分一体化管理',
@@ -51,4 +55,3 @@ withDefaults(defineProps<{
 </script>
 
 <style scoped></style>
-

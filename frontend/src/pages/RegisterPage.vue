@@ -1,6 +1,6 @@
 <template>
   <AuthShell
-    brand-title="RecordGo"
+    brand-title="作业家"
     brand-subtitle="从今天开始，把计划变成结果"
     :tips="[
       '注册邮箱用于账号找回与通知',

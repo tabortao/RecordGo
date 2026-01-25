@@ -1,55 +1,87 @@
 <template>
-  <div class="fixed top-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur z-40 border-b border-gray-200 dark:border-gray-700">
-    <div class="px-4 py-2 font-semibold dark:text-gray-100">兑换心愿</div>
-    <div class="px-4 pb-2 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <el-button size="small" type="success" plain disabled>可用金币：{{ coins }}</el-button>
-      </div>
-      <div class="flex items-center gap-2">
-        <el-button size="small" type="primary" @click="openRecords()">领取记录</el-button>
-        <el-button v-if="isParent || canWishCreate" size="small" type="success" @click="openCreate()">创建心愿</el-button>
-      </div>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300 pb-24" style="padding-bottom: calc(env(safe-area-inset-bottom) + 96px)">
+    <div class="pointer-events-none absolute inset-0 overflow-hidden">
+      <div class="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-emerald-300/35 dark:bg-emerald-500/18 blur-3xl" />
+      <div class="absolute -bottom-40 -left-28 h-80 w-80 rounded-full bg-amber-200/35 dark:bg-amber-500/16 blur-3xl" />
+      <div class="absolute inset-0 bg-[radial-gradient(1200px_circle_at_20%_-20%,rgba(255,255,255,.65),transparent_55%),radial-gradient(900px_circle_at_80%_0%,rgba(255,255,255,.45),transparent_55%)] dark:bg-[radial-gradient(1200px_circle_at_20%_-20%,rgba(255,255,255,.07),transparent_55%),radial-gradient(900px_circle_at_80%_0%,rgba(255,255,255,.06),transparent_55%)]" />
     </div>
-  </div>
-  <div class="h-20"></div>
-  <div class="p-4 space-y-4 pb-16">
 
-    <div>
-      <!-- 中文注释：改为响应式网格布局，移动端单列，桌面端多列 -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-        <el-card v-for="w in wishList" :key="w.id" shadow="hover" class="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md" @click="toggleOps(w.id)">
-          <!-- 顶部右侧：先显示所需金币（图标+数量），点击卡片后显示编辑/删除图标 -->
-          <div class="absolute top-2 right-2 flex items-center gap-2">
-            <!-- 中文注释：所需金币常显，位于编辑/删除图标左侧 -->
-            <div class="flex items-center gap-1 text-amber-600 dark:text-amber-500" title="所需金币">
-              <el-icon :size="16"><Coin /></el-icon>
-              <span class="text-sm font-medium">{{ w.need_coins }}</span>
+    <div class="sticky top-0 z-40 px-4 pt-4">
+      <div class="rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/75 dark:bg-gray-900/65 backdrop-blur-xl shadow-sm">
+        <div class="flex items-center justify-between gap-3 px-3 py-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-10 w-10 rounded-2xl border border-emerald-200/70 dark:border-emerald-900/40 bg-emerald-50/80 dark:bg-emerald-900/25 flex items-center justify-center text-emerald-700 dark:text-emerald-300">
+              <el-icon :size="18"><Coin /></el-icon>
             </div>
-            <div v-if="opsVisibleId === w.id" class="flex items-center gap-2">
-              <el-tooltip content="编辑">
-                <el-button v-if="isParent || canWishEdit" circle size="small" @click.stop="openEdit(w)"><el-icon><Edit /></el-icon></el-button>
-              </el-tooltip>
-              <el-tooltip content="删除">
-                <el-button v-if="isParent || canWishDelete" circle size="small" type="danger" @click.stop="onDelete(w)"><el-icon><Delete /></el-icon></el-button>
-              </el-tooltip>
+            <div class="min-w-0">
+              <div class="text-[17px] font-extrabold tracking-tight text-gray-900 dark:text-gray-50 truncate">心愿</div>
+              <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">可用金币：<span class="font-extrabold text-amber-700 dark:text-amber-300">{{ coins }}</span></div>
             </div>
           </div>
 
-          <!-- 图标与名称 -->
-          <div class="flex items-center gap-2">
-            <img :src="resolveIcon(w.icon)" alt="icon" class="w-8 h-8 rounded" @error="onIconError" />
-            <span class="font-medium dark:text-gray-100">{{ w.name }}</span>
+          <div class="flex items-center gap-2 shrink-0">
+            <el-button size="small" class="!rounded-2xl" @click="openRecords()">领取记录</el-button>
+            <el-button v-if="isParent || canWishCreate" size="small" type="primary" class="!rounded-2xl" @click="openCreate()">创建心愿</el-button>
           </div>
-          <div class="text-gray-500 dark:text-gray-400 text-sm mt-1">{{ w.content }}</div>
-
-          <!-- 底部：左兑换次数，右兑换按钮 -->
-          <div class="mt-2 flex items-center justify-between">
-            <div class="text-xs text-gray-600 dark:text-gray-400">已兑换：{{ w.exchanged }} 次</div>
-            <el-button type="warning" size="small" :disabled="!(isParent || canWishExchange)" @click.stop="onExchange(w)">兑换</el-button>
-          </div>
-        </el-card>
+        </div>
       </div>
     </div>
+
+    <div class="relative z-10 px-4 pt-5 pb-6">
+
+      <div class="max-w-6xl mx-auto">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div
+            v-for="w in wishList"
+            :key="w.id"
+            class="group relative rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col min-h-[168px]"
+            @click="toggleOps(w.id)"
+          >
+            <div class="absolute -top-2 -right-2 h-20 w-20 rounded-full bg-emerald-200/35 dark:bg-emerald-500/15 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="relative">
+                  <div class="absolute -inset-2 rounded-2xl bg-emerald-200/40 dark:bg-emerald-500/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <img :src="resolveIcon(w.icon)" alt="icon" class="relative w-10 h-10 rounded-2xl ring-1 ring-black/5 dark:ring-white/10" @error="onIconError" />
+                </div>
+                <div class="min-w-0">
+                  <div class="truncate text-base font-extrabold tracking-tight text-gray-900 dark:text-gray-50">{{ w.name }}</div>
+                  <div class="mt-1 line-clamp-2 text-sm leading-relaxed text-gray-600 dark:text-gray-300">{{ w.content }}</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0">
+                <div class="rounded-full border border-amber-100/70 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-900/15 px-2.5 py-1 text-xs font-extrabold text-amber-800 dark:text-amber-200 flex items-center gap-1">
+                  <el-icon :size="14"><Coin /></el-icon>
+                  <span>{{ w.need_coins }}</span>
+                </div>
+                <div v-if="opsVisibleId === w.id" class="flex items-center gap-1">
+                  <el-tooltip content="编辑">
+                    <el-button v-if="isParent || canWishEdit" circle size="small" class="!rounded-2xl" @click.stop="openEdit(w)"><el-icon><Edit /></el-icon></el-button>
+                  </el-tooltip>
+                  <el-tooltip content="删除">
+                    <el-button v-if="isParent || canWishDelete" circle size="small" type="danger" class="!rounded-2xl" @click.stop="onDelete(w)"><el-icon><Delete /></el-icon></el-button>
+                  </el-tooltip>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between gap-2 pt-4 border-t border-gray-100/70 dark:border-gray-800/70">
+              <div class="text-xs font-semibold text-gray-500 dark:text-gray-400">已兑换：{{ w.exchanged }} 次</div>
+              <el-button
+                type="warning"
+                size="small"
+                class="!rounded-2xl !font-bold"
+                :disabled="!(isParent || canWishExchange)"
+                @click.stop="onExchange(w)"
+              >
+                兑换
+              </el-button>
+            </div>
+          </div>
+        </div>
+      </div>
 
     <!-- 中文注释：已改为独立页面，不再使用内置创建/编辑弹窗 -->
 
@@ -82,28 +114,72 @@
     >
       <!-- 自定义标题栏，使用 Tailwind 增加背景与圆角 -->
       <template #header>
-        <div class="bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 border-b border-emerald-100 dark:border-emerald-800">
-          <div class="flex items-center gap-2">
-            <el-icon class="text-emerald-600"><Coin /></el-icon>
-            <h3 class="text-emerald-800 dark:text-emerald-300 font-semibold text-base truncate">{{ exchangeTarget ? `兑换：${exchangeTarget.name}` : '兑换心愿' }}</h3>
+        <div class="relative overflow-hidden border-b border-emerald-100 dark:border-emerald-900/40 bg-gradient-to-br from-emerald-50 via-emerald-50 to-white dark:from-emerald-950/30 dark:via-gray-900/40 dark:to-gray-950/40 px-4 pt-4 pb-3">
+          <div class="pointer-events-none absolute inset-0">
+            <div class="absolute -top-14 -right-16 h-44 w-44 rounded-full bg-emerald-300/35 dark:bg-emerald-500/15 blur-3xl" />
+            <div class="absolute -bottom-16 -left-20 h-48 w-48 rounded-full bg-amber-200/35 dark:bg-amber-500/12 blur-3xl" />
+          </div>
+
+          <div class="relative flex items-start gap-3">
+            <div class="relative shrink-0">
+              <div class="absolute -inset-2 rounded-2xl bg-emerald-200/45 dark:bg-emerald-500/12 blur-xl" />
+              <div class="relative h-12 w-12 rounded-2xl border border-white/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-950/35 ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
+                <img v-if="exchangeTarget" :src="resolveIcon(exchangeTarget.icon)" class="h-full w-full object-cover" />
+              </div>
+            </div>
+
+            <div class="min-w-0 flex-1">
+              <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700/70 dark:text-emerald-300/70">兑换心愿</div>
+              <div class="mt-1 text-lg font-extrabold tracking-tight text-gray-900 dark:text-gray-50 truncate">
+                {{ exchangeTarget?.name || '兑换心愿' }}
+              </div>
+              <div v-if="exchangeTarget?.content" class="mt-1 text-xs text-gray-600 dark:text-gray-300 line-clamp-1">
+                {{ exchangeTarget.content }}
+              </div>
+            </div>
+
+            <div class="shrink-0 flex flex-col items-end gap-1">
+              <div class="rounded-full border border-amber-100/80 dark:border-amber-900/40 bg-amber-50/80 dark:bg-amber-900/15 px-3 py-1 text-xs font-extrabold text-amber-800 dark:text-amber-200">
+                合计 {{ totalCost }} 金币
+              </div>
+              <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">余额 {{ coins }}</div>
+            </div>
+          </div>
+
+          <div v-if="insufficientCoins" class="relative mt-3 rounded-2xl border border-red-200/70 dark:border-red-900/40 bg-red-50/80 dark:bg-red-900/15 px-3 py-2 text-xs font-semibold text-red-700 dark:text-red-300">
+            金币不足，先去完成任务赚取金币吧
           </div>
         </div>
       </template>
-      <el-form label-width="90px">
-        <el-form-item label="兑换数量">
-          <el-input-number v-model="exchangeCount" :min="1" />
-        </el-form-item>
+
+      <el-form label-position="top" class="pretty-exchange-form">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <el-form-item label="兑换数量">
+            <el-input-number v-model="exchangeCount" :min="1" controls-position="right" class="w-full" />
+          </el-form-item>
+          <el-form-item label="单次金币">
+            <el-input :model-value="String(exchangeTarget?.need_coins ?? '-')" disabled />
+          </el-form-item>
+        </div>
         <el-form-item label="备注">
-          <el-input v-model="exchangeRemark" type="textarea" placeholder="可选，记录具体兑换情况" />
+          <el-input v-model="exchangeRemark" type="textarea" :rows="3" placeholder="可选，记录具体兑换情况" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <div class="flex justify-end gap-2 bg-gray-50 dark:bg-gray-800 px-4 py-3">
-          <el-button @click="cancelExchange">取消</el-button>
-          <el-button type="primary" @click="confirmExchange">确认兑换</el-button>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-gray-50/80 dark:bg-gray-950/40 border-t border-gray-100 dark:border-gray-800 px-4 py-3">
+          <div class="text-xs font-semibold text-gray-500 dark:text-gray-400">
+            将扣除 <span class="font-extrabold text-amber-700 dark:text-amber-300">{{ totalCost }}</span> 金币
+          </div>
+          <div class="flex justify-end gap-2">
+            <el-button class="!rounded-2xl" @click="cancelExchange">取消</el-button>
+            <el-button type="warning" class="!rounded-2xl !font-extrabold" :disabled="insufficientCoins" @click="confirmExchange">
+              确认兑换
+            </el-button>
+          </div>
         </div>
       </template>
     </el-dialog>
+    </div>
   </div>
 </template>
 
@@ -139,6 +215,16 @@ const showExchange = ref(false)
 const exchangeTarget = ref<Wish | null>(null)
 const exchangeCount = ref<number>(1)
 const exchangeRemark = ref<string>('')
+
+const totalCost = computed(() => {
+  const w = exchangeTarget.value
+  if (!w) return 0
+  const count = Math.max(1, Number(exchangeCount.value || 1))
+  return Number(w.need_coins || 0) * count
+})
+const insufficientCoins = computed(() => {
+  return totalCost.value > Number(coins.value || 0)
+})
 
 // 操作区显示切换：点击卡片右上角才显示编辑/删除
 const opsVisibleId = ref<number | null>(null)
@@ -306,5 +392,54 @@ function openRecords() {
 /* 自适应移动端对话框宽度 */
 :deep(.pretty-exchange-dialog .el-dialog) {
   max-width: calc(100vw - 24px);
+}
+
+:deep(.pretty-exchange-dialog .el-dialog__header) {
+  padding: 0;
+  margin: 0;
+}
+
+:deep(.pretty-exchange-dialog .el-dialog__footer) {
+  padding: 0;
+}
+
+:deep(.pretty-exchange-dialog .el-input__wrapper),
+:deep(.pretty-exchange-dialog .el-textarea__inner),
+:deep(.pretty-exchange-dialog .el-input-number) {
+  border-radius: 14px;
+}
+
+:deep(.pretty-exchange-dialog .el-form-item__label) {
+  font-weight: 800;
+  color: rgb(55 65 81);
+}
+
+.dark :deep(.pretty-exchange-dialog .el-form-item__label) {
+  color: rgb(209 213 219);
+}
+
+.dark :deep(.pretty-exchange-dialog .el-dialog) {
+  background: rgb(17 24 39 / 0.92);
+  border: 1px solid rgb(31 41 55 / 0.9);
+}
+
+.dark :deep(.pretty-exchange-dialog .el-dialog__body),
+.dark :deep(.pretty-exchange-dialog .el-dialog__footer) {
+  background: transparent;
+}
+
+.dark :deep(.pretty-exchange-dialog .el-input__wrapper) {
+  background: rgb(3 7 18 / 0.55);
+  box-shadow: none;
+}
+
+.dark :deep(.pretty-exchange-dialog .el-textarea__inner) {
+  background: rgb(3 7 18 / 0.55);
+  color: rgb(243 244 246);
+  border-color: rgb(31 41 55 / 0.9);
+}
+
+.dark :deep(.pretty-exchange-dialog .el-input__inner) {
+  color: rgb(243 244 246);
 }
 </style>
