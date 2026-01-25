@@ -1,6 +1,6 @@
 <template>
   <!-- 中文注释：独立的创建任务页面，顶部带返回图标；布局响应式 -->
-  <SettingsShell title="创建任务" subtitle="普通创建 · AI 智能创建" :icon="CirclePlusFilled" tone="emerald" container-class="max-w-5xl" back-to="/tasks">
+  <SettingsShell title="创建任务" subtitle="普通创建 · AI 智能创建" :icon="CirclePlusFilled" tone="emerald" container-class="max-w-5xl" back-to="/tasks" :decor="false">
     <el-tabs v-model="activeTab" class="w-full task-create-tabs">
       <el-tab-pane label="普通创建" name="normal">
         <!-- 响应式网格：移动端单列，桌面端双列/三列（根据内容） -->
@@ -595,7 +595,7 @@ async function submitAITasks() {
 
 :deep(.task-create-tabs .el-tabs__item.is-active) {
   color: rgb(4 120 87);
-  background: linear-gradient(180deg, rgb(16 185 129 / 0.24), rgb(16 185 129 / 0.1));
+  background: rgb(16 185 129 / 0.16);
   border: 1px solid rgb(16 185 129 / 0.28);
   box-shadow: 0 10px 24px rgb(16 185 129 / 0.12);
   transform: translateY(-0.5px);
@@ -603,7 +603,7 @@ async function submitAITasks() {
 
 .dark :deep(.task-create-tabs .el-tabs__item.is-active) {
   color: rgb(167 243 208);
-  background: linear-gradient(180deg, rgb(16 185 129 / 0.18), rgb(16 185 129 / 0.08));
+  background: rgb(16 185 129 / 0.12);
   border: 1px solid rgb(16 185 129 / 0.2);
   box-shadow: 0 10px 24px rgb(0 0 0 / 0.35);
   transform: translateY(-0.5px);

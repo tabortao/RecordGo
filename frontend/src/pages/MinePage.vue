@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 pb-24 transition-colors duration-300" style="padding-bottom: calc(env(safe-area-inset-bottom) + 96px)">
+  <div class="fixed inset-0 flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
     
-    <div class="sticky top-0 z-40 px-4 pt-4">
+    <div class="shrink-0 px-4 pt-4">
       <div class="rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/75 dark:bg-gray-900/65 backdrop-blur-xl shadow-sm">
         <div class="flex items-center justify-between gap-3 px-3 py-3">
           <div class="flex items-center gap-3 min-w-0">
@@ -23,7 +23,7 @@
     </div>
 
     <!-- 主要内容区域 -->
-    <div class="px-4 pt-5 space-y-4 relative z-10">
+    <div class="flex-1 overflow-y-auto px-4 pt-5 space-y-4 relative z-10" style="padding-bottom: calc(env(safe-area-inset-bottom) + 96px)">
        
        <!-- 账号管理组 -->
        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden animate-slide-up" style="animation-delay: 0.1s;">

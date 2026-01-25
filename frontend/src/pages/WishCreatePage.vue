@@ -1,5 +1,5 @@
 <template>
-  <SettingsShell title="创建心愿" subtitle="自定义图标、金币与单位" :icon="Plus" tone="emerald" container-class="max-w-3xl">
+  <SettingsShell title="创建心愿" subtitle="自定义图标、金币与单位" :icon="Plus" tone="emerald" container-class="max-w-3xl" :decor="false">
     <SettingsCard>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">

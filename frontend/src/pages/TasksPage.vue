@@ -1,49 +1,59 @@
 <template>
   <!-- 中文注释：任务页面，包含统计、列表、创建/编辑、批量删除、番茄钟功能；支持下拉刷新 -->
-  <div ref="wrapperRef" class="pull-refresh-wrapper tasks-root" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd" @touchcancel="onTouchCancel" style="overscroll-behavior-y: contain; touch-action: pan-y;">
-    <!-- 下拉刷新指示器（固定在顶部），拉动或刷新时淡入显示） -->
-    <div class="fixed top-0 left-0 right-0 flex justify-center pointer-events-none" :style="{ opacity: (pullY>10||refreshing)?1:0 }">
-      <div class="mt-2 text-xs text-gray-700 dark:text-gray-200 tasks-chip px-3 py-1.5">{{ refreshing ? '正在刷新...' : '下拉刷新' }}</div>
-    </div>
-    <div class="fixed top-0 left-0 right-0 z-40 px-4 pt-4 pointer-events-none">
-      <div class="tasks-topbar pointer-events-auto">
-        <div class="flex items-center justify-between gap-3 px-3 py-3">
-          <div class="flex items-center gap-3 min-w-0">
-            <el-dropdown trigger="click" @command="onAvatarCommand">
-              <span class="el-dropdown-link">
-                <el-avatar :size="40" :src="tasksAvatarSrc" class="cursor-pointer" />
-              </span>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="noop" class="font-semibold" style="pointer-events: none; cursor: default">切换用户</el-dropdown-item>
-                  <el-dropdown-item v-for="acc in auth.accounts" :key="acc.user.id" :command="'switch:' + acc.user.id">
-                    <div class="flex items-center gap-2">
-                      <el-avatar :size="24" :src="accountAvatarSrc(acc.user)" />
-                      <span>{{ (acc.user.nickname || '').trim() || acc.user.username }}</span>
-                      <el-icon v-if="auth.user?.id === acc.user.id" :size="16" style="color:#22c55e"><CircleCheck /></el-icon>
-                    </div>
-                  </el-dropdown-item>
-                  <el-dropdown-item divided command="add">添加新用户</el-dropdown-item>
-                  <el-dropdown-item command="logout" style="color:#f56c6c">退出登录</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-            <div class="min-w-0">
-              <div class="text-[17px] font-extrabold tracking-tight text-gray-900 dark:text-gray-50 truncate">任务</div>
+  <div class="fixed inset-0 flex flex-col overflow-hidden tasks-root">
+    <div class="relative shrink-0">
+      <div class="absolute top-0 left-0 right-0 flex justify-center pointer-events-none" :style="{ opacity: (pullY>10||refreshing)?1:0 }">
+        <div class="mt-2 text-xs text-gray-700 dark:text-gray-200 tasks-chip px-3 py-1.5">{{ refreshing ? '正在刷新...' : '下拉刷新' }}</div>
+      </div>
+      <div class="px-4 pt-4 pointer-events-none">
+        <div class="tasks-topbar pointer-events-auto">
+          <div class="flex items-center justify-between gap-3 px-3 py-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <el-dropdown trigger="click" @command="onAvatarCommand">
+                <span class="el-dropdown-link">
+                  <el-avatar :size="40" :src="tasksAvatarSrc" class="cursor-pointer" />
+                </span>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="noop" class="font-semibold" style="pointer-events: none; cursor: default">切换用户</el-dropdown-item>
+                    <el-dropdown-item v-for="acc in auth.accounts" :key="acc.user.id" :command="'switch:' + acc.user.id">
+                      <div class="flex items-center gap-2">
+                        <el-avatar :size="24" :src="accountAvatarSrc(acc.user)" />
+                        <span>{{ (acc.user.nickname || '').trim() || acc.user.username }}</span>
+                        <el-icon v-if="auth.user?.id === acc.user.id" :size="16" style="color:#22c55e"><CircleCheck /></el-icon>
+                      </div>
+                    </el-dropdown-item>
+                    <el-dropdown-item divided command="add">添加新用户</el-dropdown-item>
+                    <el-dropdown-item command="logout" style="color:#f56c6c">退出登录</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+              <div class="min-w-0">
+                <div class="text-[17px] font-extrabold tracking-tight text-gray-900 dark:text-gray-50 truncate">任务</div>
+              </div>
             </div>
-          </div>
-          <div class="flex items-center gap-3 shrink-0">
-            <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-              <el-icon :size="14" class="text-amber-700 dark:text-amber-300"><Coin /></el-icon>
-              <span class="font-extrabold text-amber-700 dark:text-amber-300 tabular-nums">{{ totalCoins }}</span>
+            <div class="flex items-center gap-3 shrink-0">
+              <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                <el-icon :size="14" class="text-amber-700 dark:text-amber-300"><Coin /></el-icon>
+                <span class="font-extrabold text-amber-700 dark:text-amber-300 tabular-nums">{{ totalCoins }}</span>
+              </div>
+              <el-icon :size="22" class="cursor-pointer text-pink-500 dark:text-pink-300" @click="router.push('/tasks/stats')"><DataAnalysis /></el-icon>
             </div>
-            <el-icon :size="22" class="cursor-pointer text-pink-500 dark:text-pink-300" @click="router.push('/tasks/stats')"><DataAnalysis /></el-icon>
           </div>
         </div>
       </div>
     </div>
-    <div class="h-24"></div>
-    <div class="p-4 space-y-4 relative z-10" :style="{ transform: pullY ? ('translateY(' + pullY + 'px)') : 'none', transition: pulling ? 'none' : 'transform 0.2s ease' }">
+
+    <div
+      ref="wrapperRef"
+      class="flex-1 overflow-y-auto pull-refresh-wrapper"
+      style="overscroll-behavior-y: contain; touch-action: pan-y; padding-bottom: calc(env(safe-area-inset-bottom) + 96px);"
+      @touchstart="onTouchStart"
+      @touchmove="onTouchMove"
+      @touchend="onTouchEnd"
+      @touchcancel="onTouchCancel"
+    >
+      <div class="p-4 space-y-4 relative z-10" :style="{ transform: pullY ? ('translateY(' + pullY + 'px)') : 'none', transition: pulling ? 'none' : 'transform 0.2s ease' }">
     
 
     <!-- 顶部统计：四项一行，不同颜色图标；下方单独大“统计”卡片居中显示 -->
@@ -518,6 +528,7 @@
         </div>
       </template>
     </el-dialog>
+    </div>
   </div>
  </template>
 
@@ -626,7 +637,7 @@ const wrapperRef = ref<HTMLElement | null>(null)
 
 function onTouchStart(e: TouchEvent) {
   // 仅在页面滚动到顶部时允许下拉刷新
-  const top = (document.scrollingElement?.scrollTop || window.scrollY || document.documentElement.scrollTop || 0)
+  const top = wrapperRef.value?.scrollTop || 0
   if (top > 0) return
   const target = e.target as HTMLElement
   if (target && target.closest('.no-pull')) return
@@ -1648,7 +1659,6 @@ function onFabTouchEnd() {
 }
 
 .tasks-root {
-  position: relative;
 }
 
 .tasks-topbar {

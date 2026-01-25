@@ -3,7 +3,7 @@
     class="relative min-h-screen overflow-x-hidden bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-50 transition-colors duration-300"
     style="padding-bottom: calc(env(safe-area-inset-bottom) + 96px)"
   >
-    <div class="pointer-events-none absolute inset-0 overflow-hidden">
+    <div v-if="props.decor" class="pointer-events-none absolute inset-0 overflow-hidden">
       <div :class="tone.glowA" class="absolute -top-24 -right-24 h-72 w-72 rounded-full blur-3xl opacity-35 dark:opacity-25" />
       <div :class="tone.glowB" class="absolute -bottom-40 -left-28 h-80 w-80 rounded-full blur-3xl opacity-30 dark:opacity-20" />
       <div class="absolute inset-0 bg-[radial-gradient(1200px_circle_at_20%_-20%,rgba(255,255,255,.65),transparent_55%),radial-gradient(900px_circle_at_80%_0%,rgba(255,255,255,.45),transparent_55%)] dark:bg-[radial-gradient(1200px_circle_at_20%_-20%,rgba(255,255,255,.07),transparent_55%),radial-gradient(900px_circle_at_80%_0%,rgba(255,255,255,.06),transparent_55%)]" />
@@ -61,10 +61,12 @@ const props = withDefaults(defineProps<{
   tone?: ToneKey
   containerClass?: string
   backTo?: string
+  decor?: boolean
 }>(), {
   tone: 'sky',
   containerClass: 'max-w-3xl',
-  backTo: ''
+  backTo: '',
+  decor: true
 })
 
 const router = useRouter()
