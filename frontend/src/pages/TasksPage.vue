@@ -33,9 +33,9 @@
               </div>
             </div>
             <div class="flex items-center gap-3 shrink-0">
-              <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                <el-icon :size="14" class="text-amber-700 dark:text-amber-300"><Coin /></el-icon>
-                <span class="font-extrabold text-amber-700 dark:text-amber-300 tabular-nums">{{ totalCoins }}</span>
+              <div class="flex items-center gap-1.5 text-sm">
+                <el-icon :size="18" class="!text-amber-700 dark:!text-amber-300"><Coin /></el-icon>
+                <span class="font-extrabold !text-amber-700 dark:!text-amber-300 tabular-nums">{{ totalCoins }}</span>
               </div>
               <el-icon :size="22" class="cursor-pointer text-pink-500 dark:text-pink-300" @click="router.push('/tasks/stats')"><DataAnalysis /></el-icon>
             </div>
@@ -1656,9 +1656,6 @@ function onFabTouchEnd() {
   color: rgb(167 243 208) !important;
   background: linear-gradient(180deg, rgb(16 185 129 / 0.2), rgb(16 185 129 / 0.08)) !important;
   border: 1px solid rgb(16 185 129 / 0.18) !important;
-}
-
-.tasks-root {
 }
 
 .tasks-topbar {

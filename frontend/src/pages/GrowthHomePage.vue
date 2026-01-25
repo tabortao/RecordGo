@@ -58,8 +58,10 @@
                    </div>
                  </div>
                  <div>
-                   <div class="text-3xl font-black text-gray-800 dark:text-white leading-none mb-1">{{ displayBmiText }}</div>
-                   <div 
+                   <div v-if="bmiValue !== null" class="text-3xl font-black text-gray-800 dark:text-white leading-none mb-1">{{ bmiValue.toFixed(1) }}</div>
+                   <div v-else class="text-xs font-bold text-gray-400 dark:text-gray-500 leading-none mb-1">录入身高与体重后显示</div>
+                   <div
+                     v-if="bmiStatusText"
                      class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold"
                      :class="{
                        'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300': bmiStatusText === '偏瘦',
@@ -224,10 +226,9 @@ const bmiValue = computed(() => {
   return Number(bmi.toFixed(1))
 })
 
-const displayBmiValue = computed(() => (bmiValue.value ?? 16.64))
-const displayBmiText = computed(() => (bmiValue.value === null ? '16.64' : bmiValue.value.toFixed(1)))
 const bmiStatusText = computed(() => {
-  const v = displayBmiValue.value
+  const v = bmiValue.value
+  if (v === null) return ''
   if (v < 18.5) return '偏瘦'
   if (v < 25) return '正常'
   if (v < 30) return '偏胖'

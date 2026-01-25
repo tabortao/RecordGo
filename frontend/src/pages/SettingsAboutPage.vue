@@ -4,16 +4,18 @@
       <div class="flex flex-col items-center justify-center px-2 py-6">
         <div class="relative">
           <div class="absolute -inset-3 rounded-[1.5rem] bg-sky-200/50 dark:bg-sky-500/15 blur-2xl" />
-          <img :src="iconSrc" alt="App Icon" class="relative w-14 h-14 rounded-2xl shadow-md ring-1 ring-white/60 dark:ring-gray-800/70" />
+          <img :src="iconSrc" alt="App Icon" class="relative w-16 h-16 rounded-3xl shadow-md ring-1 ring-white/60 dark:ring-gray-800/70" />
         </div>
         <h3 class="mt-4 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">{{ appName }}</h3>
-        <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
-          <span class="rounded-full border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
-            版本 {{ versionDisplay }}
-          </span>
-          <span class="rounded-full border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
-            {{ dateDisplay }}
-          </span>
+        <div class="mt-4 grid grid-cols-2 gap-3 w-full max-w-[420px]">
+          <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/55 px-4 py-3 text-center">
+            <div class="text-[11px] font-extrabold tracking-[0.22em] text-gray-500 dark:text-gray-400">VERSION</div>
+            <div class="mt-1 text-sm font-black text-gray-900 dark:text-gray-50">{{ versionDisplay }}</div>
+          </div>
+          <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/55 px-4 py-3 text-center">
+            <div class="text-[11px] font-extrabold tracking-[0.22em] text-gray-500 dark:text-gray-400">DATE</div>
+            <div class="mt-1 text-sm font-black text-gray-900 dark:text-gray-50">{{ dateDisplay }}</div>
+          </div>
         </div>
       </div>
     </SettingsCard>
@@ -21,7 +23,7 @@
     <SettingsCard title="快捷入口" description="打开外部链接或进入帮助页面">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <button
-          class="group w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/40 hover:bg-white/80 dark:hover:bg-gray-900/70 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          class="group w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/40 hover:bg-white/80 dark:hover:bg-gray-900/70 transition active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="!xhsUrl"
           @click="openXHS"
         >
@@ -38,7 +40,7 @@
         </button>
 
         <button
-          class="group w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/40 hover:bg-white/80 dark:hover:bg-gray-900/70 transition"
+          class="group w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/40 hover:bg-white/80 dark:hover:bg-gray-900/70 transition active:scale-[0.99]"
           @click="openMail"
         >
           <div class="flex items-center gap-3">
@@ -54,7 +56,7 @@
         </button>
 
         <button
-          class="group w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/40 hover:bg-white/80 dark:hover:bg-gray-900/70 transition"
+          class="group w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/40 hover:bg-white/80 dark:hover:bg-gray-900/70 transition active:scale-[0.99]"
           @click="router.push('/settings/help')"
         >
           <div class="flex items-center gap-3">
@@ -70,7 +72,7 @@
         </button>
 
         <button
-          class="group w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/40 hover:bg-white/80 dark:hover:bg-gray-900/70 transition"
+          class="group w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/40 hover:bg-white/80 dark:hover:bg-gray-900/70 transition active:scale-[0.99]"
           @click="router.push('/settings/support')"
         >
           <div class="flex items-center gap-3">
