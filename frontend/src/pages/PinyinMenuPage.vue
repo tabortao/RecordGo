@@ -1,6 +1,6 @@
 <template>
-  <SettingsShell title="拼音王国" subtitle="用游戏化方式练声母、韵母与拼读" :icon="EditPen" tone="sky" container-class="max-w-5xl" back-to="/homework/chinese">
-    <SettingsCard title="选择玩法" description="从轻松的小游戏开始，循序渐进更有效。">
+  <SettingsShell title="拼音王国" :icon="EditPen" tone="sky" container-class="max-w-5xl" back-to="/homework/chinese">
+    <SettingsCard>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <button
           type="button"
@@ -12,7 +12,6 @@
             <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700/70 dark:text-emerald-300/70">轻松练习</div>
           </div>
           <div class="mt-3 text-base font-extrabold tracking-tight text-gray-900 dark:text-gray-50">拼音大转盘</div>
-          <div class="mt-1 text-sm text-gray-600 dark:text-gray-300">随机组合，快速反应</div>
         </button>
 
         <button
@@ -25,7 +24,6 @@
             <div class="text-[11px] font-extrabold uppercase tracking-wider text-sky-700/70 dark:text-sky-300/70">闯关模式</div>
           </div>
           <div class="mt-3 text-base font-extrabold tracking-tight text-gray-900 dark:text-gray-50">智能拼音大闯关</div>
-          <div class="mt-1 text-sm text-gray-600 dark:text-gray-300">逐步提升，巩固拼读</div>
         </button>
       </div>
     </SettingsCard>

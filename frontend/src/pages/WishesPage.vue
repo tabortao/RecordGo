@@ -5,11 +5,11 @@
         <div class="flex items-center justify-between gap-3 px-3 py-3">
           <div class="flex items-center gap-3 min-w-0">
             <div class="h-10 w-10 rounded-2xl border border-emerald-200/70 dark:border-emerald-900/40 bg-emerald-50/80 dark:bg-emerald-900/25 flex items-center justify-center text-emerald-700 dark:text-emerald-300">
-              <el-icon :size="18"><Coin /></el-icon>
+              <el-icon :size="18" style="color:#f59e0b"><Coin /></el-icon>
             </div>
             <div class="min-w-0">
               <div class="text-[17px] font-extrabold tracking-tight text-gray-900 dark:text-gray-50 truncate">心愿</div>
-              <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">可用金币：<span class="font-extrabold text-amber-700 dark:text-amber-300">{{ coins }}</span></div>
+              <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">可用金币：<span class="font-extrabold" style="color:#f59e0b">{{ coins }}</span></div>
             </div>
           </div>
 

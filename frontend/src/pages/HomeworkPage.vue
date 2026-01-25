@@ -9,7 +9,6 @@
             </div>
             <div class="min-w-0">
               <div class="text-[17px] font-extrabold tracking-tight text-gray-900 dark:text-gray-50 truncate">作业家</div>
-              <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">语文 · 数学 · 英语 · 科学 · 课表</div>
             </div>
           </div>
         </div>

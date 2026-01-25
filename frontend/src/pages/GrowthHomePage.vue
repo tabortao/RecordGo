@@ -18,21 +18,21 @@
     <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24">
       <div class="max-w-4xl mx-auto space-y-6">
         <!-- Profile & BMI Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-3xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden">
           <!-- Background Decoration -->
           <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-50 to-transparent dark:from-blue-900/10 rounded-bl-[100px] -z-0"></div>
           
-          <div class="relative z-10 flex flex-col sm:flex-row gap-8">
+          <div class="relative z-10 flex flex-row items-stretch gap-4 sm:gap-8">
             <!-- Left: Profile Info -->
-            <div class="flex-1 flex items-center gap-5">
+            <div class="flex-1 min-w-0 flex items-center gap-4 sm:gap-5">
                <div class="relative">
-                 <el-avatar :size="72" :src="avatarSrc" class="border-4 border-white dark:border-gray-700 shadow-md" />
+                 <el-avatar :size="72" :src="avatarSrc" class="border-4 border-white dark:border-gray-700 shadow-md scale-[0.9] sm:scale-100 origin-left" />
                  <div class="absolute -bottom-1 -right-1 bg-green-400 text-white p-1 rounded-full shadow-sm border-2 border-white dark:border-gray-800">
                     <el-icon :size="12"><TrendCharts /></el-icon>
                  </div>
                </div>
                <div>
-                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1.5">{{ displayName }}</h1>
+                 <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1.5 truncate">{{ displayName }}</h1>
                  <div class="flex flex-wrap gap-2">
                    <span class="px-2.5 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300">{{ ageText }}</span>
                    <span class="px-2.5 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300">{{ genderText }}</span>
@@ -41,8 +41,8 @@
             </div>
 
             <!-- Right: BMI Status -->
-            <div class="sm:w-64 bg-white/60 dark:bg-gray-700/30 rounded-2xl p-4 border border-gray-100 dark:border-gray-600/30 backdrop-blur-sm">
-               <div class="flex items-center justify-between mb-3">
+            <div class="w-40 sm:w-64 shrink-0 bg-white/60 dark:bg-gray-700/30 rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-600/30 backdrop-blur-sm">
+               <div class="flex items-center justify-between mb-2 sm:mb-3">
                  <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">BMI 指数</span>
                  <el-tooltip content="点击查看 BMI 详情与建议" placement="top">
                    <div class="cursor-pointer text-gray-400 hover:text-blue-500 transition-colors" @click="openBmiInfo">
@@ -53,13 +53,13 @@
                
                <div class="flex items-center gap-4">
                  <div class="relative">
-                   <div class="w-14 h-14 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center overflow-hidden">
-                     <img :src="genderAvatarSrc" class="w-10 h-10 object-contain" alt="Gender Avatar" />
+                   <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center overflow-hidden">
+                     <img :src="genderAvatarSrc" class="w-9 h-9 sm:w-10 sm:h-10 object-contain" alt="Gender Avatar" />
                    </div>
                  </div>
                  <div>
-                   <div v-if="bmiValue !== null" class="text-3xl font-black text-gray-800 dark:text-white leading-none mb-1">{{ bmiValue.toFixed(1) }}</div>
-                   <div v-else class="text-xs font-bold text-gray-400 dark:text-gray-500 leading-none mb-1">录入身高与体重后显示</div>
+                   <div v-if="bmiValue !== null" class="text-2xl sm:text-3xl font-black text-gray-800 dark:text-white leading-none mb-1">{{ bmiValue.toFixed(1) }}</div>
+                   <div v-else class="text-[11px] font-bold text-gray-400 dark:text-gray-500 leading-tight mb-1">录入身高与体重后显示</div>
                    <div
                      v-if="bmiStatusText"
                      class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold"

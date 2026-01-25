@@ -1,5 +1,5 @@
 <template>
-  <SettingsShell title="关于" subtitle="版本信息与联系入口" :icon="InfoFilled" tone="sky" container-class="max-w-2xl">
+  <SettingsShell title="关于" :icon="InfoFilled" tone="sky" container-class="max-w-2xl">
     <SettingsCard>
       <div class="flex flex-col items-center justify-center px-2 py-6">
         <div class="relative">
@@ -20,7 +20,7 @@
       </div>
     </SettingsCard>
 
-    <SettingsCard title="快捷入口" description="打开外部链接或进入帮助页面">
+    <SettingsCard title="快捷入口">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <button
           class="group w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/40 hover:bg-white/80 dark:hover:bg-gray-900/70 transition active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"

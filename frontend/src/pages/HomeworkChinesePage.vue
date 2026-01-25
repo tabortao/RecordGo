@@ -1,6 +1,6 @@
 <template>
-  <SettingsShell title="语文" subtitle="拼音练习 · 汉字闯关" :icon="Reading" tone="red" container-class="max-w-5xl" back-to="/homework">
-    <SettingsCard title="练习入口" description="选择一个模块开始学习。">
+  <SettingsShell title="语文" :icon="Reading" tone="red" container-class="max-w-5xl" back-to="/homework">
+    <SettingsCard>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         <button
           type="button"
@@ -15,7 +15,6 @@
               </div>
             </div>
             <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">拼音</div>
-            <div class="text-[11px] text-gray-500 dark:text-gray-400">声母韵母组合</div>
           </div>
         </button>
 
@@ -32,7 +31,6 @@
               </div>
             </div>
             <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">汉字英雄</div>
-            <div class="text-[11px] text-gray-500 dark:text-gray-400">识字与闯关</div>
           </div>
         </button>
       </div>
