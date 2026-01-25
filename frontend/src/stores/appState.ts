@@ -66,6 +66,26 @@ export interface AppState {
   hasLoadedOnce: boolean
 }
 
+const BUILTIN_CUSTOM_TTS_PROFILES: CustomTTSProfile[] = [
+  {
+    id: 'builtin-yunyang',
+    name: '云扬',
+    apiUrl: 'https://tts.wangwangit.com/v1/audio/speech',
+    apiKey: '',
+    voiceId: 'zh-CN-YunyangNeural',
+    speed: 1,
+    pitch: 1,
+    method: 'POST'
+  }
+]
+
+function withBuiltinCustomProfiles(customProfiles: CustomTTSProfile[] | undefined | null): CustomTTSProfile[] {
+  const existing = Array.isArray(customProfiles) ? customProfiles : []
+  const ids = new Set(existing.map(p => p.id).filter((v): v is string => typeof v === 'string' && v.length > 0))
+  const builtin = BUILTIN_CUSTOM_TTS_PROFILES.filter(p => !ids.has(p.id))
+  return [...builtin, ...existing]
+}
+
 const DEFAULT_STATE: AppState = {
   coins: 0,
   wishDeductedCoins: 0,
@@ -90,7 +110,7 @@ const DEFAULT_STATE: AppState = {
     voiceURI: null,
     rate: 1,
     pitch: 1,
-    customProfiles: [],
+    customProfiles: withBuiltinCustomProfiles([]),
     activeCustomId: null
   },
   // 中文注释：任务备注入口默认开启
@@ -113,12 +133,14 @@ export const useAppState = defineStore('appState', {
     if (!raw) return DEFAULT_STATE
     try {
       const persisted = JSON.parse(raw) as Partial<AppState>
-      return {
+      const nextState: AppState = {
         ...DEFAULT_STATE,
         ...persisted,
         tomato: { ...DEFAULT_STATE.tomato, ...(persisted.tomato || {}) },
         speech: { ...DEFAULT_STATE.speech, ...(persisted.speech || {}) }
       }
+      nextState.speech.customProfiles = withBuiltinCustomProfiles(nextState.speech.customProfiles)
+      return nextState
     } catch {
       return DEFAULT_STATE
     }

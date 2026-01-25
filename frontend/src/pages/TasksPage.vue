@@ -37,7 +37,7 @@
                 <el-icon :size="18" style="color:#f59e0b"><Coin /></el-icon>
                 <span class="font-extrabold tabular-nums" style="color:#f59e0b">{{ totalCoins }}</span>
               </div>
-              <el-icon :size="22" class="cursor-pointer text-pink-500 dark:text-pink-300" @click="router.push('/tasks/stats')"><DataAnalysis /></el-icon>
+              <img :src="taskStatsIcon" alt="任务统计" class="w-6 h-6 cursor-pointer select-none" draggable="false" @click="router.push('/tasks/stats')" />
             </div>
           </div>
         </div>
@@ -537,8 +537,9 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus/es/components/form'
-import { Plus, Clock, List, Coin, Money, CircleCheck, MoreFilled, DataAnalysis, Edit, Delete, Filter, ChatDotRound, Sort, Headset, CirclePlusFilled } from '@element-plus/icons-vue'
+import { Plus, Clock, List, Coin, Money, CircleCheck, MoreFilled, Edit, Delete, Filter, ChatDotRound, Sort, Headset, CirclePlusFilled } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/avatars/default.png'
+import taskStatsIcon from '@/assets/icons/task-stats-color.svg'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
 import { usePermissions } from '@/composables/permissions'

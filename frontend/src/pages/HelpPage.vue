@@ -1,5 +1,5 @@
 <template>
-  <SettingsShell title="使用帮助" :icon="QuestionFilled" tone="sky" container-class="max-w-3xl" back-to="/settings">
+  <SettingsShell title="使用帮助" :icon="QuestionFilled" tone="sky" container-class="max-w-3xl">
     <SettingsCard>
       <div class="flex items-start gap-4">
         <div class="relative shrink-0">

@@ -26,7 +26,7 @@
     <div class="flex-1 overflow-y-auto px-4 pt-5 space-y-4 relative z-10" style="padding-bottom: calc(env(safe-area-inset-bottom) + 96px)">
        
        <!-- 账号管理组 -->
-       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden animate-slide-up" style="animation-delay: 0.1s;">
+       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
           <div class="px-4 py-3 border-b border-gray-50 dark:border-gray-700/30 flex items-center gap-2">
              <div class="w-1 h-4 bg-blue-500 rounded-full shadow-sm"></div>
              <span class="font-bold text-gray-800 dark:text-gray-100 text-sm">账号管理</span>
@@ -76,7 +76,7 @@
        </div>
 
        <!-- 数据管理 -->
-       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden animate-slide-up" style="animation-delay: 0.2s;">
+       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
           <div class="px-4 py-3 border-b border-gray-50 dark:border-gray-700/30 flex items-center gap-2">
              <div class="w-1 h-4 bg-orange-500 rounded-full shadow-sm"></div>
              <span class="font-bold text-gray-800 dark:text-gray-100 text-sm">数据管理</span>
@@ -129,7 +129,7 @@
        </div>
 
        <!-- 系统设置 -->
-       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden animate-slide-up" style="animation-delay: 0.3s;">
+       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden">
           <div class="px-4 py-3 border-b border-gray-50 dark:border-gray-700/30 flex items-center gap-2">
              <div class="w-1 h-4 bg-purple-500 rounded-full shadow-sm"></div>
              <span class="font-bold text-gray-800 dark:text-gray-100 text-sm">系统设置</span>
@@ -339,35 +339,4 @@ async function confirmClear() {
 // 中文注释：按需求取消“最近金币变动”卡片相关逻辑
 </script>
 
-<style scoped>
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in-up {
-  animation: fade-in-up 0.6s ease-out forwards;
-}
-
-.animate-slide-up {
-  opacity: 0; /* Initially hidden */
-  animation: slide-up 0.5s ease-out forwards;
-}
-</style>
+<style scoped></style>
