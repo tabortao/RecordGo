@@ -1,43 +1,50 @@
 <template>
-  <div class="min-h-screen bg-[#FDF6F8] dark:bg-gray-900 pb-10 font-sans">
-    <!-- Header -->
-    <div class="sticky top-0 z-20 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-pink-100 dark:border-gray-700 flex items-center justify-between p-4 shadow-sm">
-      <div class="flex items-center gap-3">
-        <el-icon :size="22" class="cursor-pointer text-gray-600 dark:text-gray-300 hover:text-pink-500 transition" @click="router.back()"><ArrowLeft /></el-icon>
-        <h1 class="text-xl font-bold text-gray-800 dark:text-white">语文</h1>
-      </div>
-    </div>
-
-    <!-- Grid -->
-    <div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-       <!-- Pinyin -->
-       <div 
-          class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center gap-3 cursor-pointer hover:shadow-md transition active:scale-95"
+  <SettingsShell title="语文" subtitle="拼音练习 · 汉字闯关" :icon="Reading" tone="red" container-class="max-w-5xl" back-to="/homework">
+    <SettingsCard title="练习入口" description="选择一个模块开始学习。">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <button
+          type="button"
+          class="group rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/55 backdrop-blur px-3 py-4 shadow-sm hover:shadow-md transition active:scale-[0.99]"
           @click="router.push('/homework/chinese/pinyin')"
-       >
-          <div class="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-             <span class="text-3xl font-bold">a</span>
+        >
+          <div class="flex flex-col items-center gap-2">
+            <div class="relative">
+              <div class="absolute -inset-3 rounded-2xl bg-sky-200/40 dark:bg-sky-500/12 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div class="relative h-14 w-14 rounded-2xl border border-sky-100/80 dark:border-sky-900/40 bg-sky-50/80 dark:bg-sky-900/25 flex items-center justify-center text-sky-700 dark:text-sky-300">
+                <span class="text-3xl font-extrabold leading-none">a</span>
+              </div>
+            </div>
+            <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">拼音</div>
+            <div class="text-[11px] text-gray-500 dark:text-gray-400">声母韵母组合</div>
           </div>
-          <span class="font-semibold text-gray-700 dark:text-gray-200">拼音</span>
-       </div>
+        </button>
 
-       <!-- Hanzi Hero -->
-       <div 
-          class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center gap-3 cursor-pointer hover:shadow-md transition active:scale-95"
+        <button
+          type="button"
+          class="group rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/55 backdrop-blur px-3 py-4 shadow-sm hover:shadow-md transition active:scale-[0.99]"
           @click="router.push('/homework/chinese/hanzi-hero')"
-       >
-          <div class="w-16 h-16 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center overflow-hidden">
-             <img src="@/assets/button/hanzihero.png" alt="Hanzi" class="w-full h-full object-cover opacity-90" />
+        >
+          <div class="flex flex-col items-center gap-2">
+            <div class="relative">
+              <div class="absolute -inset-3 rounded-2xl bg-amber-200/40 dark:bg-amber-500/12 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div class="relative h-14 w-14 rounded-2xl border border-amber-100/80 dark:border-amber-900/40 bg-amber-50/80 dark:bg-amber-900/20 overflow-hidden">
+                <img src="@/assets/button/hanzihero.png" alt="Hanzi" class="h-full w-full object-cover opacity-90" />
+              </div>
+            </div>
+            <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">汉字英雄</div>
+            <div class="text-[11px] text-gray-500 dark:text-gray-400">识字与闯关</div>
           </div>
-          <span class="font-semibold text-gray-700 dark:text-gray-200">汉字英雄</span>
-       </div>
-    </div>
-  </div>
+        </button>
+      </div>
+    </SettingsCard>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { Reading } from '@element-plus/icons-vue'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 const router = useRouter()
 </script>

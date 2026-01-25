@@ -1,21 +1,12 @@
 <template>
   <!-- 中文注释：独立的创建任务页面，顶部带返回图标；布局响应式 -->
-  <div class="p-4 space-y-4">
-    <!-- 顶部栏：返回 + 标题 -->
-    <div class="flex items-center gap-2">
-      <el-icon :size="18" class="cursor-pointer text-gray-600" @click="goBack"><ArrowLeft /></el-icon>
-      <div class="w-8 h-8 rounded-full flex items-center justify-center bg-emerald-100 dark:bg-emerald-900">
-        <el-icon :size="20" class="text-emerald-600"><CirclePlusFilled /></el-icon>
-      </div>
-      <h2 class="font-semibold">创建任务</h2>
-    </div>
-
-    <el-tabs v-model="activeTab" class="w-full">
+  <SettingsShell title="创建任务" subtitle="普通创建 · AI 智能创建" :icon="CirclePlusFilled" tone="emerald" container-class="max-w-5xl" back-to="/tasks">
+    <el-tabs v-model="activeTab" class="w-full task-create-tabs">
       <el-tab-pane label="普通创建" name="normal">
         <!-- 响应式网格：移动端单列，桌面端双列/三列（根据内容） -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <!-- 基础信息分区 -->
-          <el-card shadow="never" class="rounded-lg">
+          <el-card shadow="never" class="pretty-card">
             <el-form ref="formRefInstance" :model="form" :rules="rules" label-width="100px">
               <el-form-item prop="name" required>
                 <template #label>
@@ -65,7 +56,7 @@
           </el-card>
 
           <!-- 计划与重复分区 -->
-          <el-card shadow="never" class="rounded-lg">
+          <el-card shadow="never" class="pretty-card">
             <el-form :model="form" label-width="100px">
               <el-form-item prop="score">
                 <template #label>
@@ -117,15 +108,15 @@
 
         <!-- 底部操作区 -->
         <div class="flex justify-end gap-2 mt-4">
-          <el-button @click="goBack">取消</el-button>
-          <el-button type="primary" @click="submitForm">确定</el-button>
+          <el-button class="!rounded-2xl !font-extrabold" @click="goBack">取消</el-button>
+          <el-button type="primary" class="!rounded-2xl !font-extrabold" @click="submitForm">确定</el-button>
         </div>
       </el-tab-pane>
 
       <!-- AI 智能创建 Tab -->
       <el-tab-pane label="AI智能创建" name="ai">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <el-card shadow="never" class="rounded-lg h-fit">
+          <el-card shadow="never" class="pretty-card h-fit">
             <template #header>
               <div class="flex items-center justify-between">
                 <span>输入需求</span>
@@ -150,15 +141,15 @@
                   list-type="picture"
                   :file-list="aiFileList"
                >
-                  <el-button type="primary" plain :icon="Picture">上传图片识别</el-button>
+                  <el-button type="primary" plain :icon="Picture" class="!rounded-2xl !font-extrabold">上传图片识别</el-button>
                   <template #tip>
                     <div class="el-upload__tip">支持 jpg/png/webp，图片仅用于辅助识别</div>
-                    <div class="text-[12px] text-[#999999] mt-2">AI智能创建任务正在测试，可能出现不准确的情况。如遇到问题，欢迎反馈给我们！</div>
+                    <div class="text-[12px] text-gray-500 dark:text-gray-400 mt-2 leading-5">AI智能创建任务正在测试，可能出现不准确的情况。如遇到问题，欢迎反馈给我们！</div>
                   </template>
                </el-upload>
             </div>
             <div class="mt-6 flex justify-end">
-              <el-button type="primary" :loading="aiLoading" @click="handleAIParse" size="large">
+              <el-button type="primary" class="!rounded-2xl !font-extrabold" :loading="aiLoading" @click="handleAIParse" size="large">
                 <el-icon class="mr-1"><MagicStick /></el-icon>开始智能识别
               </el-button>
             </div>
@@ -166,9 +157,9 @@
 
           <!-- 识别结果 -->
           <div class="space-y-4">
-             <div v-if="aiTasks.length > 0" class="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                <h3 class="font-bold text-gray-700 dark:text-gray-200">识别结果 ({{ aiTasks.length }})</h3>
-                <el-button type="success" @click="submitAITasks" :loading="aiSubmitting">
+             <div v-if="aiTasks.length > 0" class="flex justify-between items-center bg-white/70 dark:bg-gray-900/55 backdrop-blur border border-gray-100 dark:border-gray-800 p-3 rounded-2xl">
+                <h3 class="font-extrabold text-gray-900 dark:text-gray-50">识别结果 ({{ aiTasks.length }})</h3>
+                <el-button type="success" class="!rounded-2xl !font-extrabold" @click="submitAITasks" :loading="aiSubmitting">
                    确认创建全部
                 </el-button>
              </div>
@@ -176,7 +167,7 @@
              <el-empty v-if="aiTasks.length === 0 && !aiLoading" description="暂无识别结果，请在左侧输入并点击识别" />
 
              <div v-loading="aiLoading" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                <el-card v-for="(task, idx) in aiTasks" :key="idx" shadow="hover" class="relative group">
+                <el-card v-for="(task, idx) in aiTasks" :key="idx" shadow="hover" class="pretty-card relative group">
                    <div class="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                       <el-tag v-if="task.confidence" size="small" :type="task.confidence === 'High' ? 'success' : 'warning'">
                         置信度: {{ task.confidence === 'High' ? '高' : '中' }}
@@ -235,7 +226,7 @@
         </div>
       </el-tab-pane>
     </el-tabs>
-  </div>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
@@ -249,9 +240,10 @@ import { useTaskCategories } from '@/stores/categories'
 const cats = useTaskCategories()
 const categories = computed(() => cats.list())
 onMounted(async () => { try { await cats.syncFromServer() } catch {} })
-import { ArrowLeft, Plus, Edit, List, Clock, Coin, CirclePlusFilled, QuestionFilled, MagicStick, Delete, Picture } from '@element-plus/icons-vue'
+import { Plus, Edit, List, Clock, Coin, CirclePlusFilled, QuestionFilled, MagicStick, Delete, Picture } from '@element-plus/icons-vue'
 import router from '@/router'
 import TaskImageUploader from '@/components/TaskImageUploader.vue'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
 // 中文注释：补充导入 updateTask，用于在图片上传后写入 image_json，避免未定义错误
 import { createTask, uploadTaskImage, updateTask, enqueueOfflineTask, parseTaskByAI, type AITaskParseItem } from '@/services/tasks'
 import { prepareUpload } from '@/utils/image'
@@ -549,5 +541,88 @@ async function submitAITasks() {
 :deep(input.el-input__inner),
 :deep(textarea.el-textarea__inner) {
   font-size: 16px;
+}
+
+:deep(.task-create-tabs .el-tabs__header) {
+  margin: 0 0 12px;
+}
+
+:deep(.task-create-tabs .el-tabs__content) {
+  padding-top: 6px;
+}
+
+:deep(.task-create-tabs .el-tabs__nav-wrap::after) {
+  height: 0;
+}
+
+:deep(.task-create-tabs .el-tabs__nav) {
+  background: rgb(255 255 255 / 0.75);
+  border: 1px solid rgb(255 255 255 / 0.5);
+  backdrop-filter: blur(16px);
+  border-radius: 9999px;
+  padding: 4px;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.06);
+}
+
+.dark :deep(.task-create-tabs .el-tabs__nav) {
+  background: rgb(17 24 39 / 0.65);
+  border: 1px solid rgb(31 41 55 / 0.6);
+}
+
+:deep(.task-create-tabs .el-tabs__item) {
+  height: 36px;
+  line-height: 36px;
+  font-size: 13px;
+  font-weight: 800;
+  border-radius: 9999px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  color: rgb(55 65 81);
+  transition: background-color 180ms ease, color 180ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+:deep(.task-create-tabs .el-tabs__item:hover) {
+  background: rgb(255 255 255 / 0.55);
+}
+
+.dark :deep(.task-create-tabs .el-tabs__item) {
+  color: rgb(229 231 235);
+}
+
+.dark :deep(.task-create-tabs .el-tabs__item:hover) {
+  background: rgb(31 41 55 / 0.45);
+}
+
+:deep(.task-create-tabs .el-tabs__item.is-active) {
+  color: rgb(4 120 87);
+  background: linear-gradient(180deg, rgb(16 185 129 / 0.24), rgb(16 185 129 / 0.1));
+  border: 1px solid rgb(16 185 129 / 0.28);
+  box-shadow: 0 10px 24px rgb(16 185 129 / 0.12);
+  transform: translateY(-0.5px);
+}
+
+.dark :deep(.task-create-tabs .el-tabs__item.is-active) {
+  color: rgb(167 243 208);
+  background: linear-gradient(180deg, rgb(16 185 129 / 0.18), rgb(16 185 129 / 0.08));
+  border: 1px solid rgb(16 185 129 / 0.2);
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.35);
+  transform: translateY(-0.5px);
+}
+
+:deep(.task-create-tabs .el-tabs__active-bar) {
+  display: none;
+}
+
+:deep(.pretty-card.el-card) {
+  border-radius: 24px;
+  border: 1px solid rgb(255 255 255 / 0.5);
+  background: rgb(255 255 255 / 0.8);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.dark :deep(.pretty-card.el-card) {
+  border: 1px solid rgb(31 41 55 / 0.6);
+  background: rgb(17 24 39 / 0.65);
 }
 </style>

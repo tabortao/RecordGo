@@ -1,41 +1,42 @@
 <template>
-  <div class="p-4 space-y-4 pb-24">
-    <div class="flex items-center gap-2 mb-6">
-      <el-icon :size="20" class="cursor-pointer text-gray-600" @click="router.back()"><ArrowLeft /></el-icon>
-      <h1 class="text-xl font-bold text-gray-800 dark:text-white">拼音王国</h1>
-    </div>
+  <SettingsShell title="拼音王国" subtitle="用游戏化方式练声母、韵母与拼读" :icon="EditPen" tone="sky" container-class="max-w-5xl" back-to="/homework/chinese">
+    <SettingsCard title="选择玩法" description="从轻松的小游戏开始，循序渐进更有效。">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <button
+          type="button"
+          class="group rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/55 backdrop-blur px-4 py-4 shadow-sm hover:shadow-md transition active:scale-[0.99] text-left"
+          @click="router.push('/homework/chinese/pinyin/wheel')"
+        >
+          <div class="flex items-center justify-between">
+            <div class="h-11 w-11 rounded-2xl border border-emerald-100/80 dark:border-emerald-900/40 bg-emerald-50/80 dark:bg-emerald-900/25 flex items-center justify-center text-2xl">🎡</div>
+            <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700/70 dark:text-emerald-300/70">轻松练习</div>
+          </div>
+          <div class="mt-3 text-base font-extrabold tracking-tight text-gray-900 dark:text-gray-50">拼音大转盘</div>
+          <div class="mt-1 text-sm text-gray-600 dark:text-gray-300">随机组合，快速反应</div>
+        </button>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-      <div 
-        class="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 shadow-sm border border-green-100 dark:border-green-800 flex flex-col items-center justify-center gap-3 cursor-pointer hover:shadow-md transition active:scale-95 relative overflow-hidden group"
-        @click="router.push('/homework/chinese/pinyin/wheel')"
-      >
-        <div class="absolute -right-4 -top-4 w-16 h-16 bg-green-200 rounded-full opacity-20 group-hover:scale-150 transition duration-500"></div>
-        <div class="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center text-3xl">
-          🎡
-        </div>
-        <span class="font-bold text-green-700 dark:text-green-400">拼音大转盘</span>
-        <span class="text-xs text-green-600/70">互动游戏</span>
+        <button
+          type="button"
+          class="group rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/55 backdrop-blur px-4 py-4 shadow-sm hover:shadow-md transition active:scale-[0.99] text-left"
+          @click="router.push('/homework/chinese/pinyin/adventure')"
+        >
+          <div class="flex items-center justify-between">
+            <div class="h-11 w-11 rounded-2xl border border-sky-100/80 dark:border-sky-900/40 bg-sky-50/80 dark:bg-sky-900/25 flex items-center justify-center text-2xl">🏰</div>
+            <div class="text-[11px] font-extrabold uppercase tracking-wider text-sky-700/70 dark:text-sky-300/70">闯关模式</div>
+          </div>
+          <div class="mt-3 text-base font-extrabold tracking-tight text-gray-900 dark:text-gray-50">智能拼音大闯关</div>
+          <div class="mt-1 text-sm text-gray-600 dark:text-gray-300">逐步提升，巩固拼读</div>
+        </button>
       </div>
-
-      <div 
-        class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 shadow-sm border border-blue-100 dark:border-blue-800 flex flex-col items-center justify-center gap-3 cursor-pointer hover:shadow-md transition active:scale-95 relative overflow-hidden group"
-        @click="router.push('/homework/chinese/pinyin/adventure')"
-      >
-        <div class="absolute -right-4 -top-4 w-16 h-16 bg-blue-200 rounded-full opacity-20 group-hover:scale-150 transition duration-500"></div>
-        <div class="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center text-3xl">
-          🏰
-        </div>
-        <span class="font-bold text-blue-700 dark:text-blue-400">智能拼音大闯关</span>
-        <span class="text-xs text-blue-600/70">互动游戏</span>
-      </div>
-    </div>
-  </div>
+    </SettingsCard>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { EditPen } from '@element-plus/icons-vue'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 const router = useRouter()
 </script>
