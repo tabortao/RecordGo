@@ -1,11 +1,16 @@
 <template>
   <!-- 中文注释：任务页面，包含统计、列表、创建/编辑、批量删除、番茄钟功能；支持下拉刷新 -->
-  <div ref="wrapperRef" class="pull-refresh-wrapper" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd" @touchcancel="onTouchCancel" style="overscroll-behavior-y: contain; touch-action: pan-y;">
+  <div ref="wrapperRef" class="pull-refresh-wrapper tasks-root" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd" @touchcancel="onTouchCancel" style="overscroll-behavior-y: contain; touch-action: pan-y;">
+    <div class="tasks-bg pointer-events-none">
+      <div class="tasks-glow tasks-glow-a" />
+      <div class="tasks-glow tasks-glow-b" />
+      <div class="tasks-glow tasks-glow-c" />
+    </div>
     <!-- 下拉刷新指示器（固定在顶部），拉动或刷新时淡入显示） -->
     <div class="fixed top-0 left-0 right-0 flex justify-center pointer-events-none" :style="{ opacity: (pullY>10||refreshing)?1:0 }">
-      <div class="mt-2 text-xs text-gray-500 bg-white/80 rounded px-2 py-1 shadow">{{ refreshing ? '正在刷新...' : '下拉刷新' }}</div>
+      <div class="mt-2 text-xs text-gray-700 dark:text-gray-200 tasks-chip px-3 py-1.5">{{ refreshing ? '正在刷新...' : '下拉刷新' }}</div>
     </div>
-    <div class="fixed top-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur z-40 border-b border-gray-200 dark:border-gray-700">
+    <div class="fixed top-0 left-0 right-0 tasks-topbar z-40">
       <div class="px-4 py-2 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <el-dropdown trigger="click" @command="onAvatarCommand">
@@ -39,7 +44,7 @@
       </div>
     </div>
     <div class="h-14"></div>
-    <div class="p-4 space-y-4" :style="{ transform: pullY ? ('translateY(' + pullY + 'px)') : 'none', transition: pulling ? 'none' : 'transform 0.2s ease' }">
+    <div class="p-4 space-y-4 relative z-10" :style="{ transform: pullY ? ('translateY(' + pullY + 'px)') : 'none', transition: pulling ? 'none' : 'transform 0.2s ease' }">
     
 
     <!-- 顶部统计：四项一行，不同颜色图标；下方单独大“统计”卡片居中显示 -->
@@ -154,7 +159,7 @@
             v-for="t in group.items"
             :key="t.id"
             shadow="never"
-            class="relative border border-gray-300 dark:border-gray-700 hover:ring-1 hover:ring-blue-300 dark:hover:ring-blue-200/30 transition rounded-xl mx-1"
+            class="task-card relative hover:ring-1 hover:ring-blue-300 dark:hover:ring-blue-200/30 transition rounded-2xl mx-1"
             :data-task-id="t.id"
             :class="{ 'ring-2 ring-blue-500': activeTaskId === t.id }"
             @click="activeTaskId = t.id"
@@ -484,7 +489,7 @@
       type="success"
       circle
       class="fixed no-pull"
-      :style="{ left: fabPos.x + 'px', top: fabPos.y + 'px', backgroundColor: '#22c55e', borderColor: '#22c55e', zIndex: 60 }"
+      :style="{ left: fabPos.x + 'px', top: fabPos.y + 'px', zIndex: 60 }"
       @mousedown="onFabDown"
       @touchstart="onFabTouchStart"
       @click="openCreate"
@@ -1528,7 +1533,7 @@ const activeTaskId = ref<number | null>(null)
 const fabPos = ref<{ x: number; y: number }>({ x: 0, y: 0 })
 const fabKey = 'createTaskFabPos'
 function clampFabIntoViewport() {
-  const size = 64
+  const size = 68
   const maxX = Math.max(8, window.innerWidth - size)
   const maxY = Math.max(8, window.innerHeight - size)
   fabPos.value = {
@@ -1549,7 +1554,7 @@ function initFab() {
     }
   } catch {}
   const margin = 24
-  fabPos.value = { x: window.innerWidth - 64 - margin, y: window.innerHeight - 64 - (isMobile.value ? 96 : 80) }
+  fabPos.value = { x: window.innerWidth - 68 - margin, y: window.innerHeight - 68 - (isMobile.value ? 104 : 90) }
   clampFabIntoViewport()
 }
 function saveFab() {
@@ -1569,7 +1574,7 @@ function onFabMove(e: MouseEvent) {
   if (!draggingFab) return
   const dx = e.clientX - pointerStart.x
   const dy = e.clientY - pointerStart.y
-  fabPos.value = { x: Math.max(8, Math.min(window.innerWidth - 64, fabStart.x + dx)), y: Math.max(8, Math.min(window.innerHeight - 64, fabStart.y + dy)) }
+  fabPos.value = { x: Math.max(8, Math.min(window.innerWidth - 68, fabStart.x + dx)), y: Math.max(8, Math.min(window.innerHeight - 68, fabStart.y + dy)) }
 }
 function onFabUp() {
   draggingFab = false
@@ -1591,7 +1596,7 @@ function onFabTouchMove(e: TouchEvent) {
   const dx = t.clientX - pointerStart.x
   const dy = t.clientY - pointerStart.y
   e.preventDefault()
-  fabPos.value = { x: Math.max(8, Math.min(window.innerWidth - 64, fabStart.x + dx)), y: Math.max(8, Math.min(window.innerHeight - 64, fabStart.y + dy)) }
+  fabPos.value = { x: Math.max(8, Math.min(window.innerWidth - 68, fabStart.x + dx)), y: Math.max(8, Math.min(window.innerHeight - 68, fabStart.y + dy)) }
 }
 function onFabTouchEnd() {
   draggingFab = false
@@ -1605,6 +1610,178 @@ function onFabTouchEnd() {
 /* 中文注释：基本页面样式，响应式栅格布局已通过 Tailwind 实现 */
 /* 中文注释：分类筛选按钮的文字加粗，增强可读性 */
 .el-radio-button__inner { font-weight: 600; }
+
+:deep(.el-radio-group) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+:deep(.el-radio-button__inner) {
+  border-radius: 9999px !important;
+  border: 1px solid rgb(255 255 255 / 0.55) !important;
+  background: rgb(255 255 255 / 0.62) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: rgb(55 65 81);
+  box-shadow: 0 10px 26px rgb(0 0 0 / 0.05);
+  padding: 0 12px;
+}
+
+.dark :deep(.el-radio-button__inner) {
+  border: 1px solid rgb(148 163 184 / 0.14) !important;
+  background: rgb(17 24 39 / 0.55) !important;
+  color: rgb(229 231 235);
+  box-shadow: 0 18px 46px rgb(0 0 0 / 0.42);
+}
+
+:deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  color: rgb(4 120 87) !important;
+  background: linear-gradient(180deg, rgb(16 185 129 / 0.24), rgb(16 185 129 / 0.1)) !important;
+  border: 1px solid rgb(16 185 129 / 0.22) !important;
+  box-shadow: 0 16px 34px rgb(16 185 129 / 0.14);
+}
+
+.dark :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  color: rgb(167 243 208) !important;
+  background: linear-gradient(180deg, rgb(16 185 129 / 0.2), rgb(16 185 129 / 0.08)) !important;
+  border: 1px solid rgb(16 185 129 / 0.18) !important;
+}
+
+.tasks-root {
+  position: relative;
+}
+
+.tasks-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.tasks-glow {
+  position: absolute;
+  filter: blur(44px);
+  opacity: 0.95;
+  transform: translateZ(0);
+}
+
+.tasks-glow-a {
+  width: 520px;
+  height: 520px;
+  left: -180px;
+  top: -220px;
+  background: radial-gradient(circle at 30% 30%, rgb(16 185 129 / 0.35), transparent 60%),
+    radial-gradient(circle at 70% 10%, rgb(59 130 246 / 0.25), transparent 55%);
+}
+
+.tasks-glow-b {
+  width: 620px;
+  height: 620px;
+  right: -240px;
+  top: 80px;
+  background: radial-gradient(circle at 40% 30%, rgb(236 72 153 / 0.26), transparent 60%),
+    radial-gradient(circle at 70% 55%, rgb(245 158 11 / 0.22), transparent 55%);
+}
+
+.tasks-glow-c {
+  width: 760px;
+  height: 760px;
+  left: -260px;
+  bottom: -340px;
+  background: radial-gradient(circle at 45% 45%, rgb(20 184 166 / 0.24), transparent 62%),
+    radial-gradient(circle at 65% 20%, rgb(147 197 253 / 0.18), transparent 56%);
+}
+
+.tasks-topbar {
+  background:
+    radial-gradient(140% 160% at 20% 0%, rgb(255 255 255 / 0.55), transparent 55%),
+    rgb(255 255 255 / 0.74);
+  border-bottom: 1px solid rgb(255 255 255 / 0.6);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.dark .tasks-topbar {
+  background:
+    radial-gradient(140% 160% at 20% 0%, rgb(31 41 55 / 0.45), transparent 55%),
+    rgb(17 24 39 / 0.72);
+  border-bottom: 1px solid rgb(148 163 184 / 0.14);
+  box-shadow: 0 14px 42px rgb(0 0 0 / 0.42);
+}
+
+.tasks-chip {
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.72);
+  border: 1px solid rgb(255 255 255 / 0.55);
+  box-shadow: 0 10px 26px rgb(0 0 0 / 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.dark .tasks-chip {
+  background: rgb(17 24 39 / 0.72);
+  border: 1px solid rgb(148 163 184 / 0.14);
+  box-shadow: 0 18px 44px rgb(0 0 0 / 0.45);
+}
+
+:deep(.stat-card.el-card) {
+  border-radius: 18px;
+  border: 1px solid rgb(255 255 255 / 0.6);
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 26px rgb(0 0 0 / 0.05);
+}
+
+.dark :deep(.stat-card.el-card) {
+  border: 1px solid rgb(148 163 184 / 0.14);
+  background: rgb(17 24 39 / 0.6);
+  box-shadow: 0 18px 44px rgb(0 0 0 / 0.4);
+}
+
+.task-card {
+  border: 1px solid rgb(255 255 255 / 0.65);
+  background: rgb(255 255 255 / 0.76);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.05);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.dark .task-card {
+  border: 1px solid rgb(148 163 184 / 0.14);
+  background: rgb(17 24 39 / 0.62);
+  box-shadow: 0 18px 44px rgb(0 0 0 / 0.42);
+}
+
+.task-card:hover {
+  transform: translateY(-1px);
+}
+
+:deep(.tasks-fab.el-button) {
+  width: 68px;
+  height: 68px;
+  border-radius: 9999px;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  background:
+    radial-gradient(120% 160% at 30% 20%, rgb(255 255 255 / 0.6), transparent 58%),
+    linear-gradient(180deg, rgb(16 185 129), rgb(4 120 87));
+  box-shadow:
+    0 18px 50px rgb(16 185 129 / 0.26),
+    0 1px 0 rgb(255 255 255 / 0.55) inset;
+}
+
+.dark :deep(.tasks-fab.el-button) {
+  border: 1px solid rgb(16 185 129 / 0.2);
+  box-shadow:
+    0 20px 60px rgb(0 0 0 / 0.55),
+    0 1px 0 rgb(255 255 255 / 0.08) inset;
+}
+
+:deep(.tasks-fab.el-button:hover) {
+  filter: saturate(1.04);
+}
 /* 中文注释：缩小图片上传卡片与缩略图尺寸，保证整齐美观 */
 .image-upload :deep(.el-upload--picture-card) {
   width: 96px;
@@ -1638,8 +1815,35 @@ function onFabTouchEnd() {
 .section-card :deep(.el-card__header) {
   font-weight: 600;
 }
-.no-frame {
-  border: none !important;
+:deep(.no-frame.el-card) {
+  border-radius: 26px;
+  border: 1px solid rgb(255 255 255 / 0.65);
+  background: rgb(255 255 255 / 0.74);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 16px 44px rgb(0 0 0 / 0.06);
+}
+
+.dark :deep(.no-frame.el-card) {
+  border: 1px solid rgb(148 163 184 / 0.14);
+  background: rgb(17 24 39 / 0.62);
+  box-shadow: 0 20px 62px rgb(0 0 0 / 0.44);
+}
+.no-frame :deep(.el-card__header) {
+  position: relative;
+}
+.no-frame :deep(.el-card__body) {
+  position: relative;
+}
+.no-frame :deep(.el-card__header)::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(16 185 129 / 0.22), transparent);
+  opacity: 0.55;
 }
 .no-frame :deep(.el-card__header) {
   padding-left: 0;
