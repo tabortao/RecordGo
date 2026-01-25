@@ -1,11 +1,5 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300 pb-24" style="padding-bottom: calc(env(safe-area-inset-bottom) + 96px)">
-    <div class="pointer-events-none absolute inset-0 overflow-hidden">
-      <div class="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-emerald-300/35 dark:bg-emerald-500/18 blur-3xl" />
-      <div class="absolute -bottom-40 -left-28 h-80 w-80 rounded-full bg-amber-200/35 dark:bg-amber-500/16 blur-3xl" />
-      <div class="absolute inset-0 bg-[radial-gradient(1200px_circle_at_20%_-20%,rgba(255,255,255,.65),transparent_55%),radial-gradient(900px_circle_at_80%_0%,rgba(255,255,255,.45),transparent_55%)] dark:bg-[radial-gradient(1200px_circle_at_20%_-20%,rgba(255,255,255,.07),transparent_55%),radial-gradient(900px_circle_at_80%_0%,rgba(255,255,255,.06),transparent_55%)]" />
-    </div>
-
     <div class="sticky top-0 z-40 px-4 pt-4">
       <div class="rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/75 dark:bg-gray-900/65 backdrop-blur-xl shadow-sm">
         <div class="flex items-center justify-between gap-3 px-3 py-3">
@@ -116,22 +110,16 @@
     >
       <!-- 自定义标题栏，使用 Tailwind 增加背景与圆角 -->
       <template #header>
-        <div class="relative overflow-hidden border-b border-emerald-100 dark:border-emerald-900/40 bg-gradient-to-br from-emerald-50 via-emerald-50 to-white dark:from-emerald-950/30 dark:via-gray-900/40 dark:to-gray-950/40 px-4 pt-4 pb-3">
-          <div class="pointer-events-none absolute inset-0">
-            <div class="absolute -top-14 -right-16 h-44 w-44 rounded-full bg-emerald-300/35 dark:bg-emerald-500/15 blur-3xl" />
-            <div class="absolute -bottom-16 -left-20 h-48 w-48 rounded-full bg-amber-200/35 dark:bg-amber-500/12 blur-3xl" />
-          </div>
-
+        <div class="relative overflow-hidden border-b border-gray-100 dark:border-gray-800 bg-white/78 dark:bg-gray-950/35 backdrop-blur-xl px-4 pt-4 pb-3">
           <div class="relative flex items-start gap-3">
             <div class="relative shrink-0">
-              <div class="absolute -inset-2 rounded-2xl bg-emerald-200/45 dark:bg-emerald-500/12 blur-xl" />
               <div class="relative h-12 w-12 rounded-2xl border border-white/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-950/35 ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
                 <img v-if="exchangeTarget" :src="resolveIcon(exchangeTarget.icon)" class="h-full w-full object-cover" />
               </div>
             </div>
 
             <div class="min-w-0 flex-1">
-              <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700/70 dark:text-emerald-300/70">兑换心愿</div>
+              <div class="text-[11px] font-extrabold uppercase tracking-wider text-gray-600 dark:text-gray-400">兑换心愿</div>
               <div class="mt-1 text-lg font-extrabold tracking-tight text-gray-900 dark:text-gray-50 truncate">
                 {{ exchangeTarget?.name || '兑换心愿' }}
               </div>

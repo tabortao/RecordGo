@@ -1,17 +1,17 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-sky-50 to-indigo-100 dark:bg-gray-900">
-    <div class="fixed top-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur z-40 border-b border-gray-200 dark:border-gray-700">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div class="fixed top-0 left-0 right-0 stats-topbar z-40">
       <div class="px-4 py-2 flex items-center gap-2">
         <el-icon :size="18" class="cursor-pointer" @click="goBack"><ArrowLeft /></el-icon>
-        <el-icon :size="18" class="text-indigo-600 dark:text-gray-100"><DataAnalysis /></el-icon>
-        <div class="font-semibold text-indigo-700 dark:text-gray-100">任务统计</div>
+        <el-icon :size="18" class="text-emerald-600 dark:text-emerald-300"><DataAnalysis /></el-icon>
+        <div class="font-semibold text-gray-900 dark:text-gray-100">任务统计</div>
       </div>
     </div>
     <div class="h-12"></div>
 
     <div class="p-4 space-y-4">
-      <el-card shadow="never" class="rounded-xl overflow-hidden">
-        <el-tabs v-model="activeTab" @tab-change="onTabChange">
+      <el-card shadow="never" class="stats-card overflow-hidden">
+        <el-tabs v-model="activeTab" @tab-change="onTabChange" class="stats-tabs">
           <el-tab-pane label="本周" name="week" />
           <el-tab-pane label="本月" name="month" />
           <el-tab-pane label="本年" name="year" />
@@ -20,37 +20,37 @@
       </el-card>
 
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        <el-card shadow="never" class="rounded-xl bg-sky-50 dark:bg-gray-800">
+        <el-card shadow="never" class="stats-card">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 text-sky-600 dark:text-sky-400"><el-icon :size="18"><List /></el-icon><span class="text-xs">总任务数</span></div>
             <div class="font-bold text-sky-700 dark:text-sky-400">{{ anim.totalTasks }}</div>
           </div>
         </el-card>
-        <el-card shadow="never" class="rounded-xl bg-emerald-50 dark:bg-gray-800">
+        <el-card shadow="never" class="stats-card">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400"><el-icon :size="18"><Clock /></el-icon><span class="text-xs">总时长（分）</span></div>
             <div class="font-bold text-emerald-700 dark:text-emerald-400">{{ anim.totalMinutes }}</div>
           </div>
         </el-card>
-        <el-card shadow="never" class="rounded-xl bg-emerald-50 dark:bg-gray-800">
+        <el-card shadow="never" class="stats-card">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400"><el-icon :size="18"><CircleCheck /></el-icon><span class="text-xs">已完成</span></div>
             <div class="font-bold text-emerald-700 dark:text-emerald-400">{{ metrics.completed }}</div>
           </div>
         </el-card>
-        <el-card shadow="never" class="rounded-xl bg-indigo-50 dark:bg-gray-800">
+        <el-card shadow="never" class="stats-card">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><el-icon :size="18"><Clock /></el-icon><span class="text-xs">日均时长（分）</span></div>
             <div class="font-bold text-indigo-700 dark:text-indigo-400">{{ metrics.avgDailyMinutes }}</div>
           </div>
         </el-card>
-        <el-card shadow="never" class="rounded-xl bg-violet-50 dark:bg-gray-800">
+        <el-card shadow="never" class="stats-card">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 text-violet-600 dark:text-violet-400"><el-icon :size="18"><DataAnalysis /></el-icon><span class="text-xs">平均完成率</span></div>
             <div class="font-bold text-violet-700 dark:text-violet-400">{{ metrics.rate }}%</div>
           </div>
         </el-card>
-        <el-card shadow="never" class="rounded-xl bg-amber-50 dark:bg-gray-800">
+        <el-card shadow="never" class="stats-card">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400"><el-icon :size="18"><Coin /></el-icon><span class="text-xs">总金币数</span></div>
             <div class="font-bold text-amber-700 dark:text-amber-400">{{ anim.totalCoins }}</div>
@@ -58,7 +58,7 @@
         </el-card>
       </div>
 
-      <el-card shadow="never" class="rounded-xl">
+      <el-card shadow="never" class="stats-card">
         <template #header>
           <div class="flex items-center gap-2">
             <el-icon :size="18" class="text-emerald-600"><Histogram /></el-icon>
@@ -88,7 +88,7 @@
         </div>
       </el-card>
 
-      <el-card shadow="never" class="rounded-xl">
+      <el-card shadow="never" class="stats-card">
         <template #header>
           <div class="flex items-center gap-2">
             <el-icon :size="18" class="text-pink-600"><PieChart /></el-icon>
@@ -390,4 +390,96 @@ function onTabChange() {
 </script>
 
 <style scoped>
+:deep(.stats-card.el-card) {
+  border-radius: 24px;
+  border: 1px solid rgb(255 255 255 / 0.6);
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 16px 44px rgb(0 0 0 / 0.06);
+}
+
+.dark :deep(.stats-card.el-card) {
+  border: 1px solid rgb(148 163 184 / 0.14);
+  background: rgb(17 24 39 / 0.62);
+  box-shadow: 0 20px 62px rgb(0 0 0 / 0.44);
+}
+
+.stats-topbar {
+  background: rgb(255 255 255 / 0.72);
+  border-bottom: 1px solid rgb(255 255 255 / 0.55);
+  box-shadow: 0 12px 34px rgb(0 0 0 / 0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.dark .stats-topbar {
+  background: rgb(17 24 39 / 0.72);
+  border-bottom: 1px solid rgb(148 163 184 / 0.14);
+  box-shadow: 0 14px 42px rgb(0 0 0 / 0.42);
+}
+
+:deep(.stats-tabs .el-tabs__header) {
+  margin: 0;
+}
+
+:deep(.stats-tabs .el-tabs__nav-wrap::after) {
+  height: 0;
+}
+
+:deep(.stats-tabs .el-tabs__active-bar) {
+  display: none;
+}
+
+:deep(.stats-tabs .el-tabs__nav) {
+  background: rgb(255 255 255 / 0.7);
+  border: 1px solid rgb(255 255 255 / 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 9999px;
+  padding: 4px;
+}
+
+.dark :deep(.stats-tabs .el-tabs__nav) {
+  background: rgb(17 24 39 / 0.6);
+  border: 1px solid rgb(148 163 184 / 0.14);
+}
+
+:deep(.stats-tabs .el-tabs__item) {
+  height: 34px;
+  line-height: 34px;
+  font-size: 13px;
+  font-weight: 800;
+  border-radius: 9999px;
+  padding: 0 14px;
+  color: rgb(55 65 81);
+  transition: background-color 180ms ease, color 180ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+.dark :deep(.stats-tabs .el-tabs__item) {
+  color: rgb(229 231 235);
+}
+
+:deep(.stats-tabs .el-tabs__item:hover) {
+  background: rgb(255 255 255 / 0.55);
+}
+
+.dark :deep(.stats-tabs .el-tabs__item:hover) {
+  background: rgb(31 41 55 / 0.45);
+}
+
+:deep(.stats-tabs .el-tabs__item.is-active) {
+  color: rgb(4 120 87);
+  background: rgb(16 185 129 / 0.14);
+  border: 1px solid rgb(16 185 129 / 0.16);
+  box-shadow: 0 16px 34px rgb(16 185 129 / 0.12);
+  transform: translateY(-0.5px);
+}
+
+.dark :deep(.stats-tabs .el-tabs__item.is-active) {
+  color: rgb(167 243 208);
+  background: rgb(16 185 129 / 0.16);
+  border: 1px solid rgb(16 185 129 / 0.14);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.5);
+}
 </style>

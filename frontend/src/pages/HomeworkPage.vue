@@ -1,11 +1,23 @@
 <template>
-  <div class="p-4 space-y-4 pb-24">
-    <div class="flex items-center gap-2">
-      <el-icon :size="24" class="text-indigo-600"><Reading /></el-icon>
-      <h1 class="text-xl font-bold text-gray-800 dark:text-white">作业家</h1>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300 pb-24" style="padding-bottom: calc(env(safe-area-inset-bottom) + 96px)">
+    <div class="sticky top-0 z-40 px-4 pt-4">
+      <div class="rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/75 dark:bg-gray-900/65 backdrop-blur-xl shadow-sm">
+        <div class="flex items-center justify-between gap-3 px-3 py-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-10 w-10 rounded-2xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/80 dark:bg-indigo-900/25 flex items-center justify-center text-indigo-700 dark:text-indigo-300">
+              <el-icon :size="18"><Reading /></el-icon>
+            </div>
+            <div class="min-w-0">
+              <div class="text-[17px] font-extrabold tracking-tight text-gray-900 dark:text-gray-50 truncate">作业家</div>
+              <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">语文 · 数学 · 英语 · 科学 · 课表</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="px-4 pt-5 space-y-4">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div 
         v-for="subject in subjects" 
         :key="subject.id"
@@ -17,6 +29,7 @@
         </div>
         <span class="font-semibold text-gray-700 dark:text-gray-200">{{ subject.name }}</span>
       </div>
+    </div>
     </div>
   </div>
 </template>

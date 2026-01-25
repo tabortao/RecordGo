@@ -56,9 +56,9 @@ const activeIndex = computed(() => {
 }
 
 .liquid-nav-safe {
-  max-width: 520px;
+  width: min(900px, calc(100vw - 24px));
   margin: 0 auto;
-  padding: 12px 12px calc(env(safe-area-inset-bottom) + 12px);
+  padding: 12px 0 calc(env(safe-area-inset-bottom) + 12px);
 }
 
 .liquid-nav-bar {
@@ -70,11 +70,8 @@ const activeIndex = computed(() => {
   height: 68px;
   padding: 8px;
   border-radius: var(--liquid-nav-radius);
-  background:
-    radial-gradient(120% 140% at 20% 10%, rgb(255 255 255 / 0.55), transparent 55%),
-    radial-gradient(120% 140% at 80% 0%, rgb(16 185 129 / 0.14), transparent 48%),
-    rgb(255 255 255 / 0.62);
-  border: 1px solid rgb(255 255 255 / 0.55);
+  background: rgb(255 255 255 / 0.68);
+  border: 1px solid rgb(255 255 255 / 0.5);
   box-shadow:
     0 16px 50px rgb(0 0 0 / 0.14),
     0 1px 0 rgb(255 255 255 / 0.6) inset;
@@ -84,10 +81,7 @@ const activeIndex = computed(() => {
 }
 
 .dark .liquid-nav-bar {
-  background:
-    radial-gradient(120% 140% at 20% 10%, rgb(31 41 55 / 0.35), transparent 55%),
-    radial-gradient(120% 140% at 80% 0%, rgb(16 185 129 / 0.18), transparent 52%),
-    rgb(17 24 39 / 0.66);
+  background: rgb(17 24 39 / 0.7);
   border: 1px solid rgb(148 163 184 / 0.14);
   box-shadow:
     0 18px 60px rgb(0 0 0 / 0.45),
@@ -99,8 +93,8 @@ const activeIndex = computed(() => {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.42), transparent 42%);
-  opacity: 0.85;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.38), transparent 44%);
+  opacity: 0.6;
 }
 
 .dark .liquid-nav-bar::before {
@@ -115,10 +109,8 @@ const activeIndex = computed(() => {
   bottom: 8px;
   width: calc((100% - 16px) / 4);
   border-radius: calc(var(--liquid-nav-radius) - 10px);
-  background:
-    radial-gradient(120% 180% at 30% 20%, rgb(255 255 255 / 0.8), transparent 55%),
-    linear-gradient(180deg, rgb(16 185 129 / 0.22), rgb(16 185 129 / 0.08));
-  border: 1px solid rgb(16 185 129 / 0.18);
+  background: rgb(16 185 129 / 0.12);
+  border: 1px solid rgb(16 185 129 / 0.16);
   box-shadow:
     0 16px 34px rgb(16 185 129 / 0.14),
     0 1px 0 rgb(255 255 255 / 0.6) inset;
@@ -127,10 +119,8 @@ const activeIndex = computed(() => {
 }
 
 .dark .liquid-active-pill {
-  background:
-    radial-gradient(120% 180% at 30% 20%, rgb(255 255 255 / 0.12), transparent 55%),
-    linear-gradient(180deg, rgb(16 185 129 / 0.22), rgb(16 185 129 / 0.08));
-  border: 1px solid rgb(16 185 129 / 0.18);
+  background: rgb(16 185 129 / 0.14);
+  border: 1px solid rgb(16 185 129 / 0.16);
   box-shadow:
     0 18px 40px rgb(0 0 0 / 0.5),
     0 1px 0 rgb(255 255 255 / 0.08) inset;

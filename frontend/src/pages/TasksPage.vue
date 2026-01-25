@@ -1,49 +1,45 @@
 <template>
   <!-- 中文注释：任务页面，包含统计、列表、创建/编辑、批量删除、番茄钟功能；支持下拉刷新 -->
   <div ref="wrapperRef" class="pull-refresh-wrapper tasks-root" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd" @touchcancel="onTouchCancel" style="overscroll-behavior-y: contain; touch-action: pan-y;">
-    <div class="tasks-bg pointer-events-none">
-      <div class="tasks-glow tasks-glow-a" />
-      <div class="tasks-glow tasks-glow-b" />
-      <div class="tasks-glow tasks-glow-c" />
-    </div>
     <!-- 下拉刷新指示器（固定在顶部），拉动或刷新时淡入显示） -->
     <div class="fixed top-0 left-0 right-0 flex justify-center pointer-events-none" :style="{ opacity: (pullY>10||refreshing)?1:0 }">
       <div class="mt-2 text-xs text-gray-700 dark:text-gray-200 tasks-chip px-3 py-1.5">{{ refreshing ? '正在刷新...' : '下拉刷新' }}</div>
     </div>
-    <div class="fixed top-0 left-0 right-0 tasks-topbar z-40">
-      <div class="px-4 py-2 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <el-dropdown trigger="click" @command="onAvatarCommand">
-            <span class="el-dropdown-link">
-              <el-avatar :size="36" :src="tasksAvatarSrc" class="cursor-pointer" />
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="noop" class="font-semibold" style="pointer-events: none; cursor: default">切换用户</el-dropdown-item>
-                <el-dropdown-item v-for="acc in auth.accounts" :key="acc.user.id" :command="'switch:' + acc.user.id">
-                  <div class="flex items-center gap-2">
-                    <el-avatar :size="24" :src="accountAvatarSrc(acc.user)" />
-                    <span>{{ (acc.user.nickname || '').trim() || acc.user.username }}</span>
-                    <el-icon v-if="auth.user?.id === acc.user.id" :size="16" style="color:#22c55e"><CircleCheck /></el-icon>
-                  </div>
-                </el-dropdown-item>
-                <el-dropdown-item divided command="add">添加新用户</el-dropdown-item>
-                <el-dropdown-item command="logout" style="color:#f56c6c">退出登录</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-          <div class="font-semibold">任务统计</div>
-        </div>
-        <div class="flex items-center gap-3">
-          <div class="flex items-center gap-1">
-            <el-icon :size="20" style="color:#f59e0b"><Coin /></el-icon>
-            <span class="font-semibold">{{ totalCoins }}</span>
+    <div class="fixed top-0 left-0 right-0 z-40 px-4 pt-4 pointer-events-none">
+      <div class="tasks-topbar pointer-events-auto">
+        <div class="flex items-center justify-between gap-3 px-3 py-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <el-dropdown trigger="click" @command="onAvatarCommand">
+              <span class="el-dropdown-link">
+                <el-avatar :size="40" :src="tasksAvatarSrc" class="cursor-pointer" />
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="noop" class="font-semibold" style="pointer-events: none; cursor: default">切换用户</el-dropdown-item>
+                  <el-dropdown-item v-for="acc in auth.accounts" :key="acc.user.id" :command="'switch:' + acc.user.id">
+                    <div class="flex items-center gap-2">
+                      <el-avatar :size="24" :src="accountAvatarSrc(acc.user)" />
+                      <span>{{ (acc.user.nickname || '').trim() || acc.user.username }}</span>
+                      <el-icon v-if="auth.user?.id === acc.user.id" :size="16" style="color:#22c55e"><CircleCheck /></el-icon>
+                    </div>
+                  </el-dropdown-item>
+                  <el-dropdown-item divided command="add">添加新用户</el-dropdown-item>
+                  <el-dropdown-item command="logout" style="color:#f56c6c">退出登录</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <div class="min-w-0">
+              <div class="text-[17px] font-extrabold tracking-tight text-gray-900 dark:text-gray-50 truncate">任务</div>
+              <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">可用金币：<span class="font-extrabold text-amber-700 dark:text-amber-300">{{ totalCoins }}</span></div>
+            </div>
           </div>
-          <el-icon :size="24" style="color:#ec4899" class="cursor-pointer" @click="router.push('/tasks/stats')"><DataAnalysis /></el-icon>
+          <div class="flex items-center gap-2 shrink-0">
+            <el-icon :size="22" class="cursor-pointer text-pink-500 dark:text-pink-300" @click="router.push('/tasks/stats')"><DataAnalysis /></el-icon>
+          </div>
         </div>
       </div>
     </div>
-    <div class="h-14"></div>
+    <div class="h-24"></div>
     <div class="p-4 space-y-4 relative z-10" :style="{ transform: pullY ? ('translateY(' + pullY + 'px)') : 'none', transition: pulling ? 'none' : 'transform 0.2s ease' }">
     
 
@@ -1652,63 +1648,19 @@ function onFabTouchEnd() {
   position: relative;
 }
 
-.tasks-bg {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-}
-
-.tasks-glow {
-  position: absolute;
-  filter: blur(44px);
-  opacity: 0.95;
-  transform: translateZ(0);
-}
-
-.tasks-glow-a {
-  width: 520px;
-  height: 520px;
-  left: -180px;
-  top: -220px;
-  background: radial-gradient(circle at 30% 30%, rgb(16 185 129 / 0.35), transparent 60%),
-    radial-gradient(circle at 70% 10%, rgb(59 130 246 / 0.25), transparent 55%);
-}
-
-.tasks-glow-b {
-  width: 620px;
-  height: 620px;
-  right: -240px;
-  top: 80px;
-  background: radial-gradient(circle at 40% 30%, rgb(236 72 153 / 0.26), transparent 60%),
-    radial-gradient(circle at 70% 55%, rgb(245 158 11 / 0.22), transparent 55%);
-}
-
-.tasks-glow-c {
-  width: 760px;
-  height: 760px;
-  left: -260px;
-  bottom: -340px;
-  background: radial-gradient(circle at 45% 45%, rgb(20 184 166 / 0.24), transparent 62%),
-    radial-gradient(circle at 65% 20%, rgb(147 197 253 / 0.18), transparent 56%);
-}
-
 .tasks-topbar {
-  background:
-    radial-gradient(140% 160% at 20% 0%, rgb(255 255 255 / 0.55), transparent 55%),
-    rgb(255 255 255 / 0.74);
-  border-bottom: 1px solid rgb(255 255 255 / 0.6);
-  box-shadow: 0 10px 28px rgb(0 0 0 / 0.06);
+  border-radius: 24px;
+  border: 1px solid rgb(255 255 255 / 0.5);
+  background: rgb(255 255 255 / 0.75);
+  box-shadow: 0 16px 44px rgb(0 0 0 / 0.08);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
 
 .dark .tasks-topbar {
-  background:
-    radial-gradient(140% 160% at 20% 0%, rgb(31 41 55 / 0.45), transparent 55%),
-    rgb(17 24 39 / 0.72);
-  border-bottom: 1px solid rgb(148 163 184 / 0.14);
-  box-shadow: 0 14px 42px rgb(0 0 0 / 0.42);
+  border: 1px solid rgb(148 163 184 / 0.14);
+  background: rgb(17 24 39 / 0.68);
+  box-shadow: 0 20px 62px rgb(0 0 0 / 0.46);
 }
 
 .tasks-chip {
