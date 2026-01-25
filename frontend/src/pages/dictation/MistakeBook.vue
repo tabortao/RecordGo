@@ -27,14 +27,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { Delete, Notebook } from '@element-plus/icons-vue'
 import { dictationApi, type Mistake } from '@/services/dictation'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import SettingsShell from '@/components/settings/SettingsShell.vue'
 import SettingsCard from '@/components/settings/SettingsCard.vue'
 
-const router = useRouter()
 const list = ref<Mistake[]>([])
 
 onMounted(loadData)

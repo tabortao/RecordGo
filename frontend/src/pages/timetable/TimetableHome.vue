@@ -1,11 +1,24 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 relative overflow-hidden print:bg-white print:pb-0 print:min-h-auto">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 pb-20 relative overflow-hidden print:bg-white print:pb-0 print:min-h-auto">
+    <div class="pointer-events-none absolute inset-0 overflow-hidden print:hidden">
+      <div class="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-sky-300/35 dark:bg-sky-500/16 blur-3xl" />
+      <div class="absolute -bottom-40 -left-28 h-80 w-80 rounded-full bg-amber-200/35 dark:bg-amber-500/14 blur-3xl" />
+      <div class="absolute inset-0 bg-[radial-gradient(1200px_circle_at_20%_-20%,rgba(255,255,255,.65),transparent_55%),radial-gradient(900px_circle_at_80%_0%,rgba(255,255,255,.45),transparent_55%)] dark:bg-[radial-gradient(1200px_circle_at_20%_-20%,rgba(255,255,255,.07),transparent_55%),radial-gradient(900px_circle_at_80%_0%,rgba(255,255,255,.06),transparent_55%)]" />
+    </div>
+
     <!-- Header -->
-    <div class="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center justify-between sticky top-0 z-20 relative print:shadow-none print:px-0 print:static">
-      <div class="flex items-center gap-3 z-10 print:hidden">
-        <el-icon :size="20" class="cursor-pointer dark:text-gray-200" @click="router.back()"><ArrowLeft /></el-icon>
-        <span class="font-bold text-base text-gray-900 dark:text-gray-100">{{ config?.current_grade }} {{ config?.current_semester }}</span>
-      </div>
+    <div class="sticky top-0 z-20 px-4 pt-4 print:px-0 print:pt-0 print:static">
+      <div class="rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/75 dark:bg-gray-900/70 backdrop-blur-xl shadow-sm px-3 py-3 flex items-center justify-between relative print:shadow-none print:rounded-none print:border-black print:bg-transparent print:px-0 print:py-0">
+        <div class="flex items-center gap-3 z-10 print:hidden">
+          <button
+            type="button"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 text-gray-600 dark:text-gray-300 hover:bg-white hover:text-gray-900 dark:hover:text-gray-50 transition-colors"
+            @click="router.back()"
+          >
+            <el-icon :size="20"><ArrowLeft /></el-icon>
+          </button>
+          <span class="font-extrabold tracking-tight text-gray-900 dark:text-gray-50 text-sm md:text-base">{{ config?.current_grade }} {{ config?.current_semester }}</span>
+        </div>
       
       <!-- Print Title (Only visible in print) -->
       <div class="hidden print:block text-center w-full mb-4">
@@ -14,23 +27,36 @@
         </h1>
       </div>
 
-      <h1 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-base text-gray-900 dark:text-gray-100 print:hidden">
-        {{ authStore.user?.nickname || authStore.user?.username }}的课表
-      </h1>
+        <h1 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-extrabold tracking-tight text-gray-900 dark:text-gray-50 text-sm md:text-base print:hidden">
+          {{ authStore.user?.nickname || authStore.user?.username }}的课表
+        </h1>
 
-      <div class="z-10 flex items-center gap-4 print:hidden">
-        <el-icon :size="20" class="cursor-pointer text-gray-600 dark:text-gray-300 hover:text-primary" @click="handlePrint"><Printer /></el-icon>
-        <el-icon :size="20" class="cursor-pointer text-gray-600 dark:text-gray-300 hover:text-primary" @click="router.push('/timetable/settings')"><Setting /></el-icon>
+        <div class="z-10 flex items-center gap-2 print:hidden">
+          <button
+            type="button"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 text-gray-600 dark:text-gray-300 hover:bg-white hover:text-gray-900 dark:hover:text-gray-50 transition-colors"
+            @click="handlePrint"
+          >
+            <el-icon :size="18"><Printer /></el-icon>
+          </button>
+          <button
+            type="button"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 text-gray-600 dark:text-gray-300 hover:bg-white hover:text-gray-900 dark:hover:text-gray-50 transition-colors"
+            @click="router.push('/timetable/settings')"
+          >
+            <el-icon :size="18"><Setting /></el-icon>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Timetable -->
-    <div class="p-2 overflow-x-auto relative z-10 print:p-0 print:overflow-visible">
-      <div class="min-w-[320px] print:w-full">
+    <div class="p-3 overflow-x-auto relative z-10 print:p-0 print:overflow-visible">
+      <div class="min-w-[320px] max-w-6xl mx-auto print:w-full">
         <!-- Week Header -->
         <div class="grid gap-1 mb-1 print:gap-0 print:mb-0 print:border-b print:border-black" :style="{ gridTemplateColumns: gridColumns }">
           <div class="w-16 print:border-r print:border-black"></div> <!-- Period Column Placeholder -->
-          <div v-for="day in days" :key="day.value" class="text-center py-1 font-semibold text-sm bg-blue-50 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-200 print:bg-transparent print:text-black print:border-r print:border-black print:rounded-none print:py-2 print:text-base">
+          <div v-for="day in days" :key="day.value" class="text-center py-2 font-extrabold text-sm md:text-base bg-white/70 dark:bg-gray-900/55 border border-white/50 dark:border-gray-800/60 rounded-2xl text-gray-800 dark:text-gray-100 print:bg-transparent print:text-black print:border-r print:border-black print:rounded-none print:py-2 print:text-base">
             {{ day.label }}
           </div>
         </div>
@@ -38,9 +64,9 @@
         <!-- Periods -->
         <div v-for="period in periods" :key="period" class="grid gap-1 mb-1 print:gap-0 print:mb-0 print:border-b print:border-black" :style="{ gridTemplateColumns: gridColumns }">
           <!-- Period Number & Time -->
-          <div class="flex flex-col items-center justify-center text-xs text-gray-500 font-medium w-16 bg-gray-100 dark:bg-gray-800 rounded py-1 print:bg-transparent print:text-black print:border-r print:border-black print:rounded-none">
-            <span class="text-sm font-bold print:text-base">{{ period }}</span>
-            <div v-if="getPeriodTime(period)" class="flex flex-col items-center text-[10px] scale-90 text-gray-400 leading-tight mt-0.5 print:text-black print:scale-100 print:text-xs">
+          <div class="flex flex-col items-center justify-center text-xs text-gray-600 dark:text-gray-300 font-semibold w-16 bg-white/70 dark:bg-gray-900/55 border border-white/50 dark:border-gray-800/60 rounded-2xl py-2 print:bg-transparent print:text-black print:border-r print:border-black print:rounded-none">
+            <span class="text-sm md:text-base font-extrabold print:text-base">{{ period }}</span>
+            <div v-if="getPeriodTime(period)" class="flex flex-col items-center text-[10px] text-gray-500 dark:text-gray-400 leading-tight mt-1 print:text-black print:text-xs">
                 <span>{{ getPeriodTime(period)?.start }}</span>
                 <span>{{ getPeriodTime(period)?.end }}</span>
             </div>
@@ -49,7 +75,7 @@
           <div 
             v-for="day in days" 
             :key="`${day.value}-${period}`"
-            class="h-16 rounded p-1 flex items-center justify-center text-center text-xs font-bold shadow-sm transition-colors relative overflow-hidden bg-white dark:bg-gray-800 print:shadow-none print:rounded-none print:border-r print:border-black print:h-20 print:text-base"
+            class="h-16 md:h-20 rounded-2xl p-2 flex items-center justify-center text-center text-sm md:text-base font-extrabold shadow-sm transition-colors relative overflow-hidden bg-white/70 dark:bg-gray-900/55 border border-white/50 dark:border-gray-800/60 print:shadow-none print:rounded-none print:border-r print:border-black print:h-20 print:text-base"
             :style="getCellStyle(day.value, period)"
           >
             <span class="z-10 break-words w-full">{{ getCourseName(day.value, period) }}</span>

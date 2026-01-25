@@ -1,14 +1,30 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-    <!-- Header -->
-    <div class="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center gap-3 sticky top-0 z-20">
-        <el-icon :size="20" class="cursor-pointer" @click="goBack"><ArrowLeft /></el-icon>
-        <h1 class="font-bold text-lg">课表设置</h1>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 pb-20 relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 overflow-hidden">
+      <div class="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-sky-300/35 dark:bg-sky-500/16 blur-3xl" />
+      <div class="absolute -bottom-40 -left-28 h-80 w-80 rounded-full bg-amber-200/35 dark:bg-amber-500/14 blur-3xl" />
+      <div class="absolute inset-0 bg-[radial-gradient(1200px_circle_at_20%_-20%,rgba(255,255,255,.65),transparent_55%),radial-gradient(900px_circle_at_80%_0%,rgba(255,255,255,.45),transparent_55%)] dark:bg-[radial-gradient(1200px_circle_at_20%_-20%,rgba(255,255,255,.07),transparent_55%),radial-gradient(900px_circle_at_80%_0%,rgba(255,255,255,.06),transparent_55%)]" />
     </div>
 
-    <div class="p-4 space-y-6">
+    <div class="sticky top-0 z-20 px-4 pt-4">
+      <div class="rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/75 dark:bg-gray-900/70 backdrop-blur-xl shadow-sm px-3 py-3 flex items-center gap-3">
+        <button
+          type="button"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 text-gray-600 dark:text-gray-300 hover:bg-white hover:text-gray-900 dark:hover:text-gray-50 transition-colors"
+          @click="goBack"
+        >
+          <el-icon :size="20"><ArrowLeft /></el-icon>
+        </button>
+        <div class="min-w-0">
+          <h1 class="font-extrabold tracking-tight text-gray-900 dark:text-gray-50 text-base">课表设置</h1>
+          <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">配置年级学期、课程库与课表编排</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="relative z-10 p-4 space-y-6">
         <!-- 基础配置 -->
-        <el-card shadow="never" class="rounded-xl">
+        <el-card shadow="never" class="pretty-card">
             <template #header>
                 <div class="font-bold">基础配置</div>
             </template>
@@ -34,7 +50,7 @@
         </el-card>
 
         <!-- 课程库管理 -->
-        <el-card shadow="never" class="rounded-xl">
+        <el-card shadow="never" class="pretty-card">
             <template #header>
                 <div class="flex justify-between items-center">
                     <div class="font-bold">课程库</div>
@@ -73,7 +89,7 @@
         </el-card>
 
         <!-- 课表编排 -->
-        <el-card shadow="never" class="rounded-xl overflow-visible">
+        <el-card shadow="never" class="pretty-card overflow-visible">
             <template #header>
                 <div class="flex justify-between items-center">
                     <div class="font-bold">课表编排 ({{ form.current_grade }} {{ form.current_semester }})</div>
@@ -111,7 +127,7 @@
     </div>
 
     <!-- 课程选择弹窗 -->
-    <el-dialog v-model="selectorVisible" title="选择课程" width="90%" class="rounded-xl" append-to-body>
+    <el-dialog v-model="selectorVisible" title="选择课程" width="90%" class="pretty-dialog" append-to-body>
         <div class="grid grid-cols-4 gap-3">
             <div v-for="course in courses" :key="course.id"
                  class="h-10 rounded-lg flex items-center justify-center text-sm font-medium shadow-sm cursor-pointer active:scale-95 transition-transform"
@@ -127,7 +143,7 @@
     </el-dialog>
 
     <!-- 添加/编辑课程弹窗 -->
-    <el-dialog v-model="showCourseDialog" :title="editingCourseId ? '编辑课程' : '添加新课程'" width="80%" append-to-body>
+    <el-dialog v-model="showCourseDialog" :title="editingCourseId ? '编辑课程' : '添加新课程'" width="80%" class="pretty-dialog" append-to-body>
         <el-form>
             <el-form-item label="名称">
                 <el-input v-model="courseForm.name" placeholder="例如: 编程" />
@@ -143,7 +159,7 @@
     </el-dialog>
 
     <!-- 课程时间设置弹窗 -->
-    <el-dialog v-model="timeDialogVisible" title="设置课程时间" width="80%" append-to-body>
+    <el-dialog v-model="timeDialogVisible" title="设置课程时间" width="80%" class="pretty-dialog" append-to-body>
         <div v-if="editingPeriod" class="space-y-4">
             <div class="text-center font-bold text-lg mb-4">第 {{ editingPeriod.period }} 节</div>
             <div class="flex items-center gap-2 justify-center">
@@ -502,3 +518,50 @@ async function savePeriodTime() {
     await onConfigChange()
 }
 </script>
+
+<style scoped>
+:deep(.pretty-card.el-card) {
+  border-radius: 24px;
+  border: 1px solid rgb(255 255 255 / 0.5);
+  background: rgb(255 255 255 / 0.8);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.dark :deep(.pretty-card.el-card) {
+  border: 1px solid rgb(31 41 55 / 0.6);
+  background: rgb(17 24 39 / 0.65);
+}
+
+:deep(.pretty-card .el-card__header) {
+  border-bottom: 1px solid rgb(243 244 246 / 0.8);
+}
+
+.dark :deep(.pretty-card .el-card__header) {
+  border-bottom: 1px solid rgb(31 41 55 / 0.6);
+}
+
+:deep(.pretty-dialog .el-dialog) {
+  border-radius: 24px;
+  overflow: hidden;
+  max-width: calc(100vw - 24px);
+}
+
+.dark :deep(.pretty-dialog .el-dialog) {
+  background: rgb(17 24 39 / 0.92);
+  border: 1px solid rgb(31 41 55 / 0.9);
+}
+
+:deep(.pretty-dialog .el-dialog__header) {
+  padding: 16px 16px 12px;
+  margin-right: 0;
+}
+
+:deep(.pretty-dialog .el-dialog__body) {
+  padding: 16px;
+}
+
+:deep(.pretty-dialog .el-dialog__footer) {
+  padding: 12px 16px 16px;
+}
+</style>

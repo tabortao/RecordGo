@@ -87,7 +87,7 @@
              <span class="font-bold text-gray-800 dark:text-gray-100 text-sm">数据管理</span>
           </div>
          <div class="p-1">
-           <div class="grid grid-cols-1 md:grid-cols-2 gap-1">
+           <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-1">
              <button
                class="group w-full flex items-center justify-between px-3 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 active:scale-[0.99] transition-all duration-200"
                @click="router.push('/data/records')"
@@ -113,6 +113,22 @@
                </div>
                <el-icon class="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 transition-colors"><ArrowRight /></el-icon>
              </button>
+
+             <el-tooltip content="开发中" placement="top">
+               <button
+                 class="group w-full flex items-center justify-between px-3 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 opacity-60 cursor-not-allowed"
+                 type="button"
+                 disabled
+               >
+                 <div class="flex items-center gap-3">
+                   <div class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700/60 flex items-center justify-center text-gray-400 dark:text-gray-500">
+                     <el-icon :size="16"><DocumentIcon /></el-icon>
+                   </div>
+                   <span class="text-gray-600 dark:text-gray-300 font-medium text-sm">数据导出</span>
+                 </div>
+                 <el-icon class="text-gray-300 dark:text-gray-700"><ArrowRight /></el-icon>
+               </button>
+             </el-tooltip>
            </div>
          </div>
        </div>

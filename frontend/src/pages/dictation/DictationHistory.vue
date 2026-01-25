@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import http from '@/services/http'
 import dayjs from 'dayjs'
 import { DataLine } from '@element-plus/icons-vue'
@@ -14,8 +13,6 @@ import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
 
-const router = useRouter()
-const historyList = ref<any[]>([])
 // Default to today
 const today = new Date()
 const dateRange = ref<[Date, Date]>([today, today])
