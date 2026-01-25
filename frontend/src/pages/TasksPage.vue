@@ -30,10 +30,13 @@
             </el-dropdown>
             <div class="min-w-0">
               <div class="text-[17px] font-extrabold tracking-tight text-gray-900 dark:text-gray-50 truncate">任务</div>
-              <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">可用金币：<span class="font-extrabold text-amber-700 dark:text-amber-300">{{ totalCoins }}</span></div>
             </div>
           </div>
-          <div class="flex items-center gap-2 shrink-0">
+          <div class="flex items-center gap-3 shrink-0">
+            <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+              <el-icon :size="14" class="text-amber-700 dark:text-amber-300"><Coin /></el-icon>
+              <span class="font-extrabold text-amber-700 dark:text-amber-300 tabular-nums">{{ totalCoins }}</span>
+            </div>
             <el-icon :size="22" class="cursor-pointer text-pink-500 dark:text-pink-300" @click="router.push('/tasks/stats')"><DataAnalysis /></el-icon>
           </div>
         </div>

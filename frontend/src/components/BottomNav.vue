@@ -56,7 +56,7 @@ const activeIndex = computed(() => {
 }
 
 .liquid-nav-safe {
-  width: min(900px, calc(100vw - 24px));
+  width: calc(100vw - 32px);
   margin: 0 auto;
   padding: 12px 0 calc(env(safe-area-inset-bottom) + 12px);
 }
