@@ -4,8 +4,8 @@
       <div class="flex items-start gap-4">
         <div class="relative shrink-0">
           <div class="absolute -inset-3 rounded-[1.5rem] bg-sky-200/50 dark:bg-sky-500/15 blur-2xl" />
-          <div class="relative h-14 w-14 rounded-3xl border border-white/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-950/30 ring-1 ring-black/5 dark:ring-white/10 grid place-items-center">
-            <el-icon :size="22" class="text-sky-600 dark:text-sky-300"><QuestionFilled /></el-icon>
+          <div class="relative h-14 w-14 rounded-3xl border border-white/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-950/30 ring-1 ring-black/5 dark:ring-white/10 grid place-items-center overflow-hidden">
+            <img :src="appIconSrc" alt="App Icon" class="h-10 w-10 rounded-2xl shadow-sm ring-1 ring-white/60 dark:ring-gray-800/70" />
           </div>
         </div>
         <div class="min-w-0 flex-1">
@@ -19,6 +19,55 @@
             <span class="rounded-full border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300">番茄</span>
             <span class="rounded-full border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300">心愿</span>
             <span class="rounded-full border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300">成长记录</span>
+          </div>
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button
+              class="group flex items-center justify-between gap-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/55 px-3 py-2.5 hover:bg-white dark:hover:bg-gray-900/75 transition active:scale-[0.99]"
+              @click="router.push('/tasks/create')"
+            >
+              <div class="flex items-center gap-2">
+                <div class="h-9 w-9 rounded-2xl bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-300 grid place-items-center">
+                  <el-icon :size="18"><CirclePlusFilled /></el-icon>
+                </div>
+                <div class="text-left">
+                  <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">创建任务</div>
+                  <div class="text-[11px] text-gray-500 dark:text-gray-400">从一个小目标开始</div>
+                </div>
+              </div>
+              <el-icon :size="18" class="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 transition-colors"><ArrowRight /></el-icon>
+            </button>
+
+            <button
+              class="group flex items-center justify-between gap-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/55 px-3 py-2.5 hover:bg-white dark:hover:bg-gray-900/75 transition active:scale-[0.99]"
+              @click="router.push('/tasks/stats')"
+            >
+              <div class="flex items-center gap-2">
+                <div class="h-9 w-9 rounded-2xl bg-indigo-50 dark:bg-indigo-900/25 text-indigo-700 dark:text-indigo-300 grid place-items-center">
+                  <el-icon :size="18"><DataAnalysis /></el-icon>
+                </div>
+                <div class="text-left">
+                  <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">查看统计</div>
+                  <div class="text-[11px] text-gray-500 dark:text-gray-400">复盘更有动力</div>
+                </div>
+              </div>
+              <el-icon :size="18" class="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 transition-colors"><ArrowRight /></el-icon>
+            </button>
+
+            <button
+              class="group flex items-center justify-between gap-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/55 px-3 py-2.5 hover:bg-white dark:hover:bg-gray-900/75 transition active:scale-[0.99]"
+              @click="router.push('/settings/reading')"
+            >
+              <div class="flex items-center gap-2">
+                <div class="h-9 w-9 rounded-2xl bg-sky-50 dark:bg-sky-900/25 text-sky-700 dark:text-sky-300 grid place-items-center">
+                  <el-icon :size="18"><Microphone /></el-icon>
+                </div>
+                <div class="text-left">
+                  <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">朗读设置</div>
+                  <div class="text-[11px] text-gray-500 dark:text-gray-400">辅助专注与复述</div>
+                </div>
+              </div>
+              <el-icon :size="18" class="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 transition-colors"><ArrowRight /></el-icon>
+            </button>
           </div>
         </div>
       </div>
@@ -55,6 +104,44 @@
           </div>
           <div class="mt-2 text-sm font-black text-gray-900 dark:text-gray-50">兑换心愿</div>
           <div class="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300">用金币兑换奖励，形成稳定的正向反馈。</div>
+        </div>
+      </div>
+    </SettingsCard>
+
+    <SettingsCard title="使用建议" description="更轻松地坚持下去">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/65 dark:bg-gray-900/40 px-4 py-4">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-2xl bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-300 grid place-items-center">
+              <el-icon :size="18"><CircleCheck /></el-icon>
+            </div>
+            <div class="min-w-0">
+              <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">从小任务开始</div>
+              <div class="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300">先把“能完成”放在第一位。</div>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/65 dark:bg-gray-900/40 px-4 py-4">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-2xl bg-amber-50 dark:bg-amber-900/25 text-amber-700 dark:text-amber-300 grid place-items-center">
+              <el-icon :size="18"><Clock /></el-icon>
+            </div>
+            <div class="min-w-0">
+              <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">用番茄做节奏</div>
+              <div class="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300">20-25 分钟专注，效率更稳定。</div>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/65 dark:bg-gray-900/40 px-4 py-4">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/25 text-indigo-700 dark:text-indigo-300 grid place-items-center">
+              <el-icon :size="18"><Present /></el-icon>
+            </div>
+            <div class="min-w-0">
+              <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">奖励要具体</div>
+              <div class="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300">心愿越明确，越有动力去完成。</div>
+            </div>
+          </div>
         </div>
       </div>
     </SettingsCard>
@@ -173,9 +260,14 @@
 </template>
 
 <script setup lang="ts">
-import { QuestionFilled, Download, ArrowRight, Edit, Clock, Present, List, Coin, TrendCharts, DataAnalysis } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { QuestionFilled, Download, ArrowRight, Edit, Clock, Present, List, Coin, TrendCharts, DataAnalysis, CirclePlusFilled, Microphone, CircleCheck } from '@element-plus/icons-vue'
 import SettingsShell from '@/components/settings/SettingsShell.vue'
 import SettingsCard from '@/components/settings/SettingsCard.vue'
+import appIcon from '@/assets/favicon/android-chrome-192x192.png'
+
+const router = useRouter()
+const appIconSrc = (appIcon as any) as string
 </script>
 
 <style scoped>

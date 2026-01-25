@@ -7,8 +7,11 @@
           <div class="mt-3 flex items-center gap-3">
             <div class="relative">
               <div class="absolute -inset-2 rounded-2xl bg-emerald-200/40 dark:bg-emerald-500/10 blur-xl" />
+              <div v-if="isEmojiIcon" class="relative w-12 h-12 rounded-2xl ring-1 ring-black/5 dark:ring-white/10 bg-white/60 dark:bg-gray-950/25 grid place-items-center text-[24px] leading-none">
+                {{ emojiChar }}
+              </div>
               <img
-                v-if="form.icon_preview || form.icon"
+                v-else-if="form.icon_preview || form.icon"
                 :src="form.icon_preview || iconResolved"
                 class="relative w-12 h-12 rounded-2xl ring-1 ring-black/5 dark:ring-white/10"
                 @error="onIconError"
@@ -88,6 +91,9 @@ type WishForm = Partial<Wish> & { icon_preview?: string }
 const form = reactive<WishForm>({ name: '', content: '', need_coins: 1, unit: '次', exchange_amount: 1, icon: '', icon_preview: '' })
 const iconResolved = ref('')
 
+const isEmojiIcon = computed(() => typeof form.icon === 'string' && form.icon.startsWith('emoji:'))
+const emojiChar = computed(() => (isEmojiIcon.value ? String(form.icon).slice('emoji:'.length) : ''))
+
 onMounted(async () => {
   const id = Number(route.params.id)
   const w = await getWish(id)
@@ -133,6 +139,7 @@ async function submitForm() {
 // 中文注释：解析并设置图标展示地址（异步），模板中仅绑定字符串
 async function updateIconResolved() {
   const icon = form.icon
+  if (typeof icon === 'string' && icon.startsWith('emoji:')) { iconResolved.value = new URL('../assets/wishs/领取记录.png', import.meta.url).href; return }
   if (!icon) { iconResolved.value = new URL('../assets/wishs/领取记录.png', import.meta.url).href; return }
   if (/\.(png|jpg|jpeg|webp)$/i.test(icon) && !icon.includes('/')) {
     iconResolved.value = new URL(`../assets/wishs/${icon}`, import.meta.url).href

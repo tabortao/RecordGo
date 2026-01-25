@@ -37,8 +37,9 @@
               <div class="flex items-center gap-3 min-w-0">
                 <div class="relative shrink-0">
                   <div class="absolute -inset-2 rounded-2xl bg-emerald-200/40 dark:bg-emerald-500/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div class="relative w-10 h-10 rounded-2xl ring-1 ring-black/5 dark:ring-white/10 overflow-hidden bg-white/60 dark:bg-gray-950/25 grid place-items-center">
-                    <img :src="resolveIcon(w.icon)" alt="icon" class="w-full h-full object-contain" @error="onIconError" />
+                <div class="relative w-10 h-10 rounded-2xl ring-1 ring-black/5 dark:ring-white/10 overflow-hidden bg-white/60 dark:bg-gray-950/25 grid place-items-center">
+                    <div v-if="isEmojiIcon(w.icon)" class="h-full w-full grid place-items-center text-[20px] leading-none">{{ emojiChar(w.icon) }}</div>
+                    <img v-else :src="resolveIcon(w.icon)" alt="icon" class="w-full h-full object-contain" @error="onIconError" />
                   </div>
                 </div>
                 <div class="min-w-0">
@@ -113,8 +114,9 @@
         <div class="relative overflow-hidden border-b border-gray-100 dark:border-gray-800 bg-white/78 dark:bg-gray-950/35 backdrop-blur-xl px-4 pt-4 pb-3">
           <div class="relative flex items-start gap-3">
             <div class="relative shrink-0">
-              <div class="relative h-12 w-12 rounded-2xl border border-white/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-950/35 ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
-                <img v-if="exchangeTarget" :src="resolveIcon(exchangeTarget.icon)" class="h-full w-full object-cover" />
+            <div class="relative h-12 w-12 rounded-2xl border border-white/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-950/35 ring-1 ring-black/5 dark:ring-white/10 overflow-hidden grid place-items-center">
+                <div v-if="exchangeTarget && isEmojiIcon(exchangeTarget.icon)" class="text-[26px] leading-none">{{ emojiChar(exchangeTarget.icon) }}</div>
+                <img v-else-if="exchangeTarget" :src="resolveIcon(exchangeTarget.icon)" class="h-full w-full object-cover" />
               </div>
             </div>
 
@@ -224,8 +226,16 @@ function toggleOps(id: number) {
 
 // 中文注释：解析图标路径，内置图标在 assets/wishs 中，用户上传图标走后端 uploads 路径
 const iconResolvedMap = ref<Record<string, string>>({})
+function isEmojiIcon(icon: string | undefined) {
+  return typeof icon === 'string' && icon.startsWith('emoji:')
+}
+function emojiChar(icon: string | undefined) {
+  if (!isEmojiIcon(icon)) return ''
+  return String(icon).slice('emoji:'.length)
+}
 function resolveIcon(icon: string | undefined) {
   if (!icon) return new URL('../assets/wishs/看电视.png', import.meta.url).href
+  if (isEmojiIcon(icon)) return new URL('../assets/wishs/看电视.png', import.meta.url).href
   if (/\.(png|jpg|jpeg|webp)$/i.test(icon) && !icon.includes('/')) {
     return new URL(`../assets/wishs/${icon}`, import.meta.url).href
   }
@@ -237,7 +247,7 @@ function resolveIcon(icon: string | undefined) {
 async function resolveIconsForList(list: Wish[]) {
   const targets = list
     .map(w => String(w.icon || ''))
-    .filter(p => !!p && !p.startsWith('uploads/') && p.includes('/'))
+    .filter(p => !!p && !p.startsWith('emoji:') && !p.startsWith('uploads/') && p.includes('/'))
   await Promise.all(targets.map(async (k) => {
     try { iconResolvedMap.value[k] = await presignView(k) } catch {}
   }))

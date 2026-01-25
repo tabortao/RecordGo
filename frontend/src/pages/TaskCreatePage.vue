@@ -1,24 +1,68 @@
 <template>
   <!-- 中文注释：独立的创建任务页面，顶部带返回图标；布局响应式 -->
   <SettingsShell title="创建任务" subtitle="普通创建 · AI 智能创建" :icon="CirclePlusFilled" tone="emerald" container-class="max-w-5xl" back-to="/tasks" :decor="false">
+    <div class="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm px-5 py-5">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div class="min-w-0">
+          <div class="text-[18px] font-extrabold tracking-tight text-gray-900 dark:text-gray-50">两种方式，快速创建</div>
+          <div class="mt-1 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+            普通创建适合精确填写；AI 智能创建适合把一段计划批量转成任务。
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950/10 px-3 py-2">
+            <div class="text-[11px] font-extrabold tracking-[0.22em] text-gray-500 dark:text-gray-400">TIP</div>
+            <div class="mt-1 text-xs font-extrabold text-gray-900 dark:text-gray-50">先定分类</div>
+          </div>
+          <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950/10 px-3 py-2">
+            <div class="text-[11px] font-extrabold tracking-[0.22em] text-gray-500 dark:text-gray-400">TIP</div>
+            <div class="mt-1 text-xs font-extrabold text-gray-900 dark:text-gray-50">再定时长</div>
+          </div>
+          <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950/10 px-3 py-2">
+            <div class="text-[11px] font-extrabold tracking-[0.22em] text-gray-500 dark:text-gray-400">TIP</div>
+            <div class="mt-1 text-xs font-extrabold text-gray-900 dark:text-gray-50">奖励要具体</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <el-tabs v-model="activeTab" class="w-full task-create-tabs">
-      <el-tab-pane label="普通创建" name="normal">
+      <el-tab-pane name="normal">
+        <template #label>
+          <div class="flex items-center gap-2">
+            <el-icon :size="16"><Edit /></el-icon>
+            <span>普通创建</span>
+          </div>
+        </template>
         <!-- 响应式网格：移动端单列，桌面端双列/三列（根据内容） -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <!-- 基础信息分区 -->
           <el-card shadow="never" class="pretty-card">
+            <template #header>
+              <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                  <div class="h-9 w-9 rounded-2xl bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-300 grid place-items-center">
+                    <el-icon :size="18"><Edit /></el-icon>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">基础信息</div>
+                    <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">标题 · 描述 · 图片 · 分类 · 时长</div>
+                  </div>
+                </div>
+              </div>
+            </template>
             <el-form ref="formRefInstance" :model="form" :rules="rules" label-width="100px">
               <el-form-item prop="name" required>
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><Edit /></el-icon><span>任务标题</span></div>
                 </template>
-                <el-input v-model="form.name" maxlength="128" show-word-limit />
+                <el-input v-model="form.name" maxlength="128" show-word-limit placeholder="例如：背诵古诗 1 首 / 数学口算 20 题" size="large" />
               </el-form-item>
               <el-form-item label="任务描述" prop="description">
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><List /></el-icon><span>任务描述</span></div>
                 </template>
-                <el-input v-model="form.description" type="textarea" />
+                <el-input v-model="form.description" type="textarea" :rows="4" placeholder="写下要点：怎么做、做到什么程度、需要多久" />
               </el-form-item>
               <el-form-item class="image-upload">
                 <template #label>
@@ -39,7 +83,7 @@
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><List /></el-icon><span>任务分类</span></div>
                 </template>
-                <el-select v-model="form.category" placeholder="选择分类" style="width: 100%">
+                <el-select v-model="form.category" placeholder="选择分类" style="width: 100%" size="large">
                   <el-option v-for="c in getCategories()" :key="c.name" :label="c.name" :value="c.name">
                     <span class="inline-block w-2 h-2 rounded mr-2" :style="{ backgroundColor: c.color }"></span>
                     <span>{{ c.name }}</span>
@@ -50,25 +94,38 @@
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><Clock /></el-icon><span>计划时长</span></div>
                 </template>
-                <el-input-number v-model="form.plan_minutes" :min="1" :max="240" />
+                <el-input-number v-model="form.plan_minutes" :min="1" :max="240" size="large" />
               </el-form-item>
             </el-form>
           </el-card>
 
           <!-- 计划与重复分区 -->
           <el-card shadow="never" class="pretty-card">
+            <template #header>
+              <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                  <div class="h-9 w-9 rounded-2xl bg-sky-50 dark:bg-sky-900/25 text-sky-700 dark:text-sky-300 grid place-items-center">
+                    <el-icon :size="18"><Clock /></el-icon>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">计划与重复</div>
+                    <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">金币 · 重复 · 日期范围</div>
+                  </div>
+                </div>
+              </div>
+            </template>
             <el-form :model="form" label-width="100px">
               <el-form-item prop="score">
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><Coin /></el-icon><span>任务金币</span></div>
                 </template>
-                <el-input-number v-model="form.score" :min="-10" :max="10" />
+                <el-input-number v-model="form.score" :min="-10" :max="10" size="large" />
               </el-form-item>
               <el-form-item prop="repeat_type">
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><List /></el-icon><span>重复类型</span></div>
                 </template>
-                <el-select v-model="form.repeat_type" placeholder="选择重复类型" style="width: 100%">
+                <el-select v-model="form.repeat_type" placeholder="选择重复类型" style="width: 100%" size="large">
                   <el-option label="无" value="none" />
                   <el-option label="每天" value="daily" />
                   <el-option label="每个工作日" value="weekdays" />
@@ -107,19 +164,38 @@
         </div>
 
         <!-- 底部操作区 -->
-        <div class="flex justify-end gap-2 mt-4">
-          <el-button class="!rounded-2xl !font-extrabold" @click="goBack">取消</el-button>
-          <el-button type="primary" class="!rounded-2xl !font-extrabold" @click="submitForm">确定</el-button>
+        <div class="mt-5 rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/65 backdrop-blur-xl shadow-sm px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+            提示：重复任务建议设置截止日期，避免任务无限延长。
+          </div>
+          <div class="flex justify-end gap-2">
+            <el-button class="!rounded-2xl !font-extrabold" @click="goBack">取消</el-button>
+            <el-button type="primary" class="!rounded-2xl !font-extrabold" @click="submitForm">确定</el-button>
+          </div>
         </div>
       </el-tab-pane>
 
       <!-- AI 智能创建 Tab -->
-      <el-tab-pane label="AI智能创建" name="ai">
+      <el-tab-pane name="ai">
+        <template #label>
+          <div class="flex items-center gap-2">
+            <el-icon :size="16"><MagicStick /></el-icon>
+            <span>AI智能创建</span>
+          </div>
+        </template>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <el-card shadow="never" class="pretty-card h-fit">
             <template #header>
               <div class="flex items-center justify-between">
-                <span>输入需求</span>
+                <div class="flex items-center gap-2">
+                  <div class="h-9 w-9 rounded-2xl bg-indigo-50 dark:bg-indigo-900/25 text-indigo-700 dark:text-indigo-300 grid place-items-center">
+                    <el-icon :size="18"><MagicStick /></el-icon>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">输入需求</div>
+                    <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">支持自然语言与图片辅助</div>
+                  </div>
+                </div>
                 <el-tooltip content="支持输入自然语言或上传图片，AI将自动提取任务要素" placement="top">
                   <el-icon><QuestionFilled /></el-icon>
                 </el-tooltip>
@@ -128,7 +204,7 @@
             <el-input 
               v-model="aiText" 
               type="textarea" 
-              :rows="8" 
+              :rows="8"
               placeholder="请输入学习计划或任务描述，例如：&#10;1. 每天早上7点背单词30分钟&#10;2. 周末下午跑步5公里"
             />
             <div class="mt-4">
@@ -140,11 +216,20 @@
                   :limit="1"
                   list-type="picture"
                   :file-list="aiFileList"
+                  drag
                >
-                  <el-button type="primary" plain :icon="Picture" class="!rounded-2xl !font-extrabold">上传图片识别</el-button>
+                  <div class="rounded-3xl border border-dashed border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-950/20 px-4 py-5 text-center">
+                    <div class="mx-auto h-11 w-11 rounded-3xl bg-sky-50 dark:bg-sky-900/25 text-sky-700 dark:text-sky-300 grid place-items-center">
+                      <el-icon :size="20"><Picture /></el-icon>
+                    </div>
+                    <div class="mt-3 text-sm font-extrabold text-gray-900 dark:text-gray-50">拖拽图片到这里</div>
+                    <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">或点击上传（jpg/png/webp）</div>
+                    <div class="mt-4">
+                      <el-button type="primary" plain class="!rounded-2xl !font-extrabold">选择图片</el-button>
+                    </div>
+                  </div>
                   <template #tip>
-                    <div class="el-upload__tip">支持 jpg/png/webp，图片仅用于辅助识别</div>
-                    <div class="text-[12px] text-gray-500 dark:text-gray-400 mt-2 leading-5">AI智能创建任务正在测试，可能出现不准确的情况。如遇到问题，欢迎反馈给我们！</div>
+                    <div class="mt-2 text-[12px] text-gray-500 dark:text-gray-400 leading-5">图片仅用于辅助识别；识别结果可在右侧逐条修改后再创建。</div>
                   </template>
                </el-upload>
             </div>
@@ -543,8 +628,21 @@ async function submitAITasks() {
   font-size: 16px;
 }
 
+:deep(.pretty-card .el-card__header) {
+  border-bottom: 1px solid rgb(255 255 255 / 0.45);
+  padding: 16px 16px 12px;
+}
+
+.dark :deep(.pretty-card .el-card__header) {
+  border-bottom: 1px solid rgb(31 41 55 / 0.55);
+}
+
+:deep(.pretty-card .el-card__body) {
+  padding: 16px;
+}
+
 :deep(.task-create-tabs .el-tabs__header) {
-  margin: 0 0 12px;
+  margin: 14px 0 12px;
 }
 
 :deep(.task-create-tabs .el-tabs__content) {
@@ -624,5 +722,51 @@ async function submitAITasks() {
 .dark :deep(.pretty-card.el-card) {
   border: 1px solid rgb(31 41 55 / 0.6);
   background: rgb(17 24 39 / 0.65);
+}
+
+:deep(.pretty-card .el-input__wrapper),
+:deep(.pretty-card .el-textarea__inner),
+:deep(.pretty-card .el-select__wrapper) {
+  border-radius: 16px;
+  border: 1px solid rgb(203 213 225);
+  background: rgb(255 255 255 / 0.92);
+}
+
+.dark :deep(.pretty-card .el-input__wrapper),
+.dark :deep(.pretty-card .el-textarea__inner),
+.dark :deep(.pretty-card .el-select__wrapper) {
+  border: 1px solid rgb(51 65 85);
+  background: rgb(2 6 23 / 0.18);
+}
+
+:deep(.pretty-card .el-input__wrapper),
+:deep(.pretty-card .el-select__wrapper) {
+  box-shadow: none;
+}
+
+:deep(.pretty-card .el-textarea__inner) {
+  box-shadow: none;
+}
+
+:deep(.pretty-card .el-input__wrapper.is-focus),
+:deep(.pretty-card .el-select__wrapper.is-focused) {
+  box-shadow: 0 0 0 4px rgb(16 185 129 / 0.16);
+  border-color: rgb(16 185 129);
+}
+
+.dark :deep(.pretty-card .el-input__wrapper.is-focus),
+.dark :deep(.pretty-card .el-select__wrapper.is-focused) {
+  box-shadow: 0 0 0 4px rgb(16 185 129 / 0.14);
+  border-color: rgb(16 185 129);
+}
+
+:deep(.pretty-card .el-textarea__inner:focus) {
+  box-shadow: 0 0 0 4px rgb(16 185 129 / 0.16);
+  border-color: rgb(16 185 129);
+}
+
+.dark :deep(.pretty-card .el-textarea__inner:focus) {
+  box-shadow: 0 0 0 4px rgb(16 185 129 / 0.14);
+  border-color: rgb(16 185 129);
 }
 </style>
