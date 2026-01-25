@@ -1,14 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-    <div class="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center gap-2 sticky top-0 z-10">
-      <el-icon :size="20" class="text-gray-600 dark:text-gray-300 cursor-pointer" @click="router.back()"><ArrowLeft /></el-icon>
-      <span class="text-lg font-bold text-gray-800 dark:text-white">听写设置</span>
-    </div>
-
-    <div class="p-4 space-y-4">
-      <el-card shadow="never" class="rounded-xl">
-        <template #header><div class="font-medium">播放设置</div></template>
-        <el-form label-position="left" label-width="100px">
+  <SettingsShell title="听写设置" subtitle="播放规则、默认内容与语音参数" :icon="Setting" tone="violet" container-class="max-w-4xl">
+    <SettingsCard title="播放设置">
+      <el-form label-position="top" class="dictation-form">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <el-form-item label="分词规则">
             <el-radio-group v-model="form.split_rule">
               <el-radio label="newline">按换行</el-radio>
@@ -20,7 +14,7 @@
               <el-radio label="dictate">听写模式</el-radio>
               <el-radio label="read">朗读模式</el-radio>
             </el-radio-group>
-            <div class="text-xs text-gray-500">听写模式隐藏文本；朗读模式显示文本。间隔时间均生效。</div>
+            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">听写模式隐藏文本；朗读模式显示文本。</div>
           </el-form-item>
           <el-form-item label="播放顺序">
             <el-radio-group v-model="form.order_mode">
@@ -28,85 +22,79 @@
               <el-radio label="random">乱序播放</el-radio>
             </el-radio-group>
           </el-form-item>
-        </el-form>
-      </el-card>
+        </div>
+      </el-form>
+    </SettingsCard>
 
-      <el-card shadow="never" class="rounded-xl mb-4">
-        <template #header><div class="font-medium">默认内容设置</div></template>
-        <el-form label-position="left" label-width="100px">
+    <SettingsCard title="默认内容设置" description="选择常用学段/版本/年级，词库默认按此筛选。">
+      <el-form label-position="top" class="dictation-form">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <el-form-item label="学段">
-             <el-select v-model="form.default_education_stage" placeholder="请选择学段" style="width: 100%" @change="handleStageChange">
-                <el-option label="小学" value="小学" />
-                <el-option label="初中" value="初中" />
-                <el-option label="高中" value="高中" />
-             </el-select>
+            <el-select v-model="form.default_education_stage" placeholder="请选择学段" class="w-full" @change="handleStageChange">
+              <el-option label="小学" value="小学" />
+              <el-option label="初中" value="初中" />
+              <el-option label="高中" value="高中" />
+            </el-select>
           </el-form-item>
           <el-form-item label="教材版本">
-             <el-select v-model="form.default_version" placeholder="请选择版本" style="width: 100%" allow-create filterable default-first-option>
-                <el-option v-for="v in versionOptions" :key="v" :label="v" :value="v" />
-             </el-select>
+            <el-select v-model="form.default_version" placeholder="请选择版本" class="w-full" allow-create filterable default-first-option>
+              <el-option v-for="v in versionOptions" :key="v" :label="v" :value="v" />
+            </el-select>
           </el-form-item>
           <el-form-item label="年级">
-             <el-select v-model="form.default_grade" placeholder="请选择年级" style="width: 100%">
-                <el-option v-for="g in gradeOptions" :key="g" :label="g" :value="g" />
-             </el-select>
+            <el-select v-model="form.default_grade" placeholder="请选择年级" class="w-full">
+              <el-option v-for="g in gradeOptions" :key="g" :label="g" :value="g" />
+            </el-select>
           </el-form-item>
-        </el-form>
-      </el-card>
+        </div>
+      </el-form>
+    </SettingsCard>
 
-      <el-card shadow="never" class="rounded-xl">
-        <template #header><div class="font-medium">参数调节</div></template>
-        <el-form label-position="left" label-width="100px">
+    <SettingsCard title="参数调节">
+      <el-form label-position="top" class="dictation-form">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <el-form-item label="重复次数">
-            <el-input-number v-model="form.repeat_count" :min="1" :max="10" />
-            <span class="ml-2 text-gray-500">次</span>
+            <el-input-number v-model="form.repeat_count" :min="1" :max="10" class="w-full" controls-position="right" />
           </el-form-item>
-          <el-form-item label="间隔时间">
-            <el-input-number v-model="form.interval_seconds" :min="0" :max="60" />
-            <span class="ml-2 text-gray-500">秒</span>
+          <el-form-item label="间隔时间（秒）">
+            <el-input-number v-model="form.interval_seconds" :min="0" :max="60" class="w-full" controls-position="right" />
           </el-form-item>
-          <el-form-item label="语速">
-            <el-slider v-model="form.speed" :min="0.5" :max="2.0" :step="0.1" show-stops />
-            <div class="text-right text-gray-500">{{ form.speed }}x</div>
-          </el-form-item>
+        </div>
+        <el-form-item label="语速">
+          <el-slider v-model="form.speed" :min="0.5" :max="2.0" :step="0.1" show-stops />
+          <div class="mt-1 text-xs font-extrabold text-gray-700 dark:text-gray-200">{{ form.speed }}x</div>
+        </el-form-item>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <el-form-item label="中文音色">
-             <el-select v-model="form.zh_voice_type" placeholder="中文默认" style="width: 100%">
-                <el-option label="默认（自动匹配）" value="" />
-                <el-option 
-                  v-for="v in zhVoices" 
-                  :key="v.voiceURI" 
-                  :label="`${v.name} (${v.lang})`" 
-                  :value="v.voiceURI" 
-                />
-             </el-select>
+            <el-select v-model="form.zh_voice_type" placeholder="中文默认" class="w-full">
+              <el-option label="默认（自动匹配）" value="" />
+              <el-option v-for="v in zhVoices" :key="v.voiceURI" :label="`${v.name} (${v.lang})`" :value="v.voiceURI" />
+            </el-select>
           </el-form-item>
           <el-form-item label="英文音色">
-             <el-select v-model="form.en_voice_type" placeholder="英文默认" style="width: 100%">
-                <el-option label="默认（自动匹配）" value="" />
-                <el-option 
-                  v-for="v in enVoices" 
-                  :key="v.voiceURI" 
-                  :label="`${v.name} (${v.lang})`" 
-                  :value="v.voiceURI" 
-                />
-             </el-select>
+            <el-select v-model="form.en_voice_type" placeholder="英文默认" class="w-full">
+              <el-option label="默认（自动匹配）" value="" />
+              <el-option v-for="v in enVoices" :key="v.voiceURI" :label="`${v.name} (${v.lang})`" :value="v.voiceURI" />
+            </el-select>
           </el-form-item>
-        </el-form>
-      </el-card>
+        </div>
+      </el-form>
+    </SettingsCard>
 
-      <div class="pt-4">
-        <el-button type="primary" size="large" class="w-full" @click="save">保存设置</el-button>
-      </div>
-    </div>
-  </div>
+    <SettingsCard>
+      <el-button type="primary" size="large" class="w-full !h-12 !rounded-2xl !font-extrabold" @click="save">保存设置</el-button>
+    </SettingsCard>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { Setting } from '@element-plus/icons-vue'
 import { dictationApi, type DictationSettings } from '@/services/dictation'
 import { ElMessage } from 'element-plus'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 const router = useRouter()
 const availableVoices = ref<SpeechSynthesisVoice[]>([])
@@ -184,3 +172,15 @@ async function save() {
   }
 }
 </script>
+
+<style scoped>
+:deep(.dictation-form .el-form-item__label) {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgb(107 114 128);
+}
+
+.dark :deep(.dictation-form .el-form-item__label) {
+  color: rgb(156 163 175);
+}
+</style>

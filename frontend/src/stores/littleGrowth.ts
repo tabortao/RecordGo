@@ -132,13 +132,13 @@ export const useLittleGrowthStore = defineStore('littleGrowth', () => {
     })
   }
 
-  async function fetchRecords(params: { is_favorite?: boolean, silent?: boolean } = {}) {
+  async function fetchRecords(params: { is_favorite?: boolean; silent?: boolean; page_size?: number } = {}) {
     if (!params.silent) loading.value = true
     try {
       if (!params.silent) await fetchTags() // Ensure tags are loaded
       
       // Construct query params
-      const query: any = { page_size: 100 } // Increase limit to see more records for now
+      const query: any = { page_size: Number(params.page_size || 100) }
       if (params.is_favorite) query.is_favorite = 'true'
       
       const res = await http.get('/little-growth/records', { params: query })

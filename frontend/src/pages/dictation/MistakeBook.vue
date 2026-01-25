@@ -1,38 +1,38 @@
 <template>
-  <div class="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
-    <div class="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-      <div class="flex items-center gap-2">
-        <el-icon :size="20" class="text-gray-600 dark:text-gray-300 cursor-pointer" @click="router.back()"><ArrowLeft /></el-icon>
-        <span class="text-lg font-bold text-gray-800 dark:text-white">错题本</span>
-      </div>
-      <el-button type="primary" link @click="addManual">手动添加</el-button>
-    </div>
+  <SettingsShell title="难点收藏" subtitle="把易错词收集起来，反复巩固" :icon="Notebook" tone="red" container-class="max-w-4xl">
+    <template #headerRight>
+      <el-button type="primary" class="!rounded-2xl !font-extrabold" @click="addManual">手动添加</el-button>
+    </template>
 
-    <div class="flex-1 overflow-y-auto p-3 space-y-3">
+    <SettingsCard>
       <el-empty v-if="list.length === 0" description="暂无错题" />
-      
-      <div 
-        v-for="item in list" 
-        :key="item.id"
-        class="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between"
-      >
-        <div>
-          <div class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ item.word }}</div>
-          <div class="text-xs text-gray-500 mt-1" v-if="item.context">来源: {{ item.context }}</div>
-          <div class="text-xs text-gray-400 mt-1">{{ new Date(item.created_at).toLocaleDateString() }}</div>
+
+      <div v-else class="space-y-3">
+        <div
+          v-for="item in list"
+          :key="item.id"
+          class="group rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/55 backdrop-blur px-4 py-4 shadow-sm hover:shadow-md transition flex items-start justify-between gap-3"
+        >
+          <div class="min-w-0">
+            <div class="text-lg font-extrabold tracking-tight text-gray-900 dark:text-gray-50">{{ item.word }}</div>
+            <div v-if="item.context" class="mt-1 text-sm text-gray-600 dark:text-gray-300">来源：{{ item.context }}</div>
+            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ new Date(item.created_at).toLocaleDateString() }}</div>
+          </div>
+          <el-button circle type="danger" class="!rounded-2xl" :icon="Delete" size="small" @click="removeItem(item.id)" />
         </div>
-        <el-button circle type="danger" :icon="Delete" size="small" @click="removeItem(item.id)" />
       </div>
-    </div>
-  </div>
+    </SettingsCard>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Delete } from '@element-plus/icons-vue'
+import { Delete, Notebook } from '@element-plus/icons-vue'
 import { dictationApi, type Mistake } from '@/services/dictation'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 const router = useRouter()
 const list = ref<Mistake[]>([])

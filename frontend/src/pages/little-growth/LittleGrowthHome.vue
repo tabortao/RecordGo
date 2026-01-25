@@ -44,9 +44,13 @@
             :popper-options="{ placement: 'bottom-end' }"
           >
             <template #cell="{ text, date, isCurrent }">
-              <div class="w-full h-full flex flex-col items-center justify-center relative">
-                <span :class="isCurrent ? 'font-bold text-purple-600' : ''">{{ text }}</span>
-                <span v-if="hasRecord(date)" class="w-1.5 h-1.5 bg-purple-500 rounded-full absolute bottom-1"></span>
+              <div class="w-full h-full flex items-center justify-center">
+                <div
+                  class="h-7 w-7 rounded-full flex items-center justify-center text-sm transition-colors"
+                  :class="hasRecord(date) ? 'bg-purple-600 text-white font-extrabold shadow-sm' : (isCurrent ? 'font-extrabold text-purple-600' : '')"
+                >
+                  {{ text }}
+                </div>
               </div>
             </template>
           </el-date-picker>
@@ -264,6 +268,7 @@ import { useWindowSize, useDraggable, useStorage, useIntervalFn } from '@vueuse/
 import TimelineCard from './components/TimelineCard.vue'
 import TagSidebar from './components/TagSidebar.vue'
 import dayjs from 'dayjs'
+import http from '@/services/http'
 
 const router = useRouter()
 const store = useLittleGrowthStore()
@@ -281,6 +286,7 @@ const showSidebar = ref(false)
 const searchQuery = ref('')
 const selectedDate = ref<Date | null>(null)
 const datePickerRef = ref()
+const recordDates = ref<Set<string>>(new Set())
 
 const { width, height } = useWindowSize()
 const drawerSize = computed(() => width.value < 768 ? '50%' : '25%')
@@ -521,16 +527,27 @@ const scrollToYear = (year: string) => {
   if (el) el.scrollIntoView({ behavior: 'smooth' })
 }
 
-const openCalendar = () => {
-    if (selectedDate.value) {
-        selectedDate.value = null
-    } else {
-        datePickerRef.value?.focus()
-    }
+async function ensureRecordDatesLoaded() {
+  if (recordDates.value.size > 0) return
+  try {
+    const res = await http.get('/little-growth/records', { params: { page_size: 5000 } }) as any
+    const items = Array.isArray(res?.items) ? res.items : []
+    recordDates.value = new Set(items.map((r: any) => String(r?.date || '').slice(0, 10)).filter(Boolean))
+  } catch {}
+}
+
+const openCalendar = async () => {
+  if (selectedDate.value) {
+    selectedDate.value = null
+    return
+  }
+  await ensureRecordDatesLoaded()
+  datePickerRef.value?.focus()
 }
 
 const hasRecord = (date: Date) => {
   const d = dayjs(date).format('YYYY-MM-DD')
+  if (recordDates.value.size > 0) return recordDates.value.has(d)
   return store.records.some(r => r.date === d)
 }
 

@@ -1,94 +1,134 @@
 <template>
-  <div class="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
-    <!-- Header (only if not selector mode, as selector is inside drawer) -->
-    <div v-if="!selectorMode" class="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-      <div class="flex items-center gap-2">
-        <el-icon :size="20" class="text-gray-600 dark:text-gray-300 cursor-pointer" @click="router.back()"><ArrowLeft /></el-icon>
-        <span class="text-lg font-bold text-gray-800 dark:text-white">词库管理</span>
+  <div v-if="selectorMode" class="h-full flex flex-col">
+    <div class="p-3">
+      <div class="rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/65 backdrop-blur-xl shadow-sm px-4 py-4">
+        <div class="flex gap-2 overflow-x-auto pb-1">
+          <el-select v-model="filterStage" placeholder="学段" style="width: 110px" clearable @change="handleStageChange">
+            <el-option label="全部" value="" />
+            <el-option label="小学" value="小学" />
+            <el-option label="初中" value="初中" />
+            <el-option label="高中" value="高中" />
+          </el-select>
+          <el-select v-model="filterVersion" placeholder="版本" style="width: 140px" clearable filterable allow-create>
+            <el-option label="全部" value="" />
+            <el-option v-for="v in versionOptions" :key="v" :label="v" :value="v" />
+          </el-select>
+          <el-select v-model="filterGrade" placeholder="年级" style="width: 140px" clearable>
+            <el-option label="全部" value="" />
+            <el-option v-for="g in gradeOptions" :key="g" :label="g" :value="g" />
+          </el-select>
+        </div>
       </div>
-      <el-button type="primary" size="small" @click="router.push('/dictation/banks/create')">新建</el-button>
     </div>
 
-    <!-- Filter / Search (Advanced) -->
-    <div class="p-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 flex flex-col gap-2">
-       <div class="flex gap-2 overflow-x-auto pb-1">
-          <el-select v-model="filterStage" placeholder="学段" style="width: 100px" clearable @change="handleStageChange">
-             <el-option label="全部" value="" />
-             <el-option label="小学" value="小学" />
-             <el-option label="初中" value="初中" />
-             <el-option label="高中" value="高中" />
-          </el-select>
-          <el-select v-model="filterVersion" placeholder="版本" style="width: 120px" clearable filterable allow-create>
-             <el-option label="全部" value="" />
-             <el-option v-for="v in versionOptions" :key="v" :label="v" :value="v" />
-          </el-select>
-          <el-select v-model="filterGrade" placeholder="年级" style="width: 120px" clearable>
-             <el-option label="全部" value="" />
-             <el-option v-for="g in gradeOptions" :key="g" :label="g" :value="g" />
-          </el-select>
-       </div>
-    </div>
-
-    <!-- List -->
-    <div class="flex-1 overflow-y-auto p-3 space-y-3">
+    <div class="flex-1 overflow-y-auto px-3 pb-3 space-y-3">
       <el-empty v-if="filteredList.length === 0" description="暂无词库" />
-      
-      <div 
-        v-for="wb in filteredList" 
+
+      <div
+        v-for="wb in filteredList"
         :key="wb.id"
-        class="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-3"
+        class="group rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/55 backdrop-blur px-4 py-4 shadow-sm hover:shadow-md transition flex items-center gap-3 cursor-pointer"
         @click="toggleSelection(wb)"
       >
-        <!-- Checkbox for selector mode -->
-        <div v-if="selectorMode" class="flex-shrink-0">
+        <div class="flex-shrink-0">
           <el-checkbox :model-value="selectedIds.has(wb.id)" @change="() => toggleSelection(wb)" @click.stop />
         </div>
 
         <div class="flex-1 min-w-0">
-          <div class="flex items-center justify-between mb-1">
-            <div class="flex items-center gap-2 truncate">
-              <span class="font-medium text-gray-900 dark:text-gray-100">{{ wb.title }}</span>
-              <el-tag v-if="(wb as any).is_preset" size="small" type="warning" effect="plain">系统</el-tag>
+          <div class="flex items-center justify-between gap-3">
+            <div class="min-w-0 flex items-center gap-2">
+              <span class="truncate text-base font-extrabold tracking-tight text-gray-900 dark:text-gray-50">{{ wb.title }}</span>
+              <el-tag v-if="(wb as any).is_preset" size="small" type="warning" effect="plain" class="!rounded-full">系统</el-tag>
             </div>
-            <el-tag size="small" type="info">{{ wb.subject }}</el-tag>
+            <el-tag size="small" type="info" class="!rounded-full">{{ wb.subject }}</el-tag>
           </div>
-          <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
+          <div class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
             {{ wb.education_stage }} · {{ wb.grade }} · {{ wb.version }}
           </div>
-          <div class="text-xs text-gray-400 mt-1 truncate">{{ extractPreview(wb.content) }}</div>
-        </div>
-
-        <!-- Actions for management mode -->
-        <div v-if="!selectorMode && !(wb as any).is_preset" class="flex-shrink-0 flex items-center gap-2">
-          <el-button circle size="small" :icon="Edit" @click.stop="router.push(`/dictation/banks/${wb.id}`)" />
-          <el-popconfirm title="确认删除?" @confirm="deleteBank(wb.id)">
-            <template #reference>
-              <el-button circle size="small" type="danger" :icon="Delete" @click.stop />
-            </template>
-          </el-popconfirm>
-        </div>
-        <!-- View only for presets in management mode -->
-        <div v-if="!selectorMode && (wb as any).is_preset" class="flex-shrink-0">
-           <el-button circle size="small" :icon="Edit" disabled title="系统预设不可编辑" />
+          <div class="mt-1 text-sm text-gray-600 dark:text-gray-300 truncate">{{ extractPreview(wb.content) }}</div>
         </div>
       </div>
     </div>
 
-    <!-- Selector Footer -->
-    <div v-if="selectorMode" class="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-      <el-button type="primary" class="w-full" size="large" :disabled="selectedIds.size === 0" @click="confirmSelection">
+    <div class="p-4 border-t border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-950/30 backdrop-blur">
+      <el-button type="primary" class="w-full !rounded-2xl !h-12 !font-extrabold" size="large" :disabled="selectedIds.size === 0" @click="confirmSelection">
         确认选择 ({{ selectedIds.size }})
       </el-button>
     </div>
   </div>
+
+  <SettingsShell v-else title="词库管理" subtitle="系统预设 + 自建词库" :icon="Collection" tone="blue" container-class="max-w-5xl">
+    <template #headerRight>
+      <el-button type="primary" class="!rounded-2xl !font-extrabold" @click="router.push('/dictation/banks/create')">新建</el-button>
+    </template>
+
+    <SettingsCard title="筛选">
+      <div class="flex gap-2 flex-wrap">
+        <el-select v-model="filterStage" placeholder="学段" style="width: 110px" clearable @change="handleStageChange">
+          <el-option label="全部" value="" />
+          <el-option label="小学" value="小学" />
+          <el-option label="初中" value="初中" />
+          <el-option label="高中" value="高中" />
+        </el-select>
+        <el-select v-model="filterVersion" placeholder="版本" style="width: 140px" clearable filterable allow-create>
+          <el-option label="全部" value="" />
+          <el-option v-for="v in versionOptions" :key="v" :label="v" :value="v" />
+        </el-select>
+        <el-select v-model="filterGrade" placeholder="年级" style="width: 140px" clearable>
+          <el-option label="全部" value="" />
+          <el-option v-for="g in gradeOptions" :key="g" :label="g" :value="g" />
+        </el-select>
+      </div>
+    </SettingsCard>
+
+    <SettingsCard title="词库列表">
+      <div class="space-y-3">
+        <el-empty v-if="filteredList.length === 0" description="暂无词库" />
+
+        <div
+          v-for="wb in filteredList"
+          :key="wb.id"
+          class="group rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/55 backdrop-blur px-4 py-4 shadow-sm hover:shadow-md transition flex items-center gap-3"
+        >
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0 flex items-center gap-2">
+                <span class="truncate text-base font-extrabold tracking-tight text-gray-900 dark:text-gray-50">{{ wb.title }}</span>
+                <el-tag v-if="(wb as any).is_preset" size="small" type="warning" effect="plain" class="!rounded-full">系统</el-tag>
+              </div>
+              <el-tag size="small" type="info" class="!rounded-full">{{ wb.subject }}</el-tag>
+            </div>
+            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
+              {{ wb.education_stage }} · {{ wb.grade }} · {{ wb.version }}
+            </div>
+            <div class="mt-1 text-sm text-gray-600 dark:text-gray-300 truncate">{{ extractPreview(wb.content) }}</div>
+          </div>
+
+          <div v-if="!(wb as any).is_preset" class="flex-shrink-0 flex items-center gap-2">
+            <el-button circle size="small" class="!rounded-2xl" :icon="Edit" @click.stop="router.push(`/dictation/banks/${wb.id}`)" />
+            <el-popconfirm title="确认删除?" @confirm="deleteBank(wb.id)">
+              <template #reference>
+                <el-button circle size="small" class="!rounded-2xl" type="danger" :icon="Delete" @click.stop />
+              </template>
+            </el-popconfirm>
+          </div>
+          <div v-else class="flex-shrink-0">
+            <el-button circle size="small" class="!rounded-2xl" :icon="Edit" disabled />
+          </div>
+        </div>
+      </div>
+    </SettingsCard>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Edit, Delete } from '@element-plus/icons-vue'
+import { Edit, Delete, Collection } from '@element-plus/icons-vue'
 import { dictationApi, type WordBank } from '@/services/dictation'
 import { ElMessage } from 'element-plus'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 import systemPresets from '@/assets/presets/wordbanks.json'
 

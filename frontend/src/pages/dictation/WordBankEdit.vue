@@ -1,30 +1,25 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-    <!-- Header -->
-    <div class="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-      <div class="flex items-center gap-2">
-        <el-icon :size="20" class="text-gray-600 dark:text-gray-300 cursor-pointer" @click="router.back()"><ArrowLeft /></el-icon>
-        <span class="text-lg font-bold text-gray-800 dark:text-white">{{ isEdit ? '编辑词库' : '新建词库' }}</span>
-      </div>
-      <el-button type="primary" @click="submit" :loading="saving">保存</el-button>
-    </div>
+  <SettingsShell :title="isEdit ? '编辑词库' : '新建词库'" subtitle="为听写生成更清晰的内容来源" :icon="Collection" tone="blue" container-class="max-w-4xl">
+    <template #headerRight>
+      <el-button type="primary" class="!rounded-2xl !font-extrabold" :loading="saving" @click="submit">保存</el-button>
+    </template>
 
-    <div class="p-4 space-y-4">
-      <el-form :model="form" label-position="top">
+    <SettingsCard title="基础信息">
+      <el-form :model="form" label-position="top" class="dictation-form">
         <el-form-item label="标题">
           <el-input v-model="form.title" placeholder="例如：第一单元生词" />
         </el-form-item>
-        
-        <div class="grid grid-cols-2 gap-3">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <el-form-item label="科目">
-            <el-select v-model="form.subject">
+            <el-select v-model="form.subject" class="w-full">
               <el-option label="语文" value="语文" />
               <el-option label="英语" value="英语" />
               <el-option label="其他" value="其他" />
             </el-select>
           </el-form-item>
           <el-form-item label="阶段">
-            <el-select v-model="form.education_stage">
+            <el-select v-model="form.education_stage" class="w-full">
               <el-option label="小学" value="小学" />
               <el-option label="初中" value="初中" />
               <el-option label="高中" value="高中" />
@@ -32,39 +27,39 @@
           </el-form-item>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <el-form-item label="版本">
-             <el-select v-model="form.version" allow-create filterable default-first-option placeholder="选择或输入版本">
-                <el-option v-for="v in ['人教版', '苏教版', '北师大版', '外研版']" :key="v" :label="v" :value="v" />
-             </el-select>
+            <el-select v-model="form.version" class="w-full" allow-create filterable default-first-option placeholder="选择或输入版本">
+              <el-option v-for="v in ['人教版', '苏教版', '北师大版', '外研版']" :key="v" :label="v" :value="v" />
+            </el-select>
           </el-form-item>
           <el-form-item label="年级">
-            <el-select v-model="form.grade" placeholder="选择年级">
-               <el-option v-for="g in availableGrades" :key="g" :label="g" :value="g" />
+            <el-select v-model="form.grade" class="w-full" placeholder="选择年级">
+              <el-option v-for="g in availableGrades" :key="g" :label="g" :value="g" />
             </el-select>
           </el-form-item>
         </div>
+      </el-form>
+    </SettingsCard>
 
+    <SettingsCard title="词库内容" description="支持空格或换行分隔，系统会按设置规则分词。">
+      <el-form :model="form" label-position="top" class="dictation-form">
         <el-form-item label="内容">
-          <el-input 
-            v-model="form.content" 
-            type="textarea" 
-            :rows="10" 
-            placeholder="输入词汇或课文，支持空格或换行分隔" 
-          />
-          <div class="text-xs text-gray-500 mt-1">提示：系统将自动识别分隔符进行分词。</div>
+          <el-input v-model="form.content" type="textarea" :rows="12" resize="none" placeholder="输入词汇或课文…" />
         </el-form-item>
       </el-form>
-    </div>
-  </div>
+    </SettingsCard>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { Collection } from '@element-plus/icons-vue'
 import { dictationApi, type WordBank } from '@/services/dictation'
 import { ElMessage } from 'element-plus'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -146,3 +141,15 @@ async function submit() {
   }
 }
 </script>
+
+<style scoped>
+:deep(.dictation-form .el-form-item__label) {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgb(107 114 128);
+}
+
+.dark :deep(.dictation-form .el-form-item__label) {
+  color: rgb(156 163 175);
+}
+</style>

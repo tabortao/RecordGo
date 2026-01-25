@@ -3,12 +3,14 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import http from '@/services/http'
 import dayjs from 'dayjs'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { DataLine } from '@element-plus/icons-vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart, BarChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, TitleComponent, LegendComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
 
@@ -110,59 +112,60 @@ function formatDuration(sec: number) {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 p-4">
-    <div class="flex items-center gap-3 mb-4">
-      <el-button circle :icon="ArrowLeft" @click="router.back()" />
-      <h1 class="text-xl font-bold">听写记录</h1>
-    </div>
-
-    <!-- Stats Summary -->
-    <div class="grid grid-cols-2 gap-3 mb-4">
-       <div class="bg-white rounded-xl p-3 shadow-sm flex flex-col items-center justify-center">
-          <div class="text-2xl font-bold text-indigo-600">{{ totalStats.count }}</div>
-          <div class="text-xs text-gray-500">总练习次数</div>
-       </div>
-       <div class="bg-white rounded-xl p-3 shadow-sm flex flex-col items-center justify-center">
-          <div class="text-2xl font-bold text-purple-600">{{ totalStats.durationText }}</div>
-          <div class="text-xs text-gray-500">总时长</div>
-       </div>
-    </div>
-
-    <!-- Date Filter -->
-    <div class="mb-4 flex gap-2">
-       <el-date-picker
-        v-model="dateRange[0]"
-        type="date"
-        placeholder="开始日期"
-        style="width: 100%"
-      />
-      <el-date-picker
-        v-model="dateRange[1]"
-        type="date"
-        placeholder="结束日期"
-        style="width: 100%"
-      />
-    </div>
-
-    <div v-if="filteredList.length > 0" class="bg-white rounded-xl p-4 shadow-sm mb-4 h-72">
-      <v-chart class="w-full h-full" :option="chartOption" autoresize />
-    </div>
-    <el-empty v-else description="暂无听写记录" />
-
-    <div class="space-y-3">
-      <div v-for="item in filteredList" :key="item.id" class="bg-white rounded-xl p-4 shadow-sm border-l-4" :class="item.mistake_count > 0 ? 'border-red-400' : 'border-green-400'">
-        <div class="flex justify-between items-start mb-2">
-          <div class="text-sm text-gray-500">{{ dayjs(item.created_at).format('YYYY-MM-DD HH:mm:ss') }}</div>
-          <div class="font-bold text-blue-600">{{ formatDuration(item.duration_seconds) }}</div>
+  <SettingsShell title="听写记录" subtitle="练习趋势与错题变化" :icon="DataLine" tone="violet" container-class="max-w-5xl">
+    <SettingsCard>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-3xl border border-indigo-100/70 dark:border-indigo-900/40 bg-indigo-50/70 dark:bg-indigo-900/20 px-4 py-3">
+          <div class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-700/80 dark:text-indigo-300/80">总练习次数</div>
+          <div class="mt-1 text-2xl font-extrabold tracking-tight text-indigo-800 dark:text-indigo-200">{{ totalStats.count }}</div>
         </div>
-        <div class="text-gray-800 mb-2 text-sm break-all line-clamp-3">{{ item.content_snapshot }}</div>
-        <div class="flex items-center gap-2 text-xs">
-          <span v-if="item.mistake_count > 0" class="text-red-500 font-bold">错题: {{ item.mistake_count }}</span>
-          <span v-else class="text-green-500 font-bold">全对 💯</span>
+        <div class="rounded-3xl border border-violet-100/70 dark:border-violet-900/40 bg-violet-50/70 dark:bg-violet-900/20 px-4 py-3">
+          <div class="text-[11px] font-extrabold uppercase tracking-wider text-violet-700/80 dark:text-violet-300/80">总时长</div>
+          <div class="mt-1 text-2xl font-extrabold tracking-tight text-violet-800 dark:text-violet-200">{{ totalStats.durationText }}</div>
         </div>
       </div>
-    </div>
-  </div>
+    </SettingsCard>
+
+    <SettingsCard title="筛选日期">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <el-date-picker v-model="dateRange[0]" type="date" placeholder="开始日期" class="w-full" />
+        <el-date-picker v-model="dateRange[1]" type="date" placeholder="结束日期" class="w-full" />
+      </div>
+    </SettingsCard>
+
+    <SettingsCard v-if="filteredList.length > 0" title="趋势图" description="展示最近 10 条记录的时长与错题数。">
+      <div class="h-72">
+        <v-chart class="w-full h-full" :option="chartOption" autoresize />
+      </div>
+    </SettingsCard>
+    <SettingsCard v-else>
+      <el-empty description="暂无听写记录" />
+    </SettingsCard>
+
+    <SettingsCard title="记录列表">
+      <div class="space-y-3">
+        <div
+          v-for="item in filteredList"
+          :key="item.id"
+          class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/55 backdrop-blur px-4 py-4 shadow-sm"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-xs text-gray-500 dark:text-gray-400">{{ dayjs(item.created_at).format('YYYY-MM-DD HH:mm:ss') }}</div>
+              <div class="mt-2 text-sm text-gray-800 dark:text-gray-100 break-all line-clamp-3">{{ item.content_snapshot }}</div>
+            </div>
+            <div class="shrink-0 text-right">
+              <div class="text-sm font-extrabold text-blue-700 dark:text-blue-300">{{ formatDuration(item.duration_seconds) }}</div>
+              <div class="mt-2 text-xs font-extrabold" :class="item.mistake_count > 0 ? 'text-red-600 dark:text-red-300' : 'text-emerald-600 dark:text-emerald-300'">
+                <span v-if="item.mistake_count > 0">错题 {{ item.mistake_count }}</span>
+                <span v-else>全对</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </SettingsCard>
+  </SettingsShell>
 </template>
 
 <style scoped>

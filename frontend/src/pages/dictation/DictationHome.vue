@@ -1,92 +1,85 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-    <!-- Header -->
-    <div class="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-      <div class="flex items-center gap-2">
-        <el-icon :size="20" class="text-gray-600 dark:text-gray-300 cursor-pointer" @click="router.push('/homework')"><ArrowLeft /></el-icon>
-        <span class="text-lg font-bold text-gray-800 dark:text-white">听写大师</span>
-      </div>
-      <div class="flex items-center gap-3">
-        <el-icon :size="20" class="text-gray-600 dark:text-gray-300 cursor-pointer" @click="router.push('/dictation/settings')"><Setting /></el-icon>
-      </div>
-    </div>
+  <SettingsShell title="听写大师" subtitle="输入内容或从词库选择，一键开始听写" :icon="Notebook" tone="violet" container-class="max-w-4xl" back-to="/homework">
+    <template #headerRight>
+      <button
+        type="button"
+        class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 text-gray-600 dark:text-gray-300 hover:bg-white hover:text-gray-900 dark:hover:text-gray-50 transition-colors"
+        @click="router.push('/dictation/settings')"
+      >
+        <el-icon :size="18"><Setting /></el-icon>
+      </button>
+    </template>
 
-    <!-- Content -->
-    <div class="flex-1 p-4 space-y-4 overflow-y-auto">
-      
-      <!-- Input Area -->
-      <el-card shadow="never" class="rounded-xl">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <span class="font-medium text-gray-700 dark:text-gray-200">听写内容</span>
-            <div class="flex gap-2">
-              <el-button link type="primary" @click="showSelector = true">从词库选择</el-button>
-              <el-button link type="danger" @click="content = ''">清空</el-button>
-            </div>
-          </div>
-        </template>
-        <el-input
-          v-model="content"
-          type="textarea"
-          :rows="8"
-          placeholder="在此输入听写内容，或从词库中选择，或粘贴音频链接。内容将按设置规则（空格/换行）进行分词播放。"
-          resize="none"
-        />
-      </el-card>
+    <SettingsCard title="听写内容" description="支持空格/换行分词，也可粘贴音频链接。">
+      <template #right>
+        <div class="flex items-center gap-2">
+          <el-button link type="primary" class="!font-extrabold" @click="showSelector = true">从词库选择</el-button>
+          <el-button link type="danger" class="!font-extrabold" @click="content = ''">清空</el-button>
+        </div>
+      </template>
+      <el-input
+        v-model="content"
+        type="textarea"
+        :rows="10"
+        placeholder="在此输入听写内容…"
+        resize="none"
+      />
+    </SettingsCard>
 
-      <!-- Quick Actions -->
+    <SettingsCard title="快捷入口">
       <div class="grid grid-cols-3 gap-3">
-        <el-card shadow="hover" class="cursor-pointer rounded-xl border-none bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 transform transition hover:scale-105 active:scale-95" :body-style="{ padding: '12px' }" @click="router.push('/dictation/banks')">
-          <div class="flex flex-col items-center gap-2 text-blue-600 dark:text-blue-400">
-            <div class="p-2 bg-white dark:bg-blue-800 rounded-full shadow-sm">
-                <el-icon :size="20"><Collection /></el-icon>
+        <button class="group rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/55 backdrop-blur-xl px-3 py-4 shadow-sm hover:shadow-md transition active:scale-[0.99]" type="button" @click="router.push('/dictation/banks')">
+          <div class="flex flex-col items-center gap-2">
+            <div class="h-11 w-11 rounded-2xl border border-blue-100/70 dark:border-blue-900/40 bg-blue-50/80 dark:bg-blue-900/25 flex items-center justify-center text-blue-700 dark:text-blue-300">
+              <el-icon :size="20"><Collection /></el-icon>
             </div>
-            <span class="font-bold text-sm">词库管理</span>
+            <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">词库管理</div>
+            <div class="text-[11px] text-gray-500 dark:text-gray-400">整理与筛选</div>
           </div>
-        </el-card>
-        <el-card shadow="hover" class="cursor-pointer rounded-xl border-none bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 transform transition hover:scale-105 active:scale-95" :body-style="{ padding: '12px' }" @click="router.push('/dictation/mistakes')">
-          <div class="flex flex-col items-center gap-2 text-red-600 dark:text-red-400">
-            <div class="p-2 bg-white dark:bg-red-800 rounded-full shadow-sm">
-                <el-icon :size="20"><Notebook /></el-icon>
+        </button>
+        <button class="group rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/55 backdrop-blur-xl px-3 py-4 shadow-sm hover:shadow-md transition active:scale-[0.99]" type="button" @click="router.push('/dictation/mistakes')">
+          <div class="flex flex-col items-center gap-2">
+            <div class="h-11 w-11 rounded-2xl border border-rose-100/70 dark:border-rose-900/40 bg-rose-50/80 dark:bg-rose-900/25 flex items-center justify-center text-rose-700 dark:text-rose-300">
+              <el-icon :size="20"><Notebook /></el-icon>
             </div>
-            <span class="font-bold text-sm">难点收藏</span>
+            <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">难点收藏</div>
+            <div class="text-[11px] text-gray-500 dark:text-gray-400">积累与复盘</div>
           </div>
-        </el-card>
-        <el-card shadow="hover" class="cursor-pointer rounded-xl border-none bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 transform transition hover:scale-105 active:scale-95" :body-style="{ padding: '12px' }" @click="router.push('/dictation/history')">
-          <div class="flex flex-col items-center gap-2 text-green-600 dark:text-green-400">
-            <div class="p-2 bg-white dark:bg-green-800 rounded-full shadow-sm">
-                <el-icon :size="20"><DataLine /></el-icon>
+        </button>
+        <button class="group rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/55 backdrop-blur-xl px-3 py-4 shadow-sm hover:shadow-md transition active:scale-[0.99]" type="button" @click="router.push('/dictation/history')">
+          <div class="flex flex-col items-center gap-2">
+            <div class="h-11 w-11 rounded-2xl border border-emerald-100/70 dark:border-emerald-900/40 bg-emerald-50/80 dark:bg-emerald-900/25 flex items-center justify-center text-emerald-700 dark:text-emerald-300">
+              <el-icon :size="20"><DataLine /></el-icon>
             </div>
-            <span class="font-bold text-sm">听写记录</span>
+            <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">听写记录</div>
+            <div class="text-[11px] text-gray-500 dark:text-gray-400">统计与趋势</div>
           </div>
-        </el-card>
+        </button>
       </div>
+    </SettingsCard>
 
-      <!-- Start Button -->
-      <div class="pt-4">
-        <el-button type="primary" size="large" class="w-full h-12 text-lg rounded-xl shadow-lg shadow-blue-500/30" :disabled="!content.trim()" @click="startDictation">
-          开始听写
-        </el-button>
-      </div>
+    <SettingsCard>
+      <el-button type="primary" size="large" class="w-full !h-12 !text-base !rounded-2xl !font-extrabold" :disabled="!content.trim()" @click="startDictation">
+        开始听写
+      </el-button>
+    </SettingsCard>
 
-    </div>
-
-    <!-- Word Bank Selector Drawer -->
     <el-drawer v-model="showSelector" title="选择词库内容" direction="btt" size="80%">
       <div class="h-full flex flex-col">
-        <!-- Reuse WordBankList component here or implement simple list -->
         <WordBankList selector-mode @select="onSelectContent" />
       </div>
     </el-drawer>
-  </div>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Setting, Collection, Notebook, DataLine } from '@element-plus/icons-vue'
+import { Setting, Collection, Notebook, DataLine } from '@element-plus/icons-vue'
 import WordBankList from './WordBankList.vue'
 import { dictationApi } from '@/services/dictation'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 const router = useRouter()
 const content = ref('')
@@ -118,7 +111,4 @@ function startDictation() {
 </script>
 
 <style scoped>
-:deep(.el-card__header) {
-  padding: 12px 16px;
-}
 </style>
