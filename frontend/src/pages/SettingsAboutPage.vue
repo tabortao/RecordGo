@@ -1,83 +1,105 @@
 <template>
-  <!-- 中文注释：关于页面，展示图标、名称、版本号，以及外部跳转按钮（小红书、邮件联系） -->
-  <div class="p-4 space-y-4 pb-16">
-    <!-- 标题栏：返回 + 关于图标 + 文本 -->
-    <div class="flex items-center gap-2">
-      <el-icon :size="18" class="cursor-pointer" style="color:#64748b" @click="goBack"><ArrowLeft /></el-icon>
-      <el-icon :size="18" style="color:#0ea5e9"><InfoFilled /></el-icon>
-      <h2 class="font-semibold">关于</h2>
-    </div>
-    
-    <!-- 信息卡片：图标、名称、版本分别占一行显示 -->
-    <el-card shadow="never" body-class="p-4">
-      <div class="flex flex-col items-center justify-center p-4">
-        <img :src="iconSrc" alt="App Icon" class="w-12 h-12 mb-2 rounded-lg shadow-md" />
-        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-1">{{ appName }}</h3>
-        <p class="text-sm text-gray-600 dark:text-gray-300">版本 {{ versionDisplay }}</p>
-        <p class="text-sm text-gray-600 dark:text-gray-300">{{ dateDisplay }}</p>
+  <SettingsShell title="关于" subtitle="版本信息与联系入口" :icon="InfoFilled" tone="sky" container-class="max-w-2xl">
+    <SettingsCard>
+      <div class="flex flex-col items-center justify-center px-2 py-6">
+        <div class="relative">
+          <div class="absolute -inset-3 rounded-[1.5rem] bg-sky-200/50 dark:bg-sky-500/15 blur-2xl" />
+          <img :src="iconSrc" alt="App Icon" class="relative w-14 h-14 rounded-2xl shadow-md ring-1 ring-white/60 dark:ring-gray-800/70" />
+        </div>
+        <h3 class="mt-4 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">{{ appName }}</h3>
+        <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
+          <span class="rounded-full border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
+            版本 {{ versionDisplay }}
+          </span>
+          <span class="rounded-full border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
+            {{ dateDisplay }}
+          </span>
+        </div>
       </div>
-    </el-card>
+    </SettingsCard>
 
-    <!-- 操作卡片：关注小红书、邮件联系（移动端类列表样式，左侧图标 + 右侧箭头；响应式排列） -->
-    <el-card shadow="never" body-class="p-4">
-      <!-- 中文注释：移动端单列、平板/桌面两列并排 -->
+    <SettingsCard title="快捷入口" description="打开外部链接或进入帮助页面">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <!-- 关注小红书 -->
-        <button class="w-full flex items-center justify-between px-3 py-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                :disabled="!xhsUrl"
-                @click="openXHS">
+        <button
+          class="group w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/40 hover:bg-white/80 dark:hover:bg-gray-900/70 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!xhsUrl"
+          @click="openXHS"
+        >
           <div class="flex items-center gap-3">
-            <el-icon :size="18" style="color:#ef4444"><Link /></el-icon>
-            <span class="text-gray-800 dark:text-gray-200">关注小红书</span>
+            <div class="h-10 w-10 rounded-2xl border border-rose-100/70 dark:border-rose-900/40 bg-rose-50/80 dark:bg-rose-900/25 flex items-center justify-center text-rose-600 dark:text-rose-300">
+              <el-icon :size="18"><Link /></el-icon>
+            </div>
+            <div class="text-left">
+              <div class="text-sm font-bold text-gray-900 dark:text-gray-50">关注小红书</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">动态与使用技巧</div>
+            </div>
           </div>
-          <el-icon :size="18" class="text-gray-500 dark:text-gray-400"><ArrowRight /></el-icon>
+          <el-icon :size="18" class="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 transition-colors"><ArrowRight /></el-icon>
         </button>
 
-        <!-- 邮件联系 -->
-        <button class="w-full flex items-center justify-between px-3 py-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                @click="openMail">
+        <button
+          class="group w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/40 hover:bg-white/80 dark:hover:bg-gray-900/70 transition"
+          @click="openMail"
+        >
           <div class="flex items-center gap-3">
-            <el-icon :size="18" style="color:#0ea5e9"><Message /></el-icon>
-            <span class="text-gray-800 dark:text-gray-200">邮件联系</span>
+            <div class="h-10 w-10 rounded-2xl border border-sky-100/70 dark:border-sky-900/40 bg-sky-50/80 dark:bg-sky-900/25 flex items-center justify-center text-sky-700 dark:text-sky-300">
+              <el-icon :size="18"><Message /></el-icon>
+            </div>
+            <div class="text-left">
+              <div class="text-sm font-bold text-gray-900 dark:text-gray-50">邮件联系</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">反馈建议与问题</div>
+            </div>
           </div>
-          <el-icon :size="18" class="text-gray-500 dark:text-gray-400"><ArrowRight /></el-icon>
+          <el-icon :size="18" class="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 transition-colors"><ArrowRight /></el-icon>
         </button>
 
-        <!-- 使用帮助 -->
-        <button class="w-full flex items-center justify-between px-3 py-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                @click="router.push('/settings/help')">
+        <button
+          class="group w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/40 hover:bg-white/80 dark:hover:bg-gray-900/70 transition"
+          @click="router.push('/settings/help')"
+        >
           <div class="flex items-center gap-3">
-            <el-icon :size="18" style="color:#0ea5e9"><QuestionFilled /></el-icon>
-            <span class="text-gray-800 dark:text-gray-200">使用帮助</span>
+            <div class="h-10 w-10 rounded-2xl border border-indigo-100/70 dark:border-indigo-900/40 bg-indigo-50/80 dark:bg-indigo-900/25 flex items-center justify-center text-indigo-700 dark:text-indigo-300">
+              <el-icon :size="18"><QuestionFilled /></el-icon>
+            </div>
+            <div class="text-left">
+              <div class="text-sm font-bold text-gray-900 dark:text-gray-50">使用帮助</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">常见问题与说明</div>
+            </div>
           </div>
-          <el-icon :size="18" class="text-gray-500 dark:text-gray-400"><ArrowRight /></el-icon>
+          <el-icon :size="18" class="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 transition-colors"><ArrowRight /></el-icon>
         </button>
 
-        <!-- 打赏支持 -->
-        <button class="w-full flex items-center justify-between px-3 py-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                @click="router.push('/settings/support')">
+        <button
+          class="group w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/40 hover:bg-white/80 dark:hover:bg-gray-900/70 transition"
+          @click="router.push('/settings/support')"
+        >
           <div class="flex items-center gap-3">
-            <el-icon :size="18" style="color:#f59e0b"><Present /></el-icon>
-            <span class="text-gray-800 dark:text-gray-200">打赏支持</span>
+            <div class="h-10 w-10 rounded-2xl border border-amber-100/70 dark:border-amber-900/40 bg-amber-50/80 dark:bg-amber-900/25 flex items-center justify-center text-amber-700 dark:text-amber-300">
+              <el-icon :size="18"><Present /></el-icon>
+            </div>
+            <div class="text-left">
+              <div class="text-sm font-bold text-gray-900 dark:text-gray-50">打赏支持</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">支持作者持续更新</div>
+            </div>
           </div>
-          <el-icon :size="18" class="text-gray-500 dark:text-gray-400"><ArrowRight /></el-icon>
+          <el-icon :size="18" class="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 transition-colors"><ArrowRight /></el-icon>
         </button>
       </div>
-    </el-card>
-  </div>
+    </SettingsCard>
+  </SettingsShell>
   
 </template>
 
 <script setup lang="ts">
 // 中文注释：导入路由与图标；导入应用信息 JSON（名称、版本、外链）
-import { InfoFilled, ArrowLeft, Link, Message, ArrowRight, QuestionFilled, Present } from '@element-plus/icons-vue'
+import { InfoFilled, Link, Message, ArrowRight, QuestionFilled, Present } from '@element-plus/icons-vue'
 import router from '@/router'
 import appInfo from '@/config/app-info.json'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 // 中文注释：软件图标路径（Vite 处理静态资源导入）
 import icon192 from '@/assets/favicon/android-chrome-192x192.png'
-
-function goBack() { router.back() }
 
 // 中文注释：从 JSON 配置读取软件名称与版本；为防止字段缺失，增加回退值
 const appName = (appInfo as any)?.name || '任务积分助手'
@@ -93,7 +115,7 @@ function openXHS() {
   if (!xhsUrl) return
   try {
     window.open(xhsUrl, '_blank')
-  } catch (e) {
+  } catch {
     location.href = xhsUrl
   }
 }

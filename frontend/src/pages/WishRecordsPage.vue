@@ -72,6 +72,7 @@ async function load() {
     const map: Record<number, Wish> = {}
     for (const w of wishes) map[w.id] = w
     wishMap.value = map
+    await resolveIconsForWishes(wishes)
   } catch (e: any) {
     const msg = e?.message || '加载失败'
     ElMessage.error(`兑换记录加载失败：${msg}`)
@@ -80,7 +81,7 @@ async function load() {
 
 function onPageChange(p: number) { page.value = p; load() }
 
-onMounted(async () => { await load(); await resolveIconsForRecords(records.value) })
+onMounted(async () => { await load() })
 
 // 中文注释：解析心愿图标路径（兼容内置 assets 与后端 uploads 相对路径）
 const iconResolvedMap = ref<Record<string,string>>({})
@@ -94,8 +95,10 @@ function resolveIcon(icon?: string) {
   if (path.startsWith('uploads/')) return `${base}/api/${path}`
   return iconResolvedMap.value[path] || new URL('../assets/wishs/领取记录.png', import.meta.url).href
 }
-async function resolveIconsForRecords(list: WishRecord[]) {
-  const targets = list.map((r: any) => String(r?.icon || '')).filter(p => !!p && !p.startsWith('uploads/') && p.includes('/'))
+async function resolveIconsForWishes(list: Wish[]) {
+  const targets = list
+    .map(w => String(w.icon || ''))
+    .filter(p => !!p && !p.startsWith('uploads/') && p.includes('/'))
   await Promise.all(targets.map(async (k) => { try { iconResolvedMap.value[k] = await presignView(k) } catch {} }))
 }
 

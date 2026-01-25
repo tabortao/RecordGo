@@ -2,36 +2,33 @@
   <div class="min-h-screen bg-gray-50 dark:bg-gray-950 pb-24 transition-colors duration-300" style="padding-bottom: calc(env(safe-area-inset-bottom) + 96px)">
     
     <!-- 顶部 Hero 区域 -->
-    <div class="relative bg-gradient-to-br from-blue-600 to-cyan-500 dark:from-blue-900 dark:to-cyan-900 pt-8 pb-12 px-6 rounded-b-[2rem] shadow-xl overflow-hidden mb-6">
+    <div class="relative bg-gradient-to-br from-blue-600 to-cyan-500 dark:from-blue-900 dark:to-cyan-900 pt-5 pb-7 px-6 rounded-b-[2rem] shadow-xl overflow-hidden mb-6">
        <!-- 装饰背景 -->
        <div class="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
           <div class="absolute -top-10 -right-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
           <div class="absolute top-20 -left-10 w-32 h-32 bg-yellow-300 rounded-full blur-3xl"></div>
        </div>
 
-       <!-- 标题 -->
-       <div class="absolute top-0 left-0 w-full flex justify-center pt-3 text-white/90 font-medium tracking-wide text-sm z-20">个人中心</div>
-       
        <!-- 用户信息卡片 -->
-       <div class="relative z-10 flex flex-row items-center mt-6 gap-5 animate-fade-in-up">
+       <div class="relative z-10 flex flex-row items-center mt-2 gap-5 animate-fade-in-up">
           <div class="relative group cursor-pointer" @click="isParent && router.push('/settings/profile')">
              <div class="absolute -inset-1 bg-white/30 rounded-full blur group-hover:blur-md transition duration-500"></div>
              <el-avatar :size="72" :src="avatarSrc" class="relative border-[3px] border-white/90 dark:border-gray-800 shadow-xl transition-transform duration-300 group-hover:scale-105" />
           </div>
           
           <div class="text-left flex-1 min-w-0">
-             <h2 class="text-2xl font-bold text-white tracking-tight drop-shadow-md truncate">{{ displayName }}</h2>
-             <div class="mt-1.5 flex items-center">
-                <div class="bg-white/20 backdrop-blur-md px-3 py-0.5 rounded-full border border-white/10 shadow-inner flex items-center">
-                   <VipBadge :user="auth.user" />
-                </div>
+             <div class="flex items-center gap-2 min-w-0">
+               <h2 class="text-2xl font-bold text-white tracking-tight drop-shadow-md truncate">{{ displayName }}</h2>
+               <div class="shrink-0">
+                 <VipBadge :user="auth.user" />
+               </div>
              </div>
           </div>
        </div>
     </div>
 
     <!-- 主要内容区域 -->
-    <div class="px-4 space-y-4 -mt-8 relative z-20">
+    <div class="px-4 space-y-4 -mt-6 relative z-20">
        
        <!-- 账号管理组 -->
        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden animate-slide-up" style="animation-delay: 0.1s;">

@@ -1,64 +1,58 @@
 <template>
-  <div class="p-4 space-y-4">
-    <div class="flex items-center gap-2">
-      <el-icon :size="18" class="cursor-pointer text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" @click="goBack"><ArrowLeft /></el-icon>
-      <el-icon :size="18" class="text-blue-500"><Document /></el-icon>
-      <h2 class="font-semibold text-gray-900 dark:text-gray-100">OCR 服务配置</h2>
-    </div>
-
-    <!-- 说明卡片 -->
-    <el-card shadow="never" class="!bg-blue-50 dark:!bg-blue-900/20 border-none">
+  <SettingsShell title="OCR 服务" subtitle="识别图片文字，提高创建任务准确率" :icon="Document" tone="blue">
+    <SettingsCard>
       <div class="flex gap-3">
-        <el-icon class="text-blue-500 mt-1"><InfoFilled /></el-icon>
-        <div class="text-sm text-blue-600 dark:text-blue-300">
-          配置 OCR 服务后，在“AI智能创建任务”时将优先使用 OCR 识别图片文字，提高识别准确率。
+        <div class="flex h-9 w-9 items-center justify-center rounded-2xl border border-blue-100/70 dark:border-blue-900/40 bg-blue-50/80 dark:bg-blue-900/25 text-blue-700 dark:text-blue-300">
+          <el-icon :size="18"><InfoFilled /></el-icon>
         </div>
-      </div>
-    </el-card>
-
-    <!-- 模型配置 -->
-    <el-card shadow="never" class="dark:bg-gray-800 dark:border-gray-700">
-      <div class="font-medium mb-4 text-gray-900 dark:text-gray-100">PP-OCRv5 模型参数配置</div>
-      
-      <div class="space-y-4 pt-2">
-        <div>
-          <div class="mb-1 text-sm text-gray-600 dark:text-gray-400">API URL</div>
-          <el-input v-model="configs['PP-OCRv5'].apiUrl" placeholder="请输入 API 地址" />
-        </div>
-        <div>
-          <div class="mb-1 text-sm text-gray-600 dark:text-gray-400">Token</div>
-          <el-input v-model="configs['PP-OCRv5'].token" placeholder="请输入 Token" type="password" show-password />
-          <div class="mt-1 text-xs text-blue-500 cursor-pointer hover:underline flex items-center gap-1" @click="openLink('https://aistudio.baidu.com/paddleocr')">
-            <el-icon><Link /></el-icon>
-            点击这里获取密钥
+        <div class="min-w-0">
+          <div class="text-sm font-bold text-gray-900 dark:text-gray-50">说明</div>
+          <div class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+            配置 OCR 服务后，在“AI智能创建任务”时会优先使用 OCR 识别图片文字。
           </div>
         </div>
       </div>
-      
-      <div class="mt-6 flex justify-end gap-3">
-        <el-button :loading="testing" @click="testCurrentConnection">测试连接</el-button>
-        <el-button type="primary" @click="saveSettings">保存配置</el-button>
-      </div>
-    </el-card>
+    </SettingsCard>
 
-  </div>
+    <SettingsCard title="PP-OCRv5 模型参数配置" description="填写 API 地址与 Token 后可进行连接测试">
+      <div class="space-y-4">
+        <div class="space-y-2">
+          <div class="text-xs font-semibold text-gray-500 dark:text-gray-400">API URL</div>
+          <el-input v-model="configs['PP-OCRv5'].apiUrl" placeholder="请输入 API 地址" />
+        </div>
+        <div class="space-y-2">
+          <div class="text-xs font-semibold text-gray-500 dark:text-gray-400">Token</div>
+          <el-input v-model="configs['PP-OCRv5'].token" placeholder="请输入 Token" type="password" show-password />
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-300 hover:underline"
+            @click="openLink('https://aistudio.baidu.com/paddleocr')"
+          >
+            <el-icon><Link /></el-icon>
+            点击这里获取密钥
+          </button>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <el-button class="!rounded-xl" :loading="testing" @click="testCurrentConnection">测试连接</el-button>
+          <el-button type="primary" class="!rounded-xl" @click="saveSettings">保存配置</el-button>
+        </div>
+      </div>
+    </SettingsCard>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
 import { ref, watchEffect, reactive } from 'vue'
-import { ArrowLeft, Document, InfoFilled } from '@element-plus/icons-vue'
-import { useRouter } from 'vue-router'
+import { Document, InfoFilled } from '@element-plus/icons-vue'
 import { useAIStore } from '@/stores/ai'
 import { ElMessage } from 'element-plus'
 import type { OCRConfig } from '@/stores/ai'
 import { testConnection } from '@/services/ocr'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
-const router = useRouter()
 const store = useAIStore()
-
-function goBack() {
-  router.back()
-}
 
 function openLink(url: string) {
   window.open(url, '_blank')

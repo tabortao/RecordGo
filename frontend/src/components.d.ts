@@ -55,6 +55,8 @@ declare module 'vue' {
     PageLoader: typeof import('./components/PageLoader.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SettingsCard: typeof import('./components/settings/SettingsCard.vue')['default']
+    SettingsShell: typeof import('./components/settings/SettingsShell.vue')['default']
     SpeakerIcon: typeof import('./components/SpeakerIcon.vue')['default']
     TaskImageUploader: typeof import('./components/TaskImageUploader.vue')['default']
     TomatoTimer: typeof import('./components/TomatoTimer.vue')['default']

@@ -1,7 +1,10 @@
 <template>
-  <div v-if="vipType !== 'none'" 
-       class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold shadow-sm transition-all duration-300 hover:scale-105 cursor-default select-none group relative overflow-hidden"
-       :class="badgeClasses">
+  <button
+    type="button"
+    class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold shadow-sm transition-all duration-300 hover:scale-105 select-none group relative overflow-hidden"
+    :class="[badgeClasses, clickable ? 'cursor-pointer' : 'cursor-default']"
+    @click="onClick"
+  >
     
     <!-- Shine effect -->
     <div class="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12"></div>
@@ -15,14 +18,15 @@
     <span class="relative z-10 tracking-wide font-sans">
       {{ labelText }}
     </span>
-  </div>
+  </button>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Trophy, Medal } from '@element-plus/icons-vue'
+import { Trophy, Medal, Lock } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import type { AuthUser } from '@/stores/auth'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const props = defineProps<{
   user: AuthUser | null | undefined
@@ -48,12 +52,16 @@ const badgeClasses = computed(() => {
     // Gold/Amber theme for Lifetime
     return 'bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 text-amber-900 border border-amber-300/50 shadow-lg shadow-amber-500/30'
   }
-  // Indigo/Purple theme for Regular
-  return 'bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 text-white border border-indigo-300/30 shadow-lg shadow-indigo-500/30'
+  if (vipType.value === 'regular') {
+    return 'bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 text-white border border-indigo-300/30 shadow-lg shadow-indigo-500/30'
+  }
+  return 'bg-white/70 dark:bg-gray-900/60 text-gray-600 dark:text-gray-300 border border-gray-200/70 dark:border-gray-700/60 shadow-sm'
 })
 
 const iconComponent = computed(() => {
-  return vipType.value === 'lifetime' ? Trophy : Medal
+  if (vipType.value === 'lifetime') return Trophy
+  if (vipType.value === 'regular') return Medal
+  return Lock
 })
 
 const labelText = computed(() => {
@@ -61,6 +69,27 @@ const labelText = computed(() => {
   if (vipType.value === 'regular' && props.user?.vip_expire_time) {
     return `VIP(${dayjs(props.user.vip_expire_time).format('YYYY-MM-DD')})`
   }
-  return 'VIP'
+  if (vipType.value === 'regular') return 'VIP'
+  return '普通用户'
 })
+
+const clickable = computed(() => vipType.value === 'none')
+
+async function copyText(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    ElMessage.success('已复制微信号')
+  } catch {
+    ElMessage.info(`微信号：${text}`)
+  }
+}
+
+function onClick() {
+  if (vipType.value !== 'none') return
+  ElMessageBox.confirm(
+    '添加微信 “tabor2024” 获取 VIP。\n备注：任务家',
+    '获取 VIP',
+    { confirmButtonText: '复制微信号', cancelButtonText: '关闭', type: 'info' }
+  ).then(() => copyText('tabor2024')).catch(() => {})
+}
 </script>

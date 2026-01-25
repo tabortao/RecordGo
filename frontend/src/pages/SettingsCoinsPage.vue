@@ -1,66 +1,61 @@
 <template>
-  <div class="p-4 space-y-4">
-    <div class="flex items-center gap-2">
-      <!-- 中文注释：返回仅关闭页面，不再自动保存 -->
-      <el-icon :size="18" class="cursor-pointer" style="color:#64748b" @click="onCancel"><ArrowLeft /></el-icon>
-      <el-icon :size="18" style="color:#f59e0b"><Coin /></el-icon>
-      <h2 class="font-semibold">金币设置</h2>
-    </div>
-
-    <!-- 中文注释：改为与“编辑个人信息”页一致的左对齐栈叠布局 -->
-    <div class="space-y-4">
-      <!-- 当前可用金币 -->
-      <div class="space-y-2">
-        <label class="text-sm text-gray-600">当前可用金币</label>
-        <div class="flex items-baseline gap-2">
-          <span class="text-gray-900">可用：</span>
-          <span class="font-bold text-amber-600 text-2xl">{{ store.coins }}</span>
+  <SettingsShell title="金币设置" subtitle="校准金币总数（需填写原因）" :icon="Coin" tone="amber">
+    <SettingsCard>
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">当前可用金币</div>
+          <div class="mt-1 flex items-baseline gap-2">
+            <span class="text-sm text-gray-700 dark:text-gray-300">可用</span>
+            <span class="text-3xl font-extrabold tracking-tight text-amber-700 dark:text-amber-300">{{ store.coins }}</span>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-amber-100/80 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-900/20 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+          仅当变更时需要原因
         </div>
       </div>
+    </SettingsCard>
 
-      <!-- 设置为新总金币 -->
-      <div class="space-y-2">
-        <label class="text-sm text-gray-600">设置为新总金币</label>
-        <el-input-number
-          v-model="newTotal"
-          :min="0"
-          :max="999999"
-          :size="isMobile ? 'default' : 'large'"
-          controls-position="right"
-          class="w-full sm:w-64"
-        />
+    <SettingsCard title="设置为新总金币" description="将金币总数直接设置为指定值">
+      <el-input-number
+        v-model="newTotal"
+        :min="0"
+        :max="999999"
+        :size="isMobile ? 'default' : 'large'"
+        controls-position="right"
+        class="w-full sm:w-64"
+      />
+    </SettingsCard>
+
+    <SettingsCard title="修改原因" description="仅当金币发生变更时必填">
+      <el-input
+        v-model="reason"
+        type="textarea"
+        :rows="isMobile ? 3 : 4"
+        placeholder="例如：期初校准 / 异常修正"
+      />
+    </SettingsCard>
+
+    <SettingsCard>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="text-xs text-gray-500 dark:text-gray-400">提示：金币更新后，任务页与心愿页会读取同一全局状态并即时刷新。</div>
+        <div class="flex justify-end gap-2">
+          <el-button class="!rounded-xl" @click="onCancel">取消</el-button>
+          <el-button type="primary" class="!rounded-xl" @click="onSave">确定</el-button>
+        </div>
       </div>
-
-      <!-- 修改原因 -->
-      <div class="space-y-2">
-        <label class="text-sm text-gray-600">修改原因（仅当变更时必填）</label>
-        <el-input
-          v-model="reason"
-          type="textarea"
-          :rows="isMobile ? 3 : 4"
-          placeholder="例如：期初校准 / 异常修正"
-        />
-      </div>
-
-      <!-- 底部右侧按钮，与个人信息页一致 -->
-      <div class="flex justify-end mt-6 gap-2">
-        <el-button @click="onCancel">取消</el-button>
-        <el-button type="primary" @click="onSave">确定</el-button>
-      </div>
-    </div>
-
-    <div class="text-xs text-gray-500">提示：金币总数更新后，任务页与心愿页会读取同一全局状态并即时刷新。</div>
-    
-  </div>
+    </SettingsCard>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
 import { useAppState } from '@/stores/appState'
 import { ElMessage } from 'element-plus'
-import { Coin, ArrowLeft } from '@element-plus/icons-vue'
+import { Coin } from '@element-plus/icons-vue'
 import router from '@/router'
 import { useMediaQuery } from '@vueuse/core'
 import { setCoins } from '@/services/coins'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
  
 
 const store = useAppState()

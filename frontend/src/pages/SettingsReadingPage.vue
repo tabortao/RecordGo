@@ -1,23 +1,16 @@
 <template>
-  <div class="p-4 space-y-4">
-    <!-- Header -->
-    <div class="flex items-center gap-2">
-      <el-icon :size="18" class="cursor-pointer" style="color:#64748b" @click="onBack"><ArrowLeft /></el-icon>
-      <el-icon :size="18" style="color:#7c3aed"><Microphone /></el-icon>
-      <h2 class="font-semibold">朗读设置</h2>
-    </div>
-
-    <el-card shadow="never" class="space-y-4 rounded-xl">
-      <!-- Global Switch -->
-      <div class="flex items-center justify-between">
-        <div>
-          <div class="font-medium">启用朗读</div>
-          <div class="text-xs text-gray-500 mt-1">关闭后，任务卡片的小喇叭将不再播放语音</div>
+  <SettingsShell title="朗读设置" subtitle="系统语音或自定义接口" :icon="Microphone" tone="violet" container-class="max-w-4xl">
+    <SettingsCard>
+      <div class="space-y-4">
+        <div class="flex items-center justify-between gap-4">
+          <div class="min-w-0">
+            <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">启用朗读</div>
+            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">关闭后，任务卡片的小喇叭将不再播放语音</div>
+          </div>
+          <el-switch v-model="enabled" @change="saveSettings" />
         </div>
-        <el-switch v-model="enabled" @change="saveSettings" />
-      </div>
 
-      <el-tabs v-if="enabled" v-model="activeTab" class="demo-tabs" @tab-change="onTabChange">
+        <el-tabs v-if="enabled" v-model="activeTab" class="settings-tabs" @tab-change="onTabChange">
         <!-- Tab 1: System -->
         <el-tab-pane label="系统默认" name="system">
           <div class="space-y-6 pt-4">
@@ -88,7 +81,8 @@
            </div>
         </el-tab-pane>
       </el-tabs>
-    </el-card>
+      </div>
+    </SettingsCard>
 
     <!-- Edit Dialog -->
     <el-dialog v-model="showDialog" :title="editingId ? '编辑配置' : '新增配置'" width="90%" class="max-w-lg" append-to-body destroy-on-close>
@@ -146,16 +140,17 @@
           </div>
        </template>
     </el-dialog>
-  </div>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { Microphone, ArrowLeft, Plus, Edit, Delete } from '@element-plus/icons-vue'
-import router from '@/router'
+import { Microphone, Plus, Edit, Delete } from '@element-plus/icons-vue'
 import { useAppState, type CustomTTSProfile } from '@/stores/appState'
 import { listVoices, speak } from '@/utils/speech'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 const store = useAppState()
 const enabled = ref<boolean>(store.speech.enabled)
@@ -196,10 +191,6 @@ onMounted(() => {
     refreshVoices()
     try { window.speechSynthesis?.addEventListener?.('voiceschanged', refreshVoices) } catch {}
 })
-
-function onBack() {
-  router.back()
-}
 
 // Unified Save
 function saveSettings() {
@@ -404,7 +395,48 @@ async function testConnection() {
 </script>
 
 <style scoped>
-.demo-tabs :deep(.el-tabs__nav-wrap) {
-    padding: 0 4px;
+.settings-tabs :deep(.el-tabs__header) {
+  margin: 0;
+}
+.settings-tabs :deep(.el-tabs__nav-wrap) {
+  padding: 0 2px;
+}
+.settings-tabs :deep(.el-tabs__nav) {
+  gap: 6px;
+}
+.settings-tabs :deep(.el-tabs__item) {
+  height: 34px;
+  line-height: 34px;
+  border-radius: 9999px;
+  padding: 0 14px;
+  font-weight: 800;
+  font-size: 12px;
+  color: rgb(107 114 128);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(229, 231, 235, 0.9);
+}
+.dark .settings-tabs :deep(.el-tabs__item) {
+  color: rgb(156 163 175);
+  background: rgba(17, 24, 39, 0.4);
+  border: 1px solid rgba(31, 41, 55, 0.9);
+}
+.settings-tabs :deep(.el-tabs__item.is-active) {
+  color: rgb(88 28 135);
+  border-color: rgba(221, 214, 254, 0.9);
+  background: rgba(237, 233, 254, 0.75);
+}
+.dark .settings-tabs :deep(.el-tabs__item.is-active) {
+  color: rgb(233 213 255);
+  border-color: rgba(88, 28, 135, 0.55);
+  background: rgba(88, 28, 135, 0.18);
+}
+.settings-tabs :deep(.el-tabs__active-bar) {
+  display: none;
+}
+.settings-tabs :deep(.el-tabs__item:hover) {
+  color: rgb(17 24 39);
+}
+.dark .settings-tabs :deep(.el-tabs__item:hover) {
+  color: rgb(243 244 246);
 }
 </style>

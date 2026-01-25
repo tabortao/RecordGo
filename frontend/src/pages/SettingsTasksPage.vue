@@ -1,92 +1,90 @@
 <template>
-  <div class="p-4 space-y-4">
-    <div class="flex items-center gap-2">
-      <el-icon :size="18" class="cursor-pointer" style="color:#64748b" @click="goBack"><ArrowLeft /></el-icon>
-      <el-icon :size="18" style="color:#10b981"><List /></el-icon>
-      <h2 class="font-semibold">任务设置</h2>
-    </div>
-    <!-- 中文注释：任务备注入口开关（默认开启）；关闭后任务卡片不显示备注图标，菜单不显示备注按钮 -->
-    <el-card shadow="never" v-if="isVIP">
-      <div class="flex items-center justify-between">
-        <div>
-          <div class="font-medium">显示任务备注入口</div>
-          <div class="text-xs text-gray-500 mt-1">关闭后：任务清单卡片不显示备注图标，操作菜单不显示“备注”按钮</div>
-        </div>
+  <SettingsShell title="任务设置" subtitle="分类管理与显示偏好" :icon="List" tone="emerald" container-class="max-w-4xl">
+    <SettingsCard
+      v-if="isVIP"
+      title="显示任务备注入口"
+      description="关闭后：任务清单卡片不显示备注图标，操作菜单不显示“备注”按钮"
+    >
+      <template #right>
         <el-switch v-model="taskNotesEnabled" />
-      </div>
-    </el-card>
-    <el-card shadow="never" v-else>
-      <div>
-        <div class="font-medium">任务备注功能</div>
-        <div class="text-sm text-gray-600 mt-1">该功能需要开通VIP会员才能使用</div>
-        <div class="text-xs text-gray-500 mt-2">添加微信：tabor2024，备注“任务家”，获取VIP资格</div>
-      </div>
-    </el-card>
-    <!-- 中文注释：任务自动排序开关（默认开启）；开启后分类内已完成排下方，全部完成的分类排到未完分类之后 -->
-    <el-card shadow="never">
-      <div class="flex items-center justify-between">
-        <div>
-          <div class="font-medium">任务自动排序</div>
-          <div class="text-xs text-gray-500 mt-1">开启后：分类内已完成任务排在下方；当某分类全部完成时，该分类整体排在未完分类之后</div>
-        </div>
-        <el-switch v-model="taskAutoSortEnabled" />
-      </div>
-    </el-card>
-    <!-- 分类管理（移动自“任务分类设置”页面）：新增、编辑、删除、拖拽排序 -->
-    <el-card shadow="never">
-      <div class="font-medium mb-3">任务分类管理</div>
-      <!-- 新增分类 -->
-      <div class="flex items-center gap-3 mb-4">
-        <el-input v-model="newName" placeholder="输入分类名称，如：语文" style="max-width: 300px" />
-        <el-color-picker v-model="newColor" />
-        <el-button type="primary" @click="addCategory"><el-icon class="mr-1"><Plus /></el-icon>添加分类</el-button>
-      </div>
-      <div class="text-xs text-gray-500 mb-2">中文注释：支持添加、修改、删除分类，并设置颜色；拖拽排序与列表展示同步。</div>
+      </template>
+    </SettingsCard>
+    <SettingsCard v-else title="任务备注功能" description="该功能需要开通 VIP 会员才能使用">
+      <div class="text-sm text-gray-700 dark:text-gray-200">添加微信：tabor2024，备注“任务家”，获取 VIP 资格</div>
+    </SettingsCard>
 
-      <!-- 分类列表（可编辑名称与颜色；支持拖拽排序） -->
-      <div class="space-y-2">
-        <div
-          v-for="(c, idx) in sortable"
-          :key="c.name"
-          class="flex items-center justify-between px-2 py-2 rounded border border-gray-200"
-          draggable="true"
-          @dragstart="onDragStart(idx)"
-          @dragover="onDragOver"
-          @drop="onDrop(idx)"
-        >
+    <SettingsCard
+      title="任务自动排序"
+      description="开启后：分类内已完成任务排在下方；当某分类全部完成时，该分类整体排在未完分类之后"
+    >
+      <template #right>
+        <el-switch v-model="taskAutoSortEnabled" />
+      </template>
+    </SettingsCard>
+
+    <SettingsCard title="任务分类管理" description="支持新增、编辑、删除与拖拽排序">
+      <div class="space-y-4">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+          <el-input v-model="newName" placeholder="输入分类名称，如：语文" class="w-full sm:max-w-[320px]" />
           <div class="flex items-center gap-3">
-            <!-- 中文注释：拖拽把手 -->
-            <el-icon :size="16" class="cursor-grab text-gray-500"><Sort /></el-icon>
-            <span class="inline-block w-4 h-4 rounded" :style="{ backgroundColor: c.color }"></span>
-            <el-input v-model="editable[c.name].name" style="width: 160px" />
-            <el-color-picker v-model="editable[c.name].color" />
-          </div>
-          <div class="flex items-center gap-2">
-            <el-button size="small" @click="saveCategory(c.name)"><el-icon class="mr-1"><Edit /></el-icon>保存</el-button>
-            <el-button size="small" type="danger" @click="removeCategory(c.name)"><el-icon class="mr-1"><Delete /></el-icon>删除</el-button>
+            <el-color-picker v-model="newColor" />
+            <el-button type="primary" class="!rounded-xl" @click="addCategory">
+              <el-icon class="mr-1"><Plus /></el-icon>添加分类
+            </el-button>
           </div>
         </div>
+
+        <div class="space-y-2">
+          <div
+            v-for="(c, idx) in sortable"
+            :key="c.name"
+            class="group flex items-center justify-between gap-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/40 px-3 py-3 hover:bg-white/80 dark:hover:bg-gray-900/70 transition"
+            draggable="true"
+            @dragstart="onDragStart(idx)"
+            @dragover="onDragOver"
+            @drop="onDrop(idx)"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <el-icon :size="16" class="cursor-grab text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300"><Sort /></el-icon>
+              <span class="inline-block w-4 h-4 rounded-lg ring-1 ring-black/5 dark:ring-white/10" :style="{ backgroundColor: c.color }"></span>
+              <div class="flex items-center gap-2 min-w-0">
+                <el-input v-model="editable[c.name].name" class="w-[160px] sm:w-[200px]" />
+                <el-color-picker v-model="editable[c.name].color" />
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <el-button size="small" class="!rounded-xl" @click="saveCategory(c.name)">
+                <el-icon class="mr-1"><Edit /></el-icon>保存
+              </el-button>
+              <el-button size="small" type="danger" class="!rounded-xl" @click="removeCategory(c.name)">
+                <el-icon class="mr-1"><Delete /></el-icon>删除
+              </el-button>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-xs text-gray-500 dark:text-gray-400">提示：按住左侧拖拽图标，可调整分类顺序。</div>
       </div>
-    </el-card>
-    <el-card shadow="never">
-      <div class="text-gray-600">其他配置项待完善：任务默认提醒、重复规则等。</div>
-    </el-card>
-    <!-- 取消底部返回按钮；统一使用标题左侧返回图标 -->
-  </div>
+    </SettingsCard>
+
+    <SettingsCard title="更多设置" description="后续将提供任务默认提醒、重复规则等">
+      <div class="text-sm text-gray-700 dark:text-gray-200">目前版本已支持分类管理与基础显示偏好。</div>
+    </SettingsCard>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
 // 中文注释：引入所需图标与 Color Picker 样式（避免样式加载异常）
-import { List, ArrowLeft, Plus, Edit, Delete, Sort } from '@element-plus/icons-vue'
+import { List, Plus, Edit, Delete, Sort } from '@element-plus/icons-vue'
 import 'element-plus/es/components/color-picker/style/css'
-import router from '@/router'
 import { useAppState } from '@/stores/appState'
 import { useAuth } from '@/stores/auth'
 import { computed, reactive, ref, watchEffect, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useTaskCategories } from '@/stores/categories'
 import type { TaskCategory } from '@/stores/categories'
-function goBack() { router.back() }
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 // 中文注释：联动全局状态中的任务备注开关，使用计算属性实现双向绑定
 const store = useAppState()
