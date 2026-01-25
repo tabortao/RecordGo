@@ -1,62 +1,64 @@
 <template>
-  <div class="p-4 space-y-4">
-    <div class="flex items-center gap-2">
-      <el-icon :size="20" class="cursor-pointer hover:text-blue-500" @click="router.back()"><ArrowLeft /></el-icon>
-      <el-icon :size="18" class="text-indigo-600"><DataAnalysis /></el-icon>
-      <div class="font-semibold">用户管理后台</div>
-    </div>
-
-    <el-card shadow="never">
+  <SettingsShell title="用户管理后台" subtitle="仅管理员可见" :icon="DataAnalysis" tone="indigo" container-class="max-w-6xl">
+    <SettingsCard>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div class="p-3 rounded bg-sky-50 dark:bg-gray-800">
-          <div class="text-xs text-sky-600 dark:text-sky-400">注册用户总数</div>
-          <div class="font-bold text-sky-700 dark:text-sky-300">{{ overview.total_users }}</div>
+        <div class="rounded-2xl border border-sky-100/70 dark:border-gray-800 bg-sky-50/70 dark:bg-gray-900/50 px-4 py-3">
+          <div class="text-[11px] font-extrabold uppercase tracking-wider text-sky-700/80 dark:text-sky-300/80">注册用户总数</div>
+          <div class="mt-1 text-2xl font-extrabold tracking-tight text-sky-800 dark:text-sky-200">{{ overview.total_users }}</div>
         </div>
-        <div class="p-3 rounded bg-emerald-50 dark:bg-gray-800">
-          <div class="text-xs text-emerald-600 dark:text-emerald-400">今日登录数</div>
-          <div class="font-bold text-emerald-700 dark:text-emerald-300">{{ overview.today_logins }}</div>
+        <div class="rounded-2xl border border-emerald-100/70 dark:border-gray-800 bg-emerald-50/70 dark:bg-gray-900/50 px-4 py-3">
+          <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700/80 dark:text-emerald-300/80">今日登录数</div>
+          <div class="mt-1 text-2xl font-extrabold tracking-tight text-emerald-800 dark:text-emerald-200">{{ overview.today_logins }}</div>
         </div>
       </div>
-    </el-card>
+    </SettingsCard>
 
-    <el-card shadow="never" class="dark:bg-gray-800">
-      <div class="flex items-center justify-between mb-2">
-        <div class="font-semibold">用户列表</div>
-        <el-input v-model="query" placeholder="搜索用户名/昵称/邮箱" class="w-60" />
+    <SettingsCard title="用户列表" description="支持搜索用户名 / 昵称 / 邮箱">
+      <template #right>
+        <div class="flex items-center gap-2">
+          <el-input v-model="query" placeholder="搜索..." class="w-60" @keyup.enter="loadUsers" />
+          <el-button class="!rounded-xl" @click="loadUsers">查询</el-button>
+          <el-button class="!rounded-xl" @click="loadOverview">刷新概览</el-button>
+        </div>
+      </template>
+
+      <div class="rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
+        <el-table :data="users" size="small" class="w-full" stripe>
+          <el-table-column label="ID" prop="id" width="80" />
+          <el-table-column label="用户名" prop="username" min-width="140" />
+          <el-table-column label="昵称" prop="nickname" min-width="140" />
+          <el-table-column label="邮箱" prop="email" min-width="190" />
+          <el-table-column label="电话" prop="phone" min-width="130" />
+          <el-table-column label="VIP" width="96">
+            <template #default="{ row }">
+              <el-tag v-if="row.is_lifetime_vip" type="success">终身</el-tag>
+              <el-tag v-else-if="row.is_vip" type="warning">VIP</el-tag>
+              <el-tag v-else type="info">普通</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="VIP到期" prop="vip_expire_time" width="180" />
+          <el-table-column label="最后登录" prop="last_login_time" width="180" />
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="row.is_disabled ? 'danger' : 'success'">{{ row.is_disabled ? '禁用' : '正常' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="420">
+            <template #default="{ row }">
+              <div class="flex flex-wrap gap-2">
+                <el-button size="small" class="!rounded-xl" @click="openVIP(row)">VIP设置</el-button>
+                <el-button size="small" class="!rounded-xl" type="primary" @click="resetPwd(row)">重置密码</el-button>
+                <el-button size="small" class="!rounded-xl" type="warning" @click="toggleDisabled(row)">{{ row.is_disabled ? '启用' : '禁用' }}</el-button>
+                <el-button size="small" class="!rounded-xl" type="danger" @click="removeUser(row)">删除</el-button>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
       </div>
-      <el-table :data="users" size="small" class="w-full" stripe>
-        <el-table-column label="ID" prop="id" width="80" />
-        <el-table-column label="用户名" prop="username" />
-        <el-table-column label="昵称" prop="nickname" />
-        <el-table-column label="邮箱" prop="email" />
-        <el-table-column label="电话" prop="phone" />
-        <el-table-column label="VIP" width="90">
-          <template #default="{ row }">
-            <el-tag v-if="row.is_lifetime_vip" type="success">终身</el-tag>
-            <el-tag v-else-if="row.is_vip" type="warning">VIP</el-tag>
-            <el-tag v-else type="info">普通</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="VIP到期" prop="vip_expire_time" width="180" />
-        <el-table-column label="最后登录" prop="last_login_time" width="180" />
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.is_disabled ? 'danger' : 'success'">{{ row.is_disabled ? '禁用' : '正常' }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="400">
-          <template #default="{ row }">
-            <el-button size="small" @click="openVIP(row)">VIP设置</el-button>
-            <el-button size="small" type="primary" @click="resetPwd(row)">重置密码</el-button>
-            <el-button size="small" type="warning" @click="toggleDisabled(row)">{{ row.is_disabled ? '启用' : '禁用' }}</el-button>
-            <el-button size="small" type="danger" @click="removeUser(row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+    </SettingsCard>
 
-    <el-dialog v-model="vipDialog.visible" width="420px">
-      <template #header><div class="font-semibold">VIP设置（用户ID：{{ vipDialog.user?.id }}）</div></template>
+    <el-dialog v-model="vipDialog.visible" width="420px" class="rounded-2xl overflow-hidden">
+      <template #header><div class="font-extrabold">VIP设置（用户ID：{{ vipDialog.user?.id }}）</div></template>
       <div class="space-y-3">
         <el-switch v-model="vipDialog.is_vip" active-text="VIP" inactive-text="普通" />
         <el-switch v-model="vipDialog.is_lifetime_vip" active-text="终身VIP" />
@@ -64,21 +66,23 @@
       </div>
       <template #footer>
         <div class="flex justify-end gap-2">
-          <el-button @click="vipDialog.visible=false">取消</el-button>
-          <el-button type="primary" @click="saveVIP">保存</el-button>
+          <el-button class="!rounded-xl" @click="vipDialog.visible=false">取消</el-button>
+          <el-button class="!rounded-xl" type="primary" @click="saveVIP">保存</el-button>
         </div>
       </template>
     </el-dialog>
-  </div>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { DataAnalysis, ArrowLeft } from '@element-plus/icons-vue'
+import { DataAnalysis } from '@element-plus/icons-vue'
 import http from '@/services/http'
 import router from '@/router'
 import { useAuth } from '@/stores/auth'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 const auth = useAuth()
 // 仅允许用户ID为1访问

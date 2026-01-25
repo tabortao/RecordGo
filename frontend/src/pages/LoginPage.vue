@@ -1,70 +1,56 @@
 <template>
-  <div class="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-950 to-indigo-950">
-    <div class="absolute -top-32 -left-32 h-[420px] w-[420px] rounded-full bg-indigo-600/30 blur-3xl" />
-    <div class="absolute -bottom-40 -right-40 h-[520px] w-[520px] rounded-full bg-sky-500/20 blur-3xl" />
-    <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(255,255,255,0.05),transparent_45%)]" />
-
-    <div class="relative mx-auto flex min-h-screen w-full max-w-5xl items-center px-4 py-10">
-      <div class="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
-        <div class="hidden md:flex flex-col justify-center rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur">
-          <div class="text-3xl font-semibold tracking-tight text-white">作业家</div>
-          <div class="mt-2 text-sm text-white/70">用更轻的操作，养成更稳的习惯</div>
-          <div class="mt-6 space-y-3 text-sm text-white/80">
-            <div class="rounded-lg border border-white/10 bg-white/5 p-3">任务、心愿、积分一体化管理</div>
-            <div class="rounded-lg border border-white/10 bg-white/5 p-3">子账号令牌登录，家庭协作更方便</div>
-            <div class="rounded-lg border border-white/10 bg-white/5 p-3">登录后支持在“我的-设置”里修改密码</div>
-          </div>
-        </div>
-
-        <div class="rounded-2xl border border-white/10 bg-white/95 p-6 shadow-2xl shadow-black/30 backdrop-blur md:p-8">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <div class="text-xl font-semibold text-slate-900">作业家 · 登录</div>
-              <div class="mt-1 text-xs text-slate-500">欢迎回来</div>
-            </div>
-          </div>
-
-          <div class="mt-5 flex justify-center">
-            <el-radio-group v-model="mode" size="small">
-              <el-radio-button label="account">账号密码</el-radio-button>
-              <el-radio-button label="token">令牌登录</el-radio-button>
-            </el-radio-group>
-          </div>
-
-          <el-form class="mt-5" label-position="top" @submit.prevent>
-            <template v-if="mode==='account'">
-              <el-form-item label="用户名">
-                <el-input v-model="username" placeholder="请输入用户名" />
-              </el-form-item>
-              <el-form-item label="密码">
-                <el-input v-model="password" type="password" show-password placeholder="请输入密码" />
-              </el-form-item>
-              <div class="flex items-center justify-between">
-                <el-checkbox v-model="rememberMe">记住我</el-checkbox>
-                <button class="text-sm text-slate-500 hover:text-indigo-600" type="button" @click="toRegister">去注册</button>
-              </div>
-              <el-button type="primary" class="mt-4 w-full" :loading="loading" @click="doLogin">登录</el-button>
-            </template>
-
-            <template v-else>
-              <el-form-item label="子账号令牌">
-                <el-input v-model="token" placeholder="请输入子账号令牌" />
-              </el-form-item>
-              <div class="flex items-center justify-between">
-                <el-checkbox v-model="rememberMe">记住我</el-checkbox>
-                <button class="text-sm text-slate-500 hover:text-indigo-600" type="button" @click="toRegister">去注册</button>
-              </div>
-              <el-button type="primary" class="mt-4 w-full" :loading="loading" @click="doTokenLogin">令牌登录</el-button>
-            </template>
-
-            <div class="mt-4 flex justify-center text-xs text-slate-400">
-              <button class="hover:text-slate-600" type="button" @click="clearCache">清空缓存</button>
-            </div>
-          </el-form>
-        </div>
+  <AuthShell brand-title="RecordGo" brand-subtitle="把计划变成结果，把努力变成积分">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <div class="text-xl font-extrabold text-slate-900 tracking-tight">登录</div>
+        <div class="mt-1 text-xs text-slate-500">欢迎回来</div>
       </div>
     </div>
-  </div>
+
+    <div class="mt-5 flex justify-center">
+      <el-radio-group v-model="mode" size="small">
+        <el-radio-button label="account">账号密码</el-radio-button>
+        <el-radio-button label="token">令牌登录</el-radio-button>
+      </el-radio-group>
+    </div>
+
+    <el-form class="mt-6" label-position="top" @submit.prevent>
+      <template v-if="mode==='account'">
+        <el-form-item label="用户名">
+          <el-input v-model="username" placeholder="请输入用户名" />
+        </el-form-item>
+        <el-form-item label="密码">
+          <el-input v-model="password" type="password" show-password placeholder="请输入密码" />
+        </el-form-item>
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex flex-col gap-1">
+            <el-checkbox v-model="rememberMe">记住账号密码</el-checkbox>
+            <div class="text-[11px] text-slate-400">仅保存在本机浏览器，本功能请自行评估安全风险</div>
+          </div>
+          <button class="text-sm font-semibold text-slate-500 hover:text-indigo-700" type="button" @click="toRegister">去注册</button>
+        </div>
+        <el-button type="primary" class="mt-5 w-full !rounded-2xl !h-11 !font-extrabold" :loading="loading" @click="doLogin">登录</el-button>
+      </template>
+
+      <template v-else>
+        <el-form-item label="子账号令牌">
+          <el-input v-model="token" placeholder="请输入子账号令牌" />
+        </el-form-item>
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex flex-col gap-1">
+            <el-checkbox v-model="rememberMe">记住令牌</el-checkbox>
+            <div class="text-[11px] text-slate-400">令牌将保存在本机浏览器，用于下次快速登录</div>
+          </div>
+          <button class="text-sm font-semibold text-slate-500 hover:text-indigo-700" type="button" @click="toRegister">去注册</button>
+        </div>
+        <el-button type="primary" class="mt-5 w-full !rounded-2xl !h-11 !font-extrabold" :loading="loading" @click="doTokenLogin">令牌登录</el-button>
+      </template>
+
+      <div class="mt-5 flex justify-center text-xs text-slate-400">
+        <button class="hover:text-slate-600" type="button" @click="clearCache">清空缓存</button>
+      </div>
+    </el-form>
+  </AuthShell>
 </template>
 
 <script setup lang="ts">
@@ -74,6 +60,7 @@ import router from '@/router'
 import { apiLogin, apiTokenLogin } from '@/services/auth'
 import { useAuth } from '@/stores/auth'
 import { useAppState } from '@/stores/appState'
+import AuthShell from '@/components/auth/AuthShell.vue'
 
 // 中文注释：登录模式与表单字段：账号密码 或 子账号令牌
 const mode = ref<'account'|'token'>('account')
@@ -91,7 +78,60 @@ onMounted(() => {
   const url = new URL(location.href)
   const u = url.searchParams.get('u')
   if (u) username.value = u
+
+  const remembered = readRememberedLogin()
+  if (remembered?.mode) {
+    mode.value = remembered.mode
+    rememberMe.value = true
+    if (remembered.mode === 'account') {
+      if (!u) username.value = remembered.username || username.value
+      password.value = remembered.password || ''
+    } else {
+      token.value = remembered.token || ''
+    }
+  }
 })
+
+type RememberedLogin =
+  | { mode: 'account'; username: string; password: string }
+  | { mode: 'token'; token: string }
+
+const REMEMBER_KEY = 'login_remember_v1'
+function safeB64Encode(s: string) {
+  try { return btoa(unescape(encodeURIComponent(s))) } catch { return '' }
+}
+function safeB64Decode(s: string) {
+  try { return decodeURIComponent(escape(atob(s))) } catch { return '' }
+}
+function readRememberedLogin(): RememberedLogin | null {
+  try {
+    const raw = localStorage.getItem(REMEMBER_KEY)
+    if (!raw) return null
+    const obj = JSON.parse(raw) as any
+    if (!obj || typeof obj !== 'object') return null
+    if (obj.mode === 'account') {
+      return { mode: 'account', username: safeB64Decode(String(obj.u || '')), password: safeB64Decode(String(obj.p || '')) }
+    }
+    if (obj.mode === 'token') {
+      return { mode: 'token', token: safeB64Decode(String(obj.t || '')) }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+function writeRememberedLogin(v: RememberedLogin) {
+  try {
+    const payload =
+      v.mode === 'account'
+        ? { mode: 'account', u: safeB64Encode(v.username || ''), p: safeB64Encode(v.password || '') }
+        : { mode: 'token', t: safeB64Encode(v.token || '') }
+    localStorage.setItem(REMEMBER_KEY, JSON.stringify(payload))
+  } catch {}
+}
+function clearRememberedLogin() {
+  try { localStorage.removeItem(REMEMBER_KEY) } catch {}
+}
 
 async function doLogin() {
   if (loading.value) return
@@ -103,6 +143,8 @@ async function doLogin() {
     loading.value = true
     const resp = await apiLogin(username.value, password.value)
     auth.setLogin(resp.token, resp.user, rememberMe.value)
+    if (rememberMe.value) writeRememberedLogin({ mode: 'account', username: username.value, password: password.value })
+    else clearRememberedLogin()
     // 中文注释：登录后立即同步全局金币，避免进入页面前显示为 0 的闪烁或不一致
     try { appState.setCoins(Number(resp.user?.coins ?? 0)) } catch {}
     ElMessage.success('登录成功')
@@ -127,6 +169,8 @@ async function doTokenLogin() {
     loading.value = true
     const resp = await apiTokenLogin(token.value)
     auth.setLogin(resp.token, resp.user, rememberMe.value)
+    if (rememberMe.value) writeRememberedLogin({ mode: 'token', token: token.value })
+    else clearRememberedLogin()
     // 中文注释：令牌登录同样同步全局金币
     try { appState.setCoins(Number(resp.user?.coins ?? 0)) } catch {}
     ElMessage.success('登录成功')
