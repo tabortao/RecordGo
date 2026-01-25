@@ -1,49 +1,74 @@
 <template>
-  <!-- 中文注释：独立编辑心愿页面，顶部返回图标；加载现有数据并支持修改图标 -->
-  <div class="p-4 space-y-4">
-    <div class="flex items-center gap-2">
-      <el-icon :size="18" class="cursor-pointer text-gray-600" @click="goBack"><ArrowLeft /></el-icon>
-      <el-icon :size="18" class="text-emerald-600"><Edit /></el-icon>
-      <h2 class="font-semibold">编辑心愿</h2>
-    </div>
-
-    <div class="grid grid-cols-1 gap-4">
-      <el-card shadow="never" class="rounded-lg">
-        <el-form :model="form" label-width="90px">
-          <el-form-item label="心愿图标">
-            <div class="flex items-center gap-2">
-              <img v-if="form.icon_preview || form.icon" :src="form.icon_preview || iconResolved" class="w-10 h-10 rounded" @error="onIconError" />
-              <el-upload :auto-upload="false" :show-file-list="false" accept="image/*" @change="onPickIcon">
-                <el-button type="primary" size="small">更换图片</el-button>
-              </el-upload>
+  <SettingsShell title="编辑心愿" subtitle="更新图标、金币与单位" :icon="Edit" tone="emerald" container-class="max-w-3xl">
+    <SettingsCard>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
+          <div class="text-[12px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400">心愿图标</div>
+          <div class="mt-3 flex items-center gap-3">
+            <div class="relative">
+              <div class="absolute -inset-2 rounded-2xl bg-emerald-200/40 dark:bg-emerald-500/10 blur-xl" />
+              <img
+                v-if="form.icon_preview || form.icon"
+                :src="form.icon_preview || iconResolved"
+                class="relative w-12 h-12 rounded-2xl ring-1 ring-black/5 dark:ring-white/10"
+                @error="onIconError"
+              />
+              <div v-else class="relative w-12 h-12 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/30" />
             </div>
-          </el-form-item>
-          <el-form-item label="心愿名称"><el-input v-model="form.name" /></el-form-item>
-          <el-form-item label="心愿描述"><el-input type="textarea" v-model="form.content" /></el-form-item>
-          <el-form-item label="所需金币"><el-input-number v-model="form.need_coins" :min="1" /></el-form-item>
-          <el-form-item label="单位">
-            <el-select v-model="form.unit" style="width: 100%">
+            <el-upload :auto-upload="false" :show-file-list="false" accept="image/*" @change="onPickIcon">
+              <el-button type="primary" class="!rounded-2xl !font-extrabold">更换图片</el-button>
+            </el-upload>
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
+          <el-form :model="form" label-position="top" class="wish-form">
+            <el-form-item label="心愿名称">
+              <el-input v-model="form.name" placeholder="例如：看电影" />
+            </el-form-item>
+            <el-form-item label="心愿描述">
+              <el-input type="textarea" v-model="form.content" :rows="3" placeholder="写一句更具体的目标" />
+            </el-form-item>
+          </el-form>
+        </div>
+      </div>
+
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
+          <div class="text-[12px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400">所需金币</div>
+          <div class="mt-3">
+            <el-input-number v-model="form.need_coins" :min="1" controls-position="right" class="w-full" />
+          </div>
+        </div>
+        <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
+          <div class="text-[12px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400">单位</div>
+          <div class="mt-3">
+            <el-select v-model="form.unit" class="w-full">
               <el-option label="个" value="个" /><el-option label="次" value="次" />
               <el-option label="分钟" value="分钟" /><el-option label="元" value="元" />
             </el-select>
-          </el-form-item>
-          <el-form-item label="兑换数量"><el-input-number v-model="form.exchange_amount" :min="1" /></el-form-item>
-        </el-form>
-      </el-card>
-    </div>
+          </div>
+        </div>
+        <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
+          <div class="text-[12px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400">兑换数量</div>
+          <div class="mt-3">
+            <el-input-number v-model="form.exchange_amount" :min="1" controls-position="right" class="w-full" />
+          </div>
+        </div>
+      </div>
 
-    <div class="flex justify-end gap-2">
-      <el-button @click="goBack">取消</el-button>
-      <el-button type="primary" @click="submitForm">保存</el-button>
-    </div>
-  </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <el-button class="!rounded-2xl !font-extrabold" @click="goBack">取消</el-button>
+        <el-button type="primary" class="!rounded-2xl !font-extrabold" @click="submitForm">保存</el-button>
+      </div>
+    </SettingsCard>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
-// 中文注释：编辑心愿页面逻辑，加载现有心愿并提交更新；图标上传仍转换为 webp 并走后端 uploads
 import { reactive, onMounted, ref, watch, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Edit } from '@element-plus/icons-vue'
+import { Edit } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 import router from '@/router'
 import { getWish, updateWish, uploadWishIcon, normalizeUploadPath, type Wish } from '@/services/wishes'
@@ -51,6 +76,8 @@ import { useAuth } from '@/stores/auth'
 import { prepareUpload } from '@/utils/image'
 import { getStaticBase } from '@/services/http'
 import { presignView } from '@/services/storage'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 const route = useRoute()
 const auth = useAuth()
@@ -127,5 +154,20 @@ function onIconError(e: Event) {
 </script>
 
 <style scoped>
-/* 中文注释：使用 Tailwind 响应式布局，无额外样式 */
+:deep(.wish-form .el-form-item__label) {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgb(107 114 128);
+}
+
+.dark :deep(.wish-form .el-form-item__label) {
+  color: rgb(156 163 175);
+}
+
+:deep(.wish-form .el-input__inner),
+:deep(.wish-form .el-textarea__inner),
+:deep(.wish-form .el-input-number__decrease),
+:deep(.wish-form .el-input-number__increase) {
+  font-size: 14px;
+}
 </style>

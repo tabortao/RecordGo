@@ -41,9 +41,11 @@
 
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
-                <div class="relative">
+                <div class="relative shrink-0">
                   <div class="absolute -inset-2 rounded-2xl bg-emerald-200/40 dark:bg-emerald-500/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <img :src="resolveIcon(w.icon)" alt="icon" class="relative w-10 h-10 rounded-2xl ring-1 ring-black/5 dark:ring-white/10" @error="onIconError" />
+                  <div class="relative w-10 h-10 rounded-2xl ring-1 ring-black/5 dark:ring-white/10 overflow-hidden bg-white/60 dark:bg-gray-950/25 grid place-items-center">
+                    <img :src="resolveIcon(w.icon)" alt="icon" class="w-full h-full object-contain" @error="onIconError" />
+                  </div>
                 </div>
                 <div class="min-w-0">
                   <div class="truncate text-base font-extrabold tracking-tight text-gray-900 dark:text-gray-50">{{ w.name }}</div>
@@ -67,7 +69,7 @@
               </div>
             </div>
 
-            <div class="mt-4 flex items-center justify-between gap-2 pt-4 border-t border-gray-100/70 dark:border-gray-800/70">
+            <div class="mt-auto flex items-center justify-between gap-2 pt-4 border-t border-gray-100/70 dark:border-gray-800/70">
               <div class="text-xs font-semibold text-gray-500 dark:text-gray-400">已兑换：{{ w.exchanged }} 次</div>
               <el-button
                 type="warning"

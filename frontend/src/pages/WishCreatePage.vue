@@ -3,7 +3,7 @@
     <SettingsCard>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
-          <div class="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">心愿图标</div>
+          <div class="text-[12px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400">心愿图标</div>
           <div class="mt-3 flex items-center gap-3">
             <div class="relative">
               <div class="absolute -inset-2 rounded-2xl bg-emerald-200/40 dark:bg-emerald-500/10 blur-xl" />
@@ -16,13 +16,13 @@
               <div v-else class="relative w-12 h-12 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-950/30" />
             </div>
             <el-upload :auto-upload="false" :show-file-list="false" accept="image/*" @change="onPickIcon">
-              <el-button type="primary" class="!rounded-2xl">选择图片</el-button>
+              <el-button type="primary" class="!rounded-2xl !font-extrabold">选择图片</el-button>
             </el-upload>
           </div>
         </div>
 
         <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
-          <el-form :model="form" label-position="top">
+          <el-form :model="form" label-position="top" class="wish-form">
             <el-form-item label="心愿名称">
               <el-input v-model="form.name" placeholder="例如：看电影" />
             </el-form-item>
@@ -35,13 +35,13 @@
 
       <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
-          <div class="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">所需金币</div>
+          <div class="text-[12px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400">所需金币</div>
           <div class="mt-3">
             <el-input-number v-model="form.need_coins" :min="1" controls-position="right" class="w-full" />
           </div>
         </div>
         <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
-          <div class="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">单位</div>
+          <div class="text-[12px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400">单位</div>
           <div class="mt-3">
             <el-select v-model="form.unit" class="w-full">
               <el-option label="个" value="个" /><el-option label="次" value="次" />
@@ -50,7 +50,7 @@
           </div>
         </div>
         <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 backdrop-blur px-4 py-4">
-          <div class="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">兑换数量</div>
+          <div class="text-[12px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400">兑换数量</div>
           <div class="mt-3">
             <el-input-number v-model="form.exchange_amount" :min="1" controls-position="right" class="w-full" />
           </div>
@@ -58,8 +58,8 @@
       </div>
 
       <div class="mt-5 flex justify-end gap-2">
-        <el-button class="!rounded-2xl" @click="goBack">取消</el-button>
-        <el-button type="primary" class="!rounded-2xl" @click="submitForm">确定</el-button>
+        <el-button class="!rounded-2xl !font-extrabold" @click="goBack">取消</el-button>
+        <el-button type="primary" class="!rounded-2xl !font-extrabold" @click="submitForm">确定</el-button>
       </div>
     </SettingsCard>
   </SettingsShell>
@@ -140,5 +140,20 @@ function onIconError(e: Event) {
 </script>
 
 <style scoped>
-/* 中文注释：使用 Tailwind 进行响应式布局，不额外定义样式 */
+:deep(.wish-form .el-form-item__label) {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgb(107 114 128);
+}
+
+.dark :deep(.wish-form .el-form-item__label) {
+  color: rgb(156 163 175);
+}
+
+:deep(.wish-form .el-input__inner),
+:deep(.wish-form .el-textarea__inner),
+:deep(.wish-form .el-input-number__decrease),
+:deep(.wish-form .el-input-number__increase) {
+  font-size: 14px;
+}
 </style>
