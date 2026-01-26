@@ -246,4 +246,9 @@ router.beforeEach(async (to) => {
   return true
 })
 
+router.afterEach((to, from) => {
+  try { sessionStorage.setItem('rg:lastFrom', from.fullPath || '') } catch {}
+  try { sessionStorage.setItem('rg:lastTo', to.fullPath || '') } catch {}
+})
+
 export default router

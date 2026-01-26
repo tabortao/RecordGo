@@ -15,7 +15,7 @@
           <button
             type="button"
             class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 text-gray-600 dark:text-gray-300 hover:bg-white hover:text-gray-900 dark:hover:text-gray-50 transition-colors"
-            @click="props.backTo ? router.push(props.backTo) : router.back()"
+            @click="handleBack"
           >
             <el-icon :size="20"><ArrowLeft /></el-icon>
           </button>
@@ -61,15 +61,35 @@ const props = withDefaults(defineProps<{
   tone?: ToneKey
   containerClass?: string
   backTo?: string
+  preferBack?: boolean
   decor?: boolean
 }>(), {
   tone: 'sky',
   containerClass: 'max-w-3xl',
   backTo: '',
+  preferBack: false,
   decor: true
 })
 
 const router = useRouter()
+
+function handleBack() {
+  if (!props.backTo) {
+    router.back()
+    return
+  }
+  if (props.preferBack) {
+    try {
+      const from = sessionStorage.getItem('rg:lastFrom') || ''
+      const c = from.charAt(props.backTo.length)
+      if (from === props.backTo || (from.startsWith(props.backTo) && (c === '?' || c === '#'))) {
+        router.back()
+        return
+      }
+    } catch {}
+  }
+  router.push(props.backTo)
+}
 
 const tone = computed(() => {
   const map: Record<ToneKey, { glowA: string; glowB: string; iconWrap: string; iconText: string }> = {

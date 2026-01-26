@@ -93,7 +93,7 @@
             :style="getTagStyle(tag.color)"
             @click.stop="$emit('filter-tag', tag.id)"
           >
-            # {{ tag.name }}
+            {{ tag.name }}
           </span>
         </div>
         
@@ -135,7 +135,7 @@
                 <el-popover placement="top" :width="250" trigger="click">
                     <template #reference>
                         <div class="absolute right-2 bottom-2 cursor-pointer text-gray-400 hover:text-yellow-500 transition-colors z-10">
-                            <el-icon :size="20"><img src="https://api.iconify.design/twemoji:grinning-face.svg" class="w-5 h-5 opacity-60 hover:opacity-100" /></el-icon>
+                            <span class="text-[18px] leading-none opacity-60 hover:opacity-100 select-none">😀</span>
                         </div>
                     </template>
                     <div class="flex flex-wrap gap-2 max-h-40 overflow-y-auto">

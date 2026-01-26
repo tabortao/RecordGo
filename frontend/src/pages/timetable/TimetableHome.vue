@@ -1,9 +1,9 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-950 pb-20 relative overflow-hidden print:bg-white print:pb-0 print:min-h-auto">
     <div class="pointer-events-none absolute inset-0 overflow-hidden print:hidden">
-      <div class="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-sky-300/35 dark:bg-sky-500/16 blur-3xl" />
-      <div class="absolute -bottom-40 -left-28 h-80 w-80 rounded-full bg-amber-200/35 dark:bg-amber-500/14 blur-3xl" />
-      <div class="absolute inset-0 bg-[radial-gradient(1200px_circle_at_20%_-20%,rgba(255,255,255,.65),transparent_55%),radial-gradient(900px_circle_at_80%_0%,rgba(255,255,255,.45),transparent_55%)] dark:bg-[radial-gradient(1200px_circle_at_20%_-20%,rgba(255,255,255,.07),transparent_55%),radial-gradient(900px_circle_at_80%_0%,rgba(255,255,255,.06),transparent_55%)]" />
+      <div class="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-sky-300/35 dark:opacity-0 blur-3xl" />
+      <div class="absolute -bottom-40 -left-28 h-80 w-80 rounded-full bg-amber-200/35 dark:opacity-0 blur-3xl" />
+      <div class="absolute inset-0 bg-[radial-gradient(1200px_circle_at_20%_-20%,rgba(255,255,255,.65),transparent_55%),radial-gradient(900px_circle_at_80%_0%,rgba(255,255,255,.45),transparent_55%)] dark:bg-transparent" />
     </div>
 
     <!-- Header -->

@@ -27,9 +27,6 @@
             <div class="flex-1 min-w-0 flex items-center gap-4 sm:gap-5">
                <div class="relative">
                  <el-avatar :size="72" :src="avatarSrc" class="border-4 border-white dark:border-gray-700 shadow-md scale-[0.9] sm:scale-100 origin-left" />
-                 <div class="absolute -bottom-1 -right-1 bg-green-400 text-white p-1 rounded-full shadow-sm border-2 border-white dark:border-gray-800">
-                    <el-icon :size="12"><TrendCharts /></el-icon>
-                 </div>
                </div>
                <div>
                  <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1.5 truncate">{{ displayName }}</h1>
@@ -131,7 +128,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { ArrowLeft, TrendCharts, Histogram, Medal, View, Position, QuestionFilled, ArrowRight, Clock } from '@element-plus/icons-vue'
+import { ArrowLeft, Histogram, Medal, View, Position, QuestionFilled, ArrowRight, Clock } from '@element-plus/icons-vue'
 import { useAuth } from '@/stores/auth'
 import { listGrowthRecords, type GrowthMetricRecord, type GrowthMetricType } from '@/services/growth'
 import dayjs from 'dayjs'

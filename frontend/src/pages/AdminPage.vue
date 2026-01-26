@@ -14,16 +14,24 @@
     </SettingsCard>
 
     <SettingsCard title="用户列表" description="支持搜索用户名 / 昵称 / 邮箱">
-      <template #right>
+      <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+        <el-input v-model="query" placeholder="搜索..." class="w-full sm:w-72" @keyup.enter="loadUsers" />
         <div class="flex items-center gap-2">
-          <el-input v-model="query" placeholder="搜索..." class="w-60" @keyup.enter="loadUsers" />
           <el-button class="!rounded-xl" @click="loadUsers">查询</el-button>
           <el-button class="!rounded-xl" @click="loadOverview">刷新概览</el-button>
         </div>
-      </template>
+      </div>
 
-      <div class="rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
-        <el-table :data="users" size="small" class="w-full" stripe>
+      <div class="mt-4 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
+        <div class="w-full overflow-x-auto">
+          <el-table
+            :data="users"
+            size="small"
+            stripe
+            class="min-w-[1180px]"
+            :header-cell-style="{ whiteSpace: 'nowrap' }"
+            :cell-style="{ whiteSpace: 'nowrap' }"
+          >
           <el-table-column label="ID" prop="id" width="80" />
           <el-table-column label="用户名" prop="username" min-width="140" />
           <el-table-column label="昵称" prop="nickname" min-width="140" />
@@ -53,7 +61,8 @@
               </div>
             </template>
           </el-table-column>
-        </el-table>
+          </el-table>
+        </div>
       </div>
     </SettingsCard>
 

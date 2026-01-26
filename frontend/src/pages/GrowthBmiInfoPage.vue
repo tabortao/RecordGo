@@ -1,5 +1,5 @@
 <template>
-  <SettingsShell title="BMI 指标说明" subtitle="公式、参考范围与建议" :icon="TrendCharts" tone="sky" container-class="max-w-3xl" back-to="/growth">
+  <SettingsShell title="BMI 指标说明" subtitle="公式、参考范围与建议" :icon="TrendCharts" tone="sky" container-class="max-w-3xl" back-to="/growth" :prefer-back="true">
     <SettingsCard>
       <div class="flex items-start gap-4">
         <div class="relative shrink-0">

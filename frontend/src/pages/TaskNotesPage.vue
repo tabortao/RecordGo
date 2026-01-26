@@ -1,100 +1,161 @@
 <template>
-  <!-- 中文注释：任务备注独立页面，顶部返回按钮，支持多条备注与附件（图片/音频） -->
-  <div class="p-4">
-    <!-- 顶部返回与标题 -->
-    <div class="flex items-center gap-2 mb-3">
-      <el-button link @click="goBack" class="p-0">
-        <el-icon><ArrowLeft /></el-icon>
-      </el-button>
-      <h2 class="font-semibold">任务备注</h2>
-      <span class="text-xs text-gray-500">ID：{{ taskId }}</span>
-    </div>
+  <SettingsShell
+    title="任务备注"
+    :subtitle="`任务ID：${taskId}${existingNotes.length ? ` · ${existingNotes.length} 条` : ''}`"
+    tone="indigo"
+    :decor="true"
+  >
+    <SettingsCard
+      title="历史备注"
+      :description="existingNotes.length ? '支持图片预览、音频播放与一键朗读' : '还没有备注，写下今天的收获吧'"
+    >
+      <div v-if="!existingNotes.length" class="py-4">
+        <el-empty description="暂无备注" />
+      </div>
 
-    <!-- 历史备注列表 -->
-    <el-card shadow="never" class="mb-3" v-if="existingNotes.length">
-      <div class="font-semibold mb-2">历史备注</div>
-      <div class="space-y-3">
-        <div v-for="n in existingNotes" :key="n.id" class="border rounded p-2">
-          <!-- 中文注释：右上角显示小喇叭图标，点击朗读备注内容；朗读关闭时隐藏 -->
-          <div class="flex items-start justify-between">
-            <div class="text-sm whitespace-pre-wrap">{{ n.text }}</div>
-            <span v-if="appState.speech.enabled" class="cursor-pointer select-none" title="朗读备注" style="font-size:16px; line-height:16px" @click="speakNote(n.text)">📢</span>
-          </div>
-          <div class="mt-2 flex flex-wrap gap-3">
-            <!-- 图片附件预览，可点击放大 -->
-            <template v-for="(att, idx) in n.attachments" :key="att.name + idx">
-              <el-image v-if="att.type==='image'" :src="resolveUrl(att)" :preview-src-list="imageList(n.attachments)" :initial-index="imageIndex(n.attachments, att)" fit="contain" style="width:96px;height:96px;border-radius:8px" />
-              <div v-else class="flex items-center gap-2">
-                <el-icon><Microphone /></el-icon>
-                <audio :src="resolveUrl(att)" controls preload="none" />
+      <div v-else class="space-y-3">
+        <div
+          v-for="n in existingNotes"
+          :key="n.id"
+          class="rounded-2xl border border-gray-100/70 dark:border-gray-800/60 bg-white/70 dark:bg-gray-950/35 backdrop-blur p-3"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <div class="text-[13px] text-gray-500 dark:text-gray-400">
+                {{ formatTime(n.created_at) }}
               </div>
-            </template>
+              <div class="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words">
+                {{ n.text }}
+              </div>
+            </div>
+
+            <div class="shrink-0 flex items-center gap-2">
+              <el-button
+                v-if="appState.speech.enabled"
+                size="small"
+                round
+                class="!px-3"
+                @click="speakNote(n.text)"
+              >
+                <el-icon class="mr-1"><Headset /></el-icon>
+                朗读
+              </el-button>
+              <el-button size="small" round type="danger" class="!px-3" @click="removeNote(n.id)">删除</el-button>
+            </div>
           </div>
-          <div class="text-right mt-2">
-            <el-button size="small" type="danger" @click="removeNote(n.id)">删除备注</el-button>
+
+          <div v-if="n.attachments?.length" class="mt-3">
+            <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              <template v-for="(att, idx) in n.attachments" :key="att.name + idx">
+                <el-image
+                  v-if="att.type === 'image'"
+                  class="rounded-2xl overflow-hidden border border-gray-100/60 dark:border-gray-800/60 bg-white/60 dark:bg-gray-900/40"
+                  :src="resolveUrl(att)"
+                  :preview-src-list="imageList(n.attachments)"
+                  :initial-index="imageIndex(n.attachments, att)"
+                  fit="cover"
+                  style="width:100%;aspect-ratio:1/1"
+                />
+                <div
+                  v-else
+                  class="col-span-3 sm:col-span-4 rounded-2xl border border-gray-100/60 dark:border-gray-800/60 bg-white/60 dark:bg-gray-900/40 px-3 py-2"
+                >
+                  <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <el-icon :size="16"><Microphone /></el-icon>
+                    音频附件
+                  </div>
+                  <audio :src="resolveUrl(att)" controls preload="none" class="mt-2 w-full" />
+                </div>
+              </template>
+            </div>
           </div>
         </div>
       </div>
-    </el-card>
+    </SettingsCard>
 
-    <!-- 新建备注 -->
-    <el-card shadow="never">
-      <div class="font-semibold mb-2">新增备注</div>
-      <el-form label-width="90px">
+    <SettingsCard title="新增备注" description="支持多行文本、图片附件与录音">
+      <el-form label-position="top">
         <el-form-item label="备注内容">
-          <!-- 中文注释：Element Plus 的 rows 期望 number，这里使用绑定语法避免字符串类型错误 -->
-          <el-input v-model="noteText" type="textarea" :rows="4" placeholder="请输入备注内容，支持多行" />
+          <el-input
+            v-model="noteText"
+            type="textarea"
+            :rows="5"
+            resize="none"
+            placeholder="写下今天的进步、遇到的问题、下一步计划…"
+          />
         </el-form-item>
 
         <el-form-item label="附件">
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <input ref="fileInput" type="file" accept="image/*,audio/*" class="hidden" multiple @change="onFileChange" />
-            <el-button type="primary" @click="triggerFile">上传附件</el-button>
-            <el-button :type="recording ? 'danger' : 'success'" @click="toggleRecord">
+            <el-button round type="primary" class="!px-4" @click="triggerFile">上传附件</el-button>
+            <el-button round :type="recording ? 'danger' : 'success'" class="!px-4" @click="toggleRecord">
               <el-icon class="mr-1"><Microphone /></el-icon>{{ recording ? '停止录音' : '开始录音' }}
             </el-button>
           </div>
-          <!-- <div class="text-xs text-gray-500 mt-1">图片自动压缩并转为 webp；音频录音保存为 wav 格式</div> -->
         </el-form-item>
 
-        <el-form-item label="预览区" v-if="attachments.length">
-          <div class="flex flex-wrap gap-3">
+        <el-form-item v-if="attachments.length" label="预览">
+          <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 w-full">
             <div v-for="(att, idx) in attachments" :key="att.name + idx" class="relative">
-              <el-image v-if="att.type==='image'" :src="att.url" :preview-src-list="previewList()" :initial-index="previewIndex(att)" fit="contain" style="width:96px;height:96px;border-radius:8px" />
-              <div v-else class="w-[200px]">
-                <audio :src="att.url" controls preload="none" class="w-full" />
+              <el-image
+                v-if="att.type === 'image'"
+                class="rounded-2xl overflow-hidden border border-gray-100/60 dark:border-gray-800/60 bg-white/60 dark:bg-gray-900/40"
+                :src="att.url"
+                :preview-src-list="previewList()"
+                :initial-index="previewIndex(att)"
+                fit="cover"
+                style="width:100%;aspect-ratio:1/1"
+              />
+              <div
+                v-else
+                class="col-span-3 sm:col-span-4 rounded-2xl border border-gray-100/60 dark:border-gray-800/60 bg-white/60 dark:bg-gray-900/40 px-3 py-2"
+              >
+                <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <el-icon :size="16"><Microphone /></el-icon>
+                  录音预览
+                </div>
+                <audio :src="att.url" controls preload="none" class="mt-2 w-full" />
               </div>
-              <el-button size="small" type="danger" class="absolute -top-2 -right-2" @click="removeAttachment(idx)">删除</el-button>
+
+              <button
+                type="button"
+                class="absolute -top-2 -right-2 inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-white/60 dark:border-gray-800/60 bg-white/85 dark:bg-gray-900/75 backdrop-blur text-gray-700 dark:text-gray-200 shadow-sm hover:bg-white dark:hover:bg-gray-900 transition-colors"
+                @click="removeAttachment(idx)"
+              >
+                <el-icon :size="16"><Close /></el-icon>
+              </button>
             </div>
           </div>
         </el-form-item>
 
-        <div class="text-right">
-          <el-button type="primary" @click="saveNote">保存备注</el-button>
+        <div class="pt-2">
+          <el-button round type="primary" class="w-full !h-11 !text-[15px]" @click="saveNote">保存备注</el-button>
         </div>
       </el-form>
-    </el-card>
-  </div>
+    </SettingsCard>
+  </SettingsShell>
 </template>
 
 <script setup lang="ts">
 // 中文注释：任务备注页面逻辑，支持图片压缩为 webp 与音频录音保存为 wav
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useNotesStore, type TaskNote, type NoteAttachment } from '@/stores/notes'
 import { useAuth } from '@/stores/auth'
 import { uploadNoteImage, uploadTaskAudio } from '@/services/tasks'
 import { normalizeUploadPath } from '@/services/wishes'
 import { prepareUpload } from '@/utils/image'
-import { ArrowLeft, Microphone } from '@element-plus/icons-vue'
+import { Close, Headset, Microphone } from '@element-plus/icons-vue'
 import { speak } from '@/utils/speech'
 import { useAppState } from '@/stores/appState'
 import { ElMessage } from 'element-plus'
 import { getStaticBase } from '@/services/http'
 import { presignView } from '@/services/storage'
+import SettingsShell from '@/components/settings/SettingsShell.vue'
+import SettingsCard from '@/components/settings/SettingsCard.vue'
 
 const route = useRoute()
-const router = useRouter()
 const rawId = route.params.id
 const taskId = Number(Array.isArray(rawId) ? rawId[0] : rawId)
 const auth = useAuth()
@@ -105,9 +166,6 @@ const noteText = ref('')
 type TmpAttachment = { type: 'image' | 'audio'; name: string; url: string; file?: File; serverPath?: string }
 const attachments = ref<TmpAttachment[]>([])
 const fileInput = ref<HTMLInputElement | null>(null)
-
-// 顶部返回
-function goBack() { router.back() }
 
 // 历史备注
 const existingNotes = computed<TaskNote[]>(() => store.list(taskId))
@@ -152,6 +210,12 @@ function previewList(): string[] {
 
 function previewIndex(att: { type: 'image' | 'audio'; url: string }): number {
   return attachments.value.filter((a: TmpAttachment) => a.type === 'image').findIndex((a: TmpAttachment) => a.url === att.url)
+}
+
+function formatTime(v: string) {
+  const t = new Date(v)
+  if (Number.isNaN(t.getTime())) return ''
+  return t.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
 // 触发文件选择

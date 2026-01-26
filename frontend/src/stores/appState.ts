@@ -106,12 +106,12 @@ const DEFAULT_STATE: AppState = {
   },
   speech: {
     enabled: true,
-    engine: 'system',
+    engine: 'custom',
     voiceURI: null,
     rate: 1,
     pitch: 1,
     customProfiles: withBuiltinCustomProfiles([]),
-    activeCustomId: null
+    activeCustomId: 'builtin-yunyang'
   },
   // 中文注释：任务备注入口默认开启
   taskNotesEnabled: true
@@ -140,6 +140,9 @@ export const useAppState = defineStore('appState', {
         speech: { ...DEFAULT_STATE.speech, ...(persisted.speech || {}) }
       }
       nextState.speech.customProfiles = withBuiltinCustomProfiles(nextState.speech.customProfiles)
+      if (nextState.speech.engine === 'custom' && !nextState.speech.activeCustomId) {
+        nextState.speech.activeCustomId = 'builtin-yunyang'
+      }
       return nextState
     } catch {
       return DEFAULT_STATE
