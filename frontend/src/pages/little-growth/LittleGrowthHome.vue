@@ -42,16 +42,30 @@
             type="date"
             class="!w-0 !h-0 !border-0 !p-0 !overflow-hidden opacity-0 absolute top-0 left-0 -z-10"
             :popper-options="{ placement: 'bottom-end' }"
+            @change="handleCalendarChange"
           >
             <template #cell="{ text, date, isCurrent }">
-              <div class="w-full h-full flex items-center justify-center">
-                <div
-                  class="h-7 w-7 rounded-full flex items-center justify-center text-sm transition-colors"
-                  :class="hasRecord(date) ? 'bg-purple-600 text-white font-extrabold shadow-sm' : (isCurrent ? 'font-extrabold text-purple-600' : '')"
-                >
-                  {{ text }}
+              <el-tooltip
+                :content="getRecordCountText(date)"
+                :disabled="getRecordCount(date) <= 0"
+                placement="top"
+                effect="dark"
+              >
+                <div class="w-full h-full flex items-center justify-center">
+                  <div
+                    class="relative h-7 w-7 rounded-full flex items-center justify-center text-sm transition-colors"
+                    :class="hasRecord(date) ? 'bg-purple-600 text-white font-extrabold shadow-sm' : (isCurrent ? 'font-extrabold text-purple-600' : '')"
+                  >
+                    {{ text }}
+                    <div
+                      v-if="getRecordCount(date) > 0"
+                      class="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-white text-purple-700 text-[10px] font-black shadow-sm border border-purple-200 flex items-center justify-center"
+                    >
+                      {{ getRecordCountBadge(date) }}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </el-tooltip>
             </template>
           </el-date-picker>
           
@@ -121,19 +135,23 @@
                 <span class="text-sm font-bold">置顶回忆</span>
              </div>
              <div class="space-y-4">
-                <TimelineCard 
+                <div
                   v-for="record in (pinnedRecords as unknown as import('@/stores/littleGrowth').GrowthRecord[])"
                   :key="record.id"
-                  :record="record"
-                  :allTags="store.flattenedTags"
-                  :searchQuery="getSearchQuery()"
-                  @edit="handleEdit"
-                  @delete="handleDelete"
-                  @pin="handlePin"
-                  @filter-tag="handleTagSelect"
-                  @toggle-favorite="handleToggleFavorite"
-                  @add-comment="handleAddComment"
-                />
+                  :id="'record-' + String(record.id)"
+                >
+                  <TimelineCard 
+                    :record="record"
+                    :allTags="store.flattenedTags"
+                    :searchQuery="getSearchQuery()"
+                    @edit="handleEdit"
+                    @delete="handleDelete"
+                    @pin="handlePin"
+                    @filter-tag="handleTagSelect"
+                    @toggle-favorite="handleToggleFavorite"
+                    @add-comment="handleAddComment"
+                  />
+                </div>
              </div>
           </div>
 
@@ -172,19 +190,23 @@
 
                   <!-- 卡片列表容器 -->
                   <div class="px-4 sm:px-0 sm:pl-24 space-y-6">
-                      <TimelineCard
+                      <div
                         v-for="record in (groupedRecords[year]?.[month] || [])"
                         :key="record.id"
-                        :record="record"
-                        :allTags="store.flattenedTags"
-                        :searchQuery="getSearchQuery()"
-                        @edit="handleEdit"
-                        @delete="handleDelete"
-                        @pin="handlePin"
-                        @filter-tag="handleTagSelect"
-                        @toggle-favorite="handleToggleFavorite"
-                        @add-comment="handleAddComment"
-                      />
+                        :id="'record-' + String(record.id)"
+                      >
+                        <TimelineCard
+                          :record="record"
+                          :allTags="store.flattenedTags"
+                          :searchQuery="getSearchQuery()"
+                          @edit="handleEdit"
+                          @delete="handleDelete"
+                          @pin="handlePin"
+                          @filter-tag="handleTagSelect"
+                          @toggle-favorite="handleToggleFavorite"
+                          @add-comment="handleAddComment"
+                        />
+                      </div>
                   </div>
                 </div>
             </div>
@@ -200,18 +222,29 @@
       <transition name="fade">
         <div 
           v-show="isScrolling" 
-          class="fixed right-1 top-20 bottom-24 z-10 w-6 flex flex-col items-center justify-center"
+          ref="sliderRef"
+          class="fixed right-1 top-20 bottom-24 z-10 w-8 flex flex-col items-center justify-center select-none"
           @touchstart="handleSliderTouchStart"
           @touchmove="handleSliderTouchMove"
           @touchend="handleSliderTouchEnd"
+          @click="handleSliderClick"
         >
            <div class="w-1 h-full bg-gray-200 dark:bg-gray-700 rounded-full relative">
               <!-- Handle -->
               <div 
-                class="absolute w-6 h-6 bg-purple-600 rounded-full shadow-md -left-2.5 flex items-center justify-center text-[10px] text-white font-bold"
+                class="absolute w-7 h-7 bg-purple-600 rounded-full shadow-md -left-3 flex items-center justify-center text-white"
                 :style="{ top: sliderTop + '%' }"
               >
-                 {{ currentSliderYear }}
+                 <div class="flex flex-col items-center leading-none">
+                   <span class="text-[12px] font-black">{{ currentSliderMonthLabel }}</span>
+                   <span class="text-[8px] font-semibold opacity-90">{{ currentSliderYear }}</span>
+                 </div>
+                 <div
+                   v-if="currentSliderYear && currentSliderMonth"
+                   class="absolute right-8 whitespace-nowrap rounded-full bg-white/90 px-3 py-1 text-[12px] font-bold text-gray-800 shadow-sm backdrop-blur-md dark:bg-gray-800/90 dark:text-gray-100 border border-gray-100 dark:border-gray-700"
+                 >
+                   {{ currentSliderYear }}年{{ currentSliderMonthLabel }}月
+                 </div>
               </div>
            </div>
         </div>
@@ -259,7 +292,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Menu, Plus, Close, Files, Search, Calendar, Top, TrophyBase, TrendCharts, DataAnalysis } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
@@ -286,7 +319,7 @@ const showSidebar = ref(false)
 const searchQuery = ref('')
 const selectedDate = ref<Date | null>(null)
 const datePickerRef = ref()
-const recordDates = ref<Set<string>>(new Set())
+const recordDateCountMap = ref<Record<string, number>>({})
 
 const { width, height } = useWindowSize()
 const drawerSize = computed(() => width.value < 768 ? '50%' : '25%')
@@ -328,15 +361,93 @@ const handlePin = async (id: string) => {
     try {
         await store.togglePin(id)
         ElMessage.success('操作成功')
-    } catch (e) {
+    } catch {
         // error
     }
 }
 
 // Slider Logic
+const sliderRef = ref<HTMLElement | null>(null)
 const sliderTop = ref(0)
 const currentSliderYear = ref('')
+const currentSliderMonth = ref('')
+const currentSliderMonthLabel = computed(() => currentSliderMonth.value ? String(Number(currentSliderMonth.value)) : '')
 const isDraggingSlider = ref(false)
+
+type MonthAnchor = { year: string; month: string; key: string }
+type MonthAnchorOffset = MonthAnchor & { top: number }
+
+const monthAnchors = computed<MonthAnchor[]>(() => {
+  const anchors: MonthAnchor[] = []
+  for (const year of sortedYears.value) {
+    const months = sortedMonthsByYear.value[year] || []
+    for (const month of months) {
+      anchors.push({ year, month, key: `${year}-${month}` })
+    }
+  }
+  return anchors
+})
+
+const monthAnchorOffsets = ref<MonthAnchorOffset[]>([])
+
+async function recomputeMonthAnchorOffsets() {
+  await nextTick()
+  const container = scrollContainer.value
+  if (!container) {
+    monthAnchorOffsets.value = []
+    return
+  }
+
+  const containerTop = container.getBoundingClientRect().top
+  const baseScrollTop = container.scrollTop
+  const offsets: MonthAnchorOffset[] = []
+  for (const a of monthAnchors.value) {
+    const el = document.getElementById(`month-${a.year}-${a.month}`)
+    if (!el) continue
+    const rect = el.getBoundingClientRect()
+    offsets.push({ ...a, top: rect.top - containerTop + baseScrollTop })
+  }
+  offsets.sort((a, b) => a.top - b.top)
+  monthAnchorOffsets.value = offsets
+  updateSliderFromScroll()
+}
+
+function updateSliderFromScroll() {
+  const container = scrollContainer.value
+  const offsets = monthAnchorOffsets.value
+  if (!container || offsets.length === 0) return
+
+  const y = container.scrollTop + 140
+  let idx = 0
+  for (let i = 0; i < offsets.length; i++) {
+    if (offsets[i].top <= y) idx = i
+    else break
+  }
+  const cur = offsets[idx]
+  currentSliderYear.value = cur.year
+  currentSliderMonth.value = cur.month
+  sliderTop.value = offsets.length === 1 ? 0 : (idx / (offsets.length - 1)) * 100
+}
+
+const scrollToMonth = (year: string, month: string) => {
+  const el = document.getElementById(`month-${year}-${month}`)
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function setSliderPercent(percent: number, shouldScroll: boolean) {
+  const p = Math.max(0, Math.min(100, percent))
+  sliderTop.value = p
+
+  const anchors = monthAnchorOffsets.value.length > 0 ? monthAnchorOffsets.value : monthAnchors.value
+  if (anchors.length === 0) return
+
+  const index = Math.floor((p / 100) * anchors.length)
+  const safeIndex = Math.min(anchors.length - 1, Math.max(0, index))
+  const a: any = anchors[safeIndex]
+  currentSliderYear.value = a.year
+  currentSliderMonth.value = a.month
+  if (shouldScroll) scrollToMonth(a.year, a.month)
+}
 
 const handleSliderTouchStart = (e: TouchEvent) => {
   isDraggingSlider.value = true
@@ -346,30 +457,28 @@ const handleSliderTouchStart = (e: TouchEvent) => {
 const handleSliderTouchMove = (e: TouchEvent) => {
   e.preventDefault()
   const touch = e.touches[0]
-  const sliderContainer = document.querySelector('.fixed.right-1') as HTMLElement
+  const sliderContainer = sliderRef.value
   if (!sliderContainer) return
 
   const rect = sliderContainer.getBoundingClientRect()
   const y = touch.clientY - rect.top
   const height = rect.height
   let percent = (y / height) * 100
-  percent = Math.max(0, Math.min(100, percent))
-  
-  sliderTop.value = percent
-  
-  // Calculate year based on percent
-  const years = sortedYears.value
-  if (years.length > 0) {
-    const index = Math.floor((percent / 100) * years.length)
-    const safeIndex = Math.min(years.length - 1, Math.max(0, index))
-    const year = years[safeIndex]
-    currentSliderYear.value = year
-    scrollToYear(year)
-  }
+  setSliderPercent(percent, true)
 }
 
 const handleSliderTouchEnd = () => {
   isDraggingSlider.value = false
+}
+
+const handleSliderClick = (e: MouseEvent) => {
+  const sliderContainer = sliderRef.value
+  if (!sliderContainer) return
+  const rect = sliderContainer.getBoundingClientRect()
+  const y = e.clientY - rect.top
+  const height = rect.height
+  const percent = (y / height) * 100
+  setSliderPercent(percent, true)
 }
 
 const handleScroll = () => {
@@ -382,6 +491,7 @@ const handleScroll = () => {
   if (scrollContainer.value) {
     showBackToTop.value = scrollContainer.value.scrollTop > 300
   }
+  if (!isDraggingSlider.value) updateSliderFromScroll()
 }
 
 const scrollToTop = () => {
@@ -419,6 +529,8 @@ const clearFilter = () => {
         store.fetchRecords()
     }
 }
+
+const normalizeRecordDate = (v: any) => String(v || '').slice(0, 10)
 
 const filteredList = computed(() => {
   let list = store.records
@@ -463,7 +575,7 @@ const filteredList = computed(() => {
   // 3. Date Filter
   if (selectedDate.value) {
     const d = dayjs(selectedDate.value).format('YYYY-MM-DD')
-    list = list.filter(r => r.date === d)
+    list = list.filter(r => normalizeRecordDate(r.date) === d)
   }
   
   return list
@@ -522,18 +634,59 @@ const sortedMonthsByYear = computed<Record<string, string[]>>(() => {
   return res
 })
 
-const scrollToYear = (year: string) => {
-  const el = document.getElementById('year-' + year)
-  if (el) el.scrollIntoView({ behavior: 'smooth' })
-}
+watch(groupedRecords, () => {
+  recomputeMonthAnchorOffsets()
+}, { flush: 'post' })
+
+watch([width, height], () => {
+  recomputeMonthAnchorOffsets()
+}, { flush: 'post' })
 
 async function ensureRecordDatesLoaded() {
-  if (recordDates.value.size > 0) return
+  if (Object.keys(recordDateCountMap.value).length > 0) return
   try {
     const res = await http.get('/little-growth/records', { params: { page_size: 5000 } }) as any
     const items = Array.isArray(res?.items) ? res.items : []
-    recordDates.value = new Set(items.map((r: any) => String(r?.date || '').slice(0, 10)).filter(Boolean))
+    const map: Record<string, number> = {}
+    for (const r of items) {
+      const k = String((r as any)?.date || '').slice(0, 10)
+      if (!k) continue
+      map[k] = (map[k] || 0) + 1
+    }
+    recordDateCountMap.value = map
   } catch {}
+}
+
+const getRecordCount = (date: Date) => {
+  const d = dayjs(date).format('YYYY-MM-DD')
+  const v = recordDateCountMap.value[d]
+  if (typeof v === 'number') return v
+  return store.records.reduce((acc, r) => acc + (normalizeRecordDate(r.date) === d ? 1 : 0), 0)
+}
+
+const getRecordCountBadge = (date: Date) => {
+  const n = getRecordCount(date)
+  if (n <= 0) return ''
+  return n > 9 ? '9+' : String(n)
+}
+
+const getRecordCountText = (date: Date) => {
+  const n = getRecordCount(date)
+  return n > 0 ? `当天 ${n} 篇` : ''
+}
+
+const handleCalendarChange = async (val: Date | null) => {
+  if (!val) return
+  if (getRecordCount(val) <= 0) {
+    selectedDate.value = null
+    return
+  }
+  await nextTick()
+  const target = pinnedRecords.value[0] || filteredList.value[0]
+  if (!target) return
+  await nextTick()
+  const el = document.getElementById(`record-${String((target as any).id)}`)
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 const openCalendar = async () => {
@@ -546,9 +699,7 @@ const openCalendar = async () => {
 }
 
 const hasRecord = (date: Date) => {
-  const d = dayjs(date).format('YYYY-MM-DD')
-  if (recordDates.value.size > 0) return recordDates.value.has(d)
-  return store.records.some(r => r.date === d)
+  return getRecordCount(date) > 0
 }
 
 const handleTagSelect = (tagId: string | null) => {
@@ -573,7 +724,7 @@ const handleFavoritesSelect = () => {
 const handleToggleFavorite = async (id: string) => {
     try {
         await store.toggleFavorite(id)
-    } catch (e) {
+    } catch {
         ElMessage.error('操作失败')
     }
 }
@@ -582,7 +733,7 @@ const handleAddComment = async (id: string, content: string) => {
     try {
         await store.addComment(id, content)
         ElMessage.success('评论成功')
-    } catch (e) {
+    } catch {
         ElMessage.error('评论失败')
     }
 }
