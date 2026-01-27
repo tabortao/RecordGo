@@ -11,43 +11,43 @@ import (
 )
 
 type ScoreCreateReq struct {
-	Subject   string   `json:"subject"`
-	ExamName  string   `json:"exam_name"`
-	ExamType  string   `json:"exam_type"`
-	Grade     string   `json:"grade"`
-	Term      string   `json:"term"`
-	Topic     string   `json:"topic"`
-	Difficulty string  `json:"difficulty"`
-	ExamDate  string   `json:"exam_date"`
-	Score     float64  `json:"score"`
-	FullScore float64  `json:"full_score"`
-	ClassRank *int     `json:"class_rank"`
-	RankType  string   `json:"rank_type"`
-	GradeRank *int     `json:"grade_rank"`
-	ClassAvg  *float64 `json:"class_avg"`
+	Subject      string   `json:"subject"`
+	ExamName     string   `json:"exam_name"`
+	ExamType     string   `json:"exam_type"`
+	Grade        string   `json:"grade"`
+	Term         string   `json:"term"`
+	Topic        string   `json:"topic"`
+	Difficulty   string   `json:"difficulty"`
+	ExamDate     string   `json:"exam_date"`
+	Score        float64  `json:"score"`
+	FullScore    float64  `json:"full_score"`
+	ClassRank    *int     `json:"class_rank"`
+	RankType     string   `json:"rank_type"`
+	GradeRank    *int     `json:"grade_rank"`
+	ClassAvg     *float64 `json:"class_avg"`
 	ClassHighest *float64 `json:"class_highest"`
-	PhotoURL  string   `json:"photo_url"`
-	Remark    string   `json:"remark"`
+	PhotoURL     string   `json:"photo_url"`
+	Remark       string   `json:"remark"`
 }
 
 type ScoreUpdateReq struct {
-	Subject   *string  `json:"subject"`
-	ExamName  *string  `json:"exam_name"`
-	ExamType  *string  `json:"exam_type"`
-	Grade     *string  `json:"grade"`
-	Term      *string  `json:"term"`
-	Topic     *string  `json:"topic"`
-	Difficulty *string `json:"difficulty"`
-	ExamDate  *string  `json:"exam_date"`
-	Score     *float64 `json:"score"`
-	FullScore *float64 `json:"full_score"`
-	ClassRank *int     `json:"class_rank"`
-	RankType  *string  `json:"rank_type"`
-	GradeRank *int     `json:"grade_rank"`
-	ClassAvg  *float64 `json:"class_avg"`
+	Subject      *string  `json:"subject"`
+	ExamName     *string  `json:"exam_name"`
+	ExamType     *string  `json:"exam_type"`
+	Grade        *string  `json:"grade"`
+	Term         *string  `json:"term"`
+	Topic        *string  `json:"topic"`
+	Difficulty   *string  `json:"difficulty"`
+	ExamDate     *string  `json:"exam_date"`
+	Score        *float64 `json:"score"`
+	FullScore    *float64 `json:"full_score"`
+	ClassRank    *int     `json:"class_rank"`
+	RankType     *string  `json:"rank_type"`
+	GradeRank    *int     `json:"grade_rank"`
+	ClassAvg     *float64 `json:"class_avg"`
 	ClassHighest *float64 `json:"class_highest"`
-	PhotoURL  *string  `json:"photo_url"`
-	Remark    *string  `json:"remark"`
+	PhotoURL     *string  `json:"photo_url"`
+	Remark       *string  `json:"remark"`
 }
 
 func ListScores(c *gin.Context) {
@@ -56,14 +56,15 @@ func ListScores(c *gin.Context) {
 		common.Error(c, 40100, "未登录")
 		return
 	}
-	uid := cl.UserID
-	if cl.ParentID != nil {
-		uid = *cl.ParentID
+	ids, err := readableUserIDs(cl)
+	if err != nil {
+		common.Error(c, 50001, "查询失败")
+		return
 	}
 	subject := c.Query("subject")
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
-	q := db.DB().Model(&models.ScoreRecord{}).Where("user_id = ?", uid)
+	q := db.DB().Model(&models.ScoreRecord{}).Where("user_id IN ?", ids)
 	if subject != "" {
 		q = q.Where("subject = ?", subject)
 	}
@@ -123,29 +124,25 @@ func CreateScore(c *gin.Context) {
 		common.Error(c, 40005, "日期格式错误")
 		return
 	}
-	uid := cl.UserID
-	if cl.ParentID != nil {
-		uid = *cl.ParentID
-	}
 	item := models.ScoreRecord{
-		UserID:    uid,
-		Subject:   req.Subject,
-		ExamName:  req.ExamName,
-		ExamType:  req.ExamType,
-		Grade:     req.Grade,
-		Term:      req.Term,
-		Topic:     req.Topic,
-		Difficulty: req.Difficulty,
-		ExamDate:  d,
-		Score:     req.Score,
-		FullScore: req.FullScore,
-		ClassRank: req.ClassRank,
-		RankType:  req.RankType,
-		GradeRank: req.GradeRank,
-		ClassAvg:  req.ClassAvg,
+		UserID:       cl.UserID,
+		Subject:      req.Subject,
+		ExamName:     req.ExamName,
+		ExamType:     req.ExamType,
+		Grade:        req.Grade,
+		Term:         req.Term,
+		Topic:        req.Topic,
+		Difficulty:   req.Difficulty,
+		ExamDate:     d,
+		Score:        req.Score,
+		FullScore:    req.FullScore,
+		ClassRank:    req.ClassRank,
+		RankType:     req.RankType,
+		GradeRank:    req.GradeRank,
+		ClassAvg:     req.ClassAvg,
 		ClassHighest: req.ClassHighest,
-		PhotoURL:  req.PhotoURL,
-		Remark:    req.Remark,
+		PhotoURL:     req.PhotoURL,
+		Remark:       req.Remark,
 	}
 	if err := db.DB().Create(&item).Error; err != nil {
 		common.Error(c, 50002, "创建失败")

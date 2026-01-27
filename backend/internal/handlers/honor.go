@@ -34,12 +34,13 @@ func ListHonors(c *gin.Context) {
 		common.Error(c, 40100, "未登录")
 		return
 	}
-	uid := cl.UserID
-	if cl.ParentID != nil {
-		uid = *cl.ParentID
+	ids, err := readableUserIDs(cl)
+	if err != nil {
+		common.Error(c, 50001, "查询失败")
+		return
 	}
 	var items []models.Honor
-	if err := db.DB().Where("user_id = ?", uid).Order("awarded_at DESC, created_at DESC").Find(&items).Error; err != nil {
+	if err := db.DB().Where("user_id IN ?", ids).Order("awarded_at DESC, created_at DESC").Find(&items).Error; err != nil {
 		common.Error(c, 50001, "查询失败")
 		return
 	}
@@ -71,12 +72,8 @@ func CreateHonor(c *gin.Context) {
 		common.Error(c, 40003, "日期格式错误")
 		return
 	}
-	uid := cl.UserID
-	if cl.ParentID != nil {
-		uid = *cl.ParentID
-	}
 	h := models.Honor{
-		UserID:    uid,
+		UserID:    cl.UserID,
 		Title:     req.Title,
 		Issuer:    req.Issuer,
 		AwardedAt: d,
@@ -170,9 +167,16 @@ func DeleteHonor(c *gin.Context) {
 		common.Error(c, 40401, "记录不存在")
 		return
 	}
-	if h.UserID != cl.UserID {
-		common.Error(c, 40301, "无权操作")
-		return
+	if cl.ParentID == nil {
+		if !canAccessUser(c, h.UserID) {
+			common.Error(c, 40301, "无权操作")
+			return
+		}
+	} else {
+		if h.UserID != cl.UserID {
+			common.Error(c, 40301, "无权操作")
+			return
+		}
 	}
 	if err := db.DB().Delete(&h).Error; err != nil {
 		common.Error(c, 50003, "删除失败")

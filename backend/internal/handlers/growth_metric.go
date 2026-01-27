@@ -33,12 +33,17 @@ func ListGrowthMetricRecords(c *gin.Context) {
 		common.Error(c, 40100, "未登录")
 		return
 	}
+	ids, err := readableUserIDs(cl)
+	if err != nil {
+		common.Error(c, 50001, "查询失败")
+		return
+	}
 	metricType := c.Query("type")
 	if metricType != "" && !growthMetricTypes[metricType] {
 		common.Error(c, 40001, "指标类型错误")
 		return
 	}
-	q := db.DB().Model(&models.GrowthMetricRecord{}).Where("user_id = ?", cl.UserID)
+	q := db.DB().Model(&models.GrowthMetricRecord{}).Where("user_id IN ?", ids)
 	if metricType != "" {
 		q = q.Where("metric_type = ?", metricType)
 	}
