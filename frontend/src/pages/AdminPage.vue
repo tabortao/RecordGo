@@ -11,6 +11,9 @@
           <div class="mt-1 text-2xl font-extrabold tracking-tight text-emerald-800 dark:text-emerald-200">{{ overview.today_logins }}</div>
         </div>
       </div>
+      <div class="mt-3 flex justify-end">
+        <el-button class="!rounded-xl" type="success" @click="router.push('/admin/login-stats')">查看登录统计</el-button>
+      </div>
     </SettingsCard>
 
     <SettingsCard title="用户列表" description="支持搜索用户名 / 昵称 / 邮箱">
@@ -37,6 +40,15 @@
           <el-table-column label="昵称" prop="nickname" min-width="140" />
           <el-table-column label="邮箱" prop="email" min-width="190" />
           <el-table-column label="电话" prop="phone" min-width="130" />
+          <el-table-column label="活跃标记" width="140">
+            <template #default="{ row }">
+              <div class="flex items-center gap-1">
+                <el-tag v-if="row.login_today" type="success" effect="dark">今</el-tag>
+                <el-tag v-if="row.inactive_30d" type="info">30天未登</el-tag>
+                <span v-if="!row.login_today && !row.inactive_30d" class="text-xs text-gray-400">-</span>
+              </div>
+            </template>
+          </el-table-column>
           <el-table-column label="VIP" width="96">
             <template #default="{ row }">
               <el-tag v-if="row.is_lifetime_vip" type="success">终身</el-tag>

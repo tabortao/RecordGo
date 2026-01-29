@@ -189,7 +189,8 @@ const router = createRouter({
     { path: '/settings/appearance', name: 'SettingsAppearance', component: () => import('@/pages/SettingsAppearancePage.vue'), meta: { noNav: true } }
     ,
     // 管理后台页面，仅允许用户ID=1访问
-    { path: '/admin', name: 'Admin', component: () => import('@/pages/AdminPage.vue'), meta: { noNav: true } }
+    { path: '/admin', name: 'Admin', component: () => import('@/pages/AdminPage.vue'), meta: { noNav: true } },
+    { path: '/admin/login-stats', name: 'AdminLoginStats', component: () => import('@/pages/AdminLoginStatsPage.vue'), meta: { noNav: true } }
   ]
 })
 
@@ -232,7 +233,7 @@ router.beforeEach(async (to) => {
     return { path: '/tasks' }
   }
   // 管理后台访问控制：仅允许用户ID=1
-  if (to.path === '/admin') {
+  if (to.path === '/admin' || to.path.startsWith('/admin/')) {
     const id = Number((auth.user as any)?.id || 0)
     if (id !== 1) {
       try { ElMessage.warning('仅管理员可访问该页面') } catch {}

@@ -29,7 +29,8 @@ func Init(cfg *config.Config, lg *zap.Logger) (*gorm.DB, error) {
 		&models.DictationWordBank{}, &models.DictationSettings{}, &models.DictationHistory{}, &models.MistakeNotebook{},
 		&models.GrowthRecord{}, &models.GrowthTag{}, &models.GrowthComment{}, &models.GrowthMetricRecord{},
 		&models.Honor{}, &models.ScoreRecord{},
-		&models.CourseDict{}, &models.Timetable{}, &models.TimetableConfig{}); err != nil {
+		&models.CourseDict{}, &models.Timetable{}, &models.TimetableConfig{},
+		&models.UserDailyLogin{}); err != nil {
 		return nil, err
 	}
 

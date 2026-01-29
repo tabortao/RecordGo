@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -12,13 +13,31 @@ import (
 	"recordgo/internal/models"
 )
 
+var (
+	cachedCfg     *config.Config
+	cachedCfgErr  error
+	cachedCfgOnce sync.Once
+)
+
+func getCachedConfig() (*config.Config, error) {
+	cachedCfgOnce.Do(func() {
+		cachedCfg, cachedCfgErr = config.Load()
+	})
+	return cachedCfg, cachedCfgErr
+}
+
 // 中文注释：从 Authorization 中解析 JWT Claims；失败返回 nil
 func extractClaims(c *gin.Context) *Claims {
+	if v, ok := c.Get("rg:claims"); ok {
+		if cl, ok2 := v.(*Claims); ok2 {
+			return cl
+		}
+	}
 	auth := c.Request.Header.Get("Authorization")
 	if strings.HasPrefix(strings.ToLower(auth), "bearer ") {
 		tokenStr := strings.TrimSpace(auth[7:])
-		cfg, err := config.Load()
-		if err != nil || cfg.SecretKey == "" {
+		cfg, err := getCachedConfig()
+		if err != nil || cfg == nil || cfg.SecretKey == "" {
 			return nil
 		}
 		claims := &Claims{}
@@ -36,6 +55,7 @@ func extractClaims(c *gin.Context) *Claims {
 					return nil
 				}
 			}
+			c.Set("rg:claims", claims)
 			return claims
 		}
 	}

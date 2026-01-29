@@ -6,6 +6,7 @@ import (
 	"recordgo/internal/common"
 	"recordgo/internal/db"
 	"recordgo/internal/models"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,13 +24,65 @@ func AdminUsersOverview(c *gin.Context) {
 		common.Error(c, 50001, "统计失败")
 		return
 	}
-	start := time.Now().Truncate(24 * time.Hour)
 	var today int64
-	if err := db.DB().Model(&models.User{}).Where("last_login_time >= ?", start).Count(&today).Error; err != nil {
+	day := time.Now().Format("2006-01-02")
+	if err := db.DB().Model(&models.UserDailyLogin{}).Where("day = ?", day).Count(&today).Error; err != nil {
 		common.Error(c, 50002, "统计失败")
 		return
 	}
 	common.Ok(c, gin.H{"total_users": total, "today_logins": today})
+}
+
+func AdminLoginStats(c *gin.Context) {
+	if !requireAdmin(c) {
+		return
+	}
+
+	rangeDays := 7
+	if v := strings.TrimSpace(c.Query("range")); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			rangeDays = n
+		}
+	}
+	if rangeDays != 7 && rangeDays != 30 && rangeDays != 365 {
+		rangeDays = 7
+	}
+
+	now := time.Now()
+	endDay := now.Format("2006-01-02")
+	startTime := now.AddDate(0, 0, -(rangeDays - 1))
+	startDay := startTime.Format("2006-01-02")
+
+	type row struct {
+		Day   string `gorm:"column:day"`
+		Count int64  `gorm:"column:count"`
+	}
+	var rows []row
+	if err := db.DB().Model(&models.UserDailyLogin{}).
+		Select("day, COUNT(*) as count").
+		Where("day >= ? AND day <= ?", startDay, endDay).
+		Group("day").
+		Order("day ASC").
+		Scan(&rows).Error; err != nil {
+		common.Error(c, 50003, "统计失败")
+		return
+	}
+	countMap := make(map[string]int64, len(rows))
+	for _, r := range rows {
+		countMap[r.Day] = r.Count
+	}
+
+	items := make([]gin.H, 0, rangeDays)
+	for i := 0; i < rangeDays; i++ {
+		day := startTime.AddDate(0, 0, i).Format("2006-01-02")
+		items = append(items, gin.H{"day": day, "count": countMap[day]})
+	}
+	common.Ok(c, gin.H{
+		"range_days": rangeDays,
+		"start_day":  startDay,
+		"end_day":    endDay,
+		"items":      items,
+	})
 }
 
 // AdminListUsers 用户列表，支持搜索
@@ -48,6 +101,30 @@ func AdminListUsers(c *gin.Context) {
 		common.Error(c, 50010, "查询失败")
 		return
 	}
+
+	ids := make([]uint, 0, len(users))
+	for _, u := range users {
+		if u.ID != 0 {
+			ids = append(ids, u.ID)
+		}
+	}
+	todayDay := time.Now().Format("2006-01-02")
+	start30Day := time.Now().AddDate(0, 0, -29).Format("2006-01-02")
+	todayMap := map[uint]bool{}
+	active30Map := map[uint]bool{}
+	if len(ids) > 0 {
+		var todayIDs []uint
+		_ = db.DB().Model(&models.UserDailyLogin{}).Where("day = ? AND user_id IN ?", todayDay, ids).Pluck("user_id", &todayIDs).Error
+		for _, id := range todayIDs {
+			todayMap[id] = true
+		}
+		var active30IDs []uint
+		_ = db.DB().Model(&models.UserDailyLogin{}).Distinct("user_id").Where("day >= ? AND user_id IN ?", start30Day, ids).Pluck("user_id", &active30IDs).Error
+		for _, id := range active30IDs {
+			active30Map[id] = true
+		}
+	}
+
 	// 精简返回字段
 	list := make([]gin.H, 0, len(users))
 	for _, u := range users {
@@ -57,6 +134,8 @@ func AdminListUsers(c *gin.Context) {
 			"nickname": u.Nickname,
 			"email":    u.Email,
 			"phone":    u.Phone,
+			"login_today":   todayMap[u.ID],
+			"inactive_30d":  !active30Map[u.ID],
 			"is_vip":   u.IsVIP,
 			"vip_expire_time": func() any {
 				if u.VIPExpireTime != nil {

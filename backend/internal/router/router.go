@@ -48,6 +48,8 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 		c.Next()
 	})
 
+	r.Use(handlers.AuthContextMiddleware())
+
 	// 中文注释：静态文件服务（上传图片），映射到 /api/uploads
 	r.Static("/api/uploads", filepath.Join(cfg.StorageRoot, "uploads"))
 
@@ -130,6 +132,7 @@ func New(cfg *config.Config, lg *zap.Logger) *gin.Engine {
 
 		// 管理员后台接口（仅用户ID=1允许）
 		api.GET("/admin/overview", handlers.AdminUsersOverview)
+		api.GET("/admin/login-stats", handlers.AdminLoginStats)
 		api.GET("/admin/users", handlers.AdminListUsers)
 		api.POST("/admin/users/:id/vip", handlers.AdminUpdateVIP)
 		api.POST("/admin/users/:id/reset-password", handlers.AdminResetPassword)

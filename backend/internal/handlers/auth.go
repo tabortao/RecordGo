@@ -133,6 +133,7 @@ func Login(c *gin.Context) {
 	// 记录最后登录时间
 	now := time.Now()
 	_ = db.DB().Model(&u).Updates(map[string]any{"last_login_time": now}).Error
+	_ = recordDailyLogin(u.ID, now)
 	// 生成 JWT
 	cfg, _ := config.Load()
 	// 中文注释：若为子账号，将当前 LoginToken 注入 JWT 用于后续校验；父账号为空字符串

@@ -60,6 +60,7 @@ func TokenLogin(c *gin.Context) {
         common.Error(c, 40303, "令牌已过期")
         return
     }
+    _ = recordDailyLogin(u.ID, time.Now())
     // 中文注释：计算返回的金币值——若启用了父子金币同步，则使用父账号金币
     coinsToReturn := u.Coins
     cfg2, _ := config.Load()
