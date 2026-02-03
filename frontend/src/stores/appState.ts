@@ -15,6 +15,8 @@ export interface TomatoState {
   endAtMs?: number | null
   // 中文注释：是否启用保持常亮（Wake Lock），移动端默认开启
   keepAwakeEnabled: boolean
+  countdownEndText: string
+  countdownEndSpeakEnabled: boolean
 }
 
 export interface Permissions {
@@ -102,7 +104,9 @@ const DEFAULT_STATE: AppState = {
     currentTaskId: null,
     startAtMs: null,
     endAtMs: null,
-    keepAwakeEnabled: true
+    keepAwakeEnabled: true,
+    countdownEndText: '倒计时结束，宝贝，休息会儿吧！',
+    countdownEndSpeakEnabled: true
   },
   speech: {
     enabled: true,

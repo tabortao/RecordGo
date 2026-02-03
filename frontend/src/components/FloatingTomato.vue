@@ -26,8 +26,35 @@ import router from '@/router'
 import { useAppState } from '@/stores/appState'
 import { completeTomato, updateTaskStatus } from '@/services/tasks'
 import { ElMessage } from 'element-plus'
+import { speak } from '@/utils/speech'
+import JingleBellUrl from '@/assets/audio/JingleBell.mp3'
 
 const store = useAppState()
+
+function playBell(): Promise<void> {
+  return new Promise((resolve) => {
+    try {
+      const audio = new Audio(JingleBellUrl)
+      let done = false
+      const finish = () => { if (!done) { done = true; resolve() } }
+      audio.onended = finish
+      audio.onerror = finish
+      const p = audio.play()
+      if (p && typeof (p as any).catch === 'function') (p as any).catch(finish)
+    } catch {
+      resolve()
+    }
+  })
+}
+
+async function playEndCue() {
+  await playBell().catch(() => {})
+  const text = (store.tomato.countdownEndText || '').trim()
+  if (!store.tomato.countdownEndSpeakEnabled) return
+  if (store.speech.enabled && text) {
+    speak(text, { voiceURI: store.speech.voiceURI || undefined, rate: store.speech.rate, pitch: store.speech.pitch }).catch(() => {})
+  }
+}
 let t: any = null
 let finishedOnce = false
 const ballRef = ref<HTMLElement | null>(null)
@@ -72,6 +99,7 @@ function tick() {
     store.updateTomato({ remainingSeconds: next })
     if (next <= 0 && !finishedOnce) {
       finishedOnce = true
+      playEndCue().catch(() => {})
       finalizeCountdown().finally(() => {
         store.updateTomato({ running: false, showFloating: false, startAtMs: null, endAtMs: null, runningMode: null })
         if (t) { clearInterval(t); t = null }

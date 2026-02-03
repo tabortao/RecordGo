@@ -26,6 +26,18 @@
       </template>
     </SettingsCard>
 
+    <SettingsCard title="倒计时结束提示语" description="倒计时自然结束时将使用 TTS 播报该文本">
+      <template #right>
+        <el-switch v-model="countdownEndSpeakEnabled" />
+      </template>
+      <el-input
+        v-model="countdownEndText"
+        type="textarea"
+        :rows="3"
+        placeholder="例如：倒计时结束，宝贝，休息会儿吧！"
+      />
+    </SettingsCard>
+
     <SettingsCard>
       <div class="flex justify-end gap-2">
         <el-button class="!rounded-xl" @click="cancel">取消</el-button>
@@ -48,6 +60,8 @@ const mode = ref(store.tomato.mode)
 const duration = ref(store.tomato.durationMinutes)
 const fixed = ref(store.tomato.fixedTomatoPage)
 const keepAwake = ref(store.tomato.keepAwakeEnabled)
+const countdownEndText = ref(store.tomato.countdownEndText)
+const countdownEndSpeakEnabled = ref(store.tomato.countdownEndSpeakEnabled)
 
 function cancel() {
   // 中文注释：取消不保存设置，关闭页面
@@ -61,7 +75,9 @@ function confirm() {
     runningMode: null,
     durationMinutes: duration.value,
     fixedTomatoPage: fixed.value,
-    keepAwakeEnabled: keepAwake.value
+    keepAwakeEnabled: keepAwake.value,
+    countdownEndText: countdownEndText.value,
+    countdownEndSpeakEnabled: countdownEndSpeakEnabled.value
   })
   router.back()
 }

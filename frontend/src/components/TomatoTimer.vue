@@ -102,12 +102,39 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useAppState } from '@/stores/appState'
+import { speak } from '@/utils/speech'
+import JingleBellUrl from '@/assets/audio/JingleBell.mp3'
 import { RefreshRight } from '@element-plus/icons-vue'
 
 // 中文注释：新增 taskId，便于悬浮球返回到独立番茄钟页面
 const props = defineProps<{ workMinutes?: number; breakMinutes?: number; taskName?: string; taskRemark?: string; taskId?: number }>()
 const emit = defineEmits<{ (e: 'complete', seconds: number): void }>()
 const store = useAppState()
+
+function playBell(): Promise<void> {
+  return new Promise((resolve) => {
+    try {
+      const audio = new Audio(JingleBellUrl)
+      let done = false
+      const finish = () => { if (!done) { done = true; resolve() } }
+      audio.onended = finish
+      audio.onerror = finish
+      const p = audio.play()
+      if (p && typeof (p as any).catch === 'function') (p as any).catch(finish)
+    } catch {
+      resolve()
+    }
+  })
+}
+
+async function playEndCue() {
+  await playBell().catch(() => {})
+  const text = (store.tomato.countdownEndText || '').trim()
+  if (!store.tomato.countdownEndSpeakEnabled) return
+  if (store.speech.enabled && text) {
+    speak(text, { voiceURI: store.speech.voiceURI || undefined, rate: store.speech.rate, pitch: store.speech.pitch }).catch(() => {})
+  }
+}
 
 const workM = computed(() => props.workMinutes ?? store.tomato.durationMinutes ?? 20)
 const breakM = computed(() => props.breakMinutes ?? 5)
@@ -233,6 +260,7 @@ function tick() {
     if (remaining.value <= 0) {
       stopInternal()
       if (phase.value === 'work') {
+        playEndCue().catch(() => {})
         emit('complete', workM.value * 60)
         phase.value = 'break'
         remaining.value = breakM.value * 60
