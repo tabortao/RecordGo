@@ -55,6 +55,10 @@
             <template #label><div class="flex items-center gap-1"><el-icon><Coin /></el-icon><span>任务金币</span></div></template>
             <el-input-number v-model="form.score" :min="-10" :max="10" />
           </el-form-item>
+          <el-form-item prop="daily_max_checkins">
+            <template #label><div class="flex items-center gap-1"><el-icon><List /></el-icon><span>每日上限</span></div></template>
+            <el-input-number v-model="form.daily_max_checkins" :min="1" :max="20" />
+          </el-form-item>
           <el-form-item prop="repeat_type">
             <template #label><div class="flex items-center gap-1"><el-icon><List /></el-icon><span>重复类型</span></div></template>
             <el-select v-model="form.repeat_type" placeholder="选择重复类型" style="width: 100%">
@@ -125,6 +129,7 @@ type FormModel = {
   description: string
   category: string
   score: number
+  daily_max_checkins: number
   plan_minutes: number
   start_date: Date
   end_date?: Date
@@ -136,6 +141,7 @@ type FormModel = {
 const formRef = ref()
 const form = reactive<FormModel>({
   name: '', description: '', category: '语文', score: 1, plan_minutes: 20,
+  daily_max_checkins: 1,
   start_date: new Date(), end_date: undefined,
   images: [], local_images: [], repeat_type: 'none', weekly_days: []
 })
@@ -155,6 +161,7 @@ onMounted(async () => {
     form.description = t.description
     form.category = t.category
     form.score = t.score
+    form.daily_max_checkins = Number((t as any).daily_max_checkins ?? 1)
     form.plan_minutes = t.plan_minutes
     form.start_date = new Date(t.start_date)
     form.end_date = t.end_date ? new Date(t.end_date) : undefined
@@ -174,6 +181,7 @@ async function submitForm() {
       description: form.description,
       category: form.category,
       score: form.score,
+      daily_max_checkins: form.daily_max_checkins,
       plan_minutes: form.plan_minutes,
       start_date: form.start_date,
       end_date: form.end_date,

@@ -121,6 +121,12 @@
                 </template>
                 <el-input-number v-model="form.score" :min="-10" :max="10" size="large" />
               </el-form-item>
+              <el-form-item prop="daily_max_checkins">
+                <template #label>
+                  <div class="flex items-center gap-1"><el-icon><List /></el-icon><span>每日上限</span></div>
+                </template>
+                <el-input-number v-model="form.daily_max_checkins" :min="1" :max="20" size="large" />
+              </el-form-item>
               <el-form-item prop="repeat_type">
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><List /></el-icon><span>重复类型</span></div>
@@ -348,6 +354,7 @@ type FormModel = {
   description: string
   category: string
   score: number
+  daily_max_checkins: number
   plan_minutes: number
   start_date: Date
   end_date?: Date
@@ -359,6 +366,7 @@ type FormModel = {
 const formRefInstance = ref<InstanceType<typeof ElForm>>()
 const form = reactive<FormModel>({
   name: '', description: '', category: '语文', score: 1, plan_minutes: 20,
+  daily_max_checkins: 1,
   start_date: new Date(), end_date: undefined,
   images: [], local_images: [], repeat_type: 'none', weekly_days: []
 })
@@ -392,6 +400,7 @@ async function submitForm() {
       description: form.description,
       category: form.category,
       score: form.score,
+      daily_max_checkins: form.daily_max_checkins,
       plan_minutes: form.plan_minutes,
       start_date: start,
       end_date: end,
@@ -433,6 +442,7 @@ async function submitForm() {
         description: form.description,
         category: form.category,
         score: form.score,
+        daily_max_checkins: form.daily_max_checkins,
         plan_minutes: form.plan_minutes,
         start_date: new Date(form.start_date).toISOString(),
         end_date: form.end_date ? new Date(form.end_date).toISOString() : undefined,
@@ -594,6 +604,7 @@ async function submitAITasks() {
           description: task.description,
           category: task.category,
           score: task.score,
+          daily_max_checkins: 1,
           plan_minutes: task.plan_minutes,
           start_date: new Date(task.start_date || new Date()),
           end_date: task.end_date ? new Date(task.end_date) : undefined,

@@ -177,9 +177,9 @@
             <div class="absolute left-2 top-1/2 -translate-y-1/2">
               <div
                 class="w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer"
-                :class="isCompletedOnSelected(t) ? 'bg-green-500 border-green-500 text-white' : 'border-gray-400 dark:border-gray-500 text-gray-400 dark:text-gray-500'"
-                @click="() => onCheckComplete(t, !isCompletedOnSelected(t))"
-                title="点击切换完成状态"
+                :class="getCheckCircleClass(t)"
+                @click.stop="() => onCheckinClick(t)"
+                title="点击打卡"
               >
                 <el-icon :size="12">
                   <CircleCheck />
@@ -204,8 +204,19 @@
                   <!-- 番茄钟图标仅未完成时显示 -->
                   <img v-if="!isCompletedOnSelected(t)" src="@/assets/tomato.png" alt="番茄钟" class="w-4 h-4 cursor-pointer" @click="openTomato(t)" />
                   <!-- 状态标签 -->
-                  <el-tag v-if="!isCompletedOnSelected(t)" type="danger" size="small">待完成</el-tag>
-                  <el-tag v-else type="success" size="small">已完成</el-tag>
+                  <template v-if="useOccurrenceTracking(t) && getDailyMaxCheckins(t) > 1">
+                    <el-tag v-if="getTodayCheckinsCount(t) === 0" type="danger" size="small">待完成</el-tag>
+                    <el-tag v-else-if="getTodayCheckinsCount(t) < getDailyMaxCheckins(t)" type="warning" size="small">
+                      {{ getTodayCheckinsCount(t) }}/{{ getDailyMaxCheckins(t) }}次
+                    </el-tag>
+                    <el-tag v-else type="success" size="small">
+                      {{ getDailyMaxCheckins(t) }}/{{ getDailyMaxCheckins(t) }}次
+                    </el-tag>
+                  </template>
+                  <template v-else>
+                    <el-tag v-if="!isCompletedOnSelected(t)" type="danger" size="small">待完成</el-tag>
+                    <el-tag v-else type="success" size="small">已完成</el-tag>
+                  </template>
                 </div>
                 <el-dropdown trigger="click" @command="(cmd: string)=>onMenu(cmd, t)">
                   <span class="el-dropdown-link">
@@ -689,19 +700,53 @@ async function onTouchEnd() {
 const store = useAppState()
 // 中文注释：总金币改为直接读取全局 store.coins（由后端任务完成/取消与心愿兑换实时更新），与心愿页保持一致
 const totalCoins = computed(() => store.coins)
-const occurMap = ref<Record<number, { status: number; minutes?: number }>>({})
+const occurMap = ref<Record<number, { status: number; minutes?: number; checkins_count?: number }>>({})
 function isRepeatTask(t: TaskItem) {
   const rep = String((t as any).repeat || (t as any).repeat_type || 'none').trim().toLowerCase()
   const type = /^(daily|weekdays|weekly|monthly)$/.test(rep) ? rep : 'none'
   // 中文注释：只要设置了重复类型，即视为重复任务（无论是否设置截止日期），确保点击完成时调用 completeOccurrence 而非修改主状态
   return type !== 'none'
 }
+function getDailyMaxCheckins(t: TaskItem) {
+  const v = Number((t as any).daily_max_checkins ?? 1)
+  return Number.isFinite(v) && v > 1 ? Math.floor(v) : 1
+}
+function useOccurrenceTracking(t: TaskItem) {
+  return isRepeatTask(t) || getDailyMaxCheckins(t) > 1
+}
+
+async function onCheckinClick(t: TaskItem) {
+  if (useOccurrenceTracking(t) && getDailyMaxCheckins(t) > 1) {
+    const max = getDailyMaxCheckins(t)
+    const cnt = getTodayCheckinsCount(t)
+    if (cnt >= max) {
+      ElMessage.warning('今日已达上限，不能再继续了')
+      return
+    }
+    await onCheckComplete(t, true)
+    return
+  }
+  await onCheckComplete(t, !isCompletedOnSelected(t))
+}
+function getTodayCheckinsCount(t: TaskItem) {
+  if (!useOccurrenceTracking(t)) return t.status === 2 ? 1 : 0
+  const occ = occurMap.value[t.id]
+  let n = Number(occ?.checkins_count ?? 0)
+  if ((!Number.isFinite(n) || n < 0) && (occ?.status || 0) === 2) n = 1
+  if (n === 0 && (occ?.status || 0) === 2) n = 1
+  return n
+}
+function getCheckCircleClass(t: TaskItem) {
+  if (isCompletedOnSelected(t)) return 'bg-green-500 border-green-500 text-white'
+  if (useOccurrenceTracking(t) && getDailyMaxCheckins(t) > 1 && getTodayCheckinsCount(t) > 0) return 'bg-amber-500 border-amber-500 text-white'
+  return 'border-gray-400 dark:border-gray-500 text-gray-400 dark:text-gray-500'
+}
 function isCompletedOnSelected(t: TaskItem) {
-  if (isRepeatTask(t)) return (occurMap.value[t.id]?.status || 0) === 2
+  if (useOccurrenceTracking(t)) return getTodayCheckinsCount(t) >= getDailyMaxCheckins(t)
   return t.status === 2
 }
 function getActualSeconds(t: TaskItem): number {
-  if (isRepeatTask(t)) {
+  if (useOccurrenceTracking(t)) {
     const m = occurMap.value[t.id]?.minutes || 0
     if (m > 0) return m * 60
     return (t.plan_minutes || 0) * 60
@@ -713,7 +758,10 @@ const completedTasksCount = computed(() => {
   return filteredTasks.value.filter((t) => isCompletedOnSelected(t)).length
 })
 const dayCoins = computed(() => {
-  return filteredTasks.value.filter((t) => isCompletedOnSelected(t)).reduce((sum, t) => sum + (t.score || 0), 0)
+  return filteredTasks.value.reduce((sum, t) => {
+    if (useOccurrenceTracking(t)) return sum + (t.score || 0) * getTodayCheckinsCount(t)
+    return sum + (isCompletedOnSelected(t) ? (t.score || 0) : 0)
+  }, 0)
 })
 
 // 中文注释：朗读任务内容（格式："{任务分类}，{任务标题}，备注：{任务描述}"）
@@ -1232,10 +1280,20 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
       // 中文注释：勾选为完成：按计划时长计入实际，并标记为已完成
       const planM = t.plan_minutes || 20
       const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
-      if (isRepeatTask(t)) {
-        await completeOccurrence(t.id, { date: dateStr, minutes: planM })
-        occurMap.value[t.id] = { status: 2, minutes: planM }
-        ElMessage.success('已标记为当次完成')
+      if (useOccurrenceTracking(t)) {
+        const resp = await completeOccurrence(t.id, { date: dateStr, minutes: planM })
+        occurMap.value[t.id] = {
+          status: Number((resp as any).status ?? 0),
+          minutes: Number((resp as any).minutes ?? planM),
+          checkins_count: Number((resp as any).checkins_count ?? (((resp as any).status ?? 0) === 2 ? 1 : 0)),
+        }
+        const max = getDailyMaxCheckins(t)
+        const cnt = getTodayCheckinsCount(t)
+        if (max > 1) {
+          ElMessage.success(`已完成 ${cnt}/${max} 次`)
+        } else {
+          ElMessage.success('已标记为当次完成')
+        }
       } else {
         await updateTask(t.id, { actual_minutes: planM })
         await updateTaskStatus(t.id, 2)
@@ -1244,14 +1302,25 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
         actualSecondsLocal[t.id] = planM * 60
         ElMessage.success('已标记为完成（按计划时长计）')
       }
-      celebrate(t.id)
+      if (!useOccurrenceTracking(t) || isCompletedOnSelected(t)) {
+        celebrate(t.id)
+      }
     } else {
       // 中文注释：取消完成：标记为未完成，并从日金币与总金币中扣除该任务金币
       const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
-      if (isRepeatTask(t)) {
-        await uncompleteOccurrence(t.id, { date: dateStr })
-        occurMap.value[t.id] = { status: 0 }
-        ElMessage.success('已取消当次完成')
+      if (useOccurrenceTracking(t)) {
+        const resp = await uncompleteOccurrence(t.id, { date: dateStr })
+        const left = Number((resp as any).checkins_count ?? 0)
+        if (left > 0) {
+          occurMap.value[t.id] = {
+            status: Number((resp as any).status ?? 1),
+            minutes: occurMap.value[t.id]?.minutes,
+            checkins_count: left,
+          }
+        } else {
+          delete occurMap.value[t.id]
+        }
+        ElMessage.success('已撤销一次')
       } else {
         await updateTaskStatus(t.id, 0)
         t.status = 0
@@ -1345,7 +1414,7 @@ async function doDeleteCurrent(t: TaskItem) {
     if (isRepeatTask(t)) {
       const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
       await deleteOccurrence(t.id, { date: dateStr })
-      occurMap.value[t.id] = { status: -1 }
+      occurMap.value[t.id] = { status: -1, checkins_count: 0 }
       ElMessage.success('已删除当前日程')
       deleteDialogVisible.value = false
     } else {
@@ -1390,7 +1459,7 @@ async function doDeleteSeries(scope: 'future'|'all') {
     } else {
       const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
       await deleteOccurrence(target.id, { date: dateStr })
-      occurMap.value[target.id] = { status: -1 }
+      occurMap.value[target.id] = { status: -1, checkins_count: 0 }
       const cutoff = dayjs(selectedDate.value).subtract(1, 'day').toDate()
       await updateTask(target.id, { end_date: cutoff })
       ElMessage.success('已删除当前及未来日程')
@@ -1426,10 +1495,14 @@ async function onTomatoComplete(seconds?: number) {
     // 中文注释：按实际秒数精确展示，后端按分钟上报（四舍五入）；无秒数则按计划时长
     const usedSec = Math.max(1, seconds || (currentTask.value.plan_minutes || 20) * 60)
     const reportMinutes = Math.max(1, Math.round(usedSec / 60))
-    if (isRepeatTask(currentTask.value)) {
+    if (useOccurrenceTracking(currentTask.value)) {
       const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
-      await completeOccurrence(currentTask.value.id, { date: dateStr, minutes: reportMinutes })
-      occurMap.value[currentTask.value.id] = { status: 2, minutes: reportMinutes }
+      const resp = await completeOccurrence(currentTask.value.id, { date: dateStr, minutes: reportMinutes })
+      occurMap.value[currentTask.value.id] = {
+        status: Number((resp as any).status ?? 0),
+        minutes: Number((resp as any).minutes ?? reportMinutes),
+        checkins_count: Number((resp as any).checkins_count ?? (((resp as any).status ?? 0) === 2 ? 1 : 0)),
+      }
       actualSecondsLocal[currentTask.value.id] = usedSec
     } else {
       const updated = await completeTomato(currentTask.value.id, reportMinutes)
@@ -1442,7 +1515,9 @@ async function onTomatoComplete(seconds?: number) {
     // 中文注释：dayMinutes 已改为计算属性，无需手动赋值
     // dayMinutes.value = tasks.value.reduce((sum, x) => sum + (x.actual_minutes || 0), 0)
     ElMessage.success('番茄钟完成，数据已记录')
-    celebrate(currentTask.value.id)
+    if (!useOccurrenceTracking(currentTask.value) || isCompletedOnSelected(currentTask.value)) {
+      celebrate(currentTask.value.id)
+    }
     tomatoVisible.value = false
   } catch (e: any) {
     ElMessage.error(`番茄上报失败：${e.message || e}`)
@@ -1468,8 +1543,10 @@ async function fetchOccurrences() {
   try {
     const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
     const res = await listTaskOccurrences({ date: dateStr })
-    const map: Record<number, { status: number; minutes?: number }> = {}
-    for (const it of res.items || []) { map[it.task_id] = { status: it.status, minutes: it.minutes } }
+    const map: Record<number, { status: number; minutes?: number; checkins_count?: number }> = {}
+    for (const it of res.items || []) {
+      map[it.task_id] = { status: Number(it.status || 0), minutes: Number(it.minutes || 0), checkins_count: Number((it as any).checkins_count ?? 0) }
+    }
     occurMap.value = map
   } catch {}
 }

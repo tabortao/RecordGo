@@ -12,6 +12,7 @@ export interface TaskItem {
   description: string
   category: string
   score: number
+  daily_max_checkins?: number
   plan_minutes: number
   actual_minutes: number
   status: number
@@ -33,6 +34,7 @@ export async function listTasks(params?: { status?: number; page?: number; page_
     description: String(x.description ?? x.Description ?? ''),
     category: String(x.category ?? x.Category ?? ''),
     score: Number(x.score ?? x.Score ?? 0),
+    daily_max_checkins: Number(x.daily_max_checkins ?? x.DailyMaxCheckins ?? 1),
     plan_minutes: Number(x.plan_minutes ?? x.PlanMinutes ?? 0),
     actual_minutes: Number(x.actual_minutes ?? x.ActualMinutes ?? 0),
     status: Number(x.status ?? x.Status ?? 0),
@@ -148,13 +150,13 @@ export async function completeTomato(id: number, minutes = 25): Promise<TaskItem
   return (await http.post(`/tasks/${id}/tomato/complete`, { minutes })) as any
 }
 
-export async function listTaskOccurrences(params: { date?: string; start?: string; end?: string }): Promise<{ items: { task_id: number, date: string, status: number, minutes: number }[] }> {
+export async function listTaskOccurrences(params: { date?: string; start?: string; end?: string }): Promise<{ items: { task_id: number, date: string, status: number, minutes: number, checkins_count?: number }[] }> {
   return (await http.get('/tasks/occurrences', { params })) as any
 }
-export async function completeOccurrence(id: number, payload: { date: string; minutes?: number }): Promise<{ task_id: number, date: string, status: number, minutes: number }> {
+export async function completeOccurrence(id: number, payload: { date: string; minutes?: number }): Promise<{ task_id: number, date: string, status: number, minutes: number, checkins_count?: number, daily_max_checkins?: number }> {
   return (await http.post(`/tasks/${id}/occurrences/complete`, payload)) as any
 }
-export async function uncompleteOccurrence(id: number, payload: { date: string }): Promise<{ task_id: number, date: string, status: number }> {
+export async function uncompleteOccurrence(id: number, payload: { date: string }): Promise<{ task_id: number, date: string, status: number, checkins_count?: number, daily_max_checkins?: number }> {
   return (await http.post(`/tasks/${id}/occurrences/uncomplete`, payload)) as any
 }
 
@@ -202,6 +204,7 @@ type OfflineCreateEntry = {
   description: string
   category: string
   score: number
+  daily_max_checkins?: number
   plan_minutes: number
   start_date: string
   end_date?: string
@@ -248,6 +251,7 @@ export async function syncOfflineTasks(userId: number): Promise<{ synced: number
         description: q.description,
         category: q.category,
         score: q.score,
+        daily_max_checkins: Number((q as any).daily_max_checkins ?? 1),
         plan_minutes: q.plan_minutes,
         start_date: s,
         end_date: e,
