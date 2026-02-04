@@ -52,31 +52,34 @@ export function normalizeUploadPath(p?: string): string {
   return s
 }
 
+function normalizeWish(x: any): Wish {
+  return {
+    id: Number(x.ID ?? x.id),
+    user_id: Number(x.UserID ?? x.user_id),
+    name: x.Name ?? x.name ?? '',
+    content: x.Content ?? x.content ?? '',
+    icon: (() => {
+      const raw = x.Icon ?? x.icon
+      if (!raw) return ''
+      const str = String(raw)
+      if (!str.includes('/') && !str.includes('\\')) return str
+      return normalizeUploadPath(str)
+    })(),
+    need_coins: Number(x.NeedCoins ?? x.need_coins ?? 1),
+    exchange_amount: Number(x.ExchangeAmount ?? x.exchange_amount ?? 1),
+    unit: x.Unit ?? x.unit ?? '次',
+    exchanged: Number(x.Exchanged ?? x.exchanged ?? 0),
+    built_in: Boolean(x.BuiltIn ?? x.built_in ?? false)
+  }
+}
+
 // 列表心愿
 export async function listWishes(userId: number): Promise<Wish[]> {
   // 中文注释：按用户ID查询心愿列表；后端返回模型字段为大写驼峰（如 NeedCoins），此处统一映射为前端使用的下划线命名，确保页面显示与表单绑定不为空
   const raw = await http.get(`/wishes`, { params: { user_id: userId } } as any)
   // 中文注释：若后端直接返回数组，则进行字段归一化；否则直接返回
   if (Array.isArray(raw)) {
-    return raw.map((x: any) => ({
-      id: Number(x.ID ?? x.id),
-      user_id: Number(x.UserID ?? x.user_id),
-      name: x.Name ?? x.name ?? '',
-      content: x.Content ?? x.content ?? '',
-      icon: (() => {
-        const raw = x.Icon ?? x.icon
-        if (!raw) return ''
-        const str = String(raw)
-        // 内置图标文件名（无斜杠）保留原样；否则规范化为 uploads 相对路径
-        if (!str.includes('/') && !str.includes('\\')) return str
-        return normalizeUploadPath(str)
-      })(),
-      need_coins: Number(x.NeedCoins ?? x.need_coins ?? 1),
-      exchange_amount: Number(x.ExchangeAmount ?? x.exchange_amount ?? 1),
-      unit: x.Unit ?? x.unit ?? '次',
-      exchanged: Number(x.Exchanged ?? x.exchanged ?? 0),
-      built_in: Boolean(x.BuiltIn ?? x.built_in ?? false)
-    }))
+    return raw.map(normalizeWish)
   }
   return raw as Wish[]
 }
@@ -103,7 +106,12 @@ export async function exchangeWish(id: number, userId: number, count = 1, remark
   if (remark && remark.trim()) payload.remark = remark.trim()
   const resp = await http.post(`/wishes/${id}/exchange`, payload)
   // 中文注释：后端返回 { wish, user_coins, record }，此处明确类型，避免 AxiosResponse 类型干扰
-  return resp as { wish: Wish; user_coins: number; record: WishRecord }
+  const raw = resp as any
+  return {
+    wish: raw?.wish ? normalizeWish(raw.wish) : raw?.wish,
+    user_coins: Number(raw?.user_coins ?? raw?.userCoins ?? 0),
+    record: raw?.record as WishRecord
+  } as { wish: Wish; user_coins: number; record: WishRecord }
 }
 
 // 兑换记录
@@ -140,9 +148,7 @@ export async function uploadWishIcon(userId: number, file: File) {
 // 中文注释：获取单个心愿详情（编辑页面使用）
 export async function getWish(id: number): Promise<Wish> {
   const w = await http.get(`/wishes/${id}`)
-  // 规范化返回的 icon 字段
-  const icon = normalizeUploadPath((w as any)?.Icon ?? (w as any)?.icon)
-  return { ...(w as any), icon }
+  return normalizeWish(w as any)
 }
 
 // 统一到 utils/image.prepareUpload
