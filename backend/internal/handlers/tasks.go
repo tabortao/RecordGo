@@ -27,6 +27,7 @@ type CreateTaskReq struct {
 	Category         string     `json:"category"`
 	Score            int        `json:"score"`
 	ScoreMode        string     `json:"score_mode"`
+	CustomScoreMax   int        `json:"custom_score_max"`
 	DailyMaxCheckins int        `json:"daily_max_checkins"`
 	PlanMinutes      int        `json:"plan_minutes"`
 	StartDate        time.Time  `json:"start_date"`
@@ -43,6 +44,7 @@ type UpdateTaskReq struct {
 	Category         *string     `json:"category"`
 	Score            *int        `json:"score"`
 	ScoreMode        *string     `json:"score_mode"`
+	CustomScoreMax   *int        `json:"custom_score_max"`
 	DailyMaxCheckins *int        `json:"daily_max_checkins"`
 	PlanMinutes      *int        `json:"plan_minutes"`
 	ActualMinutes    *int        `json:"actual_minutes"`
@@ -118,12 +120,20 @@ func CreateTask(c *gin.Context) {
 	if maxCheckins < 1 {
 		maxCheckins = 1
 	}
+	maxCustom := req.CustomScoreMax
+	if maxCustom <= 0 {
+		maxCustom = 5
+	}
+	if maxCustom > 10 {
+		maxCustom = 10
+	}
 	t := models.Task{
 		UserID:           req.UserID,
 		Name:             req.Name,
 		Description:      req.Description,
 		Category:         req.Category,
 		Score:            req.Score,
+		CustomScoreMax:   maxCustom,
 		DailyMaxCheckins: maxCheckins,
 		PlanMinutes:      req.PlanMinutes,
 		StartDate:        s,
@@ -316,6 +326,16 @@ func UpdateTask(c *gin.Context) {
 			t.ScoreMode = "fixed"
 		}
 	}
+	if req.CustomScoreMax != nil {
+		v := *req.CustomScoreMax
+		if v <= 0 {
+			v = 5
+		}
+		if v > 10 {
+			v = 10
+		}
+		t.CustomScoreMax = v
+	}
 	if t.ScoreMode == "custom" {
 		t.Score = 0
 	}
@@ -445,10 +465,20 @@ func UpdateStatus(c *gin.Context) {
 		} else if prev != 2 && next == 2 {
 			award := t.Score
 			if strings.ToLower(strings.TrimSpace(t.ScoreMode)) == "custom" {
-				award = 0
-				if req.CustomCoins != nil {
-					award = *req.CustomCoins
+				if req.CustomCoins == nil {
+					return newBizError(40003, "缺少自定义金币")
 				}
+				max := t.CustomScoreMax
+				if max <= 0 {
+					max = 5
+				}
+				if max > 10 {
+					max = 10
+				}
+				if *req.CustomCoins < 1 || *req.CustomCoins > max {
+					return newBizError(40003, "自定义金币超出上限")
+				}
+				award = *req.CustomCoins
 			}
 			target.Coins += int64(award)
 			t.CompletedScore = award

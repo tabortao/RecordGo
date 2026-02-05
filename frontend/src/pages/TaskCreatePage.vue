@@ -100,8 +100,14 @@
                     <el-radio-button label="custom">完成时自定义</el-radio-button>
                   </el-radio-group>
                   <el-input-number v-if="form.score_mode === 'fixed'" v-model="form.score" :min="-10" :max="10" size="large" />
-                  <div v-else class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                    完成时会弹窗选择 1-10 或自定义输入
+                  <div v-else class="space-y-2">
+                    <div class="flex items-center gap-3">
+                      <div class="text-xs font-semibold text-gray-700 dark:text-gray-200">自定义金币上限</div>
+                      <el-input-number v-model="form.custom_score_max" :min="1" :max="10" size="large" />
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                      完成任务时仅可选择 1-{{ form.custom_score_max }}，不提供其他输入方式
+                    </div>
                   </div>
                 </div>
               </el-form-item>
@@ -266,8 +272,14 @@
                                 <el-option label="完成时自定义" value="custom" />
                               </el-select>
                               <el-input-number v-if="(task as any).score_mode !== 'custom'" v-model="task.score" :min="-10" :max="10" style="width: 100%" />
-                              <div v-else class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                                完成时自定义
+                              <div v-else class="space-y-2">
+                                <div class="flex items-center gap-2">
+                                  <div class="text-xs font-semibold text-gray-700 dark:text-gray-200 shrink-0">上限</div>
+                                  <el-input-number v-model="(task as any).custom_score_max" :min="1" :max="10" style="width: 100%" />
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                                  完成时仅可选择 1-{{ (task as any).custom_score_max || 5 }}
+                                </div>
                               </div>
                             </div>
                          </el-form-item>
@@ -345,6 +357,7 @@ type FormModel = {
   category: string
   score: number
   score_mode: 'fixed' | 'custom'
+  custom_score_max: number
   daily_max_checkins: number
   plan_minutes: number
   start_date: Date
@@ -356,7 +369,7 @@ type FormModel = {
 }
 const formRefInstance = ref<InstanceType<typeof ElForm>>()
 const form = reactive<FormModel>({
-  name: '', description: '', category: '语文', score: 1, score_mode: 'fixed', plan_minutes: 20,
+  name: '', description: '', category: '语文', score: 1, score_mode: 'fixed', custom_score_max: 5, plan_minutes: 20,
   daily_max_checkins: 1,
   start_date: new Date(), end_date: undefined,
   images: [], local_images: [], repeat_type: 'none', weekly_days: []
@@ -392,6 +405,7 @@ async function submitForm() {
       category: form.category,
       score: form.score_mode === 'fixed' ? form.score : 0,
       score_mode: form.score_mode,
+      custom_score_max: form.custom_score_max,
       daily_max_checkins: form.daily_max_checkins,
       plan_minutes: form.plan_minutes,
       start_date: start,
@@ -435,6 +449,7 @@ async function submitForm() {
         category: form.category,
         score: form.score_mode === 'fixed' ? form.score : 0,
         score_mode: form.score_mode,
+        custom_score_max: form.custom_score_max,
         daily_max_checkins: form.daily_max_checkins,
         plan_minutes: form.plan_minutes,
         start_date: new Date(form.start_date).toISOString(),
@@ -564,7 +579,7 @@ async function handleAIParse() {
 
     const res = await parseTaskByAI(finalText, imageToPass, aiConfig, categoryNames)
     if (res.tasks && res.tasks.length > 0) {
-      aiTasks.value = res.tasks.map((t) => ({ ...(t as any), score_mode: (t as any).score_mode || 'fixed' }))
+      aiTasks.value = res.tasks.map((t) => ({ ...(t as any), score_mode: (t as any).score_mode || 'fixed', custom_score_max: Number((t as any).custom_score_max ?? 5) }))
       ElMessage.success(`成功识别 ${res.tasks.length} 个任务`)
     } else {
       ElMessage.info('未识别到任务，请尝试调整输入')
@@ -598,6 +613,7 @@ async function submitAITasks() {
           category: task.category,
           score: (task as any).score_mode === 'custom' ? 0 : task.score,
           score_mode: (task as any).score_mode || 'fixed',
+          custom_score_max: Number((task as any).custom_score_max ?? 5),
           daily_max_checkins: 1,
           plan_minutes: task.plan_minutes,
           start_date: new Date(task.start_date || new Date()),

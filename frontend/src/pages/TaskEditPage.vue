@@ -53,7 +53,22 @@
         <el-form :model="form" label-width="100px">
           <el-form-item prop="score">
             <template #label><div class="flex items-center gap-1"><el-icon><Coin /></el-icon><span>任务金币</span></div></template>
-            <el-input-number v-model="form.score" :min="-10" :max="10" />
+            <div class="w-full">
+              <el-radio-group v-model="form.score_mode" class="mb-2">
+                <el-radio-button label="fixed">固定金币</el-radio-button>
+                <el-radio-button label="custom">完成时自定义</el-radio-button>
+              </el-radio-group>
+              <el-input-number v-if="form.score_mode === 'fixed'" v-model="form.score" :min="-10" :max="10" />
+              <div v-else class="space-y-2">
+                <div class="flex items-center gap-3">
+                  <div class="text-xs font-semibold text-gray-700 dark:text-gray-200">自定义金币上限</div>
+                  <el-input-number v-model="form.custom_score_max" :min="1" :max="10" />
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                  完成任务时仅可选择 1-{{ form.custom_score_max }}
+                </div>
+              </div>
+            </div>
           </el-form-item>
           <el-form-item prop="daily_max_checkins">
             <template #label><div class="flex items-center gap-1"><el-icon><List /></el-icon><span>每日上限</span></div></template>
@@ -129,6 +144,8 @@ type FormModel = {
   description: string
   category: string
   score: number
+  score_mode: 'fixed' | 'custom'
+  custom_score_max: number
   daily_max_checkins: number
   plan_minutes: number
   start_date: Date
@@ -140,7 +157,7 @@ type FormModel = {
 }
 const formRef = ref()
 const form = reactive<FormModel>({
-  name: '', description: '', category: '语文', score: 1, plan_minutes: 20,
+  name: '', description: '', category: '语文', score: 1, score_mode: 'fixed', custom_score_max: 5, plan_minutes: 20,
   daily_max_checkins: 1,
   start_date: new Date(), end_date: undefined,
   images: [], local_images: [], repeat_type: 'none', weekly_days: []
@@ -161,6 +178,8 @@ onMounted(async () => {
     form.description = t.description
     form.category = t.category
     form.score = t.score
+    form.score_mode = (String((t as any).score_mode || 'fixed') as any) === 'custom' ? 'custom' : 'fixed'
+    form.custom_score_max = Number((t as any).custom_score_max ?? 5)
     form.daily_max_checkins = Number((t as any).daily_max_checkins ?? 1)
     form.plan_minutes = t.plan_minutes
     form.start_date = new Date(t.start_date)
@@ -180,7 +199,9 @@ async function submitForm() {
       name: form.name,
       description: form.description,
       category: form.category,
-      score: form.score,
+      score: form.score_mode === 'fixed' ? form.score : 0,
+      score_mode: form.score_mode,
+      custom_score_max: form.custom_score_max,
       daily_max_checkins: form.daily_max_checkins,
       plan_minutes: form.plan_minutes,
       start_date: form.start_date,

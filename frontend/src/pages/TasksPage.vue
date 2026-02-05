@@ -516,10 +516,6 @@
           {{ v }}
         </el-button>
       </div>
-      <div class="mt-4 flex items-center gap-3">
-        <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">自定义</div>
-        <el-input-number v-model="rewardDialogCustom" :min="-999" :max="999" />
-      </div>
       <template #footer>
         <div class="flex justify-end gap-2">
           <el-button @click="onRewardCancel">取消</el-button>
@@ -1325,20 +1321,26 @@ async function submitForm() {
 
 const rewardDialogVisible = ref(false)
 const rewardDialogTask = ref<TaskItem | null>(null)
-const rewardDialogQuick = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+const rewardDialogQuick = ref<number[]>([])
 const rewardDialogValue = ref<number | null>(null)
-const rewardDialogCustom = ref<number>(1)
 let rewardDialogResolve: ((v: number | null) => void) | null = null
+function getCustomScoreMax(t: TaskItem | null): number {
+  const raw = Number((t as any)?.custom_score_max ?? 5)
+  if (!Number.isFinite(raw)) return 5
+  if (raw < 1) return 1
+  if (raw > 10) return 10
+  return Math.floor(raw)
+}
 function openRewardDialog(t: TaskItem): Promise<number | null> {
   rewardDialogTask.value = t
-  rewardDialogValue.value = null
-  rewardDialogCustom.value = 1
+  const max = getCustomScoreMax(t)
+  rewardDialogQuick.value = Array.from({ length: max }, (_, i) => i + 1)
+  rewardDialogValue.value = 1
   rewardDialogVisible.value = true
   return new Promise((resolve) => { rewardDialogResolve = resolve })
 }
 function onRewardChoose(v: number) {
   rewardDialogValue.value = v
-  rewardDialogCustom.value = v
 }
 function onRewardCancel() {
   rewardDialogVisible.value = false
@@ -1348,7 +1350,7 @@ function onRewardCancel() {
   }
 }
 function onRewardConfirm() {
-  const v = rewardDialogValue.value != null ? rewardDialogValue.value : rewardDialogCustom.value
+  const v = rewardDialogValue.value != null ? rewardDialogValue.value : 1
   rewardDialogVisible.value = false
   if (rewardDialogResolve) {
     rewardDialogResolve(Number(v))
@@ -1603,7 +1605,8 @@ async function onTomatoComplete(seconds?: number) {
     let customCoins: number | undefined
     if (isCustomScore(currentTask.value)) {
       const v = await openRewardDialog(currentTask.value)
-      customCoins = v == null ? 0 : v
+      if (v == null) return
+      customCoins = v
     }
     // 中文注释：按实际秒数精确展示，后端按分钟上报（四舍五入）；无秒数则按计划时长
     const usedSec = Math.max(1, seconds || (currentTask.value.plan_minutes || 20) * 60)

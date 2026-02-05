@@ -21,6 +21,7 @@ type BatchCreateReq struct {
     Category    string    `json:"category"`
     Score       int       `json:"score"`
     ScoreMode   string    `json:"score_mode"`
+    CustomScoreMax int    `json:"custom_score_max"`
     PlanMinutes int       `json:"plan_minutes"`
     StartDate   time.Time `json:"start_date"`
     EndDate     *time.Time `json:"end_date"`
@@ -135,12 +136,16 @@ func CreateTasksBatch(c *gin.Context) {
         // 构造任务切片并批量写入
         batch := make([]models.Task, 0, len(dates))
         for _, d := range dates {
+            maxCustom := req.CustomScoreMax
+            if maxCustom <= 0 { maxCustom = 5 }
+            if maxCustom > 10 { maxCustom = 10 }
             t := models.Task{
                 UserID: uid,
                 Name: req.Name,
                 Description: req.Description,
                 Category: req.Category,
                 Score: req.Score,
+                CustomScoreMax: maxCustom,
                 PlanMinutes: req.PlanMinutes,
                 StartDate: d,
                 EndDate: nil,

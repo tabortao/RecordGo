@@ -187,10 +187,20 @@ func CompleteTaskOccurrence(c *gin.Context) {
 		}
 		coinsEarned := t.Score
 		if strings.ToLower(strings.TrimSpace(t.ScoreMode)) == "custom" {
-			coinsEarned = 0
-			if req.CustomCoins != nil {
-				coinsEarned = *req.CustomCoins
+			if req.CustomCoins == nil {
+				return newBizError(40003, "缺少自定义金币")
 			}
+			max := t.CustomScoreMax
+			if max <= 0 {
+				max = 5
+			}
+			if max > 10 {
+				max = 10
+			}
+			if *req.CustomCoins < 1 || *req.CustomCoins > max {
+				return newBizError(40003, "自定义金币超出上限")
+			}
+			coinsEarned = *req.CustomCoins
 		}
 		if len(coinsList) == 0 && effectiveCount > 0 && strings.ToLower(strings.TrimSpace(t.ScoreMode)) != "custom" {
 			coinsList = make([]int, effectiveCount)

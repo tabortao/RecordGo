@@ -18,6 +18,7 @@ type Task struct {
 	ActualMinutes    int            `gorm:"default:0" json:"actual_minutes"`
 	Score            int            `gorm:"default:1" json:"score"` // 可为负数
 	ScoreMode        string         `gorm:"size:16;default:fixed" json:"score_mode"`
+	CustomScoreMax   int            `gorm:"default:5" json:"custom_score_max"`
 	CompletedScore   int            `gorm:"default:0" json:"completed_score"`
 	DailyMaxCheckins int            `gorm:"default:1" json:"daily_max_checkins"`
 	Repeat           string         `gorm:"size:32" json:"repeat"`             // 无/每天/每周/每月/自定义星期

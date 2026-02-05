@@ -13,6 +13,7 @@ export interface TaskItem {
   category: string
   score: number
   score_mode?: 'fixed' | 'custom' | string
+  custom_score_max?: number
   completed_score?: number
   daily_max_checkins?: number
   plan_minutes: number
@@ -37,6 +38,7 @@ export async function listTasks(params?: { status?: number; page?: number; page_
     category: String(x.category ?? x.Category ?? ''),
     score: Number(x.score ?? x.Score ?? 0),
     score_mode: String(x.score_mode ?? x.ScoreMode ?? 'fixed'),
+    custom_score_max: Number(x.custom_score_max ?? x.CustomScoreMax ?? 5),
     completed_score: Number(x.completed_score ?? x.CompletedScore ?? 0),
     daily_max_checkins: Number(x.daily_max_checkins ?? x.DailyMaxCheckins ?? 1),
     plan_minutes: Number(x.plan_minutes ?? x.PlanMinutes ?? 0),
@@ -78,6 +80,7 @@ export interface AITaskParseItem {
   category: string
   score: number
   score_mode?: 'fixed' | 'custom' | string
+  custom_score_max?: number
   plan_minutes: number
   start_date: string
   end_date?: string
@@ -211,6 +214,7 @@ type OfflineCreateEntry = {
   category: string
   score: number
   score_mode?: 'fixed' | 'custom' | string
+  custom_score_max?: number
   daily_max_checkins?: number
   plan_minutes: number
   start_date: string
@@ -259,6 +263,7 @@ export async function syncOfflineTasks(userId: number): Promise<{ synced: number
         category: q.category,
         score: q.score,
         score_mode: (q as any).score_mode,
+        custom_score_max: Number((q as any).custom_score_max ?? 5),
         daily_max_checkins: Number((q as any).daily_max_checkins ?? 1),
         plan_minutes: q.plan_minutes,
         start_date: s,
