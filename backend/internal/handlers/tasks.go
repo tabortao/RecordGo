@@ -116,6 +116,10 @@ func CreateTask(c *gin.Context) {
 		ez := time.Date(req.EndDate.Year(), req.EndDate.Month(), req.EndDate.Day(), 0, 0, 0, 0, time.UTC)
 		e = &ez
 	}
+	if e != nil && e.Before(s) {
+		common.Error(c, 40003, "截止日期不能早于开始日期")
+		return
+	}
 	maxCheckins := req.DailyMaxCheckins
 	if maxCheckins < 1 {
 		maxCheckins = 1
@@ -356,8 +360,12 @@ func UpdateTask(c *gin.Context) {
 		t.StartDate = time.Date(req.StartDate.Year(), req.StartDate.Month(), req.StartDate.Day(), 0, 0, 0, 0, time.UTC)
 	}
 	if req.EndDate != nil {
-		ez := time.Date((*req.EndDate).Year(), (*req.EndDate).Month(), (*req.EndDate).Day(), 0, 0, 0, 0, time.UTC)
-		t.EndDate = &ez
+		if *req.EndDate == nil {
+			t.EndDate = nil
+		} else {
+			ez := time.Date((*req.EndDate).Year(), (*req.EndDate).Month(), (*req.EndDate).Day(), 0, 0, 0, 0, time.UTC)
+			t.EndDate = &ez
+		}
 	}
 	if req.Remark != nil {
 		t.Remark = *req.Remark
@@ -382,6 +390,10 @@ func UpdateTask(c *gin.Context) {
 	if len(req.WeeklyDays) > 0 {
 		b, _ := json.Marshal(req.WeeklyDays)
 		t.RepeatDaysJSON = string(b)
+	}
+	if t.EndDate != nil && t.EndDate.Before(t.StartDate) {
+		common.Error(c, 40003, "截止日期不能早于开始日期")
+		return
 	}
 
 	if err := db.DB().Save(&t).Error; err != nil {

@@ -636,9 +636,16 @@ const dateStatusFilteredTasks = computed(() => {
       /weekdays|工作日/i.test(rep) ? 'weekdays' :
       /weekly|每周/i.test(rep) ? 'weekly' :
       /monthly|每月/i.test(rep) ? 'monthly' : 'none'
-    if (type === 'none' || !eDate) {
+    if (type === 'none') {
+      if (eDate) {
+        if (Number((t as any).status ?? 0) === 2) return false
+        const sKey = dayjs(sDate).format('YYYY-MM-DD')
+        const eKey = dayjs(eDate).format('YYYY-MM-DD')
+        return selKey >= sKey && selKey <= eKey
+      }
       return dayjs(sDate).format('YYYY-MM-DD') === selKey
     }
+    if (!eDate) return dayjs(sDate).format('YYYY-MM-DD') === selKey
     const dow = dayjs(sDate).day() === 0 ? 7 : dayjs(sDate).day()
     const weeklyDays: number[] = Array.isArray((t as any).weekly_days) ? ((t as any).weekly_days as number[]) : [dow]
     const dates = generateRepeatDates(sDate, eDate, type, weeklyDays)

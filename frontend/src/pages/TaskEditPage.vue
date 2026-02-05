@@ -102,7 +102,7 @@
           </el-form-item>
           <el-form-item prop="end_date">
             <template #label><div class="flex items-center gap-1"><el-icon><Clock /></el-icon><span>截止日期</span></div></template>
-            <el-date-picker v-model="form.end_date" type="date" :editable="false" :clearable="false" :disabled="form.repeat_type==='none'" />
+            <el-date-picker v-model="form.end_date" type="date" :editable="false" :clearable="false" />
           </el-form-item>
         </el-form>
       </el-card>
@@ -195,6 +195,10 @@ onMounted(async () => {
 
 async function submitForm() {
   try {
+    if (form.end_date && form.start_date && new Date(form.end_date).getTime() < new Date(form.start_date).getTime()) {
+      ElMessage.error('截止日期不能早于开始日期')
+      return
+    }
     const payload = {
       name: form.name,
       description: form.description,

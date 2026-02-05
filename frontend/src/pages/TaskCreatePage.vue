@@ -153,7 +153,7 @@
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><Clock /></el-icon><span>截止日期</span></div>
                 </template>
-                <el-date-picker v-model="form.end_date" type="date" :editable="false" :clearable="false" :disabled="form.repeat_type==='none'" />
+                <el-date-picker v-model="form.end_date" type="date" :editable="false" :clearable="false" />
               </el-form-item>
             </el-form>
           </el-card>
@@ -309,7 +309,7 @@
                            <el-date-picker v-model="task.start_date" type="date" :editable="false" :clearable="false" style="width: 100%" />
                         </el-form-item>
                         <el-form-item label="截止日期" class="flex-1">
-                           <el-date-picker v-model="task.end_date" type="date" :editable="false" :clearable="false" :disabled="task.repeat_type==='none'" style="width: 100%" />
+                           <el-date-picker v-model="task.end_date" type="date" :editable="false" :clearable="false" style="width: 100%" />
                         </el-form-item>
                       </div>
                    </el-form>
@@ -388,6 +388,10 @@ async function submitForm() {
     try {
     const start = new Date(form.start_date)
     const end = form.end_date ? new Date(form.end_date) : undefined
+    if (end && end.getTime() < start.getTime()) {
+      ElMessage.error('截止日期不能早于开始日期')
+      return
+    }
 
     const created: number[] = []
     const webps: File[] = []
@@ -606,6 +610,9 @@ async function submitAITasks() {
     // 串行创建，避免并发过高
     for (const task of aiTasks.value) {
       try {
+        if (task.end_date && task.start_date && new Date(task.end_date).getTime() < new Date(task.start_date).getTime()) {
+          throw new Error('截止日期不能早于开始日期')
+        }
         await createTask({
           user_id: userId,
           name: task.name,
