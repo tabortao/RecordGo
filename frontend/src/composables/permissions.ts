@@ -6,7 +6,8 @@ import { useAuth } from '@/stores/auth'
 export interface NormalizedPerms {
   view_only?: boolean
   manage_children?: boolean
-  tasks?: { create?: boolean; edit?: boolean; delete?: boolean; status?: boolean }
+  account?: { manage_children?: boolean }
+  tasks?: { create?: boolean; edit?: boolean; delete?: boolean; status?: boolean; undo?: boolean }
   wishes?: { create?: boolean; edit?: boolean; delete?: boolean; exchange?: boolean }
   // 中文注释：新增“设置”权限分组（番茄钟/任务/金币/朗读），用于控制“我的”页设置入口
   settings?: { tomato?: boolean; tasks?: boolean; coins?: boolean; reading?: boolean }
@@ -34,7 +35,7 @@ export function usePermissions() {
   })
   const perms = computed(() => parsePerms(user.value?.permissions))
   const viewOnly = computed(() => Boolean(perms.value.view_only))
-  const manageChildren = computed(() => isParent.value || Boolean(perms.value.manage_children))
+  const manageChildren = computed(() => isParent.value || Boolean(perms.value.manage_children) || Boolean(perms.value.account?.manage_children))
 
   function has(category: keyof NormalizedPerms, action?: string): boolean {
     if (isParent.value) return true
@@ -50,6 +51,7 @@ export function usePermissions() {
   const canTaskEdit = computed(() => has('tasks', 'edit'))
   const canTaskDelete = computed(() => has('tasks', 'delete'))
   const canTaskStatus = computed(() => has('tasks', 'status'))
+  const canTaskUndo = computed(() => has('tasks', 'undo'))
 
   const canWishCreate = computed(() => has('wishes', 'create'))
   const canWishEdit = computed(() => has('wishes', 'edit'))
@@ -99,6 +101,7 @@ export function usePermissions() {
     canTaskEdit,
     canTaskDelete,
     canTaskStatus,
+    canTaskUndo,
     // 心愿相关
     canWishCreate,
     canWishEdit,

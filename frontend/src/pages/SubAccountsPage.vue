@@ -177,6 +177,7 @@
                 <el-checkbox v-model="permModel.tasks.edit" :disabled="permModel.view_only">编辑</el-checkbox>
                 <el-checkbox v-model="permModel.tasks.delete" :disabled="permModel.view_only">删除</el-checkbox>
                 <el-checkbox v-model="permModel.tasks.status" :disabled="permModel.view_only">状态</el-checkbox>
+                <el-checkbox v-model="permModel.tasks.undo" :disabled="permModel.view_only">撤销</el-checkbox>
               </div>
             </div>
 
@@ -256,7 +257,7 @@ const permTemplate = ref<'view_only' | 'tasks_status' | 'tasks_full' | 'full' | 
 type PermModel = {
   view_only: boolean
   account: { manage_children: boolean }
-  tasks: { create: boolean; edit: boolean; delete: boolean; status: boolean }
+  tasks: { create: boolean; edit: boolean; delete: boolean; status: boolean; undo: boolean }
   wishes: { create: boolean; edit: boolean; delete: boolean; exchange: boolean }
   // 中文注释：新增设置权限分组（用于控制“我的”页设置入口权限）
   settings: { tomato: boolean; tasks: boolean; coins: boolean; reading: boolean }
@@ -264,7 +265,7 @@ type PermModel = {
 const defaultPerms: PermModel = {
   view_only: true,
   account: { manage_children: false },
-  tasks: { create: false, edit: false, delete: false, status: false },
+  tasks: { create: false, edit: false, delete: false, status: false, undo: false },
   wishes: { create: false, edit: false, delete: false, exchange: false },
   settings: { tomato: false, tasks: false, coins: false, reading: false }
 }
@@ -326,12 +327,12 @@ function applyTemplate(tpl: string) {
       break
     case 'tasks_full':
       m.view_only = false
-      m.tasks = { create: true, edit: true, delete: true, status: true }
+      m.tasks = { create: true, edit: true, delete: true, status: true, undo: true }
       break
     case 'full':
       m.view_only = false
       m.account.manage_children = true
-      m.tasks = { create: true, edit: true, delete: true, status: true }
+      m.tasks = { create: true, edit: true, delete: true, status: true, undo: true }
       m.wishes = { create: true, edit: true, delete: true, exchange: true }
       m.settings = { tomato: true, tasks: true, coins: true, reading: true }
       break
@@ -354,6 +355,7 @@ function parsePermsJSON(s: string | undefined) {
       m.tasks.edit = !!obj.tasks.edit
       m.tasks.delete = !!obj.tasks.delete
       m.tasks.status = !!obj.tasks.status
+      m.tasks.undo = !!obj.tasks.undo
     }
     if (obj.wishes) {
       m.wishes.create = !!obj.wishes.create
@@ -380,7 +382,7 @@ function toPermsJSON(): string {
   if (!m.view_only) {
     if (m.account.manage_children) out.account = { manage_children: true }
     const t: any = {}
-    ;(['create','edit','delete','status'] as const).forEach(k => { if ((m.tasks as any)[k]) t[k] = true })
+    ;(['create','edit','delete','status','undo'] as const).forEach(k => { if ((m.tasks as any)[k]) t[k] = true })
     if (Object.keys(t).length) out.tasks = t
     const w: any = {}
     ;(['create','edit','delete','exchange'] as const).forEach(k => { if ((m.wishes as any)[k]) w[k] = true })

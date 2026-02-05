@@ -383,13 +383,6 @@ func UpdateStatus(c *gin.Context) {
 		common.Error(c, 40001, "参数错误")
 		return
 	}
-	// 中文注释：在 view_only 下，若为番茄钟完成且目标状态为“已完成”，允许放行；否则执行常规权限校验
-	if !hasPermission(c, "tasks", "status") {
-		if !(req.AllowByTomato && req.Status == 2) {
-			deny(c, "无权限更改任务状态")
-			return
-		}
-	}
 	if req.Status < 0 || req.Status > 2 {
 		common.Error(c, 40003, "非法状态")
 		return
@@ -407,6 +400,25 @@ func UpdateStatus(c *gin.Context) {
 	before, _ := json.Marshal(t)
 	prev := t.Status
 	next := req.Status
+	// 中文注释：权限拆分——完成/状态变更用 tasks.status；撤销完成用 tasks.undo；番茄钟完成可通过 allow_by_tomato 放行
+	if prev == 2 && next != 2 {
+		if !hasPermission(c, "tasks", "undo") {
+			deny(c, "无权限撤销任务")
+			return
+		}
+	} else if next == 2 {
+		if !hasPermission(c, "tasks", "status") {
+			if !(req.AllowByTomato && next == 2) {
+				deny(c, "无权限更改任务状态")
+				return
+			}
+		}
+	} else {
+		if !hasPermission(c, "tasks", "status") {
+			deny(c, "无权限更改任务状态")
+			return
+		}
+	}
 	var targetCoins int64
 	if err := db.DB().Transaction(func(tx *gorm.DB) error {
 		var owner models.User

@@ -277,8 +277,8 @@ type OccurrenceUncompleteReq struct {
 
 func UncompleteTaskOccurrence(c *gin.Context) {
 	id := c.Param("id")
-	if !hasPermission(c, "tasks", "status") {
-		deny(c, "无权限修改任务状态")
+	if !hasPermission(c, "tasks", "undo") {
+		deny(c, "无权限撤销任务")
 		return
 	}
 	var t models.Task

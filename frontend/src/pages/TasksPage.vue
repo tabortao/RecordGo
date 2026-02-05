@@ -235,6 +235,9 @@
             <el-dropdown-item v-if="isVIP && store.taskNotesEnabled" command="notes">
               <el-icon class="mr-1" style="color:#f97316"><ChatDotRound /></el-icon>备注
               </el-dropdown-item>
+                      <el-dropdown-item v-if="canUndoFromMenu(t)" command="undo">
+                        <el-icon class="mr-1"><RefreshLeft /></el-icon>撤销
+                      </el-dropdown-item>
                       <el-dropdown-item command="delete" style="color:#f56c6c">
                         <el-icon class="mr-1"><Delete /></el-icon>删除
                       </el-dropdown-item>
@@ -576,7 +579,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus/es/components/form'
-import { Plus, Clock, List, Coin, Money, CircleCheck, MoreFilled, Edit, Delete, Filter, ChatDotRound, Sort, Headset, CirclePlusFilled } from '@element-plus/icons-vue'
+import { Plus, Clock, List, Coin, Money, CircleCheck, MoreFilled, Edit, Delete, Filter, ChatDotRound, Sort, Headset, CirclePlusFilled, RefreshLeft } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/avatars/default.png'
 import taskStatsIcon from '@/assets/icons/task-stats-color.svg'
 import { useAuth } from '@/stores/auth'
@@ -614,7 +617,7 @@ const isVIP = computed(() => {
 })
 const userId = computed(() => auth.user?.id ?? 0)
 // 中文注释：解析权限，父账号默认放行；子账号按动作校验
-const { isParent, canTaskCreate, canTaskEdit, canTaskDelete, canTaskStatus } = usePermissions()
+const { isParent, canTaskCreate, canTaskEdit, canTaskDelete, canTaskStatus, canTaskUndo } = usePermissions()
 const dialogWidth = computed(() => (isMobile.value ? '96vw' : '640px'))
 // 中文注释：任务分类 Store，用于动态筛选与分组颜色
 const cats = useTaskCategories()
@@ -752,6 +755,11 @@ function isRepeatTask(t: TaskItem) {
 function getDailyMaxCheckins(t: TaskItem) {
   const v = Number((t as any).daily_max_checkins ?? 1)
   return Number.isFinite(v) && v > 1 ? Math.floor(v) : 1
+}
+function canUndoFromMenu(t: TaskItem) {
+  if (getDailyMaxCheckins(t) <= 1) return false
+  if (getTodayCheckinsCount(t) <= 0) return false
+  return isParent.value || canTaskUndo.value
 }
 function useOccurrenceTracking(t: TaskItem) {
   return isRepeatTask(t) || getDailyMaxCheckins(t) > 1
@@ -1356,10 +1364,9 @@ function onRewardClosed() {
 
 // 勾选即完成：只允许从未完成 -> 已完成，不提供取消
 async function onCheckComplete(t: TaskItem, checked: boolean) {
-  // 中文注释：状态变更权限校验
-  if (!isParent.value && !canTaskStatus.value) {
-    ElMessage.warning('当前权限不允许更改任务状态')
-    return
+  if (!isParent.value) {
+    if (checked && !canTaskStatus.value) { ElMessage.warning('当前权限不允许完成任务'); return }
+    if (!checked && !canTaskUndo.value) { ElMessage.warning('当前权限不允许撤销'); return }
   }
   try {
     if (checked) {
@@ -1416,6 +1423,9 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
           }
         } else {
           delete occurMap.value[t.id]
+        }
+        if (isCustomScore(t)) {
+          await fetchOccurrences()
         }
         ElMessage.success('已撤销一次')
       } else {
@@ -1666,6 +1676,7 @@ function onMenu(cmd: string, t: TaskItem) {
   if (cmd === 'tomato') return openTomato(t)
   if (cmd === 'edit') return openEdit(t)
   if (cmd === 'notes') return router.push(`/tasks/${t.id}/notes`)
+  if (cmd === 'undo') return onCheckComplete(t, false)
   if (cmd === 'delete') return confirmDelete(t)
 }
 
