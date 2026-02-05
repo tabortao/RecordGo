@@ -263,7 +263,13 @@
                 </div>
                 <div class="flex items-center gap-1 text-amber-600 dark:text-amber-500 text-xs" title="金币">
                   <el-icon :size="14"><Coin /></el-icon>
-                  <span class="font-semibold">{{ t.score || 0 }}</span>
+                  <span class="font-semibold">
+                    {{ isCustomScore(t)
+                      ? (useOccurrenceTracking(t)
+                        ? (occurMap[t.id]?.coins_earned ?? 0)
+                        : (isCompletedOnSelected(t) ? ((t as any).completed_score ?? 0) : '自定义'))
+                      : (t.score || 0) }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -497,6 +503,28 @@
       <TomatoTimer :work-minutes="currentTask?.plan_minutes || 20" :break-minutes="5" :task-name="currentTask?.name" :task-remark="currentTask?.remark || currentTask?.description" @complete="onTomatoComplete" />
     </el-dialog>
 
+    <el-dialog v-model="rewardDialogVisible" title="完成任务奖励" :width="isMobile ? '92vw' : '420px'" :close-on-click-modal="false" @closed="onRewardClosed">
+      <div class="text-sm text-gray-700 dark:text-gray-200">
+        <div class="font-semibold truncate">{{ rewardDialogTask?.name || '' }}</div>
+        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">请选择本次完成获得的金币</div>
+      </div>
+      <div class="mt-4 grid grid-cols-5 gap-2">
+        <el-button v-for="v in rewardDialogQuick" :key="v" class="!rounded-2xl !font-extrabold" :type="rewardDialogValue === v ? 'primary' : 'default'" @click="onRewardChoose(v)">
+          {{ v }}
+        </el-button>
+      </div>
+      <div class="mt-4 flex items-center gap-3">
+        <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">自定义</div>
+        <el-input-number v-model="rewardDialogCustom" :min="-999" :max="999" />
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <el-button @click="onRewardCancel">取消</el-button>
+          <el-button type="primary" @click="onRewardConfirm">确定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!-- 中文注释：任务图片全屏查看（覆盖式），支持缩放与左右翻看 -->
     <el-image-viewer v-if="imagesViewerVisible" :url-list="imageViewerList" :initial-index="imageViewerIndex" @close="imagesViewerVisible=false" />
 
@@ -700,7 +728,21 @@ async function onTouchEnd() {
 const store = useAppState()
 // 中文注释：总金币改为直接读取全局 store.coins（由后端任务完成/取消与心愿兑换实时更新），与心愿页保持一致
 const totalCoins = computed(() => store.coins)
-const occurMap = ref<Record<number, { status: number; minutes?: number; checkins_count?: number }>>({})
+const occurMap = ref<Record<number, { status: number; minutes?: number; checkins_count?: number; coins_earned?: number }>>({})
+function isCustomScore(t: TaskItem) {
+  return String((t as any).score_mode || '').trim().toLowerCase() === 'custom'
+}
+function sumCheckinCoinsJSON(v: any): number {
+  const raw = String(v || '').trim()
+  if (!raw) return 0
+  try {
+    const arr = JSON.parse(raw)
+    if (!Array.isArray(arr)) return 0
+    return arr.reduce((sum, x) => sum + Number(x || 0), 0)
+  } catch {
+    return 0
+  }
+}
 function isRepeatTask(t: TaskItem) {
   const rep = String((t as any).repeat || (t as any).repeat_type || 'none').trim().toLowerCase()
   const type = /^(daily|weekdays|weekly|monthly)$/.test(rep) ? rep : 'none'
@@ -759,8 +801,13 @@ const completedTasksCount = computed(() => {
 })
 const dayCoins = computed(() => {
   return filteredTasks.value.reduce((sum, t) => {
-    if (useOccurrenceTracking(t)) return sum + (t.score || 0) * getTodayCheckinsCount(t)
-    return sum + (isCompletedOnSelected(t) ? (t.score || 0) : 0)
+    if (useOccurrenceTracking(t)) {
+      if (isCustomScore(t)) return sum + Number(occurMap.value[t.id]?.coins_earned ?? 0)
+      return sum + (t.score || 0) * getTodayCheckinsCount(t)
+    }
+    if (!isCompletedOnSelected(t)) return sum
+    if (isCustomScore(t)) return sum + Number((t as any).completed_score ?? 0)
+    return sum + (t.score || 0)
   }, 0)
 })
 
@@ -1268,6 +1315,45 @@ async function submitForm() {
   }
 }
 
+const rewardDialogVisible = ref(false)
+const rewardDialogTask = ref<TaskItem | null>(null)
+const rewardDialogQuick = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+const rewardDialogValue = ref<number | null>(null)
+const rewardDialogCustom = ref<number>(1)
+let rewardDialogResolve: ((v: number | null) => void) | null = null
+function openRewardDialog(t: TaskItem): Promise<number | null> {
+  rewardDialogTask.value = t
+  rewardDialogValue.value = null
+  rewardDialogCustom.value = 1
+  rewardDialogVisible.value = true
+  return new Promise((resolve) => { rewardDialogResolve = resolve })
+}
+function onRewardChoose(v: number) {
+  rewardDialogValue.value = v
+  rewardDialogCustom.value = v
+}
+function onRewardCancel() {
+  rewardDialogVisible.value = false
+  if (rewardDialogResolve) {
+    rewardDialogResolve(null)
+    rewardDialogResolve = null
+  }
+}
+function onRewardConfirm() {
+  const v = rewardDialogValue.value != null ? rewardDialogValue.value : rewardDialogCustom.value
+  rewardDialogVisible.value = false
+  if (rewardDialogResolve) {
+    rewardDialogResolve(Number(v))
+    rewardDialogResolve = null
+  }
+}
+function onRewardClosed() {
+  if (rewardDialogResolve) {
+    rewardDialogResolve(null)
+    rewardDialogResolve = null
+  }
+}
+
 // 勾选即完成：只允许从未完成 -> 已完成，不提供取消
 async function onCheckComplete(t: TaskItem, checked: boolean) {
   // 中文注释：状态变更权限校验
@@ -1277,15 +1363,25 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
   }
   try {
     if (checked) {
+      let customCoins: number | undefined
+      if (isCustomScore(t)) {
+        const v = await openRewardDialog(t)
+        if (v == null) return
+        customCoins = v
+      }
       // 中文注释：勾选为完成：按计划时长计入实际，并标记为已完成
       const planM = t.plan_minutes || 20
       const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
       if (useOccurrenceTracking(t)) {
-        const resp = await completeOccurrence(t.id, { date: dateStr, minutes: planM })
+        const resp = await completeOccurrence(t.id, { date: dateStr, minutes: planM, ...(customCoins != null ? { custom_coins: customCoins } : {}) })
         occurMap.value[t.id] = {
           status: Number((resp as any).status ?? 0),
           minutes: Number((resp as any).minutes ?? planM),
           checkins_count: Number((resp as any).checkins_count ?? (((resp as any).status ?? 0) === 2 ? 1 : 0)),
+          coins_earned: isCustomScore(t) ? Number(occurMap.value[t.id]?.coins_earned ?? 0) + Number(customCoins ?? 0) : occurMap.value[t.id]?.coins_earned,
+        }
+        if (isCustomScore(t)) {
+          await fetchOccurrences()
         }
         const max = getDailyMaxCheckins(t)
         const cnt = getTodayCheckinsCount(t)
@@ -1296,8 +1392,9 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
         }
       } else {
         await updateTask(t.id, { actual_minutes: planM })
-        await updateTaskStatus(t.id, 2)
+        await updateTaskStatus(t.id, 2, customCoins != null ? { customCoins } : undefined)
         t.status = 2
+        if (customCoins != null) (t as any).completed_score = customCoins
         t.actual_minutes = (t.actual_minutes || 0) + planM
         actualSecondsLocal[t.id] = planM * 60
         ElMessage.success('已标记为完成（按计划时长计）')
@@ -1324,6 +1421,7 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
       } else {
         await updateTaskStatus(t.id, 0)
         t.status = 0
+        ;(t as any).completed_score = 0
         ElMessage.success('已取消完成')
       }
     }
@@ -1492,25 +1590,35 @@ function openTomato(t: TaskItem) {
 async function onTomatoComplete(seconds?: number) {
   if (!currentTask.value) return
   try {
+    let customCoins: number | undefined
+    if (isCustomScore(currentTask.value)) {
+      const v = await openRewardDialog(currentTask.value)
+      customCoins = v == null ? 0 : v
+    }
     // 中文注释：按实际秒数精确展示，后端按分钟上报（四舍五入）；无秒数则按计划时长
     const usedSec = Math.max(1, seconds || (currentTask.value.plan_minutes || 20) * 60)
     const reportMinutes = Math.max(1, Math.round(usedSec / 60))
     if (useOccurrenceTracking(currentTask.value)) {
       const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
-      const resp = await completeOccurrence(currentTask.value.id, { date: dateStr, minutes: reportMinutes })
+      const resp = await completeOccurrence(currentTask.value.id, { date: dateStr, minutes: reportMinutes, ...(customCoins != null ? { custom_coins: customCoins } : {}) })
       occurMap.value[currentTask.value.id] = {
         status: Number((resp as any).status ?? 0),
         minutes: Number((resp as any).minutes ?? reportMinutes),
         checkins_count: Number((resp as any).checkins_count ?? (((resp as any).status ?? 0) === 2 ? 1 : 0)),
+        coins_earned: isCustomScore(currentTask.value) ? Number(occurMap.value[currentTask.value.id]?.coins_earned ?? 0) + Number(customCoins ?? 0) : occurMap.value[currentTask.value.id]?.coins_earned,
       }
       actualSecondsLocal[currentTask.value.id] = usedSec
+      if (isCustomScore(currentTask.value)) {
+        await fetchOccurrences()
+      }
     } else {
       const updated = await completeTomato(currentTask.value.id, reportMinutes)
       const idx = tasks.value.findIndex((x) => x.id === currentTask.value!.id)
       if (idx >= 0) tasks.value[idx] = updated
       actualSecondsLocal[currentTask.value.id] = usedSec
-      await updateTaskStatus(currentTask.value.id, 2)
+      await updateTaskStatus(currentTask.value.id, 2, customCoins != null ? { customCoins } : undefined)
       if (idx >= 0) tasks.value[idx].status = 2
+      if (idx >= 0 && customCoins != null) (tasks.value[idx] as any).completed_score = customCoins
     }
     // 中文注释：dayMinutes 已改为计算属性，无需手动赋值
     // dayMinutes.value = tasks.value.reduce((sum, x) => sum + (x.actual_minutes || 0), 0)
@@ -1543,9 +1651,10 @@ async function fetchOccurrences() {
   try {
     const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
     const res = await listTaskOccurrences({ date: dateStr })
-    const map: Record<number, { status: number; minutes?: number; checkins_count?: number }> = {}
+    const map: Record<number, { status: number; minutes?: number; checkins_count?: number; coins_earned?: number }> = {}
     for (const it of res.items || []) {
-      map[it.task_id] = { status: Number(it.status || 0), minutes: Number(it.minutes || 0), checkins_count: Number((it as any).checkins_count ?? 0) }
+      const coins = sumCheckinCoinsJSON((it as any).checkin_coins_json ?? (it as any).checkinCoinsJSON ?? (it as any).CheckinCoinsJSON)
+      map[it.task_id] = { status: Number(it.status || 0), minutes: Number(it.minutes || 0), checkins_count: Number((it as any).checkins_count ?? 0), coins_earned: coins }
     }
     occurMap.value = map
   } catch {}

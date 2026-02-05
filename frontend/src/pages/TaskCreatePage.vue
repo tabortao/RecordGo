@@ -1,31 +1,6 @@
 <template>
   <!-- 中文注释：独立的创建任务页面，顶部带返回图标；布局响应式 -->
   <SettingsShell title="创建任务" subtitle="普通创建 · AI 智能创建" :icon="CirclePlusFilled" tone="emerald" container-class="max-w-5xl" back-to="/tasks" :decor="false">
-    <div class="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm px-5 py-5">
-      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div class="min-w-0">
-          <div class="text-[18px] font-extrabold tracking-tight text-gray-900 dark:text-gray-50">两种方式，快速创建</div>
-          <div class="mt-1 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-            普通创建适合精确填写；AI 智能创建适合把一段计划批量转成任务。
-          </div>
-        </div>
-        <div class="grid grid-cols-3 gap-2">
-          <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950/10 px-3 py-2">
-            <div class="text-[11px] font-extrabold tracking-[0.22em] text-gray-500 dark:text-gray-400">TIP</div>
-            <div class="mt-1 text-xs font-extrabold text-gray-900 dark:text-gray-50">先定分类</div>
-          </div>
-          <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950/10 px-3 py-2">
-            <div class="text-[11px] font-extrabold tracking-[0.22em] text-gray-500 dark:text-gray-400">TIP</div>
-            <div class="mt-1 text-xs font-extrabold text-gray-900 dark:text-gray-50">再定时长</div>
-          </div>
-          <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950/10 px-3 py-2">
-            <div class="text-[11px] font-extrabold tracking-[0.22em] text-gray-500 dark:text-gray-400">TIP</div>
-            <div class="mt-1 text-xs font-extrabold text-gray-900 dark:text-gray-50">奖励要具体</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <el-tabs v-model="activeTab" class="w-full task-create-tabs">
       <el-tab-pane name="normal">
         <template #label>
@@ -119,7 +94,16 @@
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><Coin /></el-icon><span>任务金币</span></div>
                 </template>
-                <el-input-number v-model="form.score" :min="-10" :max="10" size="large" />
+                <div class="w-full">
+                  <el-radio-group v-model="form.score_mode" class="mb-2">
+                    <el-radio-button label="fixed">固定金币</el-radio-button>
+                    <el-radio-button label="custom">完成时自定义</el-radio-button>
+                  </el-radio-group>
+                  <el-input-number v-if="form.score_mode === 'fixed'" v-model="form.score" :min="-10" :max="10" size="large" />
+                  <div v-else class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                    完成时会弹窗选择 1-10 或自定义输入
+                  </div>
+                </div>
               </el-form-item>
               <el-form-item prop="daily_max_checkins">
                 <template #label>
@@ -171,9 +155,6 @@
 
         <!-- 底部操作区 -->
         <div class="mt-5 rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/65 backdrop-blur-xl shadow-sm px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-            提示：重复任务建议设置截止日期，避免任务无限延长。
-          </div>
           <div class="flex justify-end gap-2">
             <el-button class="!rounded-2xl !font-extrabold" @click="goBack">取消</el-button>
             <el-button type="primary" class="!rounded-2xl !font-extrabold" @click="submitForm">确定</el-button>
@@ -279,7 +260,16 @@
                             <el-input-number v-model="task.plan_minutes" :min="1" :max="240" style="width: 100%" />
                          </el-form-item>
                          <el-form-item label="任务金币" class="flex-1">
-                            <el-input-number v-model="task.score" :min="-10" :max="10" style="width: 100%" />
+                            <div class="w-full">
+                              <el-select v-model="(task as any).score_mode" style="width: 100%" class="mb-2">
+                                <el-option label="固定金币" value="fixed" />
+                                <el-option label="完成时自定义" value="custom" />
+                              </el-select>
+                              <el-input-number v-if="(task as any).score_mode !== 'custom'" v-model="task.score" :min="-10" :max="10" style="width: 100%" />
+                              <div v-else class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                                完成时自定义
+                              </div>
+                            </div>
                          </el-form-item>
                       </div>
                       <el-form-item label="重复类型">
@@ -354,6 +344,7 @@ type FormModel = {
   description: string
   category: string
   score: number
+  score_mode: 'fixed' | 'custom'
   daily_max_checkins: number
   plan_minutes: number
   start_date: Date
@@ -365,7 +356,7 @@ type FormModel = {
 }
 const formRefInstance = ref<InstanceType<typeof ElForm>>()
 const form = reactive<FormModel>({
-  name: '', description: '', category: '语文', score: 1, plan_minutes: 20,
+  name: '', description: '', category: '语文', score: 1, score_mode: 'fixed', plan_minutes: 20,
   daily_max_checkins: 1,
   start_date: new Date(), end_date: undefined,
   images: [], local_images: [], repeat_type: 'none', weekly_days: []
@@ -399,7 +390,8 @@ async function submitForm() {
       name: form.name,
       description: form.description,
       category: form.category,
-      score: form.score,
+      score: form.score_mode === 'fixed' ? form.score : 0,
+      score_mode: form.score_mode,
       daily_max_checkins: form.daily_max_checkins,
       plan_minutes: form.plan_minutes,
       start_date: start,
@@ -441,7 +433,8 @@ async function submitForm() {
         name: form.name,
         description: form.description,
         category: form.category,
-        score: form.score,
+        score: form.score_mode === 'fixed' ? form.score : 0,
+        score_mode: form.score_mode,
         daily_max_checkins: form.daily_max_checkins,
         plan_minutes: form.plan_minutes,
         start_date: new Date(form.start_date).toISOString(),
@@ -449,7 +442,7 @@ async function submitForm() {
         repeat_type: form.repeat_type,
         weekly_days: form.weekly_days || [],
         images
-      })
+      } as any)
       ElMessage.success('网络异常，任务已保存到本地，恢复网络后将自动同步')
       router.back()
     } catch {
@@ -571,7 +564,7 @@ async function handleAIParse() {
 
     const res = await parseTaskByAI(finalText, imageToPass, aiConfig, categoryNames)
     if (res.tasks && res.tasks.length > 0) {
-      aiTasks.value = res.tasks
+      aiTasks.value = res.tasks.map((t) => ({ ...(t as any), score_mode: (t as any).score_mode || 'fixed' }))
       ElMessage.success(`成功识别 ${res.tasks.length} 个任务`)
     } else {
       ElMessage.info('未识别到任务，请尝试调整输入')
@@ -603,7 +596,8 @@ async function submitAITasks() {
           name: task.name,
           description: task.description,
           category: task.category,
-          score: task.score,
+          score: (task as any).score_mode === 'custom' ? 0 : task.score,
+          score_mode: (task as any).score_mode || 'fixed',
           daily_max_checkins: 1,
           plan_minutes: task.plan_minutes,
           start_date: new Date(task.start_date || new Date()),

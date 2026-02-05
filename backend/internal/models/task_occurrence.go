@@ -8,6 +8,7 @@ type TaskOccurrence struct {
 	Date          time.Time `gorm:"index" json:"date"`
 	Status        int       `gorm:"default:0" json:"status"` // 0待完成 2已完成
 	CheckinsCount int       `gorm:"default:0" json:"checkins_count"`
+	CheckinCoinsJSON string `gorm:"type:text" json:"checkin_coins_json"`
 	Minutes       int       `gorm:"default:0" json:"minutes"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`

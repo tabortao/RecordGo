@@ -12,6 +12,8 @@ export interface TaskItem {
   description: string
   category: string
   score: number
+  score_mode?: 'fixed' | 'custom' | string
+  completed_score?: number
   daily_max_checkins?: number
   plan_minutes: number
   actual_minutes: number
@@ -34,6 +36,8 @@ export async function listTasks(params?: { status?: number; page?: number; page_
     description: String(x.description ?? x.Description ?? ''),
     category: String(x.category ?? x.Category ?? ''),
     score: Number(x.score ?? x.Score ?? 0),
+    score_mode: String(x.score_mode ?? x.ScoreMode ?? 'fixed'),
+    completed_score: Number(x.completed_score ?? x.CompletedScore ?? 0),
     daily_max_checkins: Number(x.daily_max_checkins ?? x.DailyMaxCheckins ?? 1),
     plan_minutes: Number(x.plan_minutes ?? x.PlanMinutes ?? 0),
     actual_minutes: Number(x.actual_minutes ?? x.ActualMinutes ?? 0),
@@ -73,6 +77,7 @@ export interface AITaskParseItem {
   description: string
   category: string
   score: number
+  score_mode?: 'fixed' | 'custom' | string
   plan_minutes: number
   start_date: string
   end_date?: string
@@ -119,9 +124,10 @@ export async function updateTask(id: number, payload: any): Promise<TaskItem> {
   return (await http.put(`/tasks/${id}`, norm)) as any
 }
 
-export async function updateTaskStatus(id: number, status: number, opts?: { allowByTomato?: boolean }): Promise<TaskItem> {
+export async function updateTaskStatus(id: number, status: number, opts?: { allowByTomato?: boolean; customCoins?: number }): Promise<TaskItem> {
   const body: any = { status }
   if (opts?.allowByTomato) body.allow_by_tomato = true
+  if (opts?.customCoins != null) body.custom_coins = opts.customCoins
   return (await http.patch(`/tasks/${id}/status`, body)) as any
 }
 
@@ -150,10 +156,10 @@ export async function completeTomato(id: number, minutes = 25): Promise<TaskItem
   return (await http.post(`/tasks/${id}/tomato/complete`, { minutes })) as any
 }
 
-export async function listTaskOccurrences(params: { date?: string; start?: string; end?: string }): Promise<{ items: { task_id: number, date: string, status: number, minutes: number, checkins_count?: number }[] }> {
+export async function listTaskOccurrences(params: { date?: string; start?: string; end?: string }): Promise<{ items: { task_id: number, date: string, status: number, minutes: number, checkins_count?: number, checkin_coins_json?: string }[] }> {
   return (await http.get('/tasks/occurrences', { params })) as any
 }
-export async function completeOccurrence(id: number, payload: { date: string; minutes?: number }): Promise<{ task_id: number, date: string, status: number, minutes: number, checkins_count?: number, daily_max_checkins?: number }> {
+export async function completeOccurrence(id: number, payload: { date: string; minutes?: number; custom_coins?: number }): Promise<{ task_id: number, date: string, status: number, minutes: number, checkins_count?: number, daily_max_checkins?: number }> {
   return (await http.post(`/tasks/${id}/occurrences/complete`, payload)) as any
 }
 export async function uncompleteOccurrence(id: number, payload: { date: string }): Promise<{ task_id: number, date: string, status: number, checkins_count?: number, daily_max_checkins?: number }> {
@@ -204,6 +210,7 @@ type OfflineCreateEntry = {
   description: string
   category: string
   score: number
+  score_mode?: 'fixed' | 'custom' | string
   daily_max_checkins?: number
   plan_minutes: number
   start_date: string
@@ -251,6 +258,7 @@ export async function syncOfflineTasks(userId: number): Promise<{ synced: number
         description: q.description,
         category: q.category,
         score: q.score,
+        score_mode: (q as any).score_mode,
         daily_max_checkins: Number((q as any).daily_max_checkins ?? 1),
         plan_minutes: q.plan_minutes,
         start_date: s,

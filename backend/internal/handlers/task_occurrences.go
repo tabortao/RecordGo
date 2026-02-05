@@ -115,8 +115,9 @@ func matchRepeat(t models.Task, d time.Time) bool {
 }
 
 type OccurrenceCompleteReq struct {
-	Date    string `json:"date"`
-	Minutes int    `json:"minutes"`
+	Date        string `json:"date"`
+	Minutes     int    `json:"minutes"`
+	CustomCoins *int   `json:"custom_coins"`
 }
 
 func CompleteTaskOccurrence(c *gin.Context) {
@@ -173,9 +174,29 @@ func CompleteTaskOccurrence(c *gin.Context) {
 			occ.TaskID = t.ID
 			occ.Date = normalizeDate(d)
 		}
-		effectiveCount := occ.CheckinsCount
-		if effectiveCount == 0 && occ.Status == 2 {
-			effectiveCount = 1
+		var coinsList []int
+		if strings.TrimSpace(occ.CheckinCoinsJSON) != "" {
+			_ = json.Unmarshal([]byte(occ.CheckinCoinsJSON), &coinsList)
+		}
+		effectiveCount := len(coinsList)
+		if effectiveCount == 0 {
+			effectiveCount = occ.CheckinsCount
+			if effectiveCount == 0 && occ.Status == 2 {
+				effectiveCount = 1
+			}
+		}
+		coinsEarned := t.Score
+		if strings.ToLower(strings.TrimSpace(t.ScoreMode)) == "custom" {
+			coinsEarned = 0
+			if req.CustomCoins != nil {
+				coinsEarned = *req.CustomCoins
+			}
+		}
+		if len(coinsList) == 0 && effectiveCount > 0 && strings.ToLower(strings.TrimSpace(t.ScoreMode)) != "custom" {
+			coinsList = make([]int, effectiveCount)
+			for i := 0; i < effectiveCount; i++ {
+				coinsList[i] = t.Score
+			}
 		}
 		if maxCheckins == 1 {
 			if effectiveCount >= 1 {
@@ -184,6 +205,7 @@ func CompleteTaskOccurrence(c *gin.Context) {
 			occ.CheckinsCount = 1
 			occ.Status = 2
 			occ.Minutes = m
+			coinsList = append(coinsList, coinsEarned)
 		} else {
 			if effectiveCount >= maxCheckins {
 				return newBizError(40004, "今日已达上限，不能继续打卡")
@@ -195,6 +217,10 @@ func CompleteTaskOccurrence(c *gin.Context) {
 				occ.Status = 1
 			}
 			occ.Minutes = m
+			coinsList = append(coinsList, coinsEarned)
+		}
+		if b, merr := json.Marshal(coinsList); merr == nil {
+			occ.CheckinCoinsJSON = string(b)
 		}
 		if occ.ID == 0 {
 			if cerr := tx.Create(&occ).Error; cerr != nil {
@@ -219,7 +245,7 @@ func CompleteTaskOccurrence(c *gin.Context) {
 				target = parent
 			}
 		}
-		target.Coins += int64(t.Score)
+		target.Coins += int64(coinsEarned)
 		if serr := tx.Save(&target).Error; serr != nil {
 			return serr
 		}
@@ -287,12 +313,30 @@ func UncompleteTaskOccurrence(c *gin.Context) {
 		if qerr := tx.Where("task_id = ? AND date = ?", t.ID, normalizeDate(d)).First(&occ).Error; qerr != nil {
 			return newBizError(40004, "今日尚未打卡，无法撤销")
 		}
-		effectiveCount := occ.CheckinsCount
-		if effectiveCount == 0 && occ.Status == 2 {
-			effectiveCount = 1
+		var coinsList []int
+		if strings.TrimSpace(occ.CheckinCoinsJSON) != "" {
+			_ = json.Unmarshal([]byte(occ.CheckinCoinsJSON), &coinsList)
+		}
+		effectiveCount := len(coinsList)
+		if effectiveCount == 0 {
+			effectiveCount = occ.CheckinsCount
+			if effectiveCount == 0 && occ.Status == 2 {
+				effectiveCount = 1
+			}
+		}
+		if len(coinsList) == 0 && effectiveCount > 0 && strings.ToLower(strings.TrimSpace(t.ScoreMode)) != "custom" {
+			coinsList = make([]int, effectiveCount)
+			for i := 0; i < effectiveCount; i++ {
+				coinsList[i] = t.Score
+			}
 		}
 		if effectiveCount <= 0 {
 			return newBizError(40004, "今日尚未打卡，无法撤销")
+		}
+		coinsRevert := t.Score
+		if len(coinsList) > 0 {
+			coinsRevert = coinsList[len(coinsList)-1]
+			coinsList = coinsList[:len(coinsList)-1]
 		}
 		if maxCheckins == 1 {
 			if derr := tx.Where("task_id = ? AND date = ?", t.ID, normalizeDate(d)).Delete(&models.TaskOccurrence{}).Error; derr != nil {
@@ -310,7 +354,14 @@ func UncompleteTaskOccurrence(c *gin.Context) {
 				respCheckinsCount = 0
 			} else {
 				occ.CheckinsCount = next
-				occ.Status = 1
+				if next >= maxCheckins {
+					occ.Status = 2
+				} else {
+					occ.Status = 1
+				}
+				if b, merr := json.Marshal(coinsList); merr == nil {
+					occ.CheckinCoinsJSON = string(b)
+				}
 				if serr := tx.Save(&occ).Error; serr != nil {
 					return serr
 				}
@@ -332,7 +383,7 @@ func UncompleteTaskOccurrence(c *gin.Context) {
 				target = parent
 			}
 		}
-		target.Coins -= int64(t.Score)
+		target.Coins -= int64(coinsRevert)
 		if serr := tx.Save(&target).Error; serr != nil {
 			return serr
 		}

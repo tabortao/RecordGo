@@ -20,6 +20,7 @@ type BatchCreateReq struct {
     Description string    `json:"description"`
     Category    string    `json:"category"`
     Score       int       `json:"score"`
+    ScoreMode   string    `json:"score_mode"`
     PlanMinutes int       `json:"plan_minutes"`
     StartDate   time.Time `json:"start_date"`
     EndDate     *time.Time `json:"end_date"`
@@ -144,6 +145,12 @@ func CreateTasksBatch(c *gin.Context) {
                 StartDate: d,
                 EndDate: nil,
                 Status: 0,
+            }
+            if strings.ToLower(strings.TrimSpace(req.ScoreMode)) == "custom" {
+                t.ScoreMode = "custom"
+                t.Score = 0
+            } else {
+                t.ScoreMode = "fixed"
             }
             batch = append(batch, t)
         }

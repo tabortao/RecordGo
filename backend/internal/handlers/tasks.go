@@ -26,6 +26,7 @@ type CreateTaskReq struct {
 	Priority         string     `json:"priority"` // 中文注释：占位字段，实际存入 Category/Remark
 	Category         string     `json:"category"`
 	Score            int        `json:"score"`
+	ScoreMode        string     `json:"score_mode"`
 	DailyMaxCheckins int        `json:"daily_max_checkins"`
 	PlanMinutes      int        `json:"plan_minutes"`
 	StartDate        time.Time  `json:"start_date"`
@@ -41,6 +42,7 @@ type UpdateTaskReq struct {
 	Description      *string     `json:"description"`
 	Category         *string     `json:"category"`
 	Score            *int        `json:"score"`
+	ScoreMode        *string     `json:"score_mode"`
 	DailyMaxCheckins *int        `json:"daily_max_checkins"`
 	PlanMinutes      *int        `json:"plan_minutes"`
 	ActualMinutes    *int        `json:"actual_minutes"`
@@ -57,6 +59,7 @@ type UpdateStatusReq struct {
 	Status int `json:"status"` // 0待完成 1进行中 2已完成
 	// 中文注释：番茄钟完成放行标记（仅用于在 view_only 下允许标记为“已完成”）
 	AllowByTomato bool `json:"allow_by_tomato"`
+	CustomCoins   *int `json:"custom_coins"`
 }
 
 // 中文注释：番茄钟完成上报请求结构体
@@ -127,6 +130,12 @@ func CreateTask(c *gin.Context) {
 		EndDate:          e,
 		ImageJSON:        req.ImageJSON,
 		Status:           0,
+	}
+	if strings.ToLower(strings.TrimSpace(req.ScoreMode)) == "custom" {
+		t.ScoreMode = "custom"
+		t.Score = 0
+	} else {
+		t.ScoreMode = "fixed"
 	}
 	// 规范 repeat 字段
 	switch strings.ToLower(strings.TrimSpace(req.RepeatType)) {
@@ -300,6 +309,16 @@ func UpdateTask(c *gin.Context) {
 	if req.Score != nil {
 		t.Score = *req.Score
 	}
+	if req.ScoreMode != nil {
+		if strings.ToLower(strings.TrimSpace(*req.ScoreMode)) == "custom" {
+			t.ScoreMode = "custom"
+		} else {
+			t.ScoreMode = "fixed"
+		}
+	}
+	if t.ScoreMode == "custom" {
+		t.Score = 0
+	}
 	if req.DailyMaxCheckins != nil {
 		v := *req.DailyMaxCheckins
 		if v < 1 {
@@ -386,45 +405,58 @@ func UpdateStatus(c *gin.Context) {
 	}
 	// 快照
 	before, _ := json.Marshal(t)
-	// 中文注释：当任务状态从“已完成”变更为其他状态时，扣减用户金币；当从非已完成变更为“已完成”时，增加用户金币
 	prev := t.Status
-	t.Status = req.Status
-	// 同步用户金币：若启用父子金币同步，则将金币更新与返回值指向父账号
-	var owner models.User
-	if err := db.DB().First(&owner, t.UserID).Error; err != nil {
-		// 中文注释：开发环境兜底——若任务所属用户不存在，初始化一个测试用户，避免报错
-		owner = models.User{ID: t.UserID, Username: fmt.Sprintf("user%d", t.UserID), Role: "user", Coins: 0, Nickname: "测试用户"}
-		if ierr := db.DB().Create(&owner).Error; ierr != nil {
-			common.Error(c, 50005, "初始化用户失败")
-			return
+	next := req.Status
+	var targetCoins int64
+	if err := db.DB().Transaction(func(tx *gorm.DB) error {
+		var owner models.User
+		if err := tx.First(&owner, t.UserID).Error; err != nil {
+			owner = models.User{ID: t.UserID, Username: fmt.Sprintf("user%d", t.UserID), Role: "user", Coins: 0, Nickname: "测试用户"}
+			if ierr := tx.Create(&owner).Error; ierr != nil {
+				return ierr
+			}
 		}
-	}
-	// 选择金币实际归属用户
-	target := owner
-	if cfg2, _ := config.Load(); cfg2 != nil && cfg2.ParentCoinsSync && owner.ParentID != nil {
-		var parent models.User
-		if err := db.DB().First(&parent, *owner.ParentID).Error; err == nil {
-			target = parent
+		target := owner
+		if cfg2, _ := config.Load(); cfg2 != nil && cfg2.ParentCoinsSync && owner.ParentID != nil {
+			var parent models.User
+			if err := tx.First(&parent, *owner.ParentID).Error; err == nil {
+				target = parent
+			}
 		}
-	}
-	if prev == 2 && req.Status != 2 {
-		// 取消完成：扣减对应金币（允许为负数，实际效果为增加金币）
-		target.Coins -= int64(t.Score)
-	} else if prev != 2 && req.Status == 2 {
-		// 标记完成：增加对应金币
-		target.Coins += int64(t.Score)
-	}
-	if err := db.DB().Save(&target).Error; err != nil {
-		common.Error(c, 50005, "更新用户金币失败")
-		return
-	}
-	if err := db.DB().Save(&t).Error; err != nil {
+		if prev == 2 && next != 2 {
+			revert := t.Score
+			if strings.ToLower(strings.TrimSpace(t.ScoreMode)) == "custom" || t.CompletedScore != 0 {
+				revert = t.CompletedScore
+			}
+			target.Coins -= int64(revert)
+			t.CompletedScore = 0
+		} else if prev != 2 && next == 2 {
+			award := t.Score
+			if strings.ToLower(strings.TrimSpace(t.ScoreMode)) == "custom" {
+				award = 0
+				if req.CustomCoins != nil {
+					award = *req.CustomCoins
+				}
+			}
+			target.Coins += int64(award)
+			t.CompletedScore = award
+		}
+		if err := tx.Save(&target).Error; err != nil {
+			return err
+		}
+		t.Status = next
+		if err := tx.Save(&t).Error; err != nil {
+			return err
+		}
+		targetCoins = target.Coins
+		return nil
+	}); err != nil {
 		common.Error(c, 50005, "更新状态失败")
 		return
 	}
 	_ = db.DB().Create(&models.TaskHistory{TaskID: t.ID, ChangeType: "status", SnapshotJSON: string(before)}).Error
 	// 中文注释：返回 user_coins 为金币实际归属用户（父或本人）的最新值，便于前端统一展示
-	common.Ok(c, gin.H{"task": t, "user_coins": target.Coins})
+	common.Ok(c, gin.H{"task": t, "user_coins": targetCoins})
 }
 
 // DeleteTask 软删除（进入回收站）
