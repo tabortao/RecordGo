@@ -18,8 +18,8 @@
           <div class="flex flex-col items-center">
             <div class="w-48 h-48 bg-gray-100 rounded-lg overflow-hidden mb-2">
               <el-image 
-                src="https://img.sdgarden.top/blog/wechat/wechatpay.jpg" 
-                :preview-src-list="['https://img.sdgarden.top/blog/wechat/wechatpay.jpg']"
+                :src="wechatpay" 
+                :preview-src-list="[wechatpay]"
                 fit="cover"
                 class="w-full h-full"
               >
@@ -39,8 +39,8 @@
           <div class="flex flex-col items-center">
             <div class="w-48 h-48 bg-gray-100 rounded-lg overflow-hidden mb-2">
               <el-image 
-                src="https://img.sdgarden.top/blog/wechat/alipay.jpg" 
-                :preview-src-list="['https://img.sdgarden.top/blog/wechat/alipay.jpg']"
+                :src="alipay" 
+                :preview-src-list="[alipay]"
                 fit="cover"
                 class="w-full h-full"
               >
@@ -69,6 +69,9 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Present, Picture, ChatDotSquare, Wallet } from '@element-plus/icons-vue'
+
+import wechatpay from '@/assets/images/wechatpay.jpg'
+import alipay from '@/assets/images/alipay.jpg'
 
 const router = useRouter()
 </script>
