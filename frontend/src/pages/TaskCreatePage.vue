@@ -9,36 +9,37 @@
             <span>普通创建</span>
           </div>
         </template>
-        <!-- 响应式网格：移动端单列，桌面端双列/三列（根据内容） -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <!-- 基础信息分区 -->
-          <el-card shadow="never" class="pretty-card">
-            <template #header>
-              <div class="flex items-center justify-between gap-4">
-                <div class="flex items-center gap-2">
-                  <div class="h-9 w-9 rounded-2xl bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-300 grid place-items-center">
-                    <el-icon :size="18"><Edit /></el-icon>
-                  </div>
-                  <div class="min-w-0">
-                    <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">基础信息</div>
-                    <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">标题 · 描述 · 图片 · 分类 · 时长</div>
+        <el-form ref="formRefInstance" :model="form" :rules="rules" label-position="top" class="task-create-form">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <el-card shadow="never" class="pretty-card">
+              <template #header>
+                <div class="flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-2">
+                    <div class="h-9 w-9 rounded-2xl bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-300 grid place-items-center">
+                      <el-icon :size="18"><Edit /></el-icon>
+                    </div>
+                    <div class="min-w-0">
+                      <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">基础信息</div>
+                      <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">标题 · 描述 · 图片 · 分类 · 时长</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </template>
-            <el-form ref="formRefInstance" :model="form" :rules="rules" label-width="100px">
+              </template>
+
               <el-form-item prop="name" required>
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><Edit /></el-icon><span>任务标题</span></div>
                 </template>
-                <el-input v-model="form.name" maxlength="128" show-word-limit placeholder="例如：背诵古诗 1 首 / 数学口算 20 题" size="large" />
+                <el-input v-model="form.name" maxlength="128" show-word-limit placeholder="例如：背诵古诗 1 首" size="large" />
               </el-form-item>
-              <el-form-item label="任务描述" prop="description">
+
+              <el-form-item prop="description">
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><List /></el-icon><span>任务描述</span></div>
                 </template>
-                <el-input v-model="form.description" type="textarea" :rows="4" placeholder="写下要点：怎么做、做到什么程度、需要多久" />
+                <el-input v-model="form.description" type="textarea" :rows="4" placeholder="写下要点：怎么做、做到什么程度等" />
               </el-form-item>
+
               <el-form-item class="image-upload">
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><Plus /></el-icon><span>任务图片</span></div>
@@ -54,6 +55,7 @@
                   @added="() => ElMessage.success('图片已添加')"
                 />
               </el-form-item>
+
               <el-form-item prop="category" required>
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><List /></el-icon><span>任务分类</span></div>
@@ -65,45 +67,44 @@
                   </el-option>
                 </el-select>
               </el-form-item>
+
               <el-form-item prop="plan_minutes" required>
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><Clock /></el-icon><span>计划时长</span></div>
                 </template>
-                <el-input-number v-model="form.plan_minutes" :min="1" :max="240" size="large" />
+                <el-input-number v-model="form.plan_minutes" :min="1" :max="240" size="large" style="width: 100%" />
               </el-form-item>
-            </el-form>
-          </el-card>
+            </el-card>
 
-          <!-- 计划与重复分区 -->
-          <el-card shadow="never" class="pretty-card">
-            <template #header>
-              <div class="flex items-center justify-between gap-4">
-                <div class="flex items-center gap-2">
-                  <div class="h-9 w-9 rounded-2xl bg-sky-50 dark:bg-sky-900/25 text-sky-700 dark:text-sky-300 grid place-items-center">
-                    <el-icon :size="18"><Clock /></el-icon>
-                  </div>
-                  <div class="min-w-0">
-                    <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">计划与重复</div>
-                    <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">金币 · 重复 · 日期范围</div>
+            <el-card shadow="never" class="pretty-card">
+              <template #header>
+                <div class="flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-2">
+                    <div class="h-9 w-9 rounded-2xl bg-sky-50 dark:bg-sky-900/25 text-sky-700 dark:text-sky-300 grid place-items-center">
+                      <el-icon :size="18"><Clock /></el-icon>
+                    </div>
+                    <div class="min-w-0">
+                      <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">计划与重复</div>
+                      <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">金币 · 重复 · 日期范围</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </template>
-            <el-form :model="form" label-width="100px">
+              </template>
+
               <el-form-item prop="score">
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><Coin /></el-icon><span>任务金币</span></div>
                 </template>
                 <div class="w-full">
-                  <el-radio-group v-model="form.score_mode" class="mb-2">
+                  <el-radio-group v-model="form.score_mode" class="mb-2 w-full">
                     <el-radio-button label="fixed">固定金币</el-radio-button>
                     <el-radio-button label="custom">完成时自定义</el-radio-button>
                   </el-radio-group>
-                  <el-input-number v-if="form.score_mode === 'fixed'" v-model="form.score" :min="-10" :max="10" size="large" />
+                  <el-input-number v-if="form.score_mode === 'fixed'" v-model="form.score" :min="-10" :max="10" size="large" style="width: 100%" />
                   <div v-else class="space-y-2">
                     <div class="flex items-center gap-3">
-                      <div class="text-xs font-semibold text-gray-700 dark:text-gray-200">自定义金币上限</div>
-                      <el-input-number v-model="form.custom_score_max" :min="1" :max="10" size="large" />
+                      <div class="text-xs font-semibold text-gray-700 dark:text-gray-200 shrink-0">自定义金币上限</div>
+                      <el-input-number v-model="form.custom_score_max" :min="1" :max="10" size="large" style="width: 100%" />
                     </div>
                     <div class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                       完成任务时仅可选择 1-{{ form.custom_score_max }}，不提供其他输入方式
@@ -111,12 +112,14 @@
                   </div>
                 </div>
               </el-form-item>
+
               <el-form-item prop="daily_max_checkins">
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><List /></el-icon><span>每日上限</span></div>
                 </template>
-                <el-input-number v-model="form.daily_max_checkins" :min="1" :max="20" size="large" />
+                <el-input-number v-model="form.daily_max_checkins" :min="1" :max="20" size="large" style="width: 100%" />
               </el-form-item>
+
               <el-form-item prop="repeat_type">
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><List /></el-icon><span>重复类型</span></div>
@@ -129,11 +132,12 @@
                   <el-option label="每月" value="monthly" />
                 </el-select>
               </el-form-item>
-              <el-form-item v-if="form.repeat_type==='weekly'" prop="weekly_days">
+
+              <el-form-item v-if="form.repeat_type === 'weekly'" prop="weekly_days">
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><List /></el-icon><span>选择星期</span></div>
                 </template>
-                <el-checkbox-group v-model="form.weekly_days">
+                <el-checkbox-group v-model="form.weekly_days" class="flex flex-wrap gap-2">
                   <el-checkbox :label="1">周一</el-checkbox>
                   <el-checkbox :label="2">周二</el-checkbox>
                   <el-checkbox :label="3">周三</el-checkbox>
@@ -143,29 +147,32 @@
                   <el-checkbox :label="7">周日</el-checkbox>
                 </el-checkbox-group>
               </el-form-item>
+
               <el-form-item prop="start_date" required>
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><Clock /></el-icon><span>开始日期</span></div>
                 </template>
-                <el-date-picker v-model="form.start_date" type="date" :editable="false" :clearable="false" />
+                <el-date-picker v-model="form.start_date" type="date" :editable="false" :clearable="false" size="large" style="width: 100%" />
               </el-form-item>
+
               <el-form-item prop="end_date">
                 <template #label>
                   <div class="flex items-center gap-1"><el-icon><Clock /></el-icon><span>截止日期</span></div>
                 </template>
-                <el-date-picker v-model="form.end_date" type="date" :editable="false" :clearable="false" />
+                <el-date-picker v-model="form.end_date" type="date" :editable="false" :clearable="false" size="large" style="width: 100%" />
               </el-form-item>
-            </el-form>
-          </el-card>
-        </div>
-
-        <!-- 底部操作区 -->
-        <div class="mt-5 rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/65 backdrop-blur-xl shadow-sm px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div class="flex justify-end gap-2">
-            <el-button class="!rounded-2xl !font-extrabold" @click="goBack">取消</el-button>
-            <el-button type="primary" class="!rounded-2xl !font-extrabold" @click="submitForm">确定</el-button>
+            </el-card>
           </div>
-        </div>
+
+          <div class="task-create-actions mt-5 rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/65 backdrop-blur-xl shadow-sm px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sticky bottom-3 z-20">
+            <div class="flex justify-end gap-2">
+              <el-button class="!rounded-2xl !font-extrabold" size="large" @click="goBack">取消</el-button>
+              <el-button type="primary" class="!rounded-2xl !font-extrabold" size="large" :loading="submitting" @click="submitForm">
+                确定
+              </el-button>
+            </div>
+          </div>
+        </el-form>
       </el-tab-pane>
 
       <!-- AI 智能创建 Tab -->
@@ -194,7 +201,7 @@
                 </el-tooltip>
               </div>
             </template>
-            <el-input 
+            <el-input
               v-model="aiText" 
               type="textarea" 
               :rows="8"
@@ -227,8 +234,8 @@
                </el-upload>
             </div>
             <div class="mt-6 flex justify-end">
-              <el-button type="primary" class="!rounded-2xl !font-extrabold" :loading="aiLoading" @click="handleAIParse" size="large">
-                <el-icon class="mr-1"><MagicStick /></el-icon>开始智能识别
+              <el-button type="primary" class="!rounded-2xl !font-extrabold" :loading="aiLoading" :disabled="isCompressing" @click="handleAIParse" size="large">
+                <el-icon class="mr-1"><MagicStick /></el-icon>{{ aiLoadingText }}
               </el-button>
             </div>
           </el-card>
@@ -244,9 +251,9 @@
              
              <el-empty v-if="aiTasks.length === 0 && !aiLoading" description="暂无识别结果，请在左侧输入并点击识别" />
 
-             <div v-loading="aiLoading" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+             <div v-loading="aiLoading" :element-loading-text="aiLoadingText" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                 <el-card v-for="(task, idx) in aiTasks" :key="idx" shadow="hover" class="pretty-card relative group">
-                   <div class="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                   <div class="absolute top-2 right-2 z-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex gap-2">
                       <el-tag v-if="task.confidence" size="small" :type="task.confidence === 'High' ? 'success' : 'warning'">
                         置信度: {{ task.confidence === 'High' ? '高' : '中' }}
                       </el-tag>
@@ -324,9 +331,8 @@
 
 <script setup lang="ts">
 // 中文注释：创建任务页面逻辑，支持普通创建与AI智能创建
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElForm } from 'element-plus'
-import { computed } from 'vue'
 import { useTaskCategories } from '@/stores/categories'
 
 // 中文注释：联动任务分类设置，创建页下拉选项与颜色一致
@@ -349,6 +355,7 @@ function goBack() { router.back() }
 function getCategories() { return categories.value }
 
 const activeTab = ref('normal')
+const submitting = ref(false)
 
 // --- 普通创建逻辑 ---
 type FormModel = {
@@ -383,9 +390,11 @@ const rules = {
 
 async function submitForm() {
   if (!formRefInstance.value) return
-  await formRefInstance.value.validate(async (valid: boolean) => {
-    if (!valid) return
-    try {
+  const valid = await formRefInstance.value.validate().catch(() => false)
+  if (!valid) return
+
+  submitting.value = true
+  try {
     const start = new Date(form.start_date)
     const end = form.end_date ? new Date(form.end_date) : undefined
     if (end && end.getTime() < start.getTime()) {
@@ -467,8 +476,9 @@ async function submitForm() {
     } catch {
       ElMessage.error(e.message || '创建失败')
     }
+  } finally {
+    submitting.value = false
   }
-  })
 }
 
 import { recognizeImage } from '@/services/ocr'
@@ -796,5 +806,27 @@ async function submitAITasks() {
 .dark :deep(.pretty-card .el-textarea__inner:focus) {
   box-shadow: 0 0 0 4px rgb(16 185 129 / 0.14);
   border-color: rgb(16 185 129);
+}
+
+:deep(.task-create-form .el-form-item) {
+  margin-bottom: 16px;
+}
+
+:deep(.task-create-form .el-form-item__label) {
+  padding-bottom: 6px;
+  font-weight: 800;
+  color: rgb(17 24 39);
+}
+
+.dark :deep(.task-create-form .el-form-item__label) {
+  color: rgb(243 244 246);
+}
+
+:deep(.task-create-form .el-checkbox) {
+  margin-right: 0;
+}
+
+.task-create-actions {
+  bottom: calc(12px + env(safe-area-inset-bottom));
 }
 </style>

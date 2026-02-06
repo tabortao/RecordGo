@@ -13,9 +13,9 @@ body, #app {
 }
 
 @media screen and (max-width: 768px) {
-  input, textarea { font-size: 16px !important; }
-  .el-input__inner { font-size: 16px !important; }
-  .el-textarea__inner { font-size: 16px !important; }
+  input, textarea { font-size: inherit !important; }
+  .el-input__inner { font-size: inherit !important; }
+  .el-textarea__inner { font-size: inherit !important; }
 }
 
 /* 深色模式下统一 Element Plus 组件背景与文字颜色 */
