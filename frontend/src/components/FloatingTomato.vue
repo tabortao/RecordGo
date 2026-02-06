@@ -27,6 +27,7 @@ import { useAppState } from '@/stores/appState'
 import { completeTomato, updateTaskStatus } from '@/services/tasks'
 import { ElMessage } from 'element-plus'
 import { speak } from '@/utils/speech'
+import dayjs from 'dayjs'
 import JingleBellUrl from '@/assets/audio/JingleBell.mp3'
 
 const store = useAppState()
@@ -80,7 +81,7 @@ async function finalizeCountdown() {
     if (id && !isNaN(id)) {
       await completeTomato(id, minutes)
       // 中文注释：悬浮球计时完成也视为番茄完成，允许只读权限下标记“已完成”
-      await updateTaskStatus(id, 2, { allowByTomato: true })
+      await updateTaskStatus(id, 2, { allowByTomato: true, date: dayjs().format('YYYY-MM-DD') })
       ElMessage.success('番茄钟完成，数据已记录')
     }
   } catch (e: any) {

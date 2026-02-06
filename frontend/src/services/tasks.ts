@@ -15,6 +15,7 @@ export interface TaskItem {
   score_mode?: 'fixed' | 'custom' | string
   custom_score_max?: number
   completed_score?: number
+  completed_at?: string
   daily_max_checkins?: number
   plan_minutes: number
   actual_minutes: number
@@ -40,6 +41,7 @@ export async function listTasks(params?: { status?: number; page?: number; page_
     score_mode: String(x.score_mode ?? x.ScoreMode ?? 'fixed'),
     custom_score_max: Number(x.custom_score_max ?? x.CustomScoreMax ?? 5),
     completed_score: Number(x.completed_score ?? x.CompletedScore ?? 0),
+    completed_at: (x.completed_at ?? x.CompletedAt) ? String(x.completed_at ?? x.CompletedAt) : undefined,
     daily_max_checkins: Number(x.daily_max_checkins ?? x.DailyMaxCheckins ?? 1),
     plan_minutes: Number(x.plan_minutes ?? x.PlanMinutes ?? 0),
     actual_minutes: Number(x.actual_minutes ?? x.ActualMinutes ?? 0),
@@ -127,10 +129,11 @@ export async function updateTask(id: number, payload: any): Promise<TaskItem> {
   return (await http.put(`/tasks/${id}`, norm)) as any
 }
 
-export async function updateTaskStatus(id: number, status: number, opts?: { allowByTomato?: boolean; customCoins?: number }): Promise<TaskItem> {
+export async function updateTaskStatus(id: number, status: number, opts?: { allowByTomato?: boolean; customCoins?: number; date?: string }): Promise<TaskItem> {
   const body: any = { status }
   if (opts?.allowByTomato) body.allow_by_tomato = true
   if (opts?.customCoins != null) body.custom_coins = opts.customCoins
+  if (opts?.date) body.date = opts.date
   return (await http.patch(`/tasks/${id}/status`, body)) as any
 }
 

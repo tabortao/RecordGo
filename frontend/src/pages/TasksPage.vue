@@ -638,9 +638,12 @@ const dateStatusFilteredTasks = computed(() => {
       /monthly|每月/i.test(rep) ? 'monthly' : 'none'
     if (type === 'none') {
       if (eDate) {
-        if (Number((t as any).status ?? 0) === 2) return false
         const sKey = dayjs(sDate).format('YYYY-MM-DD')
         const eKey = dayjs(eDate).format('YYYY-MM-DD')
+        if (Number((t as any).status ?? 0) === 2) {
+          const cKey = getCompletedKey(t) || sKey
+          return selKey === cKey
+        }
         return selKey >= sKey && selKey <= eKey
       }
       return dayjs(sDate).format('YYYY-MM-DD') === selKey
@@ -794,6 +797,12 @@ function getCheckCircleClass(t: TaskItem) {
   if (useOccurrenceTracking(t) && getDailyMaxCheckins(t) > 1 && getTodayCheckinsCount(t) > 0) return 'bg-amber-500 border-amber-500 text-white'
   return 'border-gray-400 dark:border-gray-500 text-gray-400 dark:text-gray-500'
 }
+function getCompletedKey(t: TaskItem): string | null {
+  const raw = (t as any).completed_at ?? (t as any).CompletedAt ?? (t as any).completedAt
+  if (!raw) return null
+  const key = dayjs(String(raw)).format('YYYY-MM-DD')
+  return key && key !== 'Invalid Date' ? key : null
+}
 function isCompletedOnSelected(t: TaskItem) {
   if (useOccurrenceTracking(t)) return getTodayCheckinsCount(t) >= getDailyMaxCheckins(t)
   return t.status === 2
@@ -882,7 +891,23 @@ const taskCountMap = computed<Record<string, number>>(() => {
       /weekly|每周/i.test(rep) ? 'weekly' :
       /monthly|每月/i.test(rep) ? 'monthly' : 'none'
     const startKey = s.format('YYYY-MM-DD')
-    if (type === 'none') { map[startKey] = (map[startKey] || 0) + 1; continue }
+    if (type === 'none') {
+      if (eDate) {
+        const endKey = (eDate as any).format('YYYY-MM-DD')
+        if (Number((t as any).status ?? 0) === 2) {
+          const cKey = getCompletedKey(t) || startKey
+          map[cKey] = (map[cKey] || 0) + 1
+        } else {
+          for (const d of days) {
+            const key = d.format('YYYY-MM-DD')
+            if (key >= startKey && key <= endKey) map[key] = (map[key] || 0) + 1
+          }
+        }
+        continue
+      }
+      map[startKey] = (map[startKey] || 0) + 1
+      continue
+    }
     const dowStart = s.day() === 0 ? 7 : s.day()
     const weeklyDays: number[] = Array.isArray((t as any).weekly_days) ? ((t as any).weekly_days as number[]) : [dowStart]
     if (eDate) {
@@ -930,6 +955,15 @@ const filteredTasks = computed(() => {
       /weekly|每周/i.test(rep) ? 'weekly' :
       /monthly|每月/i.test(rep) ? 'monthly' : 'none'
     if (type === 'none') {
+      if (eDate) {
+        const sKey = dayjs(sDate).format('YYYY-MM-DD')
+        const eKey = dayjs(eDate).format('YYYY-MM-DD')
+        if (Number((t as any).status ?? 0) === 2) {
+          const cKey = getCompletedKey(t) || sKey
+          return selKey === cKey
+        }
+        return selKey >= sKey && selKey <= eKey
+      }
       return dayjs(sDate).format('YYYY-MM-DD') === selKey
     }
     const dow = dayjs(sDate).day() === 0 ? 7 : dayjs(sDate).day()
@@ -1408,9 +1442,10 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
         }
       } else {
         await updateTask(t.id, { actual_minutes: planM })
-        await updateTaskStatus(t.id, 2, customCoins != null ? { customCoins } : undefined)
+        await updateTaskStatus(t.id, 2, { ...(customCoins != null ? { customCoins } : {}), date: dateStr })
         t.status = 2
         if (customCoins != null) (t as any).completed_score = customCoins
+        ;(t as any).completed_at = dateStr
         t.actual_minutes = (t.actual_minutes || 0) + planM
         actualSecondsLocal[t.id] = planM * 60
         ElMessage.success('已标记为完成（按计划时长计）')
@@ -1441,6 +1476,7 @@ async function onCheckComplete(t: TaskItem, checked: boolean) {
         await updateTaskStatus(t.id, 0)
         t.status = 0
         ;(t as any).completed_score = 0
+        ;(t as any).completed_at = undefined
         ElMessage.success('已取消完成')
       }
     }
@@ -1618,8 +1654,8 @@ async function onTomatoComplete(seconds?: number) {
     // 中文注释：按实际秒数精确展示，后端按分钟上报（四舍五入）；无秒数则按计划时长
     const usedSec = Math.max(1, seconds || (currentTask.value.plan_minutes || 20) * 60)
     const reportMinutes = Math.max(1, Math.round(usedSec / 60))
+    const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
     if (useOccurrenceTracking(currentTask.value)) {
-      const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD')
       const resp = await completeOccurrence(currentTask.value.id, { date: dateStr, minutes: reportMinutes, ...(customCoins != null ? { custom_coins: customCoins } : {}) })
       occurMap.value[currentTask.value.id] = {
         status: Number((resp as any).status ?? 0),
@@ -1636,9 +1672,10 @@ async function onTomatoComplete(seconds?: number) {
       const idx = tasks.value.findIndex((x) => x.id === currentTask.value!.id)
       if (idx >= 0) tasks.value[idx] = updated
       actualSecondsLocal[currentTask.value.id] = usedSec
-      await updateTaskStatus(currentTask.value.id, 2, customCoins != null ? { customCoins } : undefined)
+      await updateTaskStatus(currentTask.value.id, 2, { ...(customCoins != null ? { customCoins } : {}), date: dateStr })
       if (idx >= 0) tasks.value[idx].status = 2
       if (idx >= 0 && customCoins != null) (tasks.value[idx] as any).completed_score = customCoins
+      if (idx >= 0) (tasks.value[idx] as any).completed_at = dateStr
     }
     // 中文注释：dayMinutes 已改为计算属性，无需手动赋值
     // dayMinutes.value = tasks.value.reduce((sum, x) => sum + (x.actual_minutes || 0), 0)

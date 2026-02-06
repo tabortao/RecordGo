@@ -62,6 +62,7 @@ type UpdateStatusReq struct {
 	// 中文注释：番茄钟完成放行标记（仅用于在 view_only 下允许标记为“已完成”）
 	AllowByTomato bool `json:"allow_by_tomato"`
 	CustomCoins   *int `json:"custom_coins"`
+	Date          string `json:"date"`
 }
 
 // 中文注释：番茄钟完成上报请求结构体
@@ -432,6 +433,18 @@ func UpdateStatus(c *gin.Context) {
 	before, _ := json.Marshal(t)
 	prev := t.Status
 	next := req.Status
+	var completedAt *time.Time
+	if strings.TrimSpace(req.Date) != "" {
+		if d, err := time.Parse("2006-01-02", strings.TrimSpace(req.Date)); err == nil {
+			dd := time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, time.UTC)
+			completedAt = &dd
+		}
+	}
+	if completedAt == nil {
+		now := time.Now().UTC()
+		dd := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+		completedAt = &dd
+	}
 	// 中文注释：权限拆分——完成/状态变更用 tasks.status；撤销完成用 tasks.undo；番茄钟完成可通过 allow_by_tomato 放行
 	if prev == 2 && next != 2 {
 		if !hasPermission(c, "tasks", "undo") {
@@ -474,6 +487,7 @@ func UpdateStatus(c *gin.Context) {
 			}
 			target.Coins -= int64(revert)
 			t.CompletedScore = 0
+			t.CompletedAt = nil
 		} else if prev != 2 && next == 2 {
 			award := t.Score
 			if strings.ToLower(strings.TrimSpace(t.ScoreMode)) == "custom" {
@@ -494,6 +508,7 @@ func UpdateStatus(c *gin.Context) {
 			}
 			target.Coins += int64(award)
 			t.CompletedScore = award
+			t.CompletedAt = completedAt
 		}
 		if err := tx.Save(&target).Error; err != nil {
 			return err
