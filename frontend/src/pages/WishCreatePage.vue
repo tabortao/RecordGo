@@ -1,39 +1,39 @@
 <template>
-  <SettingsShell title="创建心愿" subtitle="自定义图标、金币与单位" :icon="Plus" tone="emerald" container-class="max-w-3xl" :decor="false">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div class="lg:col-span-1 space-y-4">
+  <SettingsShell title="创建心愿" subtitle="自定义图标、金币与单位" :icon="Plus" tone="emerald" container-class="max-w-6xl" :decor="false">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+      <div class="lg:col-span-5 xl:col-span-4 space-y-6 lg:sticky lg:top-24 transition-all duration-300">
         <SettingsCard title="预览" description="创建后将展示在心愿列表中">
-          <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-950/20 px-4 py-4">
-            <div class="flex items-center gap-3">
+          <div class="rounded-[28px] border border-gray-100 dark:border-gray-800 bg-gradient-to-br from-white/80 to-white/40 dark:from-gray-900/40 dark:to-gray-900/20 p-5 shadow-sm">
+            <div class="flex items-center gap-4">
               <div class="relative shrink-0">
-                <div class="absolute -inset-2 rounded-2xl bg-emerald-200/35 dark:bg-emerald-500/12 blur-xl" />
-                <div v-if="isEmojiIcon" class="relative w-14 h-14 rounded-3xl ring-1 ring-black/5 dark:ring-white/10 bg-white/70 dark:bg-gray-950/25 grid place-items-center text-[28px] leading-none">
+                <div class="absolute -inset-4 rounded-full bg-emerald-400/20 dark:bg-emerald-500/10 blur-2xl" />
+                <div v-if="isEmojiIcon" class="relative w-16 h-16 rounded-[20px] shadow-sm ring-1 ring-black/5 dark:ring-white/10 bg-white dark:bg-gray-800 grid place-items-center text-[32px] leading-none transition-transform duration-300 hover:scale-105">
                   {{ emojiChar }}
                 </div>
                 <img
                   v-else
                   :src="form.icon_preview || iconResolved"
-                  class="relative w-14 h-14 rounded-3xl ring-1 ring-black/5 dark:ring-white/10"
+                  class="relative w-16 h-16 rounded-[20px] shadow-sm ring-1 ring-black/5 dark:ring-white/10 object-cover bg-white dark:bg-gray-800 transition-transform duration-300 hover:scale-105"
                   @error="onIconError"
                 />
               </div>
-              <div class="min-w-0 flex-1">
-                <div class="text-base font-extrabold tracking-tight text-gray-900 dark:text-gray-50 truncate">{{ previewTitle }}</div>
-                <div class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">{{ previewDesc }}</div>
+              <div class="min-w-0 flex-1 space-y-1">
+                <div class="text-lg font-black tracking-tight text-gray-900 dark:text-white truncate">{{ previewTitle }}</div>
+                <div class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">{{ previewDesc }}</div>
               </div>
             </div>
-            <div class="mt-4 grid grid-cols-3 gap-2">
-              <div class="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-950/20 px-3 py-2">
-                <div class="text-[11px] font-extrabold tracking-[0.22em] text-gray-500 dark:text-gray-400">金币</div>
-                <div class="mt-1 text-sm font-black text-emerald-700 dark:text-emerald-300 tabular-nums">{{ form.need_coins }}</div>
+            <div class="mt-6 grid grid-cols-3 gap-3">
+              <div class="group rounded-2xl bg-gray-50/80 dark:bg-gray-800/50 p-3 text-center transition-colors hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-gray-400 group-hover:text-emerald-600/70 dark:group-hover:text-emerald-400/70">金币</div>
+                <div class="mt-1 text-base font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{{ form.need_coins }}</div>
               </div>
-              <div class="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-950/20 px-3 py-2">
-                <div class="text-[11px] font-extrabold tracking-[0.22em] text-gray-500 dark:text-gray-400">单位</div>
-                <div class="mt-1 text-sm font-black text-gray-900 dark:text-gray-50">{{ form.unit }}</div>
+              <div class="group rounded-2xl bg-gray-50/80 dark:bg-gray-800/50 p-3 text-center transition-colors hover:bg-blue-50/50 dark:hover:bg-blue-900/10">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-gray-400 group-hover:text-blue-600/70 dark:group-hover:text-blue-400/70">单位</div>
+                <div class="mt-1 text-base font-black text-gray-900 dark:text-gray-100">{{ form.unit }}</div>
               </div>
-              <div class="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-950/20 px-3 py-2">
-                <div class="text-[11px] font-extrabold tracking-[0.22em] text-gray-500 dark:text-gray-400">数量</div>
-                <div class="mt-1 text-sm font-black text-gray-900 dark:text-gray-50 tabular-nums">{{ form.exchange_amount }}</div>
+              <div class="group rounded-2xl bg-gray-50/80 dark:bg-gray-800/50 p-3 text-center transition-colors hover:bg-purple-50/50 dark:hover:bg-purple-900/10">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-gray-400 group-hover:text-purple-600/70 dark:group-hover:text-purple-400/70">数量</div>
+                <div class="mt-1 text-base font-black text-gray-900 dark:text-gray-100 tabular-nums">{{ form.exchange_amount }}</div>
               </div>
             </div>
           </div>
@@ -47,39 +47,41 @@
             <el-button plain class="!rounded-2xl !font-extrabold" @click="resetIcon">重置</el-button>
           </div>
 
-          <div class="mt-5 rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/65 dark:bg-gray-950/15 px-4 py-4">
-            <div class="flex items-center justify-between gap-3">
+          <div class="mt-6 rounded-[24px] border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-950/20 p-5">
+            <div class="flex items-center justify-between gap-3 mb-5">
               <div>
-                <div class="text-sm font-extrabold text-gray-900 dark:text-gray-50">Emoji 图标</div>
-                <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">点击即可使用，适合常见心愿</div>
+                <div class="text-sm font-black text-gray-900 dark:text-gray-50">选择 Emoji</div>
+                <div class="mt-1 text-xs font-medium text-gray-400 dark:text-gray-500">点击即可使用，快速美化心愿</div>
               </div>
-              <div v-if="isEmojiIcon" class="rounded-full border border-emerald-200/70 dark:border-emerald-900/40 bg-emerald-50/70 dark:bg-emerald-900/15 px-3 py-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-200">
-                已选择
+              <div v-if="isEmojiIcon" class="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                已选中
               </div>
             </div>
 
-            <div class="mt-4 flex flex-wrap gap-2">
+            <!-- 分类标签 -->
+            <div class="flex flex-wrap gap-2 pb-2 -mx-1 px-1">
               <button
                 v-for="c in emojiCategories"
                 :key="c.key"
                 type="button"
-                class="rounded-full border px-3 py-1 text-xs font-extrabold transition active:scale-[0.99]"
+                class="shrink-0 rounded-full border px-4 py-1.5 text-xs font-bold transition-all duration-200 active:scale-95"
                 :class="activeEmojiCategory === c.key
-                  ? 'border-emerald-200/80 dark:border-emerald-900/45 bg-emerald-50/80 dark:bg-emerald-900/18 text-emerald-800 dark:text-emerald-200'
-                  : 'border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-950/10 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-900/40'"
+                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 shadow-sm shadow-emerald-500/10'
+                  : 'border-transparent bg-gray-100/50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-800'"
                 @click="activeEmojiCategory = c.key"
               >
                 {{ c.label }}
               </button>
             </div>
 
-            <div class="mt-4 grid grid-cols-6 sm:grid-cols-8 gap-2">
+            <!-- Emoji 网格 -->
+            <div class="mt-4 max-h-[320px] overflow-y-auto pr-2 grid grid-cols-6 sm:grid-cols-8 md:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6 gap-3 custom-scrollbar">
               <button
                 v-for="e in activeEmojiList"
                 :key="e"
                 type="button"
-                class="h-10 w-10 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/75 dark:bg-gray-950/15 hover:bg-white dark:hover:bg-gray-900/40 transition active:scale-[0.99] grid place-items-center text-[20px] leading-none"
-                :class="form.icon === ('emoji:' + e) ? 'ring-2 ring-emerald-400/80 dark:ring-emerald-300/60' : ''"
+                class="aspect-square rounded-2xl border border-transparent hover:border-gray-200 dark:hover:border-gray-700 bg-white/60 dark:bg-gray-800/40 hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 grid place-items-center text-2xl leading-none"
+                :class="form.icon === ('emoji:' + e) ? '!border-emerald-500/50 !bg-emerald-500/10 ring-2 ring-emerald-500/20' : ''"
                 @click="pickEmojiIcon(e)"
               >
                 {{ e }}
@@ -89,7 +91,7 @@
         </SettingsCard>
       </div>
 
-      <div class="lg:col-span-2 space-y-4">
+      <div class="lg:col-span-7 xl:col-span-8 space-y-6">
         <SettingsCard title="基本信息" description="名称越具体，越容易坚持">
           <el-form :model="form" label-position="top" class="wish-form">
             <el-form-item label="心愿名称">
@@ -102,34 +104,28 @@
         </SettingsCard>
 
         <SettingsCard title="兑换规则" description="设置所需金币、单位与可兑换数量">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-950/20 px-4 py-4">
-              <div class="text-[12px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400">所需金币</div>
-              <div class="mt-3">
-                <el-input-number v-model="form.need_coins" :min="1" controls-position="right" class="w-full" size="large" />
-              </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
+            <div class="rounded-[24px] border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-950/20 p-5 transition-colors hover:bg-white dark:hover:bg-gray-900/40 flex flex-col">
+              <div class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">所需金币</div>
+              <el-input-number v-model="form.need_coins" :min="1" controls-position="right" class="w-full !rounded-xl mt-auto" size="large" />
             </div>
-            <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-950/20 px-4 py-4">
-              <div class="text-[12px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400">单位</div>
-              <div class="mt-3">
-                <el-select v-model="form.unit" class="w-full" size="large">
-                  <el-option label="个" value="个" /><el-option label="次" value="次" />
-                  <el-option label="分钟" value="分钟" /><el-option label="元" value="元" />
-                </el-select>
-              </div>
+            <div class="rounded-[24px] border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-950/20 p-5 transition-colors hover:bg-white dark:hover:bg-gray-900/40 flex flex-col">
+              <div class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">单位</div>
+              <el-select v-model="form.unit" class="w-full mt-auto" size="large">
+                <el-option label="个" value="个" /><el-option label="次" value="次" />
+                <el-option label="分钟" value="分钟" /><el-option label="元" value="元" />
+              </el-select>
             </div>
-            <div class="rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-950/20 px-4 py-4">
-              <div class="text-[12px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400">兑换数量</div>
-              <div class="mt-3">
-                <el-input-number v-model="form.exchange_amount" :min="1" controls-position="right" class="w-full" size="large" />
-              </div>
+            <div class="rounded-[24px] border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-950/20 p-5 transition-colors hover:bg-white dark:hover:bg-gray-900/40 flex flex-col">
+              <div class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">兑换数量</div>
+              <el-input-number v-model="form.exchange_amount" :min="1" controls-position="right" class="w-full mt-auto" size="large" />
             </div>
           </div>
         </SettingsCard>
 
-        <div class="rounded-3xl border border-white/50 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/65 backdrop-blur-xl shadow-sm px-4 py-4 flex justify-end gap-2">
-          <el-button class="!rounded-2xl !font-extrabold" @click="goBack">取消</el-button>
-          <el-button type="primary" class="!rounded-2xl !font-extrabold" @click="submitForm">确定</el-button>
+        <div class="sticky bottom-6 rounded-[24px] border border-white/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-lg shadow-gray-200/20 dark:shadow-black/20 p-4 flex justify-end gap-3 z-10">
+          <el-button class="!rounded-xl !h-10 !px-6 !font-bold !text-gray-600 dark:!text-gray-300" @click="goBack">取消</el-button>
+          <el-button type="primary" class="!rounded-xl !h-10 !px-8 !font-bold shadow-md shadow-emerald-500/20" @click="submitForm">确定创建</el-button>
         </div>
       </div>
     </div>
@@ -163,32 +159,32 @@ const previewDesc = computed(() => (form.content || '').trim() || '写一句更�
 const emojiCategories = [
   {
     key: 'game',
-    label: '玩家游戏',
+    label: '游戏',
     emojis: ['🎮', '🕹️', '🎲', '♟️', '🧩', '🃏', '🏆', '🏅', '⚔️', '🛡️', '🏎️', '🏁']
   },
   {
     key: 'food',
-    label: '美食零食',
+    label: '美食',
     emojis: ['🍔', '🍟', '🍕', '🌭', '🍿', '🍣', '🍜', '🍰', '🍩', '🍪', '🧋', '🍫']
   },
   {
     key: 'life',
-    label: '生活娱乐',
+    label: '娱乐',
     emojis: ['🎬', '🎤', '🎧', '🎵', '🎸', '🥳', '🎡', '🎢', '🎠', '🏖️', '🏕️', '🧘']
   },
   {
     key: 'digital',
-    label: '电子产品',
+    label: '数码',
     emojis: ['📱', '💻', '🖥️', '⌨️', '🖱️', '🎧', '🎮', '📷', '🎥', '📺', '⌚', '🔋']
   },
   {
     key: 'study',
-    label: '书籍学习',
+    label: '学习',
     emojis: ['📚', '📖', '📝', '✏️', '🖊️', '📓', '📒', '📔', '🧠', '🔬', '🧪', '🎓']
   },
   {
     key: 'reward',
-    label: '特权奖励',
+    label: '奖励',
     emojis: ['👑', '✨', '🎁', '🎟️', '🎫', '💎', '🍦', '🛍️', '🧸', '🎉', '🌟', '🏖️']
   },
   {
@@ -301,6 +297,16 @@ function onIconError(e: Event) {
 .dark :deep(.wish-form .el-select__wrapper) {
   border: 1px solid rgb(51 65 85);
   background: rgb(2 6 23 / 0.18);
+  box-shadow: none;
+}
+
+.dark :deep(.wish-form .el-input__inner),
+.dark :deep(.wish-form .el-textarea__inner) {
+  color: rgb(249 250 251);
+}
+
+.dark :deep(.wish-form .el-select__wrapper .el-select__selected-item) {
+  color: rgb(249 250 251);
 }
 
 :deep(.wish-form .el-input__wrapper),
@@ -321,5 +327,27 @@ function onIconError(e: Event) {
 .dark :deep(.wish-form .el-textarea__inner:focus) {
   border-color: rgb(16 185 129);
   box-shadow: 0 0 0 4px rgb(16 185 129 / 0.14);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.3);
+  border-radius: 4px;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.2);
 }
 </style>
