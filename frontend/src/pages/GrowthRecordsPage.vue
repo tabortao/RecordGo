@@ -4,15 +4,15 @@
     <div class="px-4 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 transition-colors">
       <div class="flex items-center gap-3">
         <div 
-          class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300"
+          class="w-9 h-9 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300 active:scale-95"
           @click="router.back()"
         >
-          <el-icon><ArrowLeft /></el-icon>
+          <el-icon :size="18"><ArrowLeft /></el-icon>
         </div>
-        <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">{{ title }}记录</h2>
+        <h2 class="font-black text-xl text-gray-800 dark:text-gray-100 tracking-tight">{{ title }}记录</h2>
       </div>
       <button 
-        class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg shadow-blue-200 dark:shadow-blue-900/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-1"
+        class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-5 py-2 rounded-full text-sm font-black shadow-lg shadow-blue-500/30 dark:shadow-blue-900/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5"
         @click="openDialog"
       >
         <el-icon><Plus /></el-icon>
@@ -21,27 +21,36 @@
     </div>
 
     <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24">
-      <div class="max-w-3xl mx-auto space-y-6">
+      <div class="max-w-4xl mx-auto space-y-8">
         <!-- Chart Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
-              <el-icon><TrendCharts /></el-icon> 数据趋势
-            </h3>
-            <div class="flex bg-gray-100 dark:bg-gray-700/50 p-1 rounded-xl">
-              <button 
-                v-for="tab in [{k: 'week', l: '周'}, {k: 'month', l: '月'}, {k: 'year', l: '年'}, {k: 'all', l: '全部'}]" 
-                :key="tab.k"
-                class="px-3 py-1 rounded-lg text-xs font-bold transition-all"
-                :class="chartTab === tab.k ? 'bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'"
-                @click="chartTab = tab.k as any"
-              >
-                {{ tab.l }}
-              </button>
+        <div class="bg-white dark:bg-gray-800 rounded-[32px] p-6 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden">
+          <!-- Background Decoration -->
+          <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-indigo-50 to-transparent dark:from-indigo-900/10 rounded-bl-[100px] pointer-events-none"></div>
+
+          <div class="relative z-10">
+            <div class="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+              <div>
+                <h3 class="text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                  <span class="w-2 h-6 rounded-full bg-indigo-500 block"></span>
+                  数据趋势
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 pl-4">查看近期变化曲线</p>
+              </div>
+              <div class="bg-gray-100 dark:bg-gray-700/50 p-1 rounded-xl flex items-center">
+                <button 
+                  v-for="tab in [{k: 'week', l: '周'}, {k: 'month', l: '月'}, {k: 'year', l: '年'}, {k: 'all', l: '全部'}]" 
+                  :key="tab.k"
+                  class="px-5 py-2 rounded-lg text-sm font-bold transition-all duration-300"
+                  :class="chartTab === tab.k ? 'bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-400 shadow-sm scale-105' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+                  @click="chartTab = tab.k as any"
+                >
+                  {{ tab.l }}
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="h-56 w-full">
-            <VChart :option="chartOption" autoresize class="w-full h-full" />
+            <div class="h-64 w-full">
+              <VChart :option="chartOption" autoresize class="w-full h-full" />
+            </div>
           </div>
         </div>
 
@@ -56,76 +65,77 @@
 
         <!-- Records List -->
         <div class="space-y-4">
-          <div class="flex items-center justify-between px-1">
-            <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">历史数据</h3>
-            <span class="text-xs font-medium text-gray-400 bg-gray-100 dark:bg-gray-700/50 px-2 py-0.5 rounded-full">共 {{ records.length }} 条</span>
+          <div class="flex items-center justify-between px-2">
+            <h3 class="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
+              <el-icon class="text-indigo-500"><List /></el-icon>
+              历史数据
+            </h3>
+            <span class="text-xs font-bold text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">共 {{ records.length }} 条</span>
           </div>
 
-          <div v-if="records.length === 0" class="flex flex-col items-center justify-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
-            <div class="w-16 h-16 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-3">
-              <el-icon :size="24" class="text-gray-300"><Document /></el-icon>
+          <div v-if="records.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400 bg-white dark:bg-gray-800 rounded-[24px] border border-dashed border-gray-200 dark:border-gray-700">
+            <div class="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4 shadow-inner">
+              <el-icon :size="32" class="text-gray-300 dark:text-gray-600"><Document /></el-icon>
             </div>
-            <p class="text-sm">暂无记录，点击右上角添加</p>
+            <p class="font-medium">暂无记录，点击右上角添加</p>
           </div>
 
-          <div v-else class="space-y-3">
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div
               v-for="item in pagedRecords"
               :key="item.id"
-              class="group bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden"
+              class="group bg-white dark:bg-gray-800 rounded-[20px] p-5 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden cursor-pointer"
               @click="toggleDelete(item.id)"
             >
+              <!-- Background Hover -->
+              <div class="absolute inset-0 bg-indigo-50/50 dark:bg-indigo-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+
               <!-- Delete Overlay -->
               <div 
-                class="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-white via-white to-transparent dark:from-gray-800 dark:via-gray-800 flex items-center justify-end pr-4 transition-opacity duration-200"
-                :class="activeDeleteId === item.id ? 'opacity-100 z-20' : 'opacity-0 -z-10 group-hover:opacity-100 group-hover:z-20'"
+                class="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-white via-white to-transparent dark:from-gray-800 dark:via-gray-800 flex items-center justify-end pr-4 transition-all duration-300"
+                :class="activeDeleteId === item.id ? 'opacity-100 translate-x-0 z-20' : 'opacity-0 translate-x-4 -z-10 group-hover:opacity-100 group-hover:translate-x-0 group-hover:z-20'"
               >
                 <button
-                  class="h-8 w-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors shadow-sm"
+                  class="h-9 w-9 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all shadow-sm hover:scale-110 active:scale-95"
                   @click.stop="onDelete(item.id)"
                 >
-                  <el-icon><Delete /></el-icon>
+                  <el-icon :size="16"><Delete /></el-icon>
                 </button>
               </div>
 
-              <div class="flex items-center justify-between relative z-10">
+              <div class="relative z-10 flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex flex-col items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-100 dark:border-indigo-800/30">
-                    <span class="text-xs opacity-60">{{ dayjs(item.record_date).format('MM') }}月</span>
-                    <span class="text-sm leading-none">{{ dayjs(item.record_date).format('DD') }}</span>
+                  <div class="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex flex-col items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-100 dark:border-indigo-800/30 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wide opacity-70">{{ dayjs(item.record_date).format('MM') }}月</span>
+                    <span class="text-xl font-black leading-none mt-0.5">{{ dayjs(item.record_date).format('DD') }}</span>
                   </div>
                   
                   <div>
-                    <div class="flex items-baseline gap-1.5">
-                      <span class="text-xl font-black text-gray-900 dark:text-white tracking-tight">
+                    <div class="flex items-baseline gap-2">
+                      <span class="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
                         {{ formatRecordValue(item) }}
                       </span>
-                      <span class="text-xs font-bold text-gray-400" v-if="unit">{{ unit }}</span>
+                      <span class="text-xs font-bold text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 rounded" v-if="unit">{{ unit }}</span>
                     </div>
                     
-                    <div class="flex items-center gap-2 mt-0.5">
-                      <span class="text-xs text-gray-400">{{ dayjs(item.record_date).format('YYYY年') }}</span>
-                      <div v-if="type === 'vision'" class="text-[10px] bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded font-medium">
-                        左 {{ item.left_value }} / 右 {{ item.right_value }}
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="text-xs font-medium text-gray-400">{{ dayjs(item.record_date).format('YYYY年') }}</span>
+                      <div v-if="type === 'vision'" class="text-[10px] bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 px-2 py-0.5 rounded-full font-bold">
+                        L:{{ item.left_value }} / R:{{ item.right_value }}
                       </div>
                     </div>
                   </div>
                 </div>
-
-                <div v-if="item.remark" class="hidden sm:block text-xs text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded-lg max-w-[120px] truncate">
-                  {{ item.remark }}
-                </div>
               </div>
               
-              <!-- Mobile Remark -->
-              <div v-if="item.remark" class="sm:hidden mt-3 pt-2 border-t border-gray-50 dark:border-gray-700/50 text-xs text-gray-500 dark:text-gray-400 flex items-start gap-1">
-                <el-icon class="mt-0.5 text-gray-300"><ChatLineSquare /></el-icon>
-                <span>{{ item.remark }}</span>
+              <div v-if="item.remark" class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/50 flex items-start gap-1.5">
+                <el-icon class="mt-0.5 text-indigo-400"><ChatLineSquare /></el-icon>
+                <span class="text-xs text-gray-500 dark:text-gray-400 font-medium line-clamp-1">{{ item.remark }}</span>
               </div>
             </div>
           </div>
 
-          <div v-if="records.length > pageSize" class="flex justify-center pt-4">
+          <div v-if="records.length > pageSize" class="flex justify-center pt-6">
             <el-pagination
               :page-size="pageSize"
               :current-page="currentPage"
@@ -145,7 +155,7 @@
       v-model="showDialog" 
       :title="`添加${title}记录`" 
       width="90%" 
-      class="max-w-md rounded-2xl overflow-hidden"
+      class="max-w-md rounded-2xl overflow-hidden flex flex-col record-dialog"
       :show-close="false"
       align-center
     >
@@ -156,7 +166,7 @@
         </div>
       </template>
 
-      <div class="space-y-5 py-2">
+      <div class="space-y-5 py-4 px-1 record-form">
         <div class="space-y-1.5">
           <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1">记录日期</label>
           <el-date-picker 
@@ -164,7 +174,7 @@
             type="date" 
             value-format="YYYY-MM-DD" 
             placeholder="选择日期" 
-            class="!w-full custom-input" 
+            class="!w-full" 
             :clearable="false"
           />
         </div>
@@ -177,7 +187,7 @@
               :min="0" 
               :precision="2" 
               :step="0.1" 
-              class="!w-full custom-input-number" 
+              class="!w-full" 
               controls-position="right" 
               placeholder="0.00" 
             />
@@ -194,7 +204,7 @@
               :max="5.3"
               :precision="1" 
               :step="0.1" 
-              class="!w-full custom-input-number" 
+              class="!w-full" 
               controls-position="right" 
               placeholder="5.0" 
             />
@@ -207,7 +217,7 @@
               :max="5.3"
               :precision="1" 
               :step="0.1" 
-              class="!w-full custom-input-number" 
+              class="!w-full" 
               controls-position="right" 
               placeholder="5.0" 
             />
@@ -221,7 +231,6 @@
             type="textarea" 
             :rows="3" 
             placeholder="例如：最近吃得比较多..." 
-            class="custom-input"
             resize="none"
           />
         </div>
@@ -236,7 +245,7 @@
             取消
           </button>
           <button 
-            class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold text-sm shadow-lg shadow-blue-200 dark:shadow-blue-900/20 hover:scale-[1.02] active:scale-95 transition-all"
+            class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-black text-sm shadow-lg shadow-blue-200/70 dark:shadow-blue-900/20 ring-1 ring-white/20 dark:ring-white/10 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-60 disabled:hover:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
             @click="submit"
           >
             保存记录
@@ -249,7 +258,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { ArrowLeft, Delete, Plus, TrendCharts, InfoFilled, Document, ChatLineSquare } from '@element-plus/icons-vue'
+import { ArrowLeft, Delete, Plus, TrendCharts, InfoFilled, Document, ChatLineSquare, List } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 import router from '@/router'
 import dayjs from 'dayjs'
@@ -313,7 +322,7 @@ function recordNumericValue(item: GrowthMetricRecord) {
 
 function formatRecordValue(item: GrowthMetricRecord) {
   if (type.value === 'vision') {
-    return `左${item.left_value} 右${item.right_value}`
+    return `${item.left_value} / ${item.right_value}`
   }
   return item.value
 }
@@ -388,7 +397,7 @@ const weekOption = computed(() => {
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10 } },
     yAxis: { type: 'value', splitLine: { show: false } },
-    series: [{ type: 'bar', data: values, itemStyle: { color: '#22c55e' } }]
+    series: [{ type: 'bar', data: values, itemStyle: { color: '#6366f1' } }]
   }
 })
 
@@ -475,64 +484,77 @@ const chartOption = computed(() => {
   background-color: #4f46e5;
 }
 
-.custom-input :deep(.el-input__wrapper) {
-  background-color: #f9fafb;
-  border-radius: 0.75rem;
-  box-shadow: none !important;
-  border: 1px solid #e5e7eb;
-  padding: 8px 12px;
-  transition: all 0.2s;
+:deep(.record-dialog .el-dialog) {
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
-.dark .custom-input :deep(.el-input__wrapper) {
-  background-color: #374151;
-  border-color: #4b5563;
+:deep(.record-dialog .el-dialog__header) {
+  margin: 0;
+  padding: 24px;
+  border-bottom: 1px solid #f3f4f6;
 }
-.custom-input :deep(.el-input__wrapper:hover),
-.custom-input :deep(.el-input__wrapper.is-focus) {
-  border-color: #6366f1;
-  background-color: #fff;
-}
-.dark .custom-input :deep(.el-input__wrapper:hover),
-.dark .custom-input :deep(.el-input__wrapper.is-focus) {
-  border-color: #6366f1;
-  background-color: #1f2937;
+.dark :deep(.record-dialog .el-dialog__header) {
+  border-color: #374151;
 }
 
-.custom-input :deep(.el-textarea__inner) {
+:deep(.record-form .el-form-item__label) {
+  font-weight: 700;
+  color: #374151;
+}
+.dark :deep(.record-form .el-form-item__label) {
+  color: #d1d5db;
+}
+
+:deep(.record-form .el-input__wrapper),
+:deep(.record-form .el-input-number__decrease),
+:deep(.record-form .el-input-number__increase) {
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px #e5e7eb inset !important;
   background-color: #f9fafb;
-  border-radius: 0.75rem;
-  box-shadow: none !important;
-  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+  border: none;
+}
+.dark :deep(.record-form .el-input__wrapper),
+.dark :deep(.record-form .el-input-number__decrease),
+.dark :deep(.record-form .el-input-number__increase) {
+  background-color: #1f2937;
+  box-shadow: 0 0 0 1px #4b5563 inset !important;
+  color: white;
+}
+
+:deep(.record-form .el-input__wrapper.is-focus) {
+  background-color: #fff;
+  box-shadow: 0 0 0 2px #6366f1 inset !important; /* indigo-500 */
+}
+.dark :deep(.record-form .el-input__wrapper.is-focus) {
+  background-color: #111827;
+}
+
+:deep(.record-form .el-input__inner) {
+  font-weight: 700;
+  color: #1f2937;
+}
+.dark :deep(.record-form .el-input__inner) {
+  color: #f3f4f6;
+}
+
+:deep(.record-form .el-textarea__inner) {
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px #e5e7eb inset !important;
+  background-color: #f9fafb;
   padding: 12px;
 }
-.dark .custom-input :deep(.el-textarea__inner) {
-  background-color: #374151;
-  border-color: #4b5563;
-  color: #fff;
-}
-.custom-input :deep(.el-textarea__inner:hover),
-.custom-input :deep(.el-textarea__inner:focus) {
-  border-color: #6366f1;
-  background-color: #fff;
-}
-.dark .custom-input :deep(.el-textarea__inner:hover),
-.dark .custom-input :deep(.el-textarea__inner:focus) {
-  border-color: #6366f1;
+.dark :deep(.record-form .el-textarea__inner) {
   background-color: #1f2937;
+  box-shadow: 0 0 0 1px #4b5563 inset !important;
+  color: white;
 }
-
-.custom-input-number :deep(.el-input__wrapper) {
-  background-color: #f9fafb;
-  border-radius: 0.75rem;
-  box-shadow: none !important;
-  border: 1px solid #e5e7eb;
+:deep(.record-form .el-textarea__inner:focus) {
+  background-color: #fff;
+  box-shadow: 0 0 0 2px #6366f1 inset !important;
 }
-.dark .custom-input-number :deep(.el-input__wrapper) {
-  background-color: #374151;
-  border-color: #4b5563;
-}
-.custom-input-number :deep(.el-input__wrapper:hover),
-.custom-input-number :deep(.el-input__wrapper.is-focus) {
-  border-color: #6366f1;
+.dark :deep(.record-form .el-textarea__inner:focus) {
+  background-color: #111827;
 }
 </style>

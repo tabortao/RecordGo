@@ -4,15 +4,15 @@
     <div class="px-4 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 transition-colors">
       <div class="flex items-center gap-3">
         <div 
-          class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300"
+          class="w-9 h-9 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300 active:scale-95"
           @click="router.back()"
         >
-          <el-icon><ArrowLeft /></el-icon>
+          <el-icon :size="18"><ArrowLeft /></el-icon>
         </div>
-        <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">荣誉墙</h2>
+        <h2 class="font-black text-xl text-gray-800 dark:text-gray-100 tracking-tight">荣誉墙</h2>
       </div>
       <button 
-        class="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white px-4 py-2 rounded-full text-sm font-black shadow-lg shadow-amber-200/60 dark:shadow-amber-900/20 ring-1 ring-white/30 dark:ring-white/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+        class="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white px-5 py-2 rounded-full text-sm font-black shadow-lg shadow-amber-500/30 dark:shadow-amber-900/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5"
         @click="openDialog"
       >
         <el-icon><Plus /></el-icon>
@@ -21,44 +21,46 @@
     </div>
 
     <div class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24">
-      <div class="max-w-5xl mx-auto space-y-6">
+      <div class="max-w-6xl mx-auto space-y-8">
         <!-- Profile Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center sm:items-start gap-6 relative overflow-hidden">
+        <div class="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-amber-50 to-orange-50 dark:from-gray-800 dark:to-gray-800 p-8 shadow-sm border border-amber-100 dark:border-gray-700">
           <!-- Decoration -->
-          <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-100 to-transparent dark:from-amber-900/20 rounded-bl-full -z-0 opacity-50"></div>
+          <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-amber-200/40 via-orange-100/20 to-transparent dark:from-amber-500/10 rounded-bl-[100px] pointer-events-none"></div>
+          <div class="absolute bottom-0 left-0 w-40 h-40 bg-gradient-to-tr from-rose-100/30 to-transparent dark:from-rose-500/10 rounded-tr-[80px] pointer-events-none"></div>
           
-          <div class="relative z-10">
-            <div class="relative">
-              <el-avatar :size="80" :src="avatarSrc" class="border-4 border-white dark:border-gray-700 shadow-md" />
-              <div class="absolute -bottom-1 -right-1 bg-amber-400 text-white p-1.5 rounded-full shadow-sm">
-                <el-icon :size="16"><Trophy /></el-icon>
+          <div class="relative z-10 flex flex-col sm:flex-row items-center gap-8">
+            <div class="relative group">
+              <div class="absolute -inset-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full opacity-70 blur group-hover:opacity-100 transition duration-500"></div>
+              <el-avatar :size="96" :src="avatarSrc" class="relative border-4 border-white dark:border-gray-800 shadow-xl" />
+              <div class="absolute -bottom-2 -right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white p-2 rounded-full shadow-lg border-2 border-white dark:border-gray-800">
+                <el-icon :size="18"><Trophy /></el-icon>
               </div>
             </div>
-          </div>
-          
-          <div class="flex-1 text-center sm:text-left z-10">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">{{ displayName }}</h1>
-            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-sm">
-              <div class="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-medium">
-                {{ ageText }}
-              </div>
-              <div class="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-medium">
-                {{ genderText }}
-              </div>
-              <div class="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
-                <el-icon><Medal /></el-icon>
-                <span>共 {{ records.length }} 项荣誉</span>
+            
+            <div class="flex-1 text-center sm:text-left space-y-3">
+              <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{{ displayName }}</h1>
+              <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                <div class="px-4 py-1.5 rounded-full bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm text-gray-600 dark:text-gray-300 text-sm font-bold shadow-sm border border-white/50 dark:border-gray-600">
+                  {{ ageText }}
+                </div>
+                <div class="px-4 py-1.5 rounded-full bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm text-gray-600 dark:text-gray-300 text-sm font-bold shadow-sm border border-white/50 dark:border-gray-600">
+                  {{ genderText }}
+                </div>
+                <div class="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-700 dark:text-amber-400 text-sm font-bold shadow-sm border border-amber-200/50 dark:border-amber-500/20 flex items-center gap-1.5">
+                  <el-icon><Medal /></el-icon>
+                  <span>共 {{ records.length }} 项荣誉</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Empty State -->
-        <div v-if="records.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-400">
-          <div class="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+        <div v-if="records.length === 0" class="flex flex-col items-center justify-center py-24 text-gray-400">
+          <div class="w-24 h-24 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 shadow-inner">
             <el-icon :size="40" class="text-gray-300 dark:text-gray-600"><Trophy /></el-icon>
           </div>
-          <p>暂无荣誉记录，快去记录第一次高光时刻吧~</p>
+          <p class="font-medium">暂无荣誉记录，快去记录第一次高光时刻吧~</p>
         </div>
 
         <!-- Grid Layout -->
@@ -66,7 +68,7 @@
           <div
             v-for="item in records"
             :key="item.id"
-            class="group relative bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 dark:border-gray-700 cursor-pointer flex flex-col"
+            class="group relative bg-white dark:bg-gray-800 rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 dark:border-gray-700 cursor-pointer flex flex-col"
             @click="openDetail(item.id)"
           >
             <!-- Image Area -->
@@ -76,12 +78,12 @@
                 :src="resolvePhoto(item.photo_url)"
                 class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
-              <div class="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-300" v-else>
+              <div class="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800 text-gray-300" v-else>
                 <el-icon :size="32"><Picture /></el-icon>
               </div>
               <!-- Overlay Date -->
-              <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12">
-                <div class="text-white text-xs font-medium flex items-center gap-1">
+              <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4 pt-12">
+                <div class="text-white/90 text-xs font-bold flex items-center gap-1.5 backdrop-blur-[2px] bg-black/20 w-fit px-2 py-1 rounded-lg">
                   <el-icon><Calendar /></el-icon>
                   <span>{{ formatDate(item.awarded_at) }}</span>
                 </div>
@@ -89,11 +91,15 @@
             </div>
 
             <!-- Content Area -->
-            <div class="p-4 flex-1 flex flex-col">
-              <h3 class="text-base font-bold text-gray-900 dark:text-white line-clamp-2 mb-2 leading-tight group-hover:text-amber-500 transition-colors">
+            <div class="p-5 flex-1 flex flex-col relative">
+              <div class="absolute top-0 right-5 -mt-6 w-12 h-12 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 border-2 border-amber-50 dark:border-gray-700">
+                 <el-icon :size="20" class="text-amber-500"><TrophyBase /></el-icon>
+              </div>
+              
+              <h3 class="text-lg font-black text-gray-900 dark:text-white line-clamp-2 mb-3 mt-2 leading-snug group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                 {{ item.title }}
               </h3>
-              <div class="mt-auto flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <div class="mt-auto flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-3 py-1.5 rounded-lg w-fit max-w-full">
                 <el-icon><School /></el-icon>
                 <span class="truncate">{{ item.issuer || '未知机构' }}</span>
               </div>
@@ -108,7 +114,7 @@
       v-model="showDialog" 
       title="添加荣誉" 
       width="90%" 
-      class="max-w-md rounded-2xl overflow-hidden flex flex-col max-h-[90vh]"
+      class="max-w-md rounded-2xl overflow-hidden flex flex-col max-h-[90vh] honor-dialog"
       :show-close="false"
       align-center
     >
@@ -119,7 +125,7 @@
         </div>
       </template>
       
-      <div class="space-y-5 py-2 overflow-y-auto flex-1 px-1">
+      <div class="space-y-5 py-2 overflow-y-auto flex-1 px-1 honor-form">
         <!-- Photo Upload -->
         <div class="flex justify-center">
           <div class="relative group cursor-pointer" @click="triggerFileSelect">
@@ -146,7 +152,6 @@
             <el-input 
               v-model="formTitle" 
               placeholder="例如：三好学生奖状" 
-              class="custom-input"
             />
           </div>
           
@@ -156,7 +161,6 @@
               <el-input 
                 v-model="formIssuer" 
                 placeholder="例如：xx学校" 
-                class="custom-input"
               />
             </div>
             <div class="space-y-1.5">
@@ -166,7 +170,7 @@
                 type="date" 
                 value-format="YYYY-MM-DD" 
                 placeholder="选择日期" 
-                class="!w-full custom-input" 
+                class="!w-full" 
                 :clearable="false"
               />
             </div>
@@ -179,7 +183,6 @@
               type="textarea" 
               :rows="3" 
               placeholder="记录一下当时的心情吧..." 
-              class="custom-input"
               resize="none"
             />
           </div>
@@ -379,48 +382,75 @@ watch(() => auth.user?.avatar_path, () => { updateAvatar() })
 </script>
 
 <style scoped>
-.custom-input :deep(.el-input__wrapper) {
-  background-color: #f9fafb;
-  border-radius: 0.75rem;
-  box-shadow: none !important;
-  border: 1px solid #e5e7eb;
+:deep(.honor-dialog .el-dialog) {
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+:deep(.honor-dialog .el-dialog__header) {
+  margin: 0;
+  padding: 24px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.dark :deep(.honor-dialog .el-dialog__header) {
+  border-color: #374151;
+}
+
+:deep(.honor-form .el-form-item__label) {
+  font-weight: 700;
+  color: #374151;
+}
+.dark :deep(.honor-form .el-form-item__label) {
+  color: #d1d5db;
+}
+
+:deep(.honor-form .el-input__wrapper),
+:deep(.honor-form .el-textarea__inner),
+:deep(.honor-form .el-select__wrapper) {
+  border-radius: 12px;
   padding: 8px 12px;
+  box-shadow: 0 0 0 1px #e5e7eb inset !important;
+  background-color: #f9fafb;
   transition: all 0.2s;
 }
-.dark .custom-input :deep(.el-input__wrapper) {
-  background-color: #374151;
-  border-color: #4b5563;
-}
-.custom-input :deep(.el-input__wrapper:hover),
-.custom-input :deep(.el-input__wrapper.is-focus) {
-  border-color: #f59e0b;
-  background-color: #fff;
-}
-.dark .custom-input :deep(.el-input__wrapper:hover),
-.dark .custom-input :deep(.el-input__wrapper.is-focus) {
-  border-color: #f59e0b;
+.dark :deep(.honor-form .el-input__wrapper),
+.dark :deep(.honor-form .el-textarea__inner),
+.dark :deep(.honor-form .el-select__wrapper) {
   background-color: #1f2937;
+  box-shadow: 0 0 0 1px #4b5563 inset !important;
 }
-.custom-input :deep(.el-textarea__inner) {
+
+:deep(.honor-form .el-input__wrapper.is-focus),
+:deep(.honor-form .el-textarea__inner:focus),
+:deep(.honor-form .el-select__wrapper.is-focused) {
+  background-color: #fff;
+  box-shadow: 0 0 0 2px #f59e0b inset !important; /* amber-500 */
+}
+.dark :deep(.honor-form .el-input__wrapper.is-focus),
+.dark :deep(.honor-form .el-textarea__inner:focus),
+.dark :deep(.honor-form .el-select__wrapper.is-focused) {
+  background-color: #111827;
+}
+
+.upload-demo {
+  text-align: center;
+}
+:deep(.el-upload-dragger) {
+  border-radius: 16px;
+  border: 2px dashed #e5e7eb;
   background-color: #f9fafb;
-  border-radius: 0.75rem;
-  box-shadow: none !important;
-  border: 1px solid #e5e7eb;
-  padding: 12px;
+  transition: all 0.2s;
 }
-.dark .custom-input :deep(.el-textarea__inner) {
-  background-color: #374151;
+:deep(.el-upload-dragger:hover) {
+  border-color: #f59e0b;
+  background-color: #fffbeb; /* amber-50 */
+}
+.dark :deep(.el-upload-dragger) {
   border-color: #4b5563;
-  color: #fff;
-}
-.custom-input :deep(.el-textarea__inner:hover),
-.custom-input :deep(.el-textarea__inner:focus) {
-  border-color: #f59e0b;
-  background-color: #fff;
-}
-.dark .custom-input :deep(.el-textarea__inner:hover),
-.dark .custom-input :deep(.el-textarea__inner:focus) {
-  border-color: #f59e0b;
   background-color: #1f2937;
+}
+.dark :deep(.el-upload-dragger:hover) {
+  border-color: #f59e0b;
+  background-color: #374151;
 }
 </style>

@@ -1,81 +1,85 @@
 <template>
   <div class="h-screen bg-[#F5F7FA] dark:bg-gray-900 flex flex-col relative overflow-hidden">
     <!-- Header -->
-    <div class="bg-white/80 backdrop-blur-md fixed top-0 left-0 right-0 z-20 px-4 py-2 shadow-sm flex items-center justify-between dark:bg-gray-900/80 dark:border-b dark:border-gray-800">
-      <div class="flex items-center gap-3 flex-shrink-0">
-        <div 
-          class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors text-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-          @click="router.push('/homework')"
-        >
-          <el-icon><ArrowLeft /></el-icon>
-        </div>
-        <div 
-          class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors text-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-          @click="openSidebar"
-        >
-          <el-icon><Menu /></el-icon>
-        </div>
-        <h1 class="font-bold text-lg text-gray-800 tracking-tight dark:text-white whitespace-nowrap">小成长</h1>
-      </div>
-
-      <div class="flex items-center gap-2 flex-nowrap overflow-x-auto hide-scrollbar">
-        <div v-if="store.activeFilterTagId || store.onlyFavorites" class="flex items-center gap-2 bg-purple-100 px-3 py-1 rounded-full mr-2 whitespace-nowrap dark:bg-purple-900/30">
-          <span class="text-xs text-purple-600 font-medium dark:text-purple-300">正在筛选: {{ activeTagName }}</span>
-          <el-icon class="text-purple-400 cursor-pointer hover:text-purple-600" @click="clearFilter"><Close /></el-icon>
-        </div>
-
-        <!-- Search -->
-        <el-input 
-          v-model="searchQuery" 
-          placeholder="搜索..." 
-          class="!w-32 sm:!w-40 transition-all focus:!w-48 dark:bg-gray-800" 
-          size="small"
-          clearable
-          :prefix-icon="Search"
-        />
-
-        <!-- Calendar -->
-        <div class="relative flex items-center">
-          <el-date-picker
-            ref="datePickerRef"
-            v-model="selectedDate"
-            type="date"
-            class="!w-0 !h-0 !border-0 !p-0 !overflow-hidden opacity-0 absolute top-0 left-0 -z-10"
-            :popper-options="{ placement: 'bottom-end' }"
-            @change="handleCalendarChange"
+    <div class="bg-white/80 backdrop-blur-xl fixed top-0 left-0 right-0 z-20 px-4 py-3 shadow-sm border-b border-gray-100 dark:bg-gray-900/80 dark:border-gray-800 transition-all duration-300">
+      <div class="flex items-center justify-between max-w-6xl mx-auto w-full">
+        <div class="flex items-center gap-4 flex-shrink-0">
+          <button 
+            class="w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors text-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 active:scale-95"
+            @click="router.push('/homework')"
           >
-            <template #cell="{ text, date, isCurrent }">
-              <el-tooltip
-                :content="getRecordCountText(date)"
-                :disabled="getRecordCount(date) <= 0"
-                placement="top"
-                effect="dark"
-              >
-                <div class="w-full h-full flex items-center justify-center">
-                  <div
-                    class="relative h-7 w-7 rounded-full flex items-center justify-center text-sm transition-colors"
-                    :class="hasRecord(date) ? 'bg-purple-600 text-white font-extrabold shadow-sm' : (isCurrent ? 'font-extrabold text-purple-600' : '')"
-                  >
-                    {{ text }}
+            <el-icon :size="18"><ArrowLeft /></el-icon>
+          </button>
+          <button 
+            class="w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors text-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 active:scale-95"
+            @click="openSidebar"
+          >
+            <el-icon :size="18"><Menu /></el-icon>
+          </button>
+          <h1 class="font-black text-xl text-gray-800 tracking-tight dark:text-white whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500">小成长</h1>
+        </div>
+
+        <div class="flex items-center gap-3 flex-nowrap overflow-x-auto hide-scrollbar pl-2">
+          <div v-if="store.activeFilterTagId || store.onlyFavorites" class="flex items-center gap-2 bg-purple-50 px-3 py-1.5 rounded-full mr-1 whitespace-nowrap dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800/50">
+            <span class="text-xs text-purple-600 font-bold dark:text-purple-300">筛选: {{ activeTagName }}</span>
+            <el-icon class="text-purple-400 cursor-pointer hover:text-purple-600 dark:hover:text-purple-200 transition-colors" @click="clearFilter"><Close /></el-icon>
+          </div>
+
+          <!-- Search -->
+          <div class="relative group">
+            <el-input 
+              v-model="searchQuery" 
+              placeholder="搜索美好回忆..." 
+              class="!w-32 sm:!w-48 transition-all focus:!w-56 dark:bg-gray-800 search-input" 
+              size="default"
+              clearable
+              :prefix-icon="Search"
+            />
+          </div>
+
+          <!-- Calendar -->
+          <div class="relative flex items-center">
+            <el-date-picker
+              ref="datePickerRef"
+              v-model="selectedDate"
+              type="date"
+              class="!w-0 !h-0 !border-0 !p-0 !overflow-hidden opacity-0 absolute top-0 left-0 -z-10"
+              :popper-options="{ placement: 'bottom-end' }"
+              @change="handleCalendarChange"
+            >
+              <template #cell="{ text, date, isCurrent }">
+                <el-tooltip
+                  :content="getRecordCountText(date)"
+                  :disabled="getRecordCount(date) <= 0"
+                  placement="top"
+                  effect="dark"
+                >
+                  <div class="w-full h-full flex items-center justify-center">
                     <div
-                      v-if="getRecordCount(date) > 0"
-                      class="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-white text-purple-700 text-[10px] font-black shadow-sm border border-purple-200 flex items-center justify-center"
+                      class="relative h-7 w-7 rounded-full flex items-center justify-center text-sm transition-all duration-300"
+                      :class="hasRecord(date) ? 'bg-purple-600 text-white font-black shadow-md scale-110' : (isCurrent ? 'font-extrabold text-purple-600 bg-purple-50' : 'hover:bg-gray-100 dark:hover:bg-gray-700')"
                     >
-                      {{ getRecordCountBadge(date) }}
+                      {{ text }}
+                      <div
+                        v-if="getRecordCount(date) > 0"
+                        class="absolute -top-1 -right-1 h-3.5 min-w-[14px] px-0.5 rounded-full bg-amber-400 text-white text-[9px] font-black shadow-sm border border-white dark:border-gray-800 flex items-center justify-center leading-none"
+                      >
+                        {{ getRecordCountBadge(date) }}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </el-tooltip>
-            </template>
-          </el-date-picker>
-          
-          <div 
-            class="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-colors"
-            :class="selectedDate ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300' : 'bg-gray-100 text-gray-600 hover:bg-purple-50 hover:text-purple-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'"
-            @click="openCalendar"
-          >
-             <el-icon v-if="selectedDate" @click.stop="clearSelectedDate"><Close /></el-icon>
-             <el-icon v-else><Calendar /></el-icon>
+                </el-tooltip>
+              </template>
+            </el-date-picker>
+            
+            <button 
+              class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all active:scale-95"
+              :class="selectedDate ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300 ring-2 ring-purple-200 dark:ring-purple-800' : 'bg-gray-50 text-gray-600 hover:bg-purple-50 hover:text-purple-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'"
+              @click="openCalendar"
+            >
+               <el-icon v-if="selectedDate" @click.stop="clearSelectedDate"><Close /></el-icon>
+               <el-icon v-else :size="18"><Calendar /></el-icon>
+            </button>
           </div>
         </div>
       </div>
@@ -158,13 +162,13 @@
           <!-- 时间轴列表 -->
           <div class="relative">
             <!-- 桌面端左侧连接线 -->
-            <div class="absolute left-8 top-4 bottom-0 w-0.5 bg-gradient-to-b from-purple-200 via-purple-100 to-transparent dark:from-purple-900/40 dark:via-purple-900/20 hidden sm:block"></div>
+            <div class="absolute left-[26px] top-12 bottom-0 w-0.5 bg-gradient-to-b from-purple-200 via-purple-100 to-transparent dark:from-purple-900/40 dark:via-purple-900/20 hidden sm:block"></div>
 
             <div v-for="year in sortedYears" :key="year" :id="'year-' + String(year)" class="relative mb-12">
                 <!-- 年份标题 (Sticky) -->
-                <div class="sticky top-[72px] z-10 mb-6 pl-4 sm:pl-16 transition-all duration-300">
-                    <span class="inline-block rounded-full bg-white/90 px-5 py-1.5 text-2xl font-black text-gray-800 shadow-sm backdrop-blur-md dark:bg-gray-800/90 dark:text-white border border-gray-100 dark:border-gray-700">
-                        {{ year }}<span class="text-sm font-normal text-gray-500 ml-1">年</span>
+                <div class="sticky top-[80px] z-10 mb-8 pl-4 sm:pl-16 transition-all duration-300">
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-5 py-2 text-2xl font-black text-gray-800 shadow-lg shadow-purple-100/50 backdrop-blur-xl dark:bg-gray-800/95 dark:text-white dark:shadow-none border border-purple-50 dark:border-gray-700">
+                        {{ year }}<span class="text-sm font-bold text-gray-400 mt-1">年</span>
                     </span>
                 </div>
 
@@ -172,24 +176,24 @@
                   v-for="month in (sortedMonthsByYear[year] || [])"
                   :key="month"
                   :id="'month-' + String(year) + '-' + String(month)"
-                  class="mb-8 relative"
+                  class="mb-10 relative"
                 >
                   <!-- 月份标记 -->
-                  <div class="mb-4 flex items-center gap-4 pl-4 sm:pl-0">
+                  <div class="mb-6 flex items-center gap-4 pl-4 sm:pl-0">
                       <!-- Desktop: 圆形月份标 -->
-                      <div class="hidden sm:flex h-16 w-16 items-center justify-center rounded-full border-[6px] border-[#F5F7FA] bg-white text-purple-600 shadow-sm z-10 dark:border-gray-900 dark:bg-gray-800 dark:text-purple-400">
-                          <span class="text-lg font-bold">{{ month }}月</span>
+                      <div class="hidden sm:flex h-14 w-14 items-center justify-center rounded-full border-[4px] border-[#F5F7FA] bg-white text-purple-600 shadow-md z-10 dark:border-gray-900 dark:bg-gray-800 dark:text-purple-400 dark:shadow-none">
+                          <span class="text-lg font-black">{{ month }}<span class="text-xs font-bold ml-0.5">月</span></span>
                       </div>
                       
                       <!-- Mobile: 胶囊月份标 -->
-                      <div class="sm:hidden flex items-center gap-2">
-                          <div class="h-6 w-1.5 rounded-full bg-purple-500"></div>
-                          <span class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ month }}月</span>
+                      <div class="sm:hidden flex items-center gap-3">
+                          <div class="h-8 w-1.5 rounded-full bg-gradient-to-b from-purple-500 to-blue-500 shadow-sm"></div>
+                          <span class="text-xl font-black text-gray-800 dark:text-gray-100">{{ month }}月</span>
                       </div>
                   </div>
 
                   <!-- 卡片列表容器 -->
-                  <div class="px-4 sm:px-0 sm:pl-24 space-y-6">
+                  <div class="px-4 sm:px-0 sm:pl-20 space-y-6">
                       <div
                         v-for="record in (groupedRecords[year]?.[month] || [])"
                         :key="record.id"
@@ -781,6 +785,31 @@ const handleEdit = (id: string) => {
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Search Input Custom Style */
+.search-input .el-input__wrapper {
+  border-radius: 999px;
+  background-color: #f9fafb;
+  box-shadow: none !important;
+  border: 1px solid transparent;
+  padding-left: 12px;
+  transition: all 0.3s;
+}
+.dark .search-input .el-input__wrapper {
+  background-color: #1f2937;
+}
+.search-input .el-input__wrapper:hover,
+.search-input .el-input__wrapper.is-focus {
+  background-color: #fff;
+  border-color: #e5e7eb;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+.dark .search-input .el-input__wrapper:hover,
+.dark .search-input .el-input__wrapper.is-focus {
+  background-color: #374151;
+  border-color: #4b5563;
+  box-shadow: none !important;
 }
 
 /* Fade transition */
