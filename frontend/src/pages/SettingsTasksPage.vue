@@ -66,10 +66,6 @@
         <div class="text-xs text-gray-500 dark:text-gray-400">提示：按住左侧拖拽图标，可调整分类顺序。</div>
       </div>
     </SettingsCard>
-
-    <SettingsCard title="更多设置" description="后续将提供任务默认提醒、重复规则等">
-      <div class="text-sm text-gray-700 dark:text-gray-200">目前版本已支持分类管理与基础显示偏好。</div>
-    </SettingsCard>
   </SettingsShell>
 </template>
 
